@@ -4,6 +4,7 @@ import { URL } from "node:url";
 import { adminRides, cities, drivers } from "./data.mjs";
 
 const port = Number(process.env.PORT || 3001);
+const host = process.env.HOST || "0.0.0.0";
 const otpRequests = new Map();
 const rides = new Map(adminRides.map((ride) => [ride.id, { ...ride }]));
 const sseClients = new Set();
@@ -216,6 +217,6 @@ setInterval(() => {
   broadcast("admin.metrics.updated", adminOverview());
 }, 3000).unref();
 
-server.listen(port, "127.0.0.1", () => {
-  console.log(`Wasel API listening on http://127.0.0.1:${port}`);
+server.listen(port, host, () => {
+  console.log(`Wasel API listening on http://${host}:${port}`);
 });

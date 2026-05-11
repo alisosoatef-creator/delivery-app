@@ -57,3 +57,15 @@
 - [x] Add `backend/server.mjs` and `backend/data.mjs` for OTP, bootstrap data, quote creation, ride creation, ride status updates, driver status, admin metrics, and realtime SSE events.
 - [x] Add `scripts/check.mjs` for project structure and backend syntax checks.
 - [x] Verify with `npm run check`, `npm run build`, and a live API flow against `http://127.0.0.1:3001`.
+
+### Task 7: Expo Mobile App
+
+- [x] Create a real Expo app in `mobile/`.
+- [x] Remove the nested Git repository created by the Expo template.
+- [x] Add Expo Router routes in `mobile/app/`.
+- [x] Implement the mobile customer, driver, and admin experience in `mobile/components/wasel-mobile-app.js`.
+- [x] Add mobile fallback data and API helpers.
+- [x] Configure `app.json` with Wasel app identity, dark UI style, Android package, and iOS bundle identifier.
+- [x] Add `eas.json` with an Android APK preview build profile.
+- [x] Add Codex run actions for Expo in `mobile/.codex/environments/environment.toml`.
+- [x] Verify the mobile app with `npm run check` and `npx expo export --platform android --output-dir dist-check`.
