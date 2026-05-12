@@ -1,4 +1,5 @@
 .superpowers/
+.netlify/
 node_modules/
 dist/
 .runtime/

@@ -1,0 +1,6 @@
+.git/
+.runtime/
+.superpowers/
+node_modules/
+dist/
+mobile/
