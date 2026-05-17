@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>واصل | تطبيق التوصيل</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #06070a;
+      --bg-soft: #0b0d11;
+      --panel: #11141a;
+      --panel-2: #171b23;
+      --panel-3: #1e232d;
+      --text: #f8f6ef;
+      --muted: #a3a7b2;
+      --muted-2: #757b88;
+      --gold: #f6c945;
+      --gold-2: #d9a91d;
+      --green: #4dd086;
+      --red: #ff6b6b;
+      --blue: #71a7ff;
+      --border: #2b303b;
+      --shadow: 0 18px 50px rgba(0, 0, 0, .35);
+      --radius: 12px;
+      --radius-sm: 8px;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      min-height: 100%;
+      background: var(--bg);
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 15% 12%, rgba(246, 201, 69, .13), transparent 28%),
+        linear-gradient(145deg, #06070a 0%, #0b0d11 48%, #07080a 100%);
+      color: var(--text);
+      letter-spacing: 0;
+      overflow-x: hidden;
+    }
+
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid rgba(246, 201, 69, .8);
+      outline-offset: 2px;
+    }
+
+    .app {
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .auth-shell {
+      min-height: calc(100vh - 40px);
+      display: grid;
+      grid-template-columns: minmax(320px, 480px) minmax(360px, 1fr);
+      gap: 18px;
+      align-items: stretch;
+      max-width: 1220px;
+      margin: 0 auto;
+    }
+
+    .auth-panel,
+    .map-panel,
+    .surface,
+    .metric,
+    .ride-card,
+    .notice,
+    .driver-request,
+    .table-row,
+    .sheet {
+      background: rgba(17, 20, 26, .92);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .auth-panel {
+      border-radius: 18px;
+      padding: 24px;
+      display: grid;
+      align-content: space-between;
+      gap: 24px;
+    }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .brand-lockup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: linear-gradient(145deg, var(--gold), #ffdf72);
+      color: #151006;
+      font-weight: 900;
+      box-shadow: 0 12px 28px rgba(246, 201, 69, .18);
+      flex: 0 0 auto;
+    }
+
+    .brand-title {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.15;
+    }
+
+    .brand-subtitle,
+    .muted {
+      color: var(--muted);
+    }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 2px;
+      font-size: 13px;
+    }
+
+    .ghost-btn,
+    .icon-btn,
+    .tab,
+    .role-card,
+    .secondary-btn,
+    .status-chip {
+      border: 1px solid var(--border);
+      background: rgba(23, 27, 35, .92);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+
+    .ghost-btn,
+    .secondary-btn {
+      min-height: 40px;
+      padding: 0 13px;
+    }
+
+    .ghost-btn:hover,
+    .icon-btn:hover,
+    .tab:hover,
+    .role-card:hover,
+    .secondary-btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(246, 201, 69, .55);
+    }
+
+    .auth-copy h1 {
+      margin: 0;
+      font-size: clamp(34px, 4vw, 58px);
+      line-height: 1.05;
+      max-width: 650px;
+    }
+
+    .auth-copy p {
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .role-card {
+      min-height: 112px;
+      padding: 14px;
+      text-align: start;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+    }
+
+    .role-card.active {
+      background: linear-gradient(145deg, rgba(246, 201, 69, .18), rgba(23, 27, 35, .96));
+      border-color: rgba(246, 201, 69, .72);
+    }
+
+    .role-card span {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .role-card strong {
+      font-size: 18px;
+    }
+
+    .field-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field-row {
+      display: grid;
+      gap: 7px;
+    }
+
+    label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: #0c0f14;
+      color: var(--text);
+      padding: 0 12px;
+    }
+
+    textarea {
+      min-height: 74px;
+      padding: 12px;
+      resize: vertical;
+    }
+
+    .primary-btn {
+      width: 100%;
+      min-height: 48px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(145deg, var(--gold), #ffdb6d);
+      color: #151006;
+      font-weight: 900;
+      box-shadow: 0 16px 30px rgba(246, 201, 69, .18);
+    }
+
+    .map-panel {
+      min-height: 640px;
+      border-radius: 18px;
+      overflow: hidden;
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 11, 15, .78);
+      z-index: 2;
+    }
+
+    .map-canvas {
+      position: relative;
+      min-height: 420px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, .035) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(255, 255, 255, .035) 1px, transparent 1px),
+        radial-gradient(circle at 30% 25%, rgba(246, 201, 69, .16), transparent 22%),
+        radial-gradient(circle at 72% 60%, rgba(113, 167, 255, .12), transparent 25%),
+        #0c1017;
+      background-size: 64px 64px, 64px 64px, auto, auto, auto;
+      overflow: hidden;
+    }
+
+    .route-line {
+      position: absolute;
+      left: 19%;
+      top: 47%;
+      width: 60%;
+      border-top: 3px dashed rgba(246, 201, 69, .82);
+      transform: rotate(-13deg);
+      transform-origin: center;
+      filter: drop-shadow(0 0 10px rgba(246, 201, 69, .22));
+    }
+
+    .map-road {
+      position: absolute;
+      height: 2px;
+      background: rgba(255, 255, 255, .12);
+      transform-origin: left;
+    }
+
+    .map-road.r1 {
+      width: 70%;
+      left: 9%;
+      top: 28%;
+      transform: rotate(18deg);
+    }
+
+    .map-road.r2 {
+      width: 82%;
+      left: 10%;
+      top: 64%;
+      transform: rotate(-9deg);
+    }
+
+    .map-road.r3 {
+      width: 44%;
+      left: 48%;
+      top: 18%;
+      transform: rotate(80deg);
+    }
+
+    .pin,
+    .driver-pin {
+      position: absolute;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 14px 32px rgba(0, 0, 0, .4);
+    }
+
+    .pin {
+      width: 34px;
+      height: 34px;
+      background: #fff;
+      color: #111;
+    }
+
+    .pin.drop {
+      background: var(--gold);
+    }
+
+    .driver-pin {
+      width: 42px;
+      height: 42px;
+      background: #151922;
+      border: 2px solid rgba(246, 201, 69, .95);
+      color: var(--gold);
+    }
+
+    .driver-pin.dim {
+      border-color: rgba(255, 255, 255, .32);
+      color: var(--muted);
+    }
+
+    .map-sheet {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      border-top: 1px solid var(--border);
+      background: rgba(9, 11, 15, .82);
+      z-index: 2;
+    }
+
+    .map-stat {
+      background: rgba(23, 27, 35, .92);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .map-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .map-stat strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 18px;
+    }
+
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      gap: 16px;
+    }
+
+    .sidebar {
+      min-height: calc(100vh - 40px);
+      border-radius: 18px;
+      padding: 16px;
+      background: rgba(10, 12, 16, .9);
+      border: 1px solid var(--border);
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      display: grid;
+      align-content: start;
+      gap: 16px;
+    }
+
+    .nav-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .tab {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 9px;
+      text-align: start;
+    }
+
+    .tab.active {
+      background: rgba(246, 201, 69, .15);
+      color: var(--gold);
+      border-color: rgba(246, 201, 69, .55);
+    }
+
+    .main {
+      display: grid;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .app-header {
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      background: rgba(10, 12, 16, .84);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .header-title h2 {
+      margin: 0;
+      font-size: 22px;
+    }
+
+    .header-title p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .icon-btn {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) minmax(0, 1fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .surface,
+    .sheet {
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .surface-title {
+      margin: 0 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .surface-title h3 {
+      margin: 0;
+      font-size: 18px;
+    }
+
+    .status-chip {
+      min-height: 28px;
+      padding: 0 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--muted);
+    }
+
+    .status-dot.on {
+      background: var(--green);
+      box-shadow: 0 0 14px rgba(77, 208, 134, .6);
+    }
+
+    .booking-form {
+      display: grid;
+      gap: 11px;
+    }
+
+    .segmented {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .segmented button {
+      min-height: 40px;
+      border: 0;
+      color: var(--muted);
+      background: transparent;
+    }
+
+    .segmented button.active {
+      background: var(--gold);
+      color: #161006;
+      font-weight: 900;
+    }
+
+    .ride-card,
+    .driver-request,
+    .notice,
+    .table-row,
+    .metric {
+      border-radius: var(--radius);
+      padding: 13px;
+    }
+
+    .ride-list,
+    .notice-list,
+    .request-list,
+    .stack {
+      display: grid;
+      gap: 10px;
+    }
+
+    .driver-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(246, 201, 69, .16);
+      color: var(--gold);
+      font-weight: 900;
+      flex: 0 0 auto;
+    }
+
+    .driver-id {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .driver-id h4,
+    .driver-id p,
+    .table-row h4,
+    .table-row p,
+    .metric p,
+    .metric strong {
+      margin: 0;
+    }
+
+    .driver-id p,
+    .table-row p,
+    .metric p,
+    .notice p,
+    .driver-request p {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .quote-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .quote-cell {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      background: rgba(12, 15, 20, .88);
+    }
+
+    .quote-cell span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .quote-cell strong {
+      display: block;
+      margin-top: 4px;
+    }
+
+    .stepper {
+      display: grid;
+      gap: 9px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 24px 1fr;
+      gap: 10px;
+      align-items: start;
+      color: var(--muted);
+    }
+
+    .step-mark {
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .step.done,
+    .step.active {
+      color: var(--text);
+    }
+
+    .step.done .step-mark,
+    .step.active .step-mark {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #151006;
+      font-weight: 900;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 26px;
+    }
+
+    .metric.good strong {
+      color: var(--green);
+    }
+
+    .metric.gold strong {
+      color: var(--gold);
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) repeat(4, minmax(90px, .7fr));
+      gap: 10px;
+      align-items: center;
+      box-shadow: none;
+    }
+
+    .mini-map {
+      min-height: 430px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .mini-map .map-canvas {
+      min-height: 430px;
+    }
+
+    .toast-stack {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 30;
+      display: grid;
+      gap: 10px;
+      max-width: min(360px, calc(100vw - 40px));
+    }
+
+    [dir="ltr"] .toast-stack {
+      left: 20px;
+      right: auto;
+    }
+
+    .toast {
+      background: rgba(17, 20, 26, .96);
+      border: 1px solid rgba(246, 201, 69, .35);
+      border-radius: 12px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+      color: var(--text);
+    }
+
+    .drawer {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      background: rgba(0, 0, 0, .45);
+      padding: 20px;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .drawer.open {
+      display: flex;
+    }
+
+    .drawer .sheet {
+      width: min(560px, 100%);
+      max-height: min(720px, calc(100vh - 40px));
+      overflow: auto;
+    }
+
+    .empty {
+      min-height: 120px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      color: var(--muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .admin-tabs .tab {
+      width: auto;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    svg {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 1080px) {
+      .auth-shell,
+      .shell,
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        min-height: auto;
+        position: relative;
+        top: auto;
+      }
+
+      .nav-list {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .app {
+        padding: 12px;
+      }
+
+      .auth-shell {
+        min-height: calc(100vh - 24px);
+      }
+
+      .auth-panel,
+      .map-panel,
+      .surface,
+      .sheet,
+      .sidebar,
+      .app-header {
+        border-radius: 12px;
+      }
+
+      .role-grid,
+      .grid-3,
+      .map-sheet,
+      .quote-grid,
+      .nav-list {
+        grid-template-columns: 1fr;
+      }
+
+      .table-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .app-header,
+      .driver-main {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .header-actions {
+        justify-content: stretch;
+      }
+
+      .header-actions > * {
+        flex: 1;
+      }
+
+      .auth-copy h1 {
+        font-size: 34px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app" class="app"></div>
+  <div id="drawer" class="drawer"></div>
+  <div id="toasts" class="toast-stack"></div>
+
+  <script>
+    const cities = [
+      { ar: "نابلس", en: "Nablus", demand: 82 },
+      { ar: "رام الله", en: "Ramallah", demand: 91 },
+      { ar: "جنين", en: "Jenin", demand: 64 },
+      { ar: "قلقيلية", en: "Qalqilya", demand: 48 },
+      { ar: "الخليل", en: "Hebron", demand: 76 },
+      { ar: "بيت لحم", en: "Bethlehem", demand: 58 },
+      { ar: "طولكرم", en: "Tulkarm", demand: 55 },
+      { ar: "أريحا", en: "Jericho", demand: 42 },
+      { ar: "سلفيت", en: "Salfit", demand: 34 },
+      { ar: "طوباس", en: "Tubas", demand: 29 },
+      { ar: "البيرة", en: "Al-Bireh", demand: 73 }
+    ];
+
+    const drivers = [
+      { id: "d1", ar: "أحمد ناصر", en: "Ahmad Naser", car: "Hyundai Ioniq", plate: "12-3847", rating: 4.9, eta: 4, distance: 1.2, areaAr: "رفيديا", areaEn: "Rafidia", x: 32, y: 34 },
+      { id: "d2", ar: "ليث عودة", en: "Laith Odeh", car: "Kia Niro", plate: "45-9021", rating: 4.8, eta: 6, distance: 2.1, areaAr: "المخفية", areaEn: "Al-Makhfiya", x: 67, y: 54 },
+      { id: "d3", ar: "سامي درويش", en: "Sami Darwish", car: "Toyota Prius", plate: "73-1180", rating: 4.7, eta: 9, distance: 3.5, areaAr: "وسط البلد", areaEn: "Downtown", x: 48, y: 72 }
+    ];
+
+    const adminRides = [
+      { id: "R-1048", cityAr: "نابلس", cityEn: "Nablus", driverAr: "أحمد ناصر", driverEn: "Ahmad Naser", statusAr: "بالطريق", statusEn: "Arriving", fare: 24 },
+      { id: "R-1049", cityAr: "رام الله", cityEn: "Ramallah", driverAr: "مها خليل", driverEn: "Maha Khalil", statusAr: "بحث عن سائق", statusEn: "Searching", fare: 31 },
+      { id: "R-1050", cityAr: "الخليل", cityEn: "Hebron", driverAr: "ليث عودة", driverEn: "Laith Odeh", statusAr: "تم الاستلام", statusEn: "Picked up", fare: 28 }
+    ];
+
+    const copy = {
+      ar: {
+        brand: "واصل",
+        tagline: "توصيل ذكي في مدن الضفة",
+        headline: "دخول واحد للزبون والسائق",
+        sub: "اختار نوع الحساب، سجل برمز OTP، وتابع الطلب أو الشغل من نفس التطبيق.",
+        customer: "زبون",
+        customerHint: "اطلب مشوار وشوف السعر والسائق الأقرب",
+        driver: "دلفري",
+        driverHint: "افتح أونلاين واستقبل الطلبات القريبة",
+        phone: "رقم الهاتف",
+        otp: "رمز OTP",
+        city: "المدينة",
+        login: "دخول للتطبيق",
+        adminAccess: "لوحة الإدارة",
+        demoHint: "رمز التجربة: 1234",
+        pickup: "موقع الاستلام",
+        dropoff: "وجهة التسليم",
+        notes: "ملاحظات للسائق",
+        cash: "كاش",
+        wallet: "محفظة",
+        requestRide: "اطلب سائق",
+        activeRide: "الطلب الحالي",
+        nearby: "السائقين القريبين",
+        eta: "وقت الوصول",
+        distance: "المسافة",
+        fare: "السعر",
+        rating: "التقييم",
+        payment: "الدفع",
+        notifications: "التنبيهات",
+        logout: "خروج",
+        language: "EN",
+        map: "الخريطة",
+        status: "الحالة",
+        online: "أونلاين",
+        offline: "أوفلاين",
+        goOnline: "ابدأ الشغل",
+        goOffline: "إيقاف الشغل",
+        accept: "قبول الطلب",
+        complete: "إنهاء الرحلة",
+        driverDashboard: "لوحة السائق",
+        customerDashboard: "تطبيق الزبون",
+        adminDashboard: "لوحة الإدارة",
+        overview: "نظرة عامة",
+        rides: "الطلبات",
+        drivers: "السائقين",
+        walletTitle: "المحفظة",
+        admin: "الإدارة",
+        back: "رجوع",
+        matched: "تم اختيار السائق",
+        noRide: "لا يوجد طلب فعال الآن",
+        rideCreated: "تم إنشاء الطلب والبحث عن أقرب سائق",
+        driverAccepted: "السائق قبل الطلب",
+        tripCompleted: "تم إنهاء الرحلة",
+        onlineNotice: "أنت أونلاين وجاهز لاستقبال الطلبات",
+        offlineNotice: "أنت أوفلاين الآن"
+      },
+      en: {
+        brand: "Wasel",
+        tagline: "Smart rides across West Bank cities",
+        headline: "One login for customers and drivers",
+        sub: "Choose your account type, sign in with OTP, then book or work from the same app.",
+        customer: "Customer",
+        customerHint: "Book a ride and see the nearest driver",
+        driver: "Driver",
+        driverHint: "Go online and receive nearby requests",
+        phone: "Phone number",
+        otp: "OTP code",
+        city: "City",
+        login: "Enter app",
+        adminAccess: "Admin panel",
+        demoHint: "Demo code: 1234",
+        pickup: "Pickup point",
+        dropoff: "Dropoff point",
+        notes: "Driver notes",
+        cash: "Cash",
+        wallet: "Wallet",
+        requestRide: "Request driver",
+        activeRide: "Active ride",
+        nearby: "Nearby drivers",
+        eta: "ETA",
+        distance: "Distance",
+        fare: "Fare",
+        rating: "Rating",
+        payment: "Payment",
+        notifications: "Notifications",
+        logout: "Logout",
+        language: "عربي",
+        map: "Map",
+        status: "Status",
+        online: "Online",
+        offline: "Offline",
+        goOnline: "Start work",
+        goOffline: "Stop work",
+        accept: "Accept request",
+        complete: "Complete ride",
+        driverDashboard: "Driver dashboard",
+        customerDashboard: "Customer app",
+        adminDashboard: "Admin panel",
+        overview: "Overview",
+        rides: "Rides",
+        drivers: "Drivers",
+        walletTitle: "Wallet",
+        admin: "Admin",
+        back: "Back",
+        matched: "Driver matched",
+        noRide: "No active ride now",
+        rideCreated: "Ride created and matching nearby driver",
+        driverAccepted: "Driver accepted the ride",
+        tripCompleted: "Ride completed",
+        onlineNotice: "You are online and ready for requests",
+        offlineNotice: "You are offline now"
+      }
+    };
+
+    const icons = {
+      user: '<svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>',
+      car: '<svg viewBox="0 0 24 24"><path d="M5 17h14"/><path d="M6 17l1-6h10l1 6"/><path d="M8 17v2"/><path d="M16 17v2"/><path d="M8 11l2-4h4l2 4"/></svg>',
+      map: '<svg viewBox="0 0 24 24"><path d="M9 18l-6 3V6l6-3 6 3 6-3v15l-6 3-6-3z"/><path d="M9 3v15"/><path d="M15 6v15"/></svg>',
+      bell: '<svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>',
+      wallet: '<svg viewBox="0 0 24 24"><path d="M3 7h18v14H3z"/><path d="M16 12h5v4h-5z"/><path d="M3 7l3-4h12l3 4"/></svg>',
+      star: '<svg viewBox="0 0 24 24"><path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z"/></svg>',
+      admin: '<svg viewBox="0 0 24 24"><path d="M12 3l8 4v6c0 5-3.5 7.5-8 9-4.5-1.5-8-4-8-9V7l8-4z"/><path d="M9 12l2 2 4-5"/></svg>',
+      logout: '<svg viewBox="0 0 24 24"><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 3v18"/></svg>',
+      route: '<svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3"/><circle cx="18" cy="18" r="3"/><path d="M9 6h5a4 4 0 0 1 0 8H9a3 3 0 0 0 0 6h6"/></svg>',
+      check: '<svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>'
+    };
+
+    const state = {
+      lang: "ar",
+      role: "customer",
+      loggedIn: false,
+      view: "home",
+      city: "Nablus",
+      phone: "+970 59 000 0000",
+      otp: "1234",
+      pickup: "جامعة النجاح - نابلس",
+      dropoff: "رفيديا - نابلس",
+      notes: "",
+      payment: "cash",
+      selectedDriver: drivers[0],
+      rideStatus: "searching",
+      rideActive: false,
+      driverOnline: false,
+      driverRide: null,
+      drawer: null,
+      adminTab: "overview",
+      toasts: []
+    };
+
+    const app = document.getElementById("app");
+    const drawer = document.getElementById("drawer");
+    const toasts = document.getElementById("toasts");
+
+    function t(key) {
+      return copy[state.lang][key] || key;
+    }
+
+    function isAr() {
+      return state.lang === "ar";
+    }
+
+    function cityLabel(cityName) {
+      const city = cities.find((item) => item.en === cityName) || cities[0];
+      return isAr() ? city.ar : city.en;
+    }
+
+    function driverName(driver) {
+      return isAr() ? driver.ar : driver.en;
+    }
+
+    function driverArea(driver) {
+      return isAr() ? driver.areaAr : driver.areaEn;
+    }
+
+    function quote() {
+      const base = state.city === "Ramallah" ? 17 : state.city === "Hebron" ? 15 : 13;
+      const distance = Number((state.selectedDriver.distance + 4.4).toFixed(1));
+      const fare = Math.round(base + distance * 2.4);
+      return { distance, fare, eta: state.selectedDriver.eta + 3 };
+    }
+
+    function setState(patch) {
+      Object.assign(state, patch);
+      render();
+    }
+
+    function notify(message) {
+      const id = Date.now();
+      state.toasts.push({ id, message });
+      renderToasts();
+      setTimeout(() => {
+        state.toasts = state.toasts.filter((toast) => toast.id !== id);
+        renderToasts();
+      }, 3400);
+    }
+
+    function updateField(name, value) {
+      state[name] = value;
+    }
+
+    function login(role) {
+      if (role === "admin") {
+        setState({ loggedIn: true, role: "admin", view: "admin" });
+        notify(t("adminDashboard"));
+        return;
+      }
+
+      const code = document.getElementById("otp")?.value || state.otp;
+      if (code.trim() !== "1234") {
+        notify(isAr() ? "رمز OTP غير صحيح" : "Wrong OTP code");
+        return;
+      }
+
+      setState({ loggedIn: true, role, view: role === "driver" ? "driver" : "home" });
+      notify(role === "driver" ? t("driverDashboard") : t("customerDashboard"));
+    }
+
+    function logout() {
+      setState({ loggedIn: false, view: "home", role: "customer", drawer: null });
+    }
+
+    function createRide() {
+      setState({ rideActive: true, rideStatus: "accepted", view: "home" });
+      notify(t("rideCreated"));
+      setTimeout(() => {
+        state.rideStatus = "arriving";
+        render();
+        notify(t("driverAccepted"));
+      }, 1300);
+    }
+
+    function cycleRideStatus() {
+      const order = ["accepted", "arriving", "picked_up", "completed"];
+      const next = order[Math.min(order.indexOf(state.rideStatus) + 1, order.length - 1)];
+      setState({ rideStatus: next, rideActive: next !== "completed" });
+      notify(next === "completed" ? t("tripCompleted") : statusLabel(next));
+    }
+
+    function toggleDriverOnline() {
+      const next = !state.driverOnline;
+      setState({ driverOnline: next });
+      notify(next ? t("onlineNotice") : t("offlineNotice"));
+    }
+
+    function acceptDriverRide() {
+      setState({ driverRide: { id: "R-2041", customer: isAr() ? "رنا خالد" : "Rana Khaled", pickup: state.pickup, dropoff: state.dropoff, fare: quote().fare }, driverOnline: true });
+      notify(t("driverAccepted"));
+    }
+
+    function completeDriverRide() {
+      setState({ driverRide: null });
+      notify(t("tripCompleted"));
+    }
+
+    function statusLabel(status) {
+      const labels = {
+        ar: {
+          searching: "بحث عن سائق",
+          accepted: "تم قبول الطلب",
+          arriving: "السائق بالطريق",
+          picked_up: "تم استلام الزبون",
+          completed: "مكتمل",
+          cancelled: "ملغي"
+        },
+        en: {
+          searching: "Searching",
+          accepted: "Accepted",
+          arriving: "Driver arriving",
+          picked_up: "Picked up",
+          completed: "Completed",
+          cancelled: "Cancelled"
+        }
+      };
+      return labels[state.lang][status] || status;
+    }
+
+    function render() {
+      document.documentElement.lang = state.lang;
+      document.documentElement.dir = isAr() ? "rtl" : "ltr";
+      app.innerHTML = state.loggedIn ? renderShell() : renderAuth();
+      renderDrawer();
+      renderToasts();
+    }
+
+    function renderAuth() {
+      const role = state.role;
+      return `
+        <section class="auth-shell">
+          <div class="auth-panel">
+            <div class="topline">
+              <div class="brand-lockup">
+                <div class="brand-mark">W</div>
+                <div>
+                  <h2 class="brand-title">${t("brand")}</h2>
+                  <span class="brand-subtitle">${t("tagline")}</span>
+                </div>
+              </div>
+              <button class="ghost-btn" onclick="setState({ lang: state.lang === 'ar' ? 'en' : 'ar' })">${t("language")}</button>
+            </div>
+
+            <div class="auth-copy">
+              <h1>${t("headline")}</h1>
+              <p>${t("sub")}</p>
+            </div>
+
+            <div class="role-grid">
+              ${roleCard("customer", icons.user, t("customer"), t("customerHint"), role === "customer")}
+              ${roleCard("driver", icons.car, t("driver"), t("driverHint"), role === "driver")}
+            </div>
+
+            <div class="field-grid">
+              <div class="field-row">
+                <label for="phone">${t("phone")}</label>
+                <input id="phone" value="${state.phone}" oninput="updateField('phone', this.value)" inputmode="tel">
+              </div>
+              <div class="field-row">
+                <label for="city">${t("city")}</label>
+                <select id="city" onchange="setState({ city: this.value })">
+                  ${cities.map((city) => `<option value="${city.en}" ${city.en === state.city ? "selected" : ""}>${isAr() ? city.ar : city.en}</option>`).join("")}
+                </select>
+              </div>
+              <div class="field-row">
+                <label for="otp">${t("otp")}</label>
+                <input id="otp" value="${state.otp}" oninput="updateField('otp', this.value)" inputmode="numeric">
+                <span class="brand-subtitle">${t("demoHint")}</span>
+              </div>
+              <button class="primary-btn" onclick="login(state.role)">${t("login")}</button>
+              <button class="secondary-btn" onclick="login('admin')">${icons.admin}${t("adminAccess")}</button>
+            </div>
+          </div>
+
+          <div class="map-panel">
+            <div class="map-toolbar">
+              <div>
+                <strong>${cityLabel(state.city)}</strong>
+                <span class="brand-subtitle">${isAr() ? "مطابقة فورية مع السائق الأقرب" : "Instant matching with nearby drivers"}</span>
+              </div>
+              <span class="status-chip"><span class="status-dot on"></span>${isAr() ? "نشط" : "Live"}</span>
+            </div>
+            ${renderMap(false)}
+            <div class="map-sheet">
+              <div class="map-stat"><span>${t("eta")}</span><strong>${quote().eta} ${isAr() ? "د" : "min"}</strong></div>
+              <div class="map-stat"><span>${t("distance")}</span><strong>${quote().distance} ${isAr() ? "كم" : "km"}</strong></div>
+              <div class="map-stat"><span>${t("fare")}</span><strong>${quote().fare} ₪</strong></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function roleCard(role, icon, title, hint, active) {
+      return `
+        <button class="role-card ${active ? "active" : ""}" onclick="setState({ role: '${role}' })">
+          <span>${icon}</span>
+          <strong>${title}</strong>
+          <span>${hint}</span>
+        </button>
+      `;
+    }
+
+    function renderShell() {
+      const title = state.role === "driver" ? t("driverDashboard") : state.role === "admin" ? t("adminDashboard") : t("customerDashboard");
+      return `
+        <section class="shell">
+          <aside class="sidebar">
+            <div class="brand-lockup">
+              <div class="brand-mark">W</div>
+              <div>
+                <h2 class="brand-title">${t("brand")}</h2>
+                <span class="brand-subtitle">${cityLabel(state.city)}</span>
+              </div>
+            </div>
+            <nav class="nav-list">
+              ${navButton("home", icons.map, state.role === "driver" ? t("driver") : t("customer"), state.role !== "admin")}
+              ${navButton("admin", icons.admin, t("admin"), true)}
+              ${navButton("wallet", icons.wallet, t("walletTitle"), true)}
+              ${navButton("notifications", icons.bell, t("notifications"), true)}
+            </nav>
+            <button class="secondary-btn" onclick="logout()">${icons.logout}${t("logout")}</button>
+          </aside>
+          <main class="main">
+            <header class="app-header">
+              <div class="header-title">
+                <h2>${title}</h2>
+                <p>${state.role === "driver" ? (state.driverOnline ? t("onlineNotice") : t("offlineNotice")) : `${cityLabel(state.city)} · ${state.phone}`}</p>
+              </div>
+              <div class="header-actions">
+                <select onchange="setState({ city: this.value })" aria-label="${t("city")}">
+                  ${cities.map((city) => `<option value="${city.en}" ${city.en === state.city ? "selected" : ""}>${isAr() ? city.ar : city.en}</option>`).join("")}
+                </select>
+                <button class="icon-btn" title="${t("language")}" onclick="setState({ lang: state.lang === 'ar' ? 'en' : 'ar' })">${t("language")}</button>
+                <button class="icon-btn" title="${t("notifications")}" onclick="openDrawer('notifications')">${icons.bell}</button>
+              </div>
+            </header>
+            ${renderView()}
+          </main>
+        </section>
+      `;
+    }
+
+    function navButton(view, icon, label, visible) {
+      if (!visible) return "";
+      const active = state.view === view || (view === "home" && ["driver"].includes(state.view));
+      return `<button class="tab ${active ? "active" : ""}" onclick="setState({ view: '${view}' })">${icon}<span>${label}</span></button>`;
+    }
+
+    function renderView() {
+      if (state.view === "admin" || state.role === "admin") return renderAdmin();
+      if (state.view === "wallet") return renderWallet();
+      if (state.view === "notifications") return renderNotifications();
+      if (state.role === "driver") return renderDriver();
+      return renderCustomer();
+    }
+
+    function renderCustomer() {
+      return `
+        <section class="grid-2">
+          <div class="stack">
+            <div class="surface">
+              <div class="surface-title">
+                <h3>${t("requestRide")}</h3>
+                <span class="status-chip"><span class="status-dot on"></span>${cityLabel(state.city)}</span>
+              </div>
+              <div class="booking-form">
+                <div class="field-row">
+                  <label>${t("pickup")}</label>
+                  <input value="${escapeHtml(state.pickup)}" oninput="updateField('pickup', this.value)">
+                </div>
+                <div class="field-row">
+                  <label>${t("dropoff")}</label>
+                  <input value="${escapeHtml(state.dropoff)}" oninput="updateField('dropoff', this.value)">
+                </div>
+                <div class="field-row">
+                  <label>${t("notes")}</label>
+                  <textarea oninput="updateField('notes', this.value)">${escapeHtml(state.notes)}</textarea>
+                </div>
+                <div class="field-row">
+                  <label>${t("payment")}</label>
+                  <div class="segmented">
+                    <button class="${state.payment === "cash" ? "active" : ""}" onclick="setState({ payment: 'cash' })">${t("cash")}</button>
+                    <button class="${state.payment === "wallet" ? "active" : ""}" onclick="setState({ payment: 'wallet' })">${t("wallet")}</button>
+                  </div>
+                </div>
+                <button class="primary-btn" onclick="createRide()">${t("requestRide")}</button>
+              </div>
+            </div>
+
+            <div class="surface">
+              <div class="surface-title">
+                <h3>${t("nearby")}</h3>
+                <span class="status-chip">${drivers.length} ${isAr() ? "متاح" : "available"}</span>
+              </div>
+              <div class="ride-list">
+                ${drivers.map((driver) => renderDriverCard(driver)).join("")}
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="mini-map">
+              ${renderMap(true)}
+            </div>
+            ${renderActiveRide()}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderDriverCard(driver) {
+      const selected = state.selectedDriver.id === driver.id;
+      return `
+        <button class="ride-card" onclick="setState({ selectedDriver: drivers.find((item) => item.id === '${driver.id}') })" style="width:100%;text-align:start;border-color:${selected ? "rgba(246, 201, 69, .68)" : "var(--border)"}">
+          <div class="driver-main">
+            <div class="driver-id">
+              <div class="avatar">${driverName(driver).slice(0, 1)}</div>
+              <div>
+                <h4>${driverName(driver)}</h4>
+                <p>${driver.car} · ${driver.plate}</p>
+              </div>
+            </div>
+            <span class="status-chip">${icons.star}${driver.rating}</span>
+          </div>
+          <div class="quote-grid">
+            <div class="quote-cell"><span>${t("eta")}</span><strong>${driver.eta} ${isAr() ? "د" : "min"}</strong></div>
+            <div class="quote-cell"><span>${t("distance")}</span><strong>${driver.distance} ${isAr() ? "كم" : "km"}</strong></div>
+            <div class="quote-cell"><span>${t("map")}</span><strong>${driverArea(driver)}</strong></div>
+          </div>
+        </button>
+      `;
+    }
+
+    function renderActiveRide() {
+      const q = quote();
+      if (!state.rideActive) {
+        return `<div class="surface"><div class="empty">${t("noRide")}</div></div>`;
+      }
+
+      return `
+        <div class="surface">
+          <div class="surface-title">
+            <h3>${t("activeRide")}</h3>
+            <span class="status-chip"><span class="status-dot on"></span>${statusLabel(state.rideStatus)}</span>
+          </div>
+          <div class="driver-main">
+            <div class="driver-id">
+              <div class="avatar">${driverName(state.selectedDriver).slice(0, 1)}</div>
+              <div>
+                <h4>${driverName(state.selectedDriver)}</h4>
+                <p>${state.selectedDriver.car} · ${state.selectedDriver.plate}</p>
+              </div>
+            </div>
+            <button class="secondary-btn" onclick="cycleRideStatus()">${state.rideStatus === "picked_up" ? t("complete") : t("status")}</button>
+          </div>
+          <div class="quote-grid">
+            <div class="quote-cell"><span>${t("eta")}</span><strong>${q.eta} ${isAr() ? "د" : "min"}</strong></div>
+            <div class="quote-cell"><span>${t("distance")}</span><strong>${q.distance} ${isAr() ? "كم" : "km"}</strong></div>
+            <div class="quote-cell"><span>${t("fare")}</span><strong>${q.fare} ₪</strong></div>
+          </div>
+          <div class="stepper" style="margin-top:14px">
+            ${renderStep("accepted", 1)}
+            ${renderStep("arriving", 2)}
+            ${renderStep("picked_up", 3)}
+            ${renderStep("completed", 4)}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderStep(status, number) {
+      const order = ["accepted", "arriving", "picked_up", "completed"];
+      const current = order.indexOf(state.rideStatus);
+      const stepIndex = order.indexOf(status);
+      const done = stepIndex < current;
+      const active = stepIndex === current;
+      return `<div class="step ${done ? "done" : ""} ${active ? "active" : ""}"><span class="step-mark">${done ? icons.check : number}</span><span>${statusLabel(status)}</span></div>`;
+    }
+
+    function renderDriver() {
+      const q = quote();
+      return `
+        <section class="grid-2">
+          <div class="stack">
+            <div class="surface">
+              <div class="surface-title">
+                <h3>${t("driverDashboard")}</h3>
+                <span class="status-chip"><span class="status-dot ${state.driverOnline ? "on" : ""}"></span>${state.driverOnline ? t("online") : t("offline")}</span>
+              </div>
+              <button class="primary-btn" onclick="toggleDriverOnline()">${state.driverOnline ? t("goOffline") : t("goOnline")}</button>
+              <div class="grid-3" style="margin-top:12px">
+                <div class="metric gold"><p>${isAr() ? "أرباح اليوم" : "Today earnings"}</p><strong>186 ₪</strong></div>
+                <div class="metric"><p>${isAr() ? "رحلات" : "Trips"}</p><strong>9</strong></div>
+                <div class="metric good"><p>${t("rating")}</p><strong>4.9</strong></div>
+              </div>
+            </div>
+
+            <div class="surface">
+              <div class="surface-title">
+                <h3>${isAr() ? "طلبات قريبة" : "Nearby requests"}</h3>
+                <span class="status-chip">${cityLabel(state.city)}</span>
+              </div>
+              <div class="request-list">
+                ${state.driverOnline ? renderDriverRequest(q) : `<div class="empty">${isAr() ? "افتح أونلاين حتى تظهر الطلبات" : "Go online to receive requests"}</div>`}
+              </div>
+            </div>
+          </div>
+
+          <div class="stack">
+            <div class="mini-map">${renderMap(true)}</div>
+            <div class="surface">
+              <div class="surface-title">
+                <h3>${t("activeRide")}</h3>
+                <span class="status-chip">${state.driverRide ? state.driverRide.id : "-"}</span>
+              </div>
+              ${state.driverRide ? `
+                <div class="driver-request">
+                  <h4>${state.driverRide.customer}</h4>
+                  <p>${state.driverRide.pickup} → ${state.driverRide.dropoff}</p>
+                  <div class="quote-grid">
+                    <div class="quote-cell"><span>${t("fare")}</span><strong>${state.driverRide.fare} ₪</strong></div>
+                    <div class="quote-cell"><span>${t("payment")}</span><strong>${t("cash")}</strong></div>
+                    <div class="quote-cell"><span>${t("eta")}</span><strong>5 ${isAr() ? "د" : "min"}</strong></div>
+                  </div>
+                  <button class="primary-btn" style="margin-top:12px" onclick="completeDriverRide()">${t("complete")}</button>
+                </div>
+              ` : `<div class="empty">${t("noRide")}</div>`}
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderDriverRequest(q) {
+      return `
+        <div class="driver-request">
+          <div class="driver-main">
+            <div>
+              <h4>${isAr() ? "رنا خالد" : "Rana Khaled"}</h4>
+              <p>${state.pickup} → ${state.dropoff}</p>
+            </div>
+            <span class="status-chip">${q.distance} ${isAr() ? "كم" : "km"}</span>
+          </div>
+          <div class="quote-grid">
+            <div class="quote-cell"><span>${t("fare")}</span><strong>${q.fare} ₪</strong></div>
+            <div class="quote-cell"><span>${t("eta")}</span><strong>${q.eta} ${isAr() ? "د" : "min"}</strong></div>
+            <div class="quote-cell"><span>${t("payment")}</span><strong>${t("cash")}</strong></div>
+          </div>
+          <button class="primary-btn" style="margin-top:12px" onclick="acceptDriverRide()">${t("accept")}</button>
+        </div>
+      `;
+    }
+
+    function renderAdmin() {
+      return `
+        <section class="stack">
+          <div class="surface">
+            <div class="surface-title">
+              <h3>${t("adminDashboard")}</h3>
+              <div class="admin-tabs">
+                <button class="tab ${state.adminTab === "overview" ? "active" : ""}" onclick="setState({ adminTab: 'overview' })">${t("overview")}</button>
+                <button class="tab ${state.adminTab === "rides" ? "active" : ""}" onclick="setState({ adminTab: 'rides' })">${t("rides")}</button>
+                <button class="tab ${state.adminTab === "drivers" ? "active" : ""}" onclick="setState({ adminTab: 'drivers' })">${t("drivers")}</button>
+              </div>
+            </div>
+            ${state.adminTab === "overview" ? renderAdminOverview() : state.adminTab === "drivers" ? renderAdminDrivers() : renderAdminRides()}
+          </div>
+        </section>
+      `;
+    }
+
+    function renderAdminOverview() {
+      return `
+        <div class="grid-3">
+          <div class="metric gold"><p>${isAr() ? "طلبات فعالة" : "Active rides"}</p><strong>38</strong></div>
+          <div class="metric good"><p>${isAr() ? "سائقين أونلاين" : "Online drivers"}</p><strong>126</strong></div>
+          <div class="metric"><p>${isAr() ? "إيراد اليوم" : "Today revenue"}</p><strong>7,840 ₪</strong></div>
+        </div>
+        <div class="grid-2" style="margin-top:12px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+          <div class="surface" style="box-shadow:none">
+            <div class="surface-title"><h3>${isAr() ? "الطلب حسب المدينة" : "Demand by city"}</h3></div>
+            <div class="stack">
+              ${cities.slice(0, 6).map((city) => `
+                <div>
+                  <div class="driver-main"><span>${isAr() ? city.ar : city.en}</span><strong>${city.demand}%</strong></div>
+                  <div style="height:8px;border-radius:999px;background:#0b0d11;border:1px solid var(--border);overflow:hidden;margin-top:7px">
+                    <div style="height:100%;width:${city.demand}%;background:linear-gradient(90deg,var(--gold),#fff1ad)"></div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="mini-map">${renderMap(true)}</div>
+        </div>
+      `;
+    }
+
+    function renderAdminRides() {
+      return `
+        <div class="stack">
+          ${adminRides.map((ride) => `
+            <div class="table-row">
+              <div><h4>${ride.id}</h4><p>${isAr() ? ride.cityAr : ride.cityEn}</p></div>
+              <div><p>${t("driver")}</p><strong>${isAr() ? ride.driverAr : ride.driverEn}</strong></div>
+              <div><p>${t("status")}</p><strong>${isAr() ? ride.statusAr : ride.statusEn}</strong></div>
+              <div><p>${t("fare")}</p><strong>${ride.fare} ₪</strong></div>
+              <button class="secondary-btn" onclick="openDrawer('ride')">${isAr() ? "تفاصيل" : "Details"}</button>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderAdminDrivers() {
+      return `
+        <div class="stack">
+          ${drivers.map((driver) => `
+            <div class="table-row">
+              <div class="driver-id">
+                <div class="avatar">${driverName(driver).slice(0, 1)}</div>
+                <div><h4>${driverName(driver)}</h4><p>${driver.car} · ${driver.plate}</p></div>
+              </div>
+              <div><p>${t("city")}</p><strong>${cityLabel(state.city)}</strong></div>
+              <div><p>${t("rating")}</p><strong>${driver.rating}</strong></div>
+              <div><p>${t("eta")}</p><strong>${driver.eta} ${isAr() ? "د" : "min"}</strong></div>
+              <span class="status-chip"><span class="status-dot on"></span>${t("online")}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    function renderWallet() {
+      return `
+        <section class="grid-2">
+          <div class="surface">
+            <div class="surface-title">
+              <h3>${t("walletTitle")}</h3>
+              <span class="status-chip">${state.payment === "wallet" ? t("wallet") : t("cash")}</span>
+            </div>
+            <div class="metric gold"><p>${isAr() ? "الرصيد المتاح" : "Available balance"}</p><strong>82 ₪</strong></div>
+            <div class="quote-grid" style="margin-top:12px">
+              <div class="quote-cell"><span>${isAr() ? "مدفوعات كاش" : "Cash payments"}</span><strong>14</strong></div>
+              <div class="quote-cell"><span>${isAr() ? "استرداد" : "Refunds"}</span><strong>2</strong></div>
+              <div class="quote-cell"><span>${isAr() ? "نقاط" : "Points"}</span><strong>420</strong></div>
+            </div>
+          </div>
+          <div class="surface">
+            <div class="surface-title"><h3>${isAr() ? "آخر الحركات" : "Recent activity"}</h3></div>
+            <div class="notice-list">
+              <div class="notice"><strong>${isAr() ? "رحلة نابلس" : "Nablus ride"}</strong><p>-24 ₪ · ${t("cash")}</p></div>
+              <div class="notice"><strong>${isAr() ? "شحن محفظة" : "Wallet top-up"}</strong><p>+50 ₪</p></div>
+              <div class="notice"><strong>${isAr() ? "خصم تقييم" : "Rating bonus"}</strong><p>+6 ₪</p></div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderNotifications() {
+      return `
+        <section class="surface">
+          <div class="surface-title"><h3>${t("notifications")}</h3><span class="status-chip">3</span></div>
+          <div class="notice-list">
+            <div class="notice"><strong>${t("matched")}</strong><p>${driverName(state.selectedDriver)} · ${state.selectedDriver.eta} ${isAr() ? "دقائق" : "minutes"}</p></div>
+            <div class="notice"><strong>${isAr() ? "عرض محفظة" : "Wallet offer"}</strong><p>${isAr() ? "اشحن 50 شيكل وخذ 5 شيكل هدية" : "Top up 50 ILS and get 5 ILS bonus"}</p></div>
+            <div class="notice"><strong>${isAr() ? "تقييم الرحلة" : "Rate your trip"}</strong><p>${isAr() ? "رأيك يساعدنا نحسن الخدمة" : "Your feedback helps improve the service"}</p></div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderMap(compact) {
+      const selected = state.selectedDriver;
+      return `
+        <div class="map-canvas">
+          <div class="map-road r1"></div>
+          <div class="map-road r2"></div>
+          <div class="map-road r3"></div>
+          <div class="route-line"></div>
+          <div class="pin" style="left:22%;top:62%" title="${t("pickup")}">${icons.user}</div>
+          <div class="pin drop" style="left:78%;top:38%" title="${t("dropoff")}">${icons.route}</div>
+          ${drivers.map((driver) => `<div class="driver-pin ${driver.id === selected.id ? "" : "dim"}" style="left:${driver.x}%;top:${driver.y}%" title="${driverName(driver)}">${icons.car}</div>`).join("")}
+          ${compact ? "" : `<div class="status-chip" style="position:absolute;left:16px;bottom:16px;background:rgba(17,20,26,.9)">${icons.map}${cityLabel(state.city)}</div>`}
+        </div>
+      `;
+    }
+
+    function openDrawer(type) {
+      state.drawer = type;
+      renderDrawer();
+    }
+
+    function closeDrawer() {
+      state.drawer = null;
+      renderDrawer();
+    }
+
+    function renderDrawer() {
+      drawer.className = `drawer ${state.drawer ? "open" : ""}`;
+      if (!state.drawer) {
+        drawer.innerHTML = "";
+        return;
+      }
+
+      const body = state.drawer === "notifications" ? renderNotifications() : `
+        <div class="surface-title"><h3>${isAr() ? "تفاصيل الطلب" : "Ride details"}</h3><button class="icon-btn" onclick="closeDrawer()">×</button></div>
+        <div class="stack">
+          <div class="notice"><strong>R-1048</strong><p>${state.pickup} → ${state.dropoff}</p></div>
+          <div class="quote-grid">
+            <div class="quote-cell"><span>${t("fare")}</span><strong>${quote().fare} ₪</strong></div>
+            <div class="quote-cell"><span>${t("distance")}</span><strong>${quote().distance} ${isAr() ? "كم" : "km"}</strong></div>
+            <div class="quote-cell"><span>${t("status")}</span><strong>${statusLabel(state.rideStatus)}</strong></div>
+          </div>
+        </div>
+      `;
+
+      drawer.innerHTML = `<div class="sheet">${state.drawer === "notifications" ? `<div class="surface-title"><h3>${t("notifications")}</h3><button class="icon-btn" onclick="closeDrawer()">×</button></div>${renderNotifications()}` : body}</div>`;
+      drawer.onclick = (event) => {
+        if (event.target === drawer) closeDrawer();
+      };
+    }
+
+    function renderToasts() {
+      toasts.innerHTML = state.toasts.map((toast) => `<div class="toast">${toast.message}</div>`).join("");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+.superpowers/
+.netlify/
+node_modules/
+dist/
+.runtime/
+.env
+.env.local
+*.log
