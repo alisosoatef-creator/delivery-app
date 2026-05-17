@@ -141,14 +141,18 @@ const statusText = {
     accepted: "تم قبول الطلب",
     arriving: "السائق بالطريق",
     picked_up: "تم الاستلام",
-    completed: "مكتمل"
+    completed: "مكتمل",
+    cancelled: "ملغية",
+    canceled: "ملغية"
   },
   en: {
     searching: "Searching",
     accepted: "Accepted",
     arriving: "Driver arriving",
     picked_up: "Picked up",
-    completed: "Completed"
+    completed: "Completed",
+    cancelled: "Cancelled",
+    canceled: "Cancelled"
   }
 };
 
@@ -224,6 +228,109 @@ function localQuote(state) {
     distanceKm,
     etaMinutes: 7
   };
+}
+
+function tripTimeline(isArabic) {
+  return [
+    { key: "searching", label: isArabic ? "طلب المشوار" : "Ride requested" },
+    { key: "accepted", label: isArabic ? "تم قبول السائق" : "Driver accepted" },
+    { key: "arriving", label: isArabic ? "السائق بالطريق" : "Driver on the way" },
+    { key: "arrived", label: isArabic ? "وصل السائق" : "Driver arrived" },
+    { key: "picked_up", label: isArabic ? "بدأت الرحلة" : "Trip started" },
+    { key: "completed", label: isArabic ? "انتهت الرحلة" : "Trip completed" }
+  ];
+}
+
+function tripTimelineIndex(status) {
+  const indexes = {
+    searching: 0,
+    accepted: 1,
+    arriving: 2,
+    arrived: 3,
+    picked_up: 4,
+    completed: 5
+  };
+  return indexes[status] ?? 0;
+}
+
+function rideDisplayCode(ride) {
+  if (!ride?.id) return "R-0000";
+  return `R-${String(ride.id).replace("ride_", "").replace("local_", "").slice(0, 6).toUpperCase()}`;
+}
+
+function rideStatusGroup(status) {
+  if (status === "completed") return "completed";
+  if (status === "cancelled" || status === "canceled") return "cancelled";
+  return "active";
+}
+
+function rideDateLabel(ride, index, isArabic) {
+  const sourceDate = ride?.createdAt || ride?.completedAt || ride?.updatedAt || ride?.startedAt;
+  const fallbackDate = new Date(Date.now() - (index + 1) * 86400000);
+  const date = sourceDate ? new Date(sourceDate) : fallbackDate;
+  const safeDate = Number.isNaN(date.getTime()) ? fallbackDate : date;
+  return new Intl.DateTimeFormat(isArabic ? "ar" : "en", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(safeDate);
+}
+
+function cityNameById(cities, cityId, isArabic) {
+  const city = cities.find((item) => item.id === cityId) || cities[0];
+  return isArabic ? city?.ar || city?.en || "المدينة" : city?.en || city?.ar || "City";
+}
+
+function findRideDriver(ride, state, selectedDriver) {
+  return state.drivers.find((driver) => driver.id === ride?.driverId) || selectedDriver || state.drivers[0] || {};
+}
+
+function driverDisplayName(driver, isArabic) {
+  if (!driver) return isArabic ? "سائق واصل" : "Wasel driver";
+  return isArabic ? driver.nameAr || driver.nameEn || "سائق واصل" : driver.nameEn || driver.nameAr || "Wasel driver";
+}
+
+function buildRideHistory(state, selectedDriver, isArabic) {
+  const currentRide = state.ride ? [{ ...state.ride, isCurrent: true }] : [];
+  const sourceRides = [...currentRide, ...(state.admin.recentRides || [])];
+  const seen = new Set();
+
+  return sourceRides
+    .filter((ride) => {
+      const id = ride?.id || `ride_${seen.size}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .map((ride, index) => {
+      const cityName = cityNameById(state.cities, ride.cityId || state.cityId, isArabic);
+      const driver = findRideDriver(ride, state, selectedDriver);
+      const pickupFallback = isArabic ? `مركز ${cityName}` : `${cityName} center`;
+      const dropoffFallback = isArabic ? `وجهة داخل ${cityName}` : `${cityName} destination`;
+      const paymentMethod = ride.paymentMethod || state.paymentMethod || "cash";
+      const status = ride.status || "completed";
+
+      return {
+        id: ride.id || `ride_${index}`,
+        raw: ride,
+        code: rideDisplayCode(ride),
+        pickup: ride.pickup || (ride.isCurrent ? state.pickup : pickupFallback),
+        dropoff: ride.dropoff || (ride.isCurrent ? state.dropoff : dropoffFallback),
+        dateLabel: rideDateLabel(ride, index, isArabic),
+        fareIls: ride.fareIls || state.quote.fareIls,
+        distanceKm: ride.distanceKm || state.quote.distanceKm,
+        etaMinutes: ride.etaMinutes || state.quote.etaMinutes,
+        status,
+        statusGroup: rideStatusGroup(status),
+        statusLabel: statusText[state.language][status] || status,
+        cityName,
+        driver,
+        driverName: driverDisplayName(driver, isArabic),
+        paymentMethod,
+        paymentLabel: paymentMethod === "wallet" ? (isArabic ? "محفظة" : "Wallet") : (isArabic ? "كاش" : "Cash")
+      };
+    });
 }
 
 function App() {
@@ -394,12 +501,35 @@ function App() {
 
 function AuthScreen({ state, dispatch, t, isArabic, requestOtp, login }) {
   return (
-    <main className="auth-layout">
-      <section className="auth-card">
+    <main className="home-layout">
+      <section className="home-hero">
         <TopBar state={state} dispatch={dispatch} t={t} />
         <div className="hero-copy">
-          <h1>{t.headline}</h1>
-          <p>{t.subhead}</p>
+          <h1>{isArabic ? "مشوارك جاهز قبل ما تتحرك" : "Your ride is ready before you move"}</h1>
+          <p>
+            {isArabic
+              ? "واجهة حجز فخمة وبسيطة لاختيار نقطة الانطلاق والوجهة، رؤية السعر المتوقع، ثم الدخول وطلب المشوار بأمان."
+              : "A premium first-step booking flow for choosing pickup and dropoff, previewing fare, and signing in safely."}
+          </p>
+        </div>
+        <RouteSearchCard
+          state={state}
+          dispatch={dispatch}
+          t={t}
+          isArabic={isArabic}
+          actionLabel={isArabic ? "ابدأ طلب مشوار" : "Start ride request"}
+          onAction={requestOtp}
+        />
+      </section>
+
+      <section className="home-map-panel">
+        <MapBoard state={state} selectedDriver={state.drivers[0]} t={t} isArabic={isArabic} />
+      </section>
+
+      <section className="auth-card sign-in-card">
+        <div className="auth-card-header">
+          <span>{isArabic ? "تسجيل سريع" : "Quick sign in"}</span>
+          <strong>{isArabic ? "ابدأ المرحلة الأولى" : "Start phase one"}</strong>
         </div>
         <div className="role-grid">
           {["customer", "driver"].map((role) => (
@@ -433,9 +563,6 @@ function AuthScreen({ state, dispatch, t, isArabic, requestOtp, login }) {
           </div>
           <button className="admin-link" onClick={() => login("admin")}>{t.adminPanel}</button>
         </div>
-      </section>
-      <section className="map-showcase">
-        <MapBoard state={state} selectedDriver={state.drivers[0]} t={t} isArabic={isArabic} />
       </section>
       <Toast message={state.toast} />
     </main>
@@ -484,27 +611,59 @@ function Shell({ children, state, dispatch, t, selectedDriver }) {
 function CustomerPanel(props) {
   const { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus } = props;
   const nextStatus = state.ride?.status === "accepted" ? "arriving" : state.ride?.status === "arriving" ? "picked_up" : "completed";
+  const [historyFilter, setHistoryFilter] = useState("all");
+  const [selectedHistoryId, setSelectedHistoryId] = useState("");
+  const rideHistory = useMemo(
+    () => buildRideHistory(state, selectedDriver, isArabic),
+    [
+      state.ride,
+      state.admin.recentRides,
+      state.drivers,
+      state.pickup,
+      state.dropoff,
+      state.quote,
+      state.paymentMethod,
+      state.cityId,
+      state.cities,
+      state.language,
+      selectedDriver,
+      isArabic
+    ]
+  );
+  const filteredRideHistory = useMemo(
+    () => rideHistory.filter((ride) => historyFilter === "all" || ride.statusGroup === historyFilter),
+    [historyFilter, rideHistory]
+  );
+  const selectedHistoryRide =
+    filteredRideHistory.find((ride) => ride.id === selectedHistoryId) || filteredRideHistory[0] || rideHistory[0];
+
   return (
-    <div className="content-grid">
-      <section className="panel">
-        <PanelTitle title={t.requestRide} meta={isArabic ? "مطابقة حسب أقرب سائق" : "Nearest driver matching"} />
-        <div className="form-grid">
-          <Field label={t.pickup} value={state.pickup} onChange={(pickup) => dispatch({ type: "patch", patch: { pickup } })} />
-          <Field label={t.dropoff} value={state.dropoff} onChange={(dropoff) => dispatch({ type: "patch", patch: { dropoff } })} />
-          <div className="segmented">
-            <button className={state.paymentMethod === "cash" ? "active" : ""} onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "cash" } })}>{t.cash}</button>
-            <button className={state.paymentMethod === "wallet" ? "active" : ""} onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "wallet" } })}>{t.wallet}</button>
-          </div>
-          <button className="primary" onClick={requestRide}>{t.requestRide}</button>
-        </div>
-        <QuoteStrip state={state} t={t} />
+    <div className="stage-one-grid">
+      <section className="stage-one-copy">
+        <h1>{isArabic ? "اختَر وجهتك ودع واصل يرتب المشوار" : "Choose your route and let Wasel arrange the ride"}</h1>
+        <p>
+          {isArabic
+            ? "هذه هي واجهة المرحلة الأولى: نقطة الانطلاق، الوجهة، تقدير السعر، وخريطة واضحة قبل إرسال الطلب."
+            : "This is the phase-one ride flow: pickup, dropoff, fare estimate, and a clear map preview before request."}
+        </p>
       </section>
 
-      <section className="panel wide">
+      <section className="booking-panel">
+        <RouteSearchCard
+          state={state}
+          dispatch={dispatch}
+          t={t}
+          isArabic={isArabic}
+          actionLabel={t.requestRide}
+          onAction={requestRide}
+        />
+      </section>
+
+      <section className="panel wide map-panel">
         <MapBoard state={state} selectedDriver={selectedDriver} t={t} isArabic={isArabic} />
       </section>
 
-      <section className="panel">
+      <section className="panel support-panel">
         <PanelTitle title={t.nearbyDrivers} meta={`${state.drivers.length}`} />
         <div className="list">
           {state.drivers.map((driver) => (
@@ -524,20 +683,58 @@ function CustomerPanel(props) {
         </div>
       </section>
 
-      <section className="panel">
-        <PanelTitle title={t.activeRide} meta={state.ride ? statusText[state.language][state.ride.status] : "-"} />
-        {state.ride ? (
-          <div className="ride-card">
-            <strong>{state.ride.pickup}</strong>
-            <small>{state.ride.dropoff}</small>
-            <QuoteStrip state={{ ...state, quote: state.ride }} t={t} compact />
-            <button className="secondary" disabled={state.ride.status === "completed"} onClick={() => updateRideStatus(nextStatus)}>
-              {state.ride.status === "completed" ? statusText[state.language].completed : t.status}
-            </button>
-          </div>
-        ) : (
-          <div className="empty">{t.noRide}</div>
-        )}
+      <section className="phase-two-panel">
+        <PhaseTwoExperience
+          state={state}
+          dispatch={dispatch}
+          t={t}
+          isArabic={isArabic}
+          selectedDriver={selectedDriver}
+          nextStatus={nextStatus}
+          updateRideStatus={updateRideStatus}
+        />
+      </section>
+
+      <section className="phase-three-panel">
+        <RideHistoryPanel
+          rides={filteredRideHistory}
+          allRides={rideHistory}
+          selectedRide={selectedHistoryRide}
+          filter={historyFilter}
+          setFilter={setHistoryFilter}
+          setSelectedRideId={setSelectedHistoryId}
+          isArabic={isArabic}
+          language={state.language}
+        />
+      </section>
+
+      <section className="ride-detail-page">
+        <RideDetailPage ride={selectedHistoryRide} state={state} t={t} isArabic={isArabic} />
+      </section>
+
+      <section className="profile-panel">
+        <AccountProfilePanel
+          state={state}
+          dispatch={dispatch}
+          t={t}
+          isArabic={isArabic}
+          rideHistory={rideHistory}
+          selectedDriver={selectedDriver}
+        />
+      </section>
+
+      <section className="wallet-panel">
+        <WalletPaymentPanel
+          state={state}
+          dispatch={dispatch}
+          t={t}
+          isArabic={isArabic}
+          rideHistory={rideHistory}
+        />
+      </section>
+
+      <section className="settings-panel">
+        <AccountSettingsPanel state={state} dispatch={dispatch} t={t} isArabic={isArabic} />
       </section>
     </div>
   );
@@ -553,6 +750,168 @@ function DriverPanel({ state, dispatch, t, isArabic, selectedDriver, toggleDrive
     etaMinutes: state.quote.etaMinutes,
     status: "searching"
   };
+  const driverName = isArabic ? selectedDriver.nameAr : selectedDriver.nameEn;
+  const rideHistory = buildRideHistory(state, selectedDriver, isArabic);
+  const currentRide = state.ride ? rideHistory.find((ride) => ride.id === state.ride.id) || rideHistory[0] : null;
+  const requestFallback = {
+    id: assignedRide.id,
+    raw: assignedRide,
+    code: rideDisplayCode(assignedRide),
+    pickup: assignedRide.pickup,
+    dropoff: assignedRide.dropoff,
+    fareIls: assignedRide.fareIls,
+    distanceKm: assignedRide.distanceKm,
+    etaMinutes: assignedRide.etaMinutes,
+    status: assignedRide.status,
+    statusLabel: statusText[state.language][assignedRide.status] || assignedRide.status,
+    paymentLabel: state.paymentMethod === "wallet" ? t.wallet : t.cash
+  };
+  const newRequests = rideHistory.filter((ride) => ride.status === "searching");
+  const visibleRequests = newRequests.length ? newRequests : state.driverOnline && !state.ride ? [requestFallback] : [];
+  const driverTrips = rideHistory.filter((ride) => ride.raw?.driverId === selectedDriver.id || ride.id === state.ride?.id);
+  const visibleTrips = driverTrips.length ? driverTrips : rideHistory.slice(0, 4);
+  const todayEarnings = visibleTrips.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
+  const completedTrips = visibleTrips.filter((ride) => ride.statusGroup === "completed").length;
+
+  function notify(messageAr, messageEn) {
+    dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
+  }
+
+  function acceptRide(ride) {
+    dispatch({
+      type: "patch",
+      patch: {
+        ride: {
+          ...ride.raw,
+          id: ride.id,
+          pickup: ride.pickup,
+          dropoff: ride.dropoff,
+          fareIls: ride.fareIls,
+          distanceKm: ride.distanceKm,
+          etaMinutes: ride.etaMinutes,
+          status: "accepted",
+          driverId: selectedDriver.id
+        }
+      }
+    });
+  }
+
+  return (
+    <div className="driver-dashboard">
+      <section className="driver-hero-card">
+        <div className="driver-hero-top">
+          <Avatar label={driverName.slice(0, 1)} />
+          <div>
+            <span>{isArabic ? "لوحة السائق" : "Driver dashboard"}</span>
+            <h2>{driverName}</h2>
+            <p>{selectedDriver.vehicle} · {selectedDriver.plate}</p>
+          </div>
+          <span className={`driver-status-pill ${state.driverOnline ? "online" : "offline"}`}>
+            {state.driverOnline ? t.online : t.offline}
+          </span>
+        </div>
+        <div className="driver-hero-actions">
+          <button className={state.driverOnline ? "secondary danger-soft" : "primary"} onClick={toggleDriverStatus}>
+            {state.driverOnline ? t.goOffline : t.goOnline}
+          </button>
+          <button className="secondary" onClick={() => notify("الدعم غير مربوط بعد", "Support is not connected yet")}>
+            {isArabic ? "الدعم" : "Support"}
+          </button>
+        </div>
+      </section>
+
+      <section className="driver-kpi-grid">
+        <Metric label={isArabic ? "أرباح اليوم" : "Today earnings"} value={`${todayEarnings} ₪`} />
+        <Metric label={isArabic ? "عدد الرحلات" : "Trips"} value={visibleTrips.length} />
+        <Metric label={t.rating} value={selectedDriver.rating} />
+        <Metric label={isArabic ? "مكتملة" : "Completed"} value={completedTrips} />
+      </section>
+
+      <section className="driver-map-card">
+        <PanelTitle title={isArabic ? "نطاق العمل والخريطة" : "Work zone and map"} meta={cityNameById(state.cities, state.cityId, isArabic)} />
+        <MapBoard state={state} selectedDriver={selectedDriver} t={t} isArabic={isArabic} />
+      </section>
+
+      <section className="driver-requests-card">
+        <PanelTitle title={isArabic ? "طلبات الرحلات الجديدة" : "New ride requests"} meta={`${visibleRequests.length}`} />
+        {state.driverOnline && visibleRequests.length ? (
+          <div className="driver-request-list">
+            {visibleRequests.slice(0, 3).map((ride) => (
+              <div className="driver-request-card" key={ride.id}>
+                <div className="driver-card-head">
+                  <strong>{ride.code}</strong>
+                  <StatusBadge status={ride.status} label={ride.statusLabel} />
+                </div>
+                <div className="driver-route-line">
+                  <span><small>{t.pickup}</small><b>{ride.pickup}</b></span>
+                  <span><small>{t.dropoff}</small><b>{ride.dropoff}</b></span>
+                </div>
+                <div className="driver-request-meta">
+                  <span>{ride.distanceKm} km</span>
+                  <span>{ride.etaMinutes} min</span>
+                  <strong>{ride.fareIls} ₪</strong>
+                </div>
+                <div className="driver-action-row">
+                  <button className="primary" onClick={() => acceptRide(ride)}>{t.acceptRide}</button>
+                  <button className="secondary" onClick={() => notify("رفض الرحلة غير مفعل في هذه النسخة", "Reject ride is not enabled in this build")}>
+                    {isArabic ? "رفض" : "Reject"}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="empty">
+            {state.driverOnline
+              ? (isArabic ? "لا توجد طلبات جديدة الآن" : "No new requests right now")
+              : (isArabic ? "افتح أونلاين حتى تظهر الطلبات" : "Go online to receive requests")}
+          </div>
+        )}
+      </section>
+
+      <section className="driver-current-card">
+        <PanelTitle title={isArabic ? "الرحلة الحالية" : "Current ride"} meta={currentRide ? <StatusBadge status={currentRide.status} label={currentRide.statusLabel} /> : "-"} />
+        {currentRide ? (
+          <div className="driver-current-stack">
+            <div className="driver-card-head">
+              <strong>{currentRide.code}</strong>
+              <b>{currentRide.fareIls} ₪</b>
+            </div>
+            <div className="driver-route-line">
+              <span><small>{t.pickup}</small><b>{currentRide.pickup}</b></span>
+              <span><small>{t.dropoff}</small><b>{currentRide.dropoff}</b></span>
+            </div>
+            <QuoteStrip state={{ ...state, quote: currentRide }} t={t} compact />
+            <button className="secondary" disabled={state.ride?.status === "completed"} onClick={() => updateRideStatus("completed")}>
+              {state.ride?.status === "completed" ? statusText[state.language].completed : t.completeRide}
+            </button>
+          </div>
+        ) : (
+          <div className="empty">{isArabic ? "لا توجد رحلة حالية" : "No current ride"}</div>
+        )}
+      </section>
+
+      <section className="driver-history-card">
+        <PanelTitle title={isArabic ? "رحلات السائق السابقة" : "Driver ride history"} meta={`${visibleTrips.length}`} />
+        <div className="driver-history-list">
+          {visibleTrips.length ? (
+            visibleTrips.slice(0, 5).map((ride) => (
+              <div className="driver-history-row" key={ride.id}>
+                <span>
+                  <strong>{ride.code}</strong>
+                  <small>{ride.pickup} · {ride.dropoff}</small>
+                </span>
+                <StatusBadge status={ride.status} label={ride.statusLabel} />
+                <b>{ride.fareIls} ₪</b>
+              </div>
+            ))
+          ) : (
+            <div className="detail-empty compact">{isArabic ? "ستظهر الرحلات هنا بعد قبول الطلبات" : "Trips will appear here after accepted requests"}</div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 
   return (
     <div className="content-grid">
@@ -576,7 +935,19 @@ function DriverPanel({ state, dispatch, t, isArabic, selectedDriver, toggleDrive
         <MapBoard state={state} selectedDriver={selectedDriver} t={t} isArabic={isArabic} />
       </section>
       <section className="panel">
-        <PanelTitle title={isArabic ? "طلب قريب" : "Nearby request"} meta={state.driverOnline ? "Live" : t.offline} />
+        <PanelTitle
+          title={isArabic ? "طلب قريب" : "Nearby request"}
+          meta={
+            state.driverOnline ? (
+              <StatusBadge
+                status={assignedRide.status}
+                label={statusText[state.language][assignedRide.status] || assignedRide.status}
+              />
+            ) : (
+              t.offline
+            )
+          }
+        />
         {state.driverOnline ? (
           <div className="ride-card">
             <strong>{assignedRide.pickup}</strong>
@@ -589,6 +960,405 @@ function DriverPanel({ state, dispatch, t, isArabic, selectedDriver, toggleDrive
           <div className="empty">{isArabic ? "افتح أونلاين حتى تظهر الطلبات" : "Go online to receive requests"}</div>
         )}
       </section>
+    </div>
+  );
+}
+
+function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver, nextStatus, updateRideStatus }) {
+  const ride = state.ride;
+  const driver = selectedDriver || state.drivers[0] || {};
+  const rideStatus = ride?.status || "searching";
+  const statusLabel = ride ? statusText[state.language][rideStatus] || rideStatus : isArabic ? "جاهز للبحث" : "Ready to search";
+  const driverName = isArabic ? driver.nameAr || "سائق واصل" : driver.nameEn || "Wasel driver";
+  const vehicle = driver.vehicle || (isArabic ? "مركبة مريحة" : "Comfort vehicle");
+  const plate = driver.plate || (isArabic ? "غير متاح" : "Not available");
+  const rating = driver.rating || "4.9";
+  const eta = ride?.etaMinutes || state.quote.etaMinutes;
+  const fare = ride?.fareIls || state.quote.fareIls;
+  const distance = ride?.distanceKm || state.quote.distanceKm;
+  const isSearching = !ride || rideStatus === "searching";
+  const rideCode = ride ? `R-${ride.id.replace("ride_", "").slice(0, 6).toUpperCase()}` : "-";
+
+  function notify(messageAr, messageEn) {
+    dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
+  }
+
+  return (
+    <div className="phase-two-stack">
+      <section className={`phase-two-card searching-driver ${isSearching ? "is-searching" : "is-matched"}`}>
+        <div className="search-visual" aria-hidden="true">
+          <span />
+          <i />
+        </div>
+        <div className="phase-two-copy">
+          <span>{isArabic ? "البحث عن سائق" : "Searching driver"}</span>
+          <h3>{isSearching ? (isArabic ? "نبحث عن أفضل سائق قريب" : "Finding the best nearby driver") : (isArabic ? "تم العثور على السائق" : "Driver matched")}</h3>
+          <p>
+            {isSearching
+              ? (isArabic ? "سيظهر السائق هنا فور قبول الطلب." : "The driver will appear here as soon as the request is accepted.")
+              : (isArabic ? `${driverName} في طريقه إليك خلال ${eta} دقائق.` : `${driverName} is heading your way in ${eta} minutes.`)}
+          </p>
+        </div>
+        <StatusBadge status={rideStatus} label={statusLabel} />
+      </section>
+
+      <section className="phase-two-card driver-match-card">
+        <div className="driver-card-top">
+          <Avatar label={driverName.slice(0, 1)} />
+          <div>
+            <span>{isArabic ? "السائق" : "Driver"}</span>
+            <strong>{driverName}</strong>
+          </div>
+          <b>{rating}</b>
+        </div>
+        <div className="driver-meta-grid">
+          <span><small>{isArabic ? "السيارة" : "Vehicle"}</small><strong>{vehicle}</strong></span>
+          <span><small>{isArabic ? "رقم اللوحة" : "Plate"}</small><strong>{plate}</strong></span>
+          <span><small>{t.eta}</small><strong>{eta} min</strong></span>
+        </div>
+        <div className="ride-action-row">
+          <button className="secondary danger-soft" disabled={!ride} onClick={() => notify("الإلغاء غير مفعل في هذه النسخة", "Cancel is not enabled in this build")}>
+            {isArabic ? "إلغاء الرحلة" : "Cancel ride"}
+          </button>
+          <button className="secondary" disabled={!ride} onClick={() => notify("سيتم فتح الاتصال عند ربط الهاتف", "Calling will be enabled when phone data is connected")}>
+            {isArabic ? "اتصال" : "Call"}
+          </button>
+          <button className="secondary" disabled={!ride} onClick={() => notify("الرسائل ستظهر عند تفعيل المحادثة", "Messages will appear when chat is enabled")}>
+            {isArabic ? "رسالة" : "Message"}
+          </button>
+        </div>
+      </section>
+
+      <section className="phase-two-card tracking-card">
+        <PanelTitle title={isArabic ? "تتبع السائق" : "Driver tracking"} meta={<StatusBadge status={rideStatus} label={statusLabel} />} />
+        <div className="tracking-map-shell">
+          <MapBoard state={state} selectedDriver={driver} t={t} isArabic={isArabic} />
+        </div>
+      </section>
+
+      <section className="phase-two-card trip-details-card">
+        <PanelTitle title={isArabic ? "تفاصيل الرحلة الحالية" : "Current trip details"} meta={rideCode} />
+        <div className="trip-route">
+          <span><small>{t.pickup}</small><strong>{ride?.pickup || state.pickup}</strong></span>
+          <span><small>{t.dropoff}</small><strong>{ride?.dropoff || state.dropoff}</strong></span>
+        </div>
+        <div className="detail-metrics">
+          <Metric label={t.fare} value={`${fare} ₪`} />
+          <Metric label={t.distance} value={`${distance} km`} />
+          <Metric label={t.eta} value={`${eta} min`} />
+        </div>
+        <RideTimeline status={rideStatus} isArabic={isArabic} />
+        <button className="secondary" disabled={!ride || rideStatus === "completed"} onClick={() => updateRideStatus(nextStatus)}>
+          {rideStatus === "completed" ? statusText[state.language].completed : t.status}
+        </button>
+      </section>
+    </div>
+  );
+}
+
+function RideTimeline({ status, isArabic }) {
+  const activeIndex = tripTimelineIndex(status);
+  return (
+    <ol className="ride-timeline">
+      {tripTimeline(isArabic).map((item, index) => (
+        <li className={index <= activeIndex ? "done" : ""} key={item.key}>
+          <span>{index + 1}</span>
+          <strong>{item.label}</strong>
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function RideHistoryPanel({ rides, allRides, selectedRide, filter, setFilter, setSelectedRideId, isArabic }) {
+  const filters = [
+    { key: "all", label: isArabic ? "الكل" : "All" },
+    { key: "completed", label: isArabic ? "مكتملة" : "Completed" },
+    { key: "cancelled", label: isArabic ? "ملغية" : "Cancelled" },
+    { key: "active", label: isArabic ? "قيد التنفيذ" : "In progress" }
+  ];
+
+  function countFor(key) {
+    if (key === "all") return allRides.length;
+    return allRides.filter((ride) => ride.statusGroup === key).length;
+  }
+
+  return (
+    <div className="history-panel">
+      <PanelTitle
+        title={isArabic ? "رحلاتي السابقة" : "My previous rides"}
+        meta={isArabic ? `${allRides.length} رحلات` : `${allRides.length} rides`}
+      />
+      <div className="history-filter-row" aria-label={isArabic ? "فلترة الرحلات" : "Ride filters"}>
+        {filters.map((item) => (
+          <button
+            className={filter === item.key ? "active" : ""}
+            key={item.key}
+            onClick={() => setFilter(item.key)}
+            aria-pressed={filter === item.key}
+          >
+            <span>{item.label}</span>
+            <b>{countFor(item.key)}</b>
+          </button>
+        ))}
+      </div>
+      <div className="history-trip-list">
+        {rides.length ? (
+          rides.map((ride) => (
+            <button
+              className={`history-trip-card ${selectedRide?.id === ride.id ? "selected" : ""}`}
+              key={ride.id}
+              onClick={() => setSelectedRideId(ride.id)}
+            >
+              <span className="history-card-head">
+                <strong>{ride.code}</strong>
+                <StatusBadge status={ride.status} label={ride.statusLabel} />
+              </span>
+              <span className="history-route">
+                <span>
+                  <small>{isArabic ? "من" : "From"}</small>
+                  <b>{ride.pickup}</b>
+                </span>
+                <span>
+                  <small>{isArabic ? "إلى" : "To"}</small>
+                  <b>{ride.dropoff}</b>
+                </span>
+              </span>
+              <span className="history-meta">
+                <span>{ride.dateLabel}</span>
+                <span>{ride.driverName}</span>
+                <strong>{ride.fareIls} ₪</strong>
+              </span>
+            </button>
+          ))
+        ) : (
+          <div className="detail-empty">
+            {isArabic ? "لا توجد رحلات مطابقة لهذا الفلتر الآن" : "No rides match this filter yet"}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RideDetailPage({ ride, state, t, isArabic }) {
+  if (!ride) {
+    return (
+      <div className="ride-detail-card">
+        <PanelTitle title={isArabic ? "تفاصيل الرحلة" : "Ride details"} meta="-" />
+        <div className="detail-empty">{isArabic ? "اختر رحلة لعرض التفاصيل" : "Select a ride to view details"}</div>
+      </div>
+    );
+  }
+
+  const driver = ride.driver || {};
+  const driverName = ride.driverName || driverDisplayName(driver, isArabic);
+  const vehicle = driver.vehicle || (isArabic ? "مركبة مريحة" : "Comfort vehicle");
+  const plate = driver.plate || (isArabic ? "غير متاح" : "Not available");
+  const rating = driver.rating || "4.9";
+  const mapState = { ...state, pickup: ride.pickup, dropoff: ride.dropoff };
+
+  return (
+    <div className="ride-detail-card">
+      <div className="detail-hero">
+        <div>
+          <span>{isArabic ? "تفاصيل الرحلة" : "Ride details"}</span>
+          <h3>{isArabic ? "ملخص الرحلة" : "Trip summary"}</h3>
+          <p>{ride.code} · {ride.dateLabel}</p>
+        </div>
+        <StatusBadge status={ride.status} label={ride.statusLabel} />
+      </div>
+
+      <div className="detail-route-grid">
+        <span>
+          <small>{t.pickup}</small>
+          <strong>{ride.pickup}</strong>
+        </span>
+        <span>
+          <small>{t.dropoff}</small>
+          <strong>{ride.dropoff}</strong>
+        </span>
+      </div>
+
+      <div className="detail-metrics">
+        <Metric label={t.fare} value={`${ride.fareIls} ₪`} />
+        <Metric label={t.distance} value={`${ride.distanceKm} km`} />
+        <Metric label={t.eta} value={`${ride.etaMinutes} min`} />
+        <Metric label={isArabic ? "طريقة الدفع" : "Payment"} value={ride.paymentLabel} />
+      </div>
+
+      <div className="detail-driver-card">
+        <Avatar label={driverName.slice(0, 1)} />
+        <div>
+          <span>{isArabic ? "بيانات السائق" : "Driver details"}</span>
+          <strong>{driverName}</strong>
+          <small>{vehicle} · {plate}</small>
+        </div>
+        <b>{rating}</b>
+      </div>
+
+      <div className="detail-map-shell">
+        <MapBoard state={mapState} selectedDriver={driver} t={t} isArabic={isArabic} />
+      </div>
+    </div>
+  );
+}
+
+function AccountProfilePanel({ state, dispatch, t, isArabic, rideHistory, selectedDriver }) {
+  const phone = state.session?.phone || state.phone;
+  const cityName = cityNameById(state.cities, state.cityId, isArabic);
+  const completedRides = rideHistory.filter((ride) => ride.statusGroup === "completed").length;
+  const activeRides = rideHistory.filter((ride) => ride.statusGroup === "active").length;
+  const totalSpent = rideHistory.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
+  const userName = isArabic ? "عميل واصل" : "Wasel rider";
+  const rating = selectedDriver?.rating || "4.9";
+
+  function notify(messageAr, messageEn) {
+    dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
+  }
+
+  return (
+    <div className="account-card profile-card">
+      <div className="profile-hero">
+        <div className="profile-avatar-wrap">
+          <Avatar label={userName.slice(0, 1)} />
+          <span />
+        </div>
+        <div>
+          <span>{isArabic ? "حساب المستخدم" : "User profile"}</span>
+          <h3>{userName}</h3>
+          <p>{phone}</p>
+        </div>
+        <StatusBadge status="accepted" label={isArabic ? "نشط" : "Active"} />
+      </div>
+
+      <div className="profile-info-grid">
+        <span>
+          <small>{t.city}</small>
+          <strong>{cityName}</strong>
+        </span>
+        <span>
+          <small>{isArabic ? "نوع الحساب" : "Account type"}</small>
+          <strong>{t.customer}</strong>
+        </span>
+        <span>
+          <small>{isArabic ? "طريقة الدفع" : "Payment"}</small>
+          <strong>{state.paymentMethod === "wallet" ? t.wallet : t.cash}</strong>
+        </span>
+      </div>
+
+      <div className="account-stats-grid">
+        <span><small>{isArabic ? "كل الرحلات" : "All rides"}</small><strong>{rideHistory.length}</strong></span>
+        <span><small>{isArabic ? "مكتملة" : "Completed"}</small><strong>{completedRides}</strong></span>
+        <span><small>{isArabic ? "قيد التنفيذ" : "Active"}</small><strong>{activeRides}</strong></span>
+        <span><small>{isArabic ? "إجمالي ظاهر" : "Visible spend"}</small><strong>{totalSpent} ₪</strong></span>
+        <span><small>{isArabic ? "تقييم الخدمة" : "Service rating"}</small><strong>{rating}</strong></span>
+      </div>
+
+      <div className="account-action-row">
+        <button className="secondary" onClick={() => notify("تعديل الحساب غير مفعل في هذه النسخة", "Profile editing is not enabled in this build")}>
+          {isArabic ? "تعديل الحساب" : "Edit profile"}
+        </button>
+        <button className="secondary danger-soft" onClick={() => dispatch({ type: "patch", patch: { session: null, role: "customer" } })}>
+          {t.logout}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function WalletPaymentPanel({ state, dispatch, t, isArabic, rideHistory }) {
+  const visibleSpend = rideHistory.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
+  const paymentRows = rideHistory.slice(0, 4);
+
+  return (
+    <div className="account-card wallet-card-shell">
+      <PanelTitle title={isArabic ? "المحفظة والدفع" : "Wallet and payment"} meta={isArabic ? "واجهة آمنة" : "Safe UI"} />
+      <div className="wallet-card-visual">
+        <div>
+          <span>{isArabic ? "Wasel Wallet" : "Wasel Wallet"}</span>
+          <strong>{isArabic ? "محفظة تجريبية" : "Demo wallet"}</strong>
+          <small>{isArabic ? "لا يوجد شحن أو دفع حقيقي هنا" : "No real charging or payment is connected"}</small>
+        </div>
+        <b>{visibleSpend} ₪</b>
+      </div>
+
+      <div className="payment-methods">
+        <button
+          className={state.paymentMethod === "cash" ? "selected" : ""}
+          onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "cash" } })}
+        >
+          <span>{isArabic ? "كاش" : "Cash"}</span>
+          <small>{isArabic ? "الدفع عند نهاية الرحلة" : "Pay after the ride"}</small>
+        </button>
+        <button
+          className={state.paymentMethod === "wallet" ? "selected" : ""}
+          onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "wallet" } })}
+        >
+          <span>{isArabic ? "محفظة" : "Wallet"}</span>
+          <small>{isArabic ? "Placeholder آمن فقط" : "Safe placeholder only"}</small>
+        </button>
+      </div>
+
+      <div className="payment-activity">
+        <div className="section-mini-title">
+          <strong>{isArabic ? "سجل عمليات الدفع" : "Payment activity"}</strong>
+          <small>{paymentRows.length ? (isArabic ? "حسب الرحلات الظاهرة" : "Based on visible rides") : (isArabic ? "لا توجد عمليات" : "No activity")}</small>
+        </div>
+        {paymentRows.length ? (
+          paymentRows.map((ride) => (
+            <div className="payment-row" key={ride.id}>
+              <span>
+                <strong>{ride.code}</strong>
+                <small>{ride.dateLabel} · {ride.paymentLabel}</small>
+              </span>
+              <b>{ride.fareIls} ₪</b>
+            </div>
+          ))
+        ) : (
+          <div className="detail-empty compact">{isArabic ? "ستظهر عمليات الدفع بعد إنشاء الرحلات" : "Payment records will appear after rides exist"}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AccountSettingsPanel({ state, dispatch, t, isArabic }) {
+  function notify(messageAr, messageEn) {
+    dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
+  }
+
+  return (
+    <div className="account-card settings-card">
+      <PanelTitle title={isArabic ? "إعدادات الحساب" : "Account settings"} meta={isArabic ? "بسيطة وآمنة" : "Simple and safe"} />
+      <div className="settings-grid">
+        <label className="settings-row field">
+          <span>{t.city}</span>
+          <select value={state.cityId} onChange={(event) => dispatch({ type: "patch", patch: { cityId: event.target.value } })}>
+            {state.cities.map((city) => (
+              <option key={city.id} value={city.id}>{isArabic ? city.ar : city.en}</option>
+            ))}
+          </select>
+        </label>
+        <div className="settings-row">
+          <span>
+            <small>{isArabic ? "لغة التطبيق" : "App language"}</small>
+            <strong>{isArabic ? "العربية" : "English"}</strong>
+          </span>
+          <button className="secondary" onClick={() => dispatch({ type: "patch", patch: { language: state.language === "ar" ? "en" : "ar" } })}>
+            {t.language}
+          </button>
+        </div>
+        <div className="settings-row">
+          <span>
+            <small>{isArabic ? "التنبيهات" : "Notifications"}</small>
+            <strong>{isArabic ? "جاهزة للربط لاحقًا" : "Ready to connect later"}</strong>
+          </span>
+          <button className="secondary" onClick={() => notify("إعدادات التنبيهات غير مرتبطة بعد", "Notification settings are not connected yet")}>
+            {isArabic ? "إدارة" : "Manage"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -617,12 +1387,53 @@ function AdminPanel({ state, t, isArabic }) {
           {(state.admin.recentRides || []).map((ride) => (
             <div className="table-card" key={ride.id}>
               <strong>{ride.id.replace("ride_", "R-")}</strong>
-              <small>{statusText[state.language][ride.status] || ride.status}</small>
+              <StatusBadge status={ride.status} label={statusText[state.language][ride.status] || ride.status} />
               <b>{ride.fareIls} ₪</b>
             </div>
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+
+function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onAction }) {
+  return (
+    <div className="route-search-card">
+      <div className="route-search-head">
+        <span>{isArabic ? "حجز مشوار" : "Book a ride"}</span>
+        <strong>{isArabic ? "من / إلى" : "From / To"}</strong>
+      </div>
+      <div className="route-fields">
+        <Field
+          label={isArabic ? "From / من" : "From"}
+          value={state.pickup}
+          onChange={(pickup) => dispatch({ type: "patch", patch: { pickup } })}
+        />
+        <Field
+          label={isArabic ? "To / إلى" : "To"}
+          value={state.dropoff}
+          onChange={(dropoff) => dispatch({ type: "patch", patch: { dropoff } })}
+        />
+      </div>
+      <div className="route-options-row">
+        <label className="field city-field">
+          <span>{t.city}</span>
+          <select value={state.cityId} onChange={(event) => dispatch({ type: "patch", patch: { cityId: event.target.value } })}>
+            {state.cities.map((city) => (
+              <option key={city.id} value={city.id}>
+                {isArabic ? city.ar : city.en}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="segmented">
+          <button className={state.paymentMethod === "cash" ? "active" : ""} onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "cash" } })}>{t.cash}</button>
+          <button className={state.paymentMethod === "wallet" ? "active" : ""} onClick={() => dispatch({ type: "patch", patch: { paymentMethod: "wallet" } })}>{t.wallet}</button>
+        </div>
+      </div>
+      <QuoteStrip state={state} t={t} />
+      <button className="primary ride-cta" onClick={onAction}>{actionLabel}</button>
     </div>
   );
 }
@@ -644,11 +1455,19 @@ function MapBoard({ state, selectedDriver, t, isArabic }) {
   const driver = selectedDriver || state.drivers[0];
   return (
     <div className="map-board">
+      <div className="map-zone zone-a" />
+      <div className="map-zone zone-b" />
+      <div className="map-zone zone-c" />
       <div className="road road-a" />
       <div className="road road-b" />
+      <div className="road road-c" />
       <div className="route-line" />
-      <div className="pin pickup">C</div>
-      <div className="pin drop">D</div>
+      <div className="pin pickup">
+        <span>{isArabic ? "من" : "F"}</span>
+      </div>
+      <div className="pin drop">
+        <span>{isArabic ? "إلى" : "T"}</span>
+      </div>
       {state.drivers.map((item, index) => (
         <div
           className={`car-pin ${item.id === driver?.id ? "selected" : ""}`}
@@ -658,9 +1477,14 @@ function MapBoard({ state, selectedDriver, t, isArabic }) {
           {item.nameEn.slice(0, 1)}
         </div>
       ))}
+      <div className="map-compass">N</div>
       <div className="map-sheet">
-        <span>{isArabic ? "تتبع مباشر" : "Live tracking"}</span>
+        <span>{isArabic ? "معاينة المسار" : "Route preview"}</span>
         <strong>{driver ? (isArabic ? driver.nameAr : driver.nameEn) : t.nearbyDrivers}</strong>
+        <div className="map-route-summary">
+          <small>{state.pickup}</small>
+          <small>{state.dropoff}</small>
+        </div>
       </div>
     </div>
   );
@@ -679,9 +1503,13 @@ function PanelTitle({ title, meta }) {
   return (
     <div className="panel-title">
       <h3>{title}</h3>
-      <span>{meta}</span>
+      <span className="panel-meta">{meta}</span>
     </div>
   );
+}
+
+function StatusBadge({ status, label }) {
+  return <span className={`status-badge status-${status}`}>{label}</span>;
 }
 
 function QuoteStrip({ state, t, compact }) {
