@@ -25,7 +25,50 @@ for (const script of ["dev", "api", "build", "check"]) {
   }
 }
 
-const appSource = fs.readFileSync("src/App.jsx", "utf8");
+const sourceOrder = [
+  "src/utils/rideUtils.js",
+  "src/App.jsx",
+  "src/features/auth/AuthScreen.jsx",
+  "src/features/auth/AuthField.jsx",
+  "src/components/layout/Shell.jsx",
+  "src/features/customer/CustomerShell.jsx",
+  "src/components/ui/SettingsIcon.jsx",
+  "src/features/customer/CustomerPanel.jsx",
+  "src/features/driver/DriverPanel.jsx",
+  "src/features/rides/PhaseTwoExperience.jsx",
+  "src/features/rides/RideTimeline.jsx",
+  "src/features/rides/RideHistoryPanel.jsx",
+  "src/features/rides/RideDetailPage.jsx",
+  "src/features/support/CustomerSupportPanel.jsx",
+  "src/features/customer/AccountProfilePanel.jsx",
+  "src/features/payments/WalletPaymentPanel.jsx",
+  "src/features/customer/AccountSettingsPanel.jsx",
+  "src/features/admin/AdminPanel.jsx",
+  "src/features/rides/RouteSearchCard.jsx",
+  "src/components/layout/TopBar.jsx",
+  "src/features/rides/MapBoard.jsx",
+  "src/features/rides/LegacyMapBoard.jsx",
+  "src/components/ui/Field.jsx",
+  "src/components/ui/PanelTitle.jsx",
+  "src/components/ui/StatusBadge.jsx",
+  "src/components/ui/QuoteStrip.jsx",
+  "src/components/ui/Metric.jsx",
+  "src/components/ui/Avatar.jsx",
+  "src/components/ui/Toast.jsx",
+  "src/features/auth/LegacyAuthScreen.jsx",
+  "src/utils/constants.js",
+  "src/utils/mapUtils.js",
+  "src/utils/paymentUtils.js",
+  "src/utils/i18n.js",
+  "src/store/appState.js",
+  "src/services/api.js",
+  "src/services/rides.js"
+];
+
+const appSource = sourceOrder
+  .filter((file) => fs.existsSync(file))
+  .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
+  .join("\n");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const authStart = appSource.indexOf("function AuthScreen");
 const shellStart = appSource.indexOf("function Shell", authStart);
