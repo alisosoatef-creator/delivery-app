@@ -4,6 +4,7 @@ import { AdminPanel } from "./features/admin/AdminPanel.jsx";
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
 import { CustomerShell } from "./features/customer/CustomerShell.jsx";
 import { DriverPanel } from "./features/driver/DriverPanel.jsx";
+import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, roleRouteFallback } from "./routes/index.js";
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
 import { initialState, reducer } from "./store/appState.js";
@@ -210,20 +211,40 @@ function App() {
   }
 
   const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, toggleDriverStatus, login, requestOtp };
+  const activeRoutePath = roleRouteFallback(state);
 
   if (!state.session) {
-    return <AuthScreen {...sharedProps} />;
+    return (
+      <GuestRoute state={state}>
+        <AuthScreen {...sharedProps} routePath={APP_ROUTE_PATHS.login} />
+      </GuestRoute>
+    );
   }
 
   if (state.role === "customer") {
-    return <CustomerShell {...sharedProps} />;
+    return (
+      <CustomerRoute state={state}>
+        <CustomerShell {...sharedProps} routePath={activeRoutePath} />
+      </CustomerRoute>
+    );
+  }
+
+  if (state.role === "driver") {
+    return (
+      <DriverRoute state={state}>
+        <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.driver.dashboard}>
+          <DriverPanel {...sharedProps} />
+        </Shell>
+      </DriverRoute>
+    );
   }
 
   return (
-    <Shell {...sharedProps}>
-      {state.role === "admin" && <AdminPanel {...sharedProps} />}
-      {state.role === "driver" && <DriverPanel {...sharedProps} />}
-    </Shell>
+    <AdminRoute state={state}>
+      <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard}>
+        <AdminPanel {...sharedProps} />
+      </Shell>
+    </AdminRoute>
   );
 }
 

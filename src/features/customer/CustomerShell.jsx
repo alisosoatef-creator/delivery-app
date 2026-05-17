@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SettingsIcon, Toast } from "../../components/ui/index.js";
+import { APP_ROUTE_PATHS, routePathForCustomerView } from "../../routes/index.js";
 import { AccountSettingsPanel } from "./AccountSettingsPanel.jsx";
 import { CustomerPanel } from "./CustomerPanel.jsx";
 
@@ -16,8 +17,14 @@ export function CustomerShell(props) {
     { key: "account", label: isArabic ? "حسابي" : "Account" }
   ];
 
+  const activeRoutePath = settingsPanelOpen ? APP_ROUTE_PATHS.customer.settings : routePathForCustomerView(activeView);
+  const routedNavItems = navItems.map((item) => ({
+    ...item,
+    path: routePathForCustomerView(item.key)
+  }));
+
   return (
-    <main className="customer-app-layout">
+    <main className="customer-app-layout" data-route={activeRoutePath}>
       <header className="customer-navbar">
         <div className="customer-brand">
           <span className="brand-mark">W</span>
@@ -28,10 +35,11 @@ export function CustomerShell(props) {
         </div>
 
         <nav className="customer-nav" aria-label={isArabic ? "تنقل الزبون" : "Customer navigation"}>
-          {navItems.map((item) => (
+          {routedNavItems.map((item) => (
             <button
               type="button"
               key={item.key}
+              data-route={item.path}
               className={activeView === item.key ? "active" : ""}
               onClick={() => setActiveView(item.key)}
               aria-current={activeView === item.key ? "page" : undefined}
@@ -61,10 +69,11 @@ export function CustomerShell(props) {
       </section>
 
       <nav className="customer-bottom-nav" aria-label={isArabic ? "تنقل الزبون السريع" : "Customer quick navigation"}>
-        {navItems.map((item) => (
+        {routedNavItems.map((item) => (
           <button
             type="button"
             key={item.key}
+            data-route={item.path}
             className={activeView === item.key ? "active" : ""}
             onClick={() => setActiveView(item.key)}
             aria-current={activeView === item.key ? "page" : undefined}

@@ -28,6 +28,9 @@ for (const script of ["dev", "api", "build", "check"]) {
 const sourceOrder = [
   "src/utils/rideUtils.js",
   "src/App.jsx",
+  "src/routes/guards.jsx",
+  "src/routes/routeConfig.js",
+  "src/routes/index.js",
   "src/features/auth/AuthScreen.jsx",
   "src/features/auth/AuthField.jsx",
   "src/components/layout/Shell.jsx",
@@ -70,6 +73,76 @@ const appSource = sourceOrder
   .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
   .join("\n");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
+const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
+  ? fs.readFileSync("src/routes/guards.jsx", "utf8")
+  : "";
+const routeConfigSource = fs.existsSync("src/routes/routeConfig.js")
+  ? fs.readFileSync("src/routes/routeConfig.js", "utf8")
+  : "";
+
+for (const routeFile of [
+  "src/routes/guards.jsx",
+  "src/routes/routeConfig.js",
+  "src/routes/index.js"
+]) {
+  if (!fs.existsSync(routeFile)) {
+    throw new Error(`Missing route organization file: ${routeFile}`);
+  }
+}
+
+for (const guardToken of [
+  "function GuestRoute",
+  "function ProtectedRoute",
+  "function CustomerRoute",
+  "function DriverRoute",
+  "function AdminRoute",
+  "allowedRole",
+  "state.session",
+  "state.role"
+]) {
+  if (!routeGuardSource.includes(guardToken)) {
+    throw new Error(`Route guard is missing role/session token: ${guardToken}`);
+  }
+}
+
+for (const routeToken of [
+  '"/login"',
+  '"/register"',
+  '"/verify-otp"',
+  '"/customer"',
+  '"/customer/home"',
+  '"/customer/request-ride"',
+  '"/customer/rides"',
+  '"/customer/settings"',
+  '"/customer/support"',
+  '"/driver/apply"',
+  '"/driver/dashboard"',
+  '"/admin/dashboard"',
+  '"/admin/customers"',
+  '"/admin/drivers"',
+  '"/admin/driver-applications"',
+  '"/admin/rides"',
+  '"/admin/payments"',
+  '"/admin/support"',
+  '"/admin/settings"'
+]) {
+  if (!routeConfigSource.includes(routeToken)) {
+    throw new Error(`Route registry is missing path: ${routeToken}`);
+  }
+}
+
+for (const appRoutingToken of [
+  "<GuestRoute",
+  "<CustomerRoute",
+  "<DriverRoute",
+  "<AdminRoute",
+  "roleRouteFallback",
+  "APP_ROUTE_PATHS"
+]) {
+  if (!appSource.includes(appRoutingToken)) {
+    throw new Error(`App must render through route guards: ${appRoutingToken}`);
+  }
+}
 const authStart = appSource.indexOf("function AuthScreen");
 const shellStart = appSource.indexOf("function Shell", authStart);
 
@@ -134,6 +207,7 @@ if (customerShellStart === -1 || customerPanelStart === -1 || customerPanelStart
 }
 
 const customerShellSource = appSource.slice(customerShellStart, customerPanelStart);
+const shellSource = appSource.slice(shellStart, customerShellStart);
 for (const customerToken of [
   "customer-app-layout",
   "customer-navbar",
@@ -161,6 +235,17 @@ for (const blockedCustomerShellToken of [
 ]) {
   if (customerShellSource.includes(blockedCustomerShellToken)) {
     throw new Error(`CustomerShell must not expose experimental/admin controls: ${blockedCustomerShellToken}`);
+  }
+}
+
+for (const blockedShellRoleSwitcher of [
+  'role: "customer"',
+  'role: "driver"',
+  'role: "admin"',
+  "nav-stack"
+]) {
+  if (shellSource.includes(blockedShellRoleSwitcher)) {
+    throw new Error(`Role shell must not expose manual role switching: ${blockedShellRoleSwitcher}`);
   }
 }
 
