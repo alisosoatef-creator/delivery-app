@@ -48,6 +48,21 @@ const sourceOrder = [
   "src/features/payments/WalletPaymentPanel.jsx",
   "src/features/customer/AccountSettingsPanel.jsx",
   "src/features/admin/AdminPanel.jsx",
+  "src/features/admin/AdminShell.jsx",
+  "src/features/admin/AdminSidebar.jsx",
+  "src/features/admin/AdminHeader.jsx",
+  "src/features/admin/AdminStats.jsx",
+  "src/features/admin/AdminDashboard.jsx",
+  "src/features/admin/AdminDriverApplications.jsx",
+  "src/features/admin/AdminCustomers.jsx",
+  "src/features/admin/AdminDrivers.jsx",
+  "src/features/admin/AdminRides.jsx",
+  "src/features/admin/AdminPayments.jsx",
+  "src/features/admin/AdminSupport.jsx",
+  "src/features/admin/AdminPricing.jsx",
+  "src/features/admin/AdminSettings.jsx",
+  "src/features/admin/AdminPermissions.jsx",
+  "src/features/admin/adminMockData.js",
   "src/features/rides/RouteSearchCard.jsx",
   "src/components/layout/TopBar.jsx",
   "src/features/rides/MapBoard.jsx",
@@ -142,6 +157,82 @@ for (const appRoutingToken of [
 ]) {
   if (!appSource.includes(appRoutingToken)) {
     throw new Error(`App must render through route guards: ${appRoutingToken}`);
+  }
+}
+
+for (const adminFile of [
+  "src/features/admin/AdminShell.jsx",
+  "src/features/admin/AdminSidebar.jsx",
+  "src/features/admin/AdminHeader.jsx",
+  "src/features/admin/AdminStats.jsx",
+  "src/features/admin/AdminDashboard.jsx",
+  "src/features/admin/AdminDriverApplications.jsx",
+  "src/features/admin/AdminCustomers.jsx",
+  "src/features/admin/AdminDrivers.jsx",
+  "src/features/admin/AdminRides.jsx",
+  "src/features/admin/AdminPayments.jsx",
+  "src/features/admin/AdminSupport.jsx",
+  "src/features/admin/AdminPricing.jsx",
+  "src/features/admin/AdminSettings.jsx",
+  "src/features/admin/AdminPermissions.jsx"
+]) {
+  if (!fs.existsSync(adminFile)) {
+    throw new Error(`Admin system file is missing: ${adminFile}`);
+  }
+}
+
+for (const adminSystemToken of [
+  "function AdminShell",
+  "function AdminSidebar",
+  "function AdminHeader",
+  "function AdminStats",
+  "function AdminDashboard",
+  "function AdminDriverApplications",
+  "function AdminCustomers",
+  "function AdminDrivers",
+  "function AdminRides",
+  "function AdminPayments",
+  "function AdminSupport",
+  "function AdminPricing",
+  "function AdminSettings",
+  "function AdminPermissions",
+  "pendingCaptainApplications",
+  "approvedCaptains",
+  "adminStats",
+  "supportTickets",
+  "pricingRules",
+  "approveCaptainApplication",
+  "rejectCaptainApplication",
+  "status: \"approved\"",
+  "status: \"rejected\"",
+  "admin-app-layout",
+  "admin-sidebar",
+  "admin-header",
+  "admin-stat-grid",
+  "admin-data-table",
+  "admin-permission-grid",
+  "Placeholder"
+]) {
+  if (!appSource.includes(adminSystemToken)) {
+    throw new Error(`Admin system is missing: ${adminSystemToken}`);
+  }
+}
+
+if (appSource.includes("<Shell {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard}")) {
+  throw new Error("Admin dashboard must render through the dedicated AdminShell, not the shared role Shell");
+}
+
+for (const adminStyleToken of [
+  ".admin-app-layout",
+  ".admin-sidebar",
+  ".admin-header",
+  ".admin-stat-grid",
+  ".admin-data-table",
+  ".admin-action-row",
+  ".admin-permission-grid"
+]) {
+  if (!stylesSource.includes(adminStyleToken)) {
+    throw new Error(`Admin system styles are missing: ${adminStyleToken}`);
   }
 }
 const authStart = appSource.indexOf("function AuthScreen");

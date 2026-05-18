@@ -241,9 +241,7 @@ function App() {
 
   return (
     <AdminRoute state={state}>
-      <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard}>
-        <AdminPanel {...sharedProps} />
-      </Shell>
+      <AdminPanel {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard} />
     </AdminRoute>
   );
 }

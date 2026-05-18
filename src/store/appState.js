@@ -28,6 +28,56 @@ export const initialState = {
   locationStatus: "default",
   driverOnline: false,
   pendingCaptainApplications: [],
+  approvedCaptains: [],
+  adminStats: {
+    customers: 3,
+    captains: fallbackDrivers.length,
+    pendingCaptainApplications: 0,
+    todayRides: 3,
+    activeRides: 3,
+    estimatedRevenueIls: 83,
+    openSupportTickets: 2
+  },
+  supportTickets: [
+    {
+      id: "support_001",
+      userName: "ليان سمارة",
+      type: "تأخير كابتن",
+      message: "الكابتن تأخر عن موعد الوصول المتوقع.",
+      status: "open",
+      createdAt: "2026-05-18T08:20:00.000Z"
+    },
+    {
+      id: "support_002",
+      userName: "Omar Khalil",
+      type: "Payment",
+      message: "VISA payment is still a placeholder in this build.",
+      status: "open",
+      createdAt: "2026-05-18T09:05:00.000Z"
+    },
+    {
+      id: "support_003",
+      userName: "سارة عودة",
+      type: "تحديث بيانات",
+      message: "طلب تعديل رقم الهاتف.",
+      status: "closed",
+      createdAt: "2026-05-17T16:30:00.000Z"
+    }
+  ],
+  pricingRules: fallbackCities.map((city) => ({
+    id: `pricing_${city.id}`,
+    cityId: city.id,
+    baseFareIls: city.baseFare,
+    perKmIls: 3,
+    minimumFareIls: city.baseFare + 4,
+    updatedAt: "2026-05-18T00:00:00.000Z"
+  })),
+  systemSettings: {
+    appName: "Wasel",
+    appStatus: "active",
+    adminSupportPhone: "+970 59 000 1111",
+    welcomeMessage: "أهلًا بك في وصل"
+  },
   admin: { activeRides: 3, onlineDrivers: 2, todayRevenueIls: 83, recentRides: [] },
   backendLive: false,
   liveTicks: 0,
