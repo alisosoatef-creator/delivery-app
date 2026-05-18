@@ -6,6 +6,9 @@ const requiredFiles = [
   "src/main.jsx",
   "src/App.jsx",
   "src/styles.css",
+  "src/utils/roles.js",
+  "src/components/ui/AccessDenied.jsx",
+  "src/features/auth/AdminDevLogin.jsx",
   "backend/server.mjs",
   "backend/data.mjs",
   "backend/auth/passwords.mjs",
@@ -36,7 +39,10 @@ const sourceOrder = [
   "src/routes/guards.jsx",
   "src/routes/routeConfig.js",
   "src/routes/index.js",
+  "src/utils/roles.js",
+  "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AuthScreen.jsx",
+  "src/features/auth/AdminDevLogin.jsx",
   "src/features/auth/AuthField.jsx",
   "src/features/driver/CaptainApplicationPanel.jsx",
   "src/components/layout/Shell.jsx",
@@ -152,6 +158,7 @@ for (const routeToken of [
   '"/login"',
   '"/register"',
   '"/verify-otp"',
+  '"/admin/dev-login"',
   '"/customer"',
   '"/customer/home"',
   '"/customer/request-ride"',
@@ -179,11 +186,52 @@ for (const appRoutingToken of [
   "<CustomerRoute",
   "<DriverRoute",
   "<AdminRoute",
+  "<AccessDenied",
+  "<AdminDevLogin",
   "roleRouteFallback",
   "APP_ROUTE_PATHS"
 ]) {
   if (!appSource.includes(appRoutingToken)) {
     throw new Error(`App must render through route guards: ${appRoutingToken}`);
+  }
+}
+
+for (const roleToken of [
+  "export const ROLES",
+  'guest: "guest"',
+  'customer: "customer"',
+  'driver: "driver"',
+  'admin: "admin"',
+  'owner: "owner"',
+  'support: "support"',
+  'operations: "operations"',
+  "ADMIN_ROLES",
+  "canAccessAdmin",
+  "canAccessDriver",
+  "homePathForRole",
+  "function AccessDenied",
+  "لا تملك صلاحية الوصول لهذه الصفحة",
+  "function AdminDevLogin",
+  "admin",
+  "1234",
+  "import.meta.env.DEV"
+]) {
+  if (!appSource.includes(roleToken)) {
+    throw new Error(`Phase 9 role/permission system is missing: ${roleToken}`);
+  }
+}
+
+for (const guardPermissionToken of [
+  "allowedRoles",
+  "canAccessAdmin(state)",
+  "canAccessDriver(state)",
+  "currentRole(state) === ROLES.customer",
+  "AccessDenied",
+  "onNavigateHome",
+  "homePathForRole"
+]) {
+  if (!routeGuardSource.includes(guardPermissionToken) && !appSource.includes(guardPermissionToken)) {
+    throw new Error(`Phase 9 route guard behavior is missing: ${guardPermissionToken}`);
   }
 }
 
@@ -463,7 +511,14 @@ for (const blockedShellRoleSwitcher of [
   }
 }
 
-if (!appSource.includes('if (state.role === "customer")') || !appSource.includes("<CustomerShell")) {
+if (
+  !appSource.includes('if (state.role === "customer")') &&
+  !appSource.includes("activeRole === ROLES.customer")
+) {
+  throw new Error("Logged-in customers must be routed by the customer role");
+}
+
+if (!appSource.includes("<CustomerShell")) {
   throw new Error("Logged-in customers must render through CustomerShell");
 }
 

@@ -15,6 +15,7 @@ export const APP_ROUTE_PATHS = {
     dashboard: "/driver/dashboard"
   },
   admin: {
+    devLogin: "/admin/dev-login",
     dashboard: "/admin/dashboard",
     customers: "/admin/customers",
     drivers: "/admin/drivers",
@@ -30,6 +31,7 @@ export const GUEST_ROUTES = [
   { path: APP_ROUTE_PATHS.login, key: "login", role: "guest" },
   { path: APP_ROUTE_PATHS.register, key: "register", role: "guest" },
   { path: APP_ROUTE_PATHS.verifyOtp, key: "verify-otp", role: "guest" },
+  { path: APP_ROUTE_PATHS.admin.devLogin, key: "admin-dev-login", role: "guest" },
   { path: APP_ROUTE_PATHS.driver.apply, key: "driver-apply", role: "guest" }
 ];
 
@@ -47,14 +49,14 @@ export const DRIVER_ROUTES = [
 ];
 
 export const ADMIN_ROUTES = [
-  { path: APP_ROUTE_PATHS.admin.dashboard, key: "admin-dashboard", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.customers, key: "admin-customers", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.drivers, key: "admin-drivers", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.driverApplications, key: "admin-driver-applications", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.rides, key: "admin-rides", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.payments, key: "admin-payments", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.support, key: "admin-support", role: "admin" },
-  { path: APP_ROUTE_PATHS.admin.settings, key: "admin-settings", role: "admin" }
+  { path: APP_ROUTE_PATHS.admin.dashboard, key: "admin-dashboard", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.customers, key: "admin-customers", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.drivers, key: "admin-drivers", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.driverApplications, key: "admin-driver-applications", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.rides, key: "admin-rides", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.payments, key: "admin-payments", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.support, key: "admin-support", role: "admin", allowedRoles: ["admin", "owner"] },
+  { path: APP_ROUTE_PATHS.admin.settings, key: "admin-settings", role: "admin", allowedRoles: ["admin", "owner"] }
 ];
 
 export const APP_ROUTES = [
@@ -72,6 +74,6 @@ export function routePathForCustomerView(view) {
 export function roleRouteFallback(state) {
   if (!state?.session) return APP_ROUTE_PATHS.login;
   if (state.role === "driver") return APP_ROUTE_PATHS.driver.dashboard;
-  if (state.role === "admin") return APP_ROUTE_PATHS.admin.dashboard;
+  if (state.role === "admin" || state.role === "owner") return APP_ROUTE_PATHS.admin.dashboard;
   return APP_ROUTE_PATHS.customer.requestRide;
 }

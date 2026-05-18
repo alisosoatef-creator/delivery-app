@@ -97,6 +97,12 @@ function broadcast(event, payload) {
   for (const client of sseClients) client.write(frame);
 }
 
+function requireAdminDev(request) {
+  // TODO phase-10: replace this development placeholder with real token/session authorization for /api/admin.
+  const token = request.headers.authorization || "";
+  return token.startsWith("Bearer dev-admin-session-token") || process.env.NODE_ENV !== "production";
+}
+
 async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 

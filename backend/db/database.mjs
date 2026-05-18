@@ -394,6 +394,21 @@ export function updateCaptainApplicationStatus(applicationId, status) {
 export function createDriverFromApplication(application) {
   const existing = one("SELECT * FROM drivers WHERE applicationId = ?", application.id);
   if (existing) return driverRow(existing);
+  const existingUser = findUserByPhone(application.phone);
+  if (!existingUser) {
+    run(
+      `
+        INSERT INTO users (id, fullName, phone, city, age, birthDate, password, passwordHash, role, status, isVerified, trips, createdAt)
+        VALUES (?, ?, ?, ?, ?, '', '', '', 'driver', 'active', 1, 0, ?)
+      `,
+      `usr_driver_${randomUUID()}`,
+      application.fullName,
+      application.phone,
+      application.city,
+      application.age ?? null,
+      nowIso()
+    );
+  }
   const id = `captain_${application.id}`;
   run(
     `

@@ -159,11 +159,12 @@ try {
   assert(login.token, "login should return token");
   assert(login.user?.role === "customer", "login should return a customer session user");
 
+  const captainPhone = `+97059999${Date.now().toString().slice(-4)}`;
   const applicationResponse = await request("/api/captain-applications", {
     method: "POST",
     body: JSON.stringify({
       fullName: "Smoke Captain",
-      phone: `+97059999${Date.now().toString().slice(-4)}`,
+      phone: captainPhone,
       city: "nablus",
       age: 31,
       vehicleType: "car",
@@ -179,6 +180,10 @@ try {
   const approve = await request(`/api/admin/captain-applications/${applicationId}/approve`, { method: "PATCH" });
   assert(approve.application.status === "approved", "approve should update application status");
   assert(approve.captain?.applicationId === applicationId, "approve should create approved captain");
+  const smokeDriverDb = new DatabaseSync(smokeDbPath, { readOnly: true });
+  const driverUser = smokeDriverDb.prepare("SELECT role, status FROM users WHERE phone = ?").get(captainPhone);
+  smokeDriverDb.close();
+  assert(driverUser?.role === "driver" && driverUser.status === "active", "approved captain should prepare an active driver user");
 
   const quote = await request("/api/rides/quote", {
     method: "POST",

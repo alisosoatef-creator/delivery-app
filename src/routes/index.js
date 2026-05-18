@@ -1,6 +1,7 @@
 export {
   AdminRoute,
   CustomerRoute,
+  DefaultAccessDenied,
   DriverRoute,
   GuestRoute,
   ProtectedRoute

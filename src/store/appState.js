@@ -3,7 +3,7 @@ import { statusText } from "../utils/i18n.js";
 
 export const initialState = {
   language: "ar",
-  role: "customer",
+  role: "guest",
   session: null,
   currentUser: null,
   authStatus: "guest",

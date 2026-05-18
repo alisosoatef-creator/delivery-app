@@ -1,10 +1,11 @@
-function currentRole(state) {
-  return state.role || state.session?.role || "guest";
-}
+import { AccessDenied } from "../components/ui/AccessDenied.jsx";
+import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "../utils/roles.js";
 
-function RoleRoute({ state, allowedRole, children, fallback = null }) {
+// state.role is normalized through currentRole so route checks stay centralized.
+function RoleRoute({ state, allowedRole, allowedRoles, children, fallback = null }) {
   if (!state.session) return fallback;
-  return currentRole(state) === allowedRole ? children : fallback;
+  const roles = allowedRoles || [allowedRole];
+  return roles.includes(currentRole(state)) ? children : fallback;
 }
 
 export function GuestRoute({ state, children, fallback = null }) {
@@ -16,13 +17,23 @@ export function ProtectedRoute({ state, children, fallback = null }) {
 }
 
 export function CustomerRoute({ state, children, fallback = null }) {
-  return <RoleRoute state={state} allowedRole="customer" fallback={fallback}>{children}</RoleRoute>;
+  return currentRole(state) === ROLES.customer ? children : fallback;
 }
 
 export function DriverRoute({ state, children, fallback = null }) {
-  return <RoleRoute state={state} allowedRole="driver" fallback={fallback}>{children}</RoleRoute>;
+  return canAccessDriver(state) ? children : fallback;
 }
 
 export function AdminRoute({ state, children, fallback = null }) {
-  return <RoleRoute state={state} allowedRole="admin" fallback={fallback}>{children}</RoleRoute>;
+  return canAccessAdmin(state) ? children : fallback;
+}
+
+export function DefaultAccessDenied({ state, isArabic, onNavigateHome }) {
+  return (
+    <AccessDenied
+      state={state}
+      isArabic={isArabic}
+      onNavigateHome={onNavigateHome || (() => window.history.replaceState(null, "", homePathForRole(state)))}
+    />
+  );
 }

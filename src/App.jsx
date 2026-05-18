@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { Shell } from "./components/layout/Shell.jsx";
+import { AccessDenied } from "./components/ui/AccessDenied.jsx";
 import { AdminPanel } from "./features/admin/AdminPanel.jsx";
+import { AdminDevLogin } from "./features/auth/AdminDevLogin.jsx";
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
 import { CustomerShell } from "./features/customer/CustomerShell.jsx";
 import { DriverPanel } from "./features/driver/DriverPanel.jsx";
@@ -11,6 +13,7 @@ import { localQuote } from "./services/rides.js";
 import { createRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
+import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "./utils/roles.js";
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -18,6 +21,9 @@ function App() {
   const bootstrapQuery = useBootstrap();
   const t = text[state.language];
   const isArabic = state.language === "ar";
+  const activeRole = currentRole(state);
+  const currentPath = window.location.pathname;
+  const isAdminDevLoginRoute = currentPath === APP_ROUTE_PATHS.admin.devLogin;
 
   useEffect(() => {
     document.documentElement.lang = state.language;
@@ -226,7 +232,7 @@ function App() {
           currentUser: null,
           token: "",
           authStatus: "guest",
-          role: "customer"
+          role: ROLES.guest
         }
       });
     }
@@ -234,6 +240,24 @@ function App() {
 
   const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, toggleDriverStatus, login, requestOtp, logout };
   const activeRoutePath = roleRouteFallback(state);
+  const accessDenied = (
+    <AccessDenied
+      state={state}
+      isArabic={isArabic}
+      onNavigateHome={() => {
+        window.history.replaceState(null, "", homePathForRole(state));
+        dispatch({ type: "patch", patch: { toast: "" } });
+      }}
+    />
+  );
+
+  if (isAdminDevLoginRoute && import.meta.env.DEV) {
+    return (
+      <GuestRoute state={state} fallback={accessDenied}>
+        <AdminDevLogin {...sharedProps} />
+      </GuestRoute>
+    );
+  }
 
   if (!state.session) {
     return (
@@ -243,17 +267,17 @@ function App() {
     );
   }
 
-  if (state.role === "customer") {
+  if (activeRole === ROLES.customer) {
     return (
-      <CustomerRoute state={state}>
+      <CustomerRoute state={state} fallback={accessDenied}>
         <CustomerShell {...sharedProps} routePath={activeRoutePath} />
       </CustomerRoute>
     );
   }
 
-  if (state.role === "driver") {
+  if (activeRole === ROLES.driver) {
     return (
-      <DriverRoute state={state}>
+      <DriverRoute state={state} fallback={accessDenied}>
         <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.driver.dashboard}>
           <DriverPanel {...sharedProps} />
         </Shell>
@@ -261,11 +285,25 @@ function App() {
     );
   }
 
-  return (
-    <AdminRoute state={state}>
-      <AdminPanel {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard} />
-    </AdminRoute>
-  );
+  if (canAccessAdmin(state)) {
+    return (
+      <AdminRoute state={state} fallback={accessDenied}>
+        <AdminPanel {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard} />
+      </AdminRoute>
+    );
+  }
+
+  if (canAccessDriver(state)) {
+    return (
+      <DriverRoute state={state} fallback={accessDenied}>
+        <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.driver.dashboard}>
+          <DriverPanel {...sharedProps} />
+        </Shell>
+      </DriverRoute>
+    );
+  }
+
+  return accessDenied;
 }
 
 export default App;
