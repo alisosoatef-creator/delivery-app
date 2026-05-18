@@ -8,8 +8,12 @@ const requiredFiles = [
   "src/styles.css",
   "backend/server.mjs",
   "backend/data.mjs",
+  "backend/db/database.mjs",
+  "backend/db/schema.mjs",
+  "backend/db/seed.mjs",
   "backend/schema.sql",
-  "backend/api-contract.md"
+  "backend/api-contract.md",
+  "scripts/backend-smoke.mjs"
 ];
 
 for (const file of requiredFiles) {
@@ -19,7 +23,7 @@ for (const file of requiredFiles) {
 }
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-for (const script of ["dev", "api", "build", "check"]) {
+for (const script of ["dev", "api", "db:init", "db:seed", "build", "check", "api:check"]) {
   if (!packageJson.scripts?.[script]) {
     throw new Error(`Missing npm script: ${script}`);
   }
@@ -105,6 +109,11 @@ const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
 const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
+const backendDatabaseSource = fs.readFileSync("backend/db/database.mjs", "utf8");
+const backendSchemaSource = fs.readFileSync("backend/db/schema.mjs", "utf8");
+const backendSeedSource = fs.readFileSync("backend/db/seed.mjs", "utf8");
+const backendSmokeSource = fs.readFileSync("scripts/backend-smoke.mjs", "utf8");
+const gitignoreSource = fs.existsSync(".gitignore") ? fs.readFileSync(".gitignore", "utf8") : "";
 const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
   ? fs.readFileSync("src/routes/guards.jsx", "utf8")
   : "";
@@ -690,6 +699,9 @@ for (const premiumMotionToken of [
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/db/database.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/db/schema.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/db/seed.mjs"], { stdio: "inherit" });
 
 for (const backendEndpointToken of [
   'url.pathname === "/api/auth/register"',
@@ -734,6 +746,78 @@ for (const backendDataToken of [
 ]) {
   if (!backendDataSource.includes(backendDataToken)) {
     throw new Error(`Backend in-memory data is missing: ${backendDataToken}`);
+  }
+}
+
+for (const sqliteToken of [
+  'import { DatabaseSync } from "node:sqlite"',
+  "WASEL_DB_PATH",
+  "backend/dev.sqlite",
+  "createSchema(db)",
+  "seedDatabase(db)",
+  "databaseInfo",
+  "createOrUpdateCustomerUser",
+  "insertCaptainApplication",
+  "createDriverFromApplication",
+  "insertRide",
+  "insertSupportTicket",
+  "updatePricingRule"
+]) {
+  if (!backendDatabaseSource.includes(sqliteToken) && !backendSource.includes(sqliteToken)) {
+    throw new Error(`SQLite backend integration is missing: ${sqliteToken}`);
+  }
+}
+
+for (const sqliteTableToken of [
+  "CREATE TABLE IF NOT EXISTS cities",
+  "CREATE TABLE IF NOT EXISTS users",
+  "CREATE TABLE IF NOT EXISTS otp_codes",
+  "CREATE TABLE IF NOT EXISTS captain_applications",
+  "CREATE TABLE IF NOT EXISTS drivers",
+  "CREATE TABLE IF NOT EXISTS rides",
+  "CREATE TABLE IF NOT EXISTS support_tickets",
+  "CREATE TABLE IF NOT EXISTS pricing_rules",
+  "CREATE TABLE IF NOT EXISTS system_settings"
+]) {
+  if (!backendSchemaSource.includes(sqliteTableToken)) {
+    throw new Error(`SQLite schema is missing: ${sqliteTableToken}`);
+  }
+}
+
+for (const sqliteSeedToken of [
+  "seedDatabase",
+  "pricing_rules",
+  "system_settings",
+  "drivers",
+  "users",
+  "support_tickets"
+]) {
+  if (!backendSeedSource.includes(sqliteSeedToken)) {
+    throw new Error(`SQLite seed is missing: ${sqliteSeedToken}`);
+  }
+}
+
+for (const persistenceSmokeToken of [
+  "WASEL_DB_PATH",
+  "health should report sqlite database",
+  "captain application should persist after server restart",
+  "approved captain should persist as driver after server restart",
+  "ride should persist after server restart",
+  "support ticket should persist after server restart",
+  "pricing update should persist after server restart"
+]) {
+  if (!backendSmokeSource.includes(persistenceSmokeToken)) {
+    throw new Error(`Backend smoke persistence check is missing: ${persistenceSmokeToken}`);
+  }
+}
+
+for (const ignoredDatabaseToken of [
+  "backend/*.sqlite",
+  "backend/*.sqlite-shm",
+  "backend/*.sqlite-wal"
+]) {
+  if (!gitignoreSource.includes(ignoredDatabaseToken)) {
+    throw new Error(`SQLite database files must be ignored by git: ${ignoredDatabaseToken}`);
   }
 }
 

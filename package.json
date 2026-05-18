@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "api": "node backend/server.mjs",
+    "db:init": "node backend/db/database.mjs",
+    "db:seed": "node backend/db/database.mjs",
     "check": "node scripts/check.mjs",
     "api:check": "node scripts/backend-smoke.mjs",
     "build": "vite build",

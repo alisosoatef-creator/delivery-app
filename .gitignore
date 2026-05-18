@@ -6,3 +6,6 @@ dist/
 .env
 .env.local
 *.log
+backend/*.sqlite
+backend/*.sqlite-shm
+backend/*.sqlite-wal
