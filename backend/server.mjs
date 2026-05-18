@@ -13,6 +13,7 @@ import {
   getRide,
   findUserByPhone,
   findUserByIdentifier,
+  getDriverByPhone,
   getCity,
   getPricingRule,
   getSystemSettings,
@@ -20,9 +21,11 @@ import {
   insertRide,
   insertSupportTicket,
   listCaptainApplications,
+  listAvailableRides,
   listCities,
   listCustomerRides,
   listCustomers,
+  listDriverRides,
   listDriverRequests,
   listDrivers,
   listPricingRules,
@@ -33,6 +36,7 @@ import {
   updateCaptainApplicationStatus,
   updateCustomerStatus,
   updateDriverLocation,
+  updateDriverRideStatus,
   updateDriverStatus,
   updatePricingRule,
   updateRideStatus,
@@ -281,6 +285,38 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/driver/dev-drivers") {
+    sendJson(response, 200, { drivers: listDrivers().filter((driver) => driver.status === "active") });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/driver/dev-login") {
+    // TODO phase-14: replace this development-only driver entry with real driver auth.
+    const body = await readJson(request);
+    const driver = body.driverId
+      ? listDrivers().find((item) => item.id === body.driverId)
+      : getDriverByPhone(body.phone || "");
+    if (!driver || driver.status !== "active") {
+      sendJson(response, 401, { error: "driver_not_active_or_approved" });
+      return;
+    }
+    sendJson(response, 200, {
+      token: `dev-driver-session-token-${randomUUID()}`,
+      user: {
+        id: `driver_user_${driver.id}`,
+        fullName: driver.fullName,
+        name: driver.fullName,
+        phone: driver.phone,
+        city: driver.cityId,
+        role: "driver",
+        status: driver.status,
+        driverId: driver.id
+      },
+      driver
+    });
+    return;
+  }
+
   const driverStatusMatch = url.pathname.match(/^\/api\/admin\/drivers\/([^/]+)\/status$/);
   if (request.method === "PATCH" && driverStatusMatch) {
     const body = await readJson(request);
@@ -301,6 +337,21 @@ async function handleApi(request, response) {
 
   if (request.method === "GET" && url.pathname === "/api/rides") {
     sendJson(response, 200, { rides: listRides() });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/driver/available-rides") {
+    sendJson(response, 200, { rides: listAvailableRides({ cityId: url.searchParams.get("cityId") || "" }) });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/driver/my-rides") {
+    sendJson(response, 200, {
+      rides: listDriverRides({
+        driverId: url.searchParams.get("driverId") || "",
+        phone: url.searchParams.get("phone") || ""
+      })
+    });
     return;
   }
 
@@ -366,6 +417,26 @@ async function handleApi(request, response) {
     const ride = acceptRide(rideAcceptMatch[1], body.driverId);
     if (!ride) {
       sendJson(response, 404, { error: "ride_or_driver_not_found" });
+      return;
+    }
+    broadcast("ride.status.changed", { ride });
+    sendJson(response, 200, { ride });
+    return;
+  }
+
+  const driverRideStatusMatch = url.pathname.match(/^\/api\/driver\/rides\/([^/]+)\/status$/);
+  if (request.method === "PATCH" && driverRideStatusMatch) {
+    const body = await readJson(request);
+    if (!body.driverId) {
+      sendJson(response, 400, { error: "driver_id_required" });
+      return;
+    }
+    const ride = updateDriverRideStatus(driverRideStatusMatch[1], {
+      driverId: body.driverId,
+      status: body.status
+    });
+    if (!ride) {
+      sendJson(response, 409, { error: "invalid_driver_ride_transition" });
       return;
     }
     broadcast("ride.status.changed", { ride });

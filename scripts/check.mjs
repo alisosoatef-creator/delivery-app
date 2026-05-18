@@ -10,6 +10,7 @@ const requiredFiles = [
   "src/utils/roles.js",
   "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AdminDevLogin.jsx",
+  "src/features/auth/DriverDevLogin.jsx",
   "backend/server.mjs",
   "backend/rideStatus.mjs",
   "backend/data.mjs",
@@ -46,6 +47,7 @@ const sourceOrder = [
   "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AuthScreen.jsx",
   "src/features/auth/AdminDevLogin.jsx",
+  "src/features/auth/DriverDevLogin.jsx",
   "src/features/auth/AuthField.jsx",
   "src/features/driver/CaptainApplicationPanel.jsx",
   "src/components/layout/Shell.jsx",
@@ -105,6 +107,7 @@ const sourceOrder = [
   "src/services/captainApplicationsApi.js",
   "src/services/adminApi.js",
   "src/services/ridesApi.js",
+  "src/services/driverApi.js",
   "src/services/supportApi.js",
   "src/services/pricingApi.js",
   "src/services/bootstrapApi.js",
@@ -112,6 +115,7 @@ const sourceOrder = [
   "src/hooks/useCaptainApplications.js",
   "src/hooks/useAdminData.js",
   "src/hooks/useRidesApi.js",
+  "src/hooks/useDriverData.js",
   "src/hooks/useBootstrap.js"
 ];
 
@@ -166,6 +170,7 @@ for (const routeToken of [
   '"/register"',
   '"/verify-otp"',
   '"/admin/dev-login"',
+  '"/driver/dev-login"',
   '"/customer"',
   '"/customer/home"',
   '"/customer/request-ride"',
@@ -195,6 +200,7 @@ for (const appRoutingToken of [
   "<AdminRoute",
   "<AccessDenied",
   "<AdminDevLogin",
+  "<DriverDevLogin",
   "roleRouteFallback",
   "APP_ROUTE_PATHS"
 ]) {
@@ -868,7 +874,11 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/admin/dashboard"',
   'url.pathname === "/api/admin/customers"',
   'url.pathname === "/api/admin/drivers"',
+  'url.pathname === "/api/driver/dev-drivers"',
+  'url.pathname === "/api/driver/dev-login"',
   'url.pathname === "/api/rides"',
+  'url.pathname === "/api/driver/available-rides"',
+  'url.pathname === "/api/driver/my-rides"',
   'url.pathname === "/api/customer/rides"',
   'url.pathname === "/api/admin/rides"',
   'url.pathname === "/api/support/tickets"',
@@ -884,6 +894,7 @@ for (const backendEndpointToken of [
   'rideStatusMatch',
   'customerRideDetailsMatch',
   'rideAcceptMatch',
+  'driverRideStatusMatch',
   'supportTicketStatusMatch',
   'pricingPatchMatch',
   'approvedCaptains',
@@ -921,7 +932,10 @@ for (const sqliteToken of [
   "createDriverFromApplication",
   "insertRide",
   "listCustomerRides",
+  "listAvailableRides",
+  "listDriverRides",
   "acceptRide",
+  "updateDriverRideStatus",
   "insertSupportTicket",
   "updatePricingRule"
 ]) {
@@ -970,7 +984,12 @@ for (const persistenceSmokeToken of [
   "ride should persist after server restart",
   "new customer ride should start searching",
   "customer rides should include the newly created ride",
+  "driver available rides should include searching rides",
   "ride accept endpoint should set accepted status",
+  "accepted ride should appear in driver my-rides",
+  "driver should update ride to driver_arriving",
+  "driver should update ride to arrived",
+  "driver should update ride to in_progress",
   "support ticket should persist after server restart",
   "pricing update should persist after server restart",
   "settings update should persist after server restart"

@@ -59,6 +59,7 @@ export function cityNameById(cities, cityId, isArabic) {
 }
 
 export function findRideDriver(ride, state, selectedDriver) {
+  if (ride?.driver) return ride.driver;
   const matchedDriver = state.drivers.find((driver) => driver.id === ride?.driverId);
   if (matchedDriver) return matchedDriver;
   if (ride?.driverId && selectedDriver?.id === ride.driverId) return selectedDriver;

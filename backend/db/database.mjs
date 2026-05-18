@@ -182,6 +182,7 @@ function rideRow(row) {
   const routeDistanceKm = row.routeDistanceKm ?? row.distanceKm ?? 0;
   const durationMinutes = row.durationMinutes ?? null;
   const hasAcceptedDriver = Boolean(row.driverId) && !["searching", "cancelled", "canceled"].includes(row.status);
+  const driver = hasAcceptedDriver ? getDriver(row.driverId) : null;
   return {
     id: row.id,
     customerId: row.customerId || "",
@@ -189,7 +190,9 @@ function rideRow(row) {
     customerName: row.customerName || "Customer",
     customerPhone: row.customerPhone || "",
     driverId: row.driverId || null,
-    captain: hasAcceptedDriver ? row.driverId : "Pending captain acceptance",
+    driver,
+    driverName: driver?.fullName || driver?.nameAr || "",
+    captain: hasAcceptedDriver ? driver?.fullName || row.driverId : "Pending captain acceptance",
     pickup: row.pickup,
     destination: row.destination,
     dropoff: row.destination,
@@ -517,6 +520,19 @@ export function getDriver(driverId) {
   ));
 }
 
+export function getDriverByPhone(phone) {
+  return driverRow(one(
+    `
+      SELECT drivers.*, cities.enName AS cityName
+      FROM drivers
+      LEFT JOIN cities ON cities.id = drivers.city
+      WHERE drivers.phone = ?
+      LIMIT 1
+    `,
+    phone
+  ));
+}
+
 export function listDrivers() {
   return many(`
     SELECT drivers.*, cities.enName AS cityName
@@ -596,6 +612,14 @@ export function listRides() {
   return many("SELECT * FROM rides ORDER BY createdAt DESC").map(rideRow);
 }
 
+export function listAvailableRides({ cityId = "" } = {}) {
+  const normalizedCity = String(cityId || "").trim();
+  const query = normalizedCity
+    ? "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL AND city = ? ORDER BY createdAt ASC"
+    : "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL ORDER BY createdAt ASC";
+  return (normalizedCity ? many(query, normalizedCity) : many(query)).map(rideRow);
+}
+
 export function listCustomerRides({ customerId = "", customerPhone = "" } = {}) {
   const normalizedCustomerId = String(customerId || "").trim();
   const normalizedPhone = String(customerPhone || "").trim();
@@ -614,7 +638,7 @@ export function listCustomerRides({ customerId = "", customerPhone = "" } = {}) 
 }
 
 export function listDriverRequests(cityId = "nablus") {
-  return many("SELECT * FROM rides WHERE city = ? AND status = 'searching' ORDER BY createdAt DESC", cityId).map(rideRow);
+  return listAvailableRides({ cityId });
 }
 
 export function updateRideStatus(rideId, status) {
@@ -647,7 +671,7 @@ export function updateRideStatus(rideId, status) {
 export function acceptRide(rideId, driverId) {
   const current = getRide(rideId);
   const driver = getDriver(driverId);
-  if (!current || !driver || isTerminalRideStatus(current.status)) return null;
+  if (!current || !driver || driver.status !== "active" || current.status !== RIDE_STATUSES.searching || current.driverId) return null;
   const updatedAt = nowIso();
   run(
     `
@@ -657,6 +681,57 @@ export function acceptRide(rideId, driverId) {
     `,
     driver.id,
     updatedAt,
+    updatedAt,
+    rideId
+  );
+  return getRide(rideId);
+}
+
+const DRIVER_RIDE_STATUS_TRANSITIONS = Object.freeze({
+  [RIDE_STATUSES.accepted]: [RIDE_STATUSES.driverArriving, RIDE_STATUSES.cancelled],
+  [RIDE_STATUSES.driverArriving]: [RIDE_STATUSES.arrived],
+  [RIDE_STATUSES.arrived]: [RIDE_STATUSES.inProgress],
+  [RIDE_STATUSES.inProgress]: [RIDE_STATUSES.completed],
+  [RIDE_STATUSES.searching]: [RIDE_STATUSES.cancelled]
+});
+
+export function listDriverRides({ driverId = "", phone = "" } = {}) {
+  const driver = driverId ? getDriver(driverId) : phone ? getDriverByPhone(phone) : null;
+  if (!driver) return [];
+  return many("SELECT * FROM rides WHERE driverId = ? ORDER BY createdAt DESC", driver.id).map(rideRow);
+}
+
+export function updateDriverRideStatus(rideId, { driverId, status }) {
+  const current = getRide(rideId);
+  const driver = getDriver(driverId);
+  const nextStatus = normalizeRideStatus(status);
+  if (!current || !driver || !isValidRideStatus(nextStatus)) return null;
+  if (current.driverId && current.driverId !== driver.id) return null;
+  if (!current.driverId && current.status !== RIDE_STATUSES.searching) return null;
+  const allowedNextStatuses = DRIVER_RIDE_STATUS_TRANSITIONS[normalizeRideStatus(current.status)] || [];
+  if (!allowedNextStatuses.includes(nextStatus)) return null;
+
+  const updatedAt = nowIso();
+  const nextDriverId = current.driverId || driver.id;
+  run(
+    `
+      UPDATE rides
+      SET driverId = ?,
+          status = ?,
+          updatedAt = ?,
+          acceptedAt = CASE WHEN ? = 'accepted' AND acceptedAt IS NULL THEN ? ELSE acceptedAt END,
+          cancelledAt = CASE WHEN ? = 'cancelled' THEN ? ELSE cancelledAt END,
+          completedAt = CASE WHEN ? = 'completed' THEN ? ELSE completedAt END
+      WHERE id = ?
+    `,
+    nextDriverId,
+    nextStatus,
+    updatedAt,
+    nextStatus,
+    updatedAt,
+    nextStatus,
+    updatedAt,
+    nextStatus,
     updatedAt,
     rideId
   );

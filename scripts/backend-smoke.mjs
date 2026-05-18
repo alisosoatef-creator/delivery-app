@@ -247,6 +247,12 @@ try {
   assert(searchingRide.ride.routeDistanceKm === 5.2, "ride should persist route distance");
   assert(searchingRide.ride.durationMinutes === 14, "ride should persist route duration");
 
+  const availableBeforeCancel = await request("/api/driver/available-rides?cityId=nablus");
+  assert(
+    availableBeforeCancel.rides.some((availableRide) => availableRide.id === cancelledRideId && availableRide.status === "searching"),
+    "driver available rides should include searching rides"
+  );
+
   const customerRides = await request(`/api/customer/rides?phone=${encodeURIComponent(phone)}`);
   assert(
     customerRides.rides.some((customerRide) => customerRide.id === cancelledRideId),
@@ -270,16 +276,53 @@ try {
   assert(rideId, "ride request should create ride");
   assert(ride.ride.status === "searching", "second ride should also start searching");
 
+  const availableBeforeAccept = await request("/api/driver/available-rides?cityId=nablus");
+  assert(
+    availableBeforeAccept.rides.some((availableRide) => availableRide.id === rideId),
+    "driver available rides should include the ride before acceptance"
+  );
+
   const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
     method: "PATCH",
     body: JSON.stringify({ driverId: approve.captain.id })
   });
   assert(acceptedRide.ride.status === "accepted", "ride accept endpoint should set accepted status");
   assert(acceptedRide.ride.driverId === approve.captain.id, "ride accept endpoint should assign driver id");
+  assert(acceptedRide.ride.driver?.id === approve.captain.id, "accepted ride should include driver details");
 
-  const status = await request(`/api/rides/${rideId}/status`, {
+  const availableAfterAccept = await request("/api/driver/available-rides?cityId=nablus");
+  assert(
+    !availableAfterAccept.rides.some((availableRide) => availableRide.id === rideId),
+    "accepted ride should leave available driver requests"
+  );
+
+  const myRidesAfterAccept = await request(`/api/driver/my-rides?driverId=${encodeURIComponent(approve.captain.id)}`);
+  assert(
+    myRidesAfterAccept.rides.some((driverRide) => driverRide.id === rideId && driverRide.status === "accepted"),
+    "accepted ride should appear in driver my-rides"
+  );
+
+  const driverArriving = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status: "completed" })
+    body: JSON.stringify({ driverId: approve.captain.id, status: "driver_arriving" })
+  });
+  assert(driverArriving.ride.status === "driver_arriving", "driver should update ride to driver_arriving");
+
+  const driverArrived = await request(`/api/driver/rides/${rideId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ driverId: approve.captain.id, status: "arrived" })
+  });
+  assert(driverArrived.ride.status === "arrived", "driver should update ride to arrived");
+
+  const inProgress = await request(`/api/driver/rides/${rideId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ driverId: approve.captain.id, status: "in_progress" })
+  });
+  assert(inProgress.ride.status === "in_progress", "driver should update ride to in_progress");
+
+  const status = await request(`/api/driver/rides/${rideId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ driverId: approve.captain.id, status: "completed" })
   });
   assert(status.ride.status === "completed", "ride status should update");
 
@@ -344,7 +387,7 @@ try {
 
   const persistedRides = await request("/api/admin/rides");
   assert(
-    persistedRides.rides.some((persistedRide) => persistedRide.id === rideId && persistedRide.status === "completed"),
+    persistedRides.rides.some((persistedRide) => persistedRide.id === rideId && persistedRide.status === "completed" && persistedRide.driverId === approve.captain.id),
     "ride should persist after server restart"
   );
 

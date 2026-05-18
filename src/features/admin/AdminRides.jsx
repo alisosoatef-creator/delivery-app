@@ -14,7 +14,7 @@ function normalizeRide(ride) {
     id: ride.id,
     customer: ride.customer || ride.customerName || "Customer",
     customerPhone: ride.customerPhone || "",
-    captain: ride.captain || ride.driverId || "Pending captain acceptance",
+    captain: ride.driver?.fullName || ride.driverName || ride.captain || ride.driverId || "Pending captain acceptance",
     pickup: ride.pickup,
     dropoff: ride.dropoff || ride.destination,
     city: ride.city || ride.cityId || "-",
@@ -23,7 +23,8 @@ function normalizeRide(ride) {
     fareIls: ride.fareIls ?? ride.price ?? 0,
     paymentMethod: ride.paymentMethod,
     status: ride.status,
-    time: ride.createdAt || ride.time || "-"
+    time: ride.createdAt || ride.time || "-",
+    acceptedAt: ride.acceptedAt || ""
   };
 }
 
@@ -93,6 +94,7 @@ export function AdminRides({ state, isArabic, adminRides }) {
           <span>{isArabic ? "الدفع" : "Payment"}</span>
           <span>{isArabic ? "الحالة" : "Status"}</span>
           <span>{isArabic ? "تاريخ الإنشاء" : "Created"}</span>
+          <span>{isArabic ? "وقت القبول" : "Accepted"}</span>
           <span>{isArabic ? "تفاصيل" : "Details"}</span>
         </div>
         {filteredRides.length ? filteredRides.map((ride) => (
@@ -108,6 +110,7 @@ export function AdminRides({ state, isArabic, adminRides }) {
             <span>{ride.paymentMethod}</span>
             <b className={`admin-badge ${ride.status}`}>{ride.status}</b>
             <span>{formatDate(ride.time)}</span>
+            <span>{formatDate(ride.acceptedAt)}</span>
             <button className="secondary" type="button" onClick={() => setSelectedRide(ride)}>
               {isArabic ? "عرض" : "View"}
             </button>
@@ -132,6 +135,7 @@ export function AdminRides({ state, isArabic, adminRides }) {
             <div><dt>{isArabic ? "السعر" : "Fare"}</dt><dd>{selectedRide.fareIls} ₪</dd></div>
             <div><dt>{isArabic ? "طريقة الدفع" : "Payment"}</dt><dd>{selectedRide.paymentMethod}</dd></div>
             <div><dt>{isArabic ? "الحالة" : "Status"}</dt><dd>{selectedRide.status}</dd></div>
+            <div><dt>{isArabic ? "وقت القبول" : "Accepted at"}</dt><dd>{formatDate(selectedRide.acceptedAt)}</dd></div>
             <div><dt>{isArabic ? "الوقت" : "Time"}</dt><dd>{formatDate(selectedRide.time)}</dd></div>
           </dl>
         </div>

@@ -4,13 +4,14 @@ import { AccessDenied } from "./components/ui/AccessDenied.jsx";
 import { AdminPanel } from "./features/admin/AdminPanel.jsx";
 import { AdminDevLogin } from "./features/auth/AdminDevLogin.jsx";
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
+import { DriverDevLogin } from "./features/auth/DriverDevLogin.jsx";
 import { CustomerShell } from "./features/customer/CustomerShell.jsx";
 import { DriverPanel } from "./features/driver/DriverPanel.jsx";
 import { useBootstrap } from "./hooks/useBootstrap.js";
 import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, roleRouteFallback } from "./routes/index.js";
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
-import { createRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
+import { createRide, fetchCustomerRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
 import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
@@ -25,6 +26,7 @@ function App() {
   const activeRole = currentRole(state);
   const currentPath = window.location.pathname;
   const isAdminDevLoginRoute = currentPath === APP_ROUTE_PATHS.admin.devLogin;
+  const isDriverDevLoginRoute = currentPath === APP_ROUTE_PATHS.driver.devLogin;
 
   useEffect(() => {
     document.documentElement.lang = state.language;
@@ -218,6 +220,36 @@ function App() {
     }
   }
 
+  async function refreshCurrentRide() {
+    if (!state.ride?.id) return;
+    const customer = state.currentUser || state.session || {};
+    try {
+      const ride = await fetchCustomerRide(state.ride.id, {
+        customerId: customer.id || "",
+        customerPhone: customer.phone || state.phone || ""
+      });
+      if (!ride) return;
+      dispatch({
+        type: "patch",
+        patch: {
+          ride,
+          selectedDriverId: ride.driverId || state.selectedDriverId,
+          customerRides: [ride, ...(state.customerRides || []).filter((item) => item.id !== ride.id)],
+          backendLive: true,
+          toast: isArabic ? "تم تحديث حالة الرحلة." : "Ride status refreshed."
+        }
+      });
+    } catch {
+      dispatch({
+        type: "patch",
+        patch: {
+          backendLive: false,
+          toast: isArabic ? "تعذر تحديث حالة الرحلة الآن." : "Unable to refresh the ride status now."
+        }
+      });
+    }
+  }
+
   async function toggleDriverStatus() {
     const online = !state.driverOnline;
     dispatch({ type: "patch", patch: { driverOnline: online } });
@@ -251,7 +283,7 @@ function App() {
     }
   }
 
-  const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, toggleDriverStatus, login, requestOtp, logout };
+  const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, refreshCurrentRide, toggleDriverStatus, login, requestOtp, logout };
   const activeRoutePath = roleRouteFallback(state);
   const accessDenied = (
     <AccessDenied
@@ -268,6 +300,14 @@ function App() {
     return (
       <GuestRoute state={state} fallback={accessDenied}>
         <AdminDevLogin {...sharedProps} />
+      </GuestRoute>
+    );
+  }
+
+  if (isDriverDevLoginRoute && import.meta.env.DEV) {
+    return (
+      <GuestRoute state={state} fallback={accessDenied}>
+        <DriverDevLogin {...sharedProps} />
       </GuestRoute>
     );
   }

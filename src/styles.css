@@ -2830,6 +2830,20 @@ small,
   margin-top: 14px;
 }
 
+.ride-status-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.compact-refresh {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
 .route-request-error {
   margin: 10px 0 0;
   color: #b91c1c;
@@ -4100,6 +4114,17 @@ small,
 
 .driver-request-meta {
   flex-wrap: wrap;
+}
+
+.driver-panel-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.driver-status-actions {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .driver-history-row {

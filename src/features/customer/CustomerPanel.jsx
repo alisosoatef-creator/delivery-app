@@ -145,6 +145,7 @@ export function CustomerPanel(props) {
             isArabic={isArabic}
             selectedDriver={selectedDriver}
             cancelRide={() => updateRideStatus?.(RIDE_STATUSES.cancelled)}
+            refreshCurrentRide={props.refreshCurrentRide}
           />
         </section>
       )}

@@ -11,6 +11,7 @@ export const APP_ROUTE_PATHS = {
     support: "/customer/support"
   },
   driver: {
+    devLogin: "/driver/dev-login",
     apply: "/driver/apply",
     dashboard: "/driver/dashboard"
   },
@@ -32,6 +33,7 @@ export const GUEST_ROUTES = [
   { path: APP_ROUTE_PATHS.register, key: "register", role: "guest" },
   { path: APP_ROUTE_PATHS.verifyOtp, key: "verify-otp", role: "guest" },
   { path: APP_ROUTE_PATHS.admin.devLogin, key: "admin-dev-login", role: "guest" },
+  { path: APP_ROUTE_PATHS.driver.devLogin, key: "driver-dev-login", role: "guest" },
   { path: APP_ROUTE_PATHS.driver.apply, key: "driver-apply", role: "guest" }
 ];
 

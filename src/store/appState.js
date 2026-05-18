@@ -131,6 +131,7 @@ export function reducer(state, action) {
       return {
         ...state,
         ride: state.ride?.id === action.payload.ride.id ? action.payload.ride : state.ride,
+        selectedDriverId: action.payload.ride.driverId || state.selectedDriverId,
         customerRides: (state.customerRides || []).map((ride) =>
           ride.id === action.payload.ride.id ? action.payload.ride : ride
         ),

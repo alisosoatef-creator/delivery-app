@@ -73,6 +73,16 @@ Admin writes are persisted in SQLite for development. API authorization is still
 New customer rides start with `status = "searching"` and do not include captain details before a driver accepts the ride.
 `PATCH /api/rides/:id/accept` is a development placeholder for the next driver phase and assigns a driver without logging anyone in.
 
+## Driver
+
+- `GET /api/driver/dev-drivers`
+- `POST /api/driver/dev-login`
+- `GET /api/driver/available-rides`
+- `GET /api/driver/my-rides`
+- `PATCH /api/driver/rides/:id/status`
+
+Driver development login is limited to active approved captains in the local database. The driver ride status endpoint enforces the current development lifecycle: `accepted -> driver_arriving -> arrived -> in_progress -> completed`.
+
 ## Support
 
 - `POST /api/support/tickets`

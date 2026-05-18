@@ -5,7 +5,7 @@ import { statusText } from "../../utils/i18n.js";
 import { MapBoard } from "./MapBoard.jsx";
 import { RideTimeline } from "./RideTimeline.jsx";
 
-export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver, cancelRide }) {
+export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver, cancelRide, refreshCurrentRide }) {
   const ride = state.ride;
   const rideStatus = ride?.status || "searching";
   const isCancelled = rideStatus === "cancelled" || rideStatus === "canceled";
@@ -52,7 +52,12 @@ export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDrive
               : (isArabic ? "لن تظهر بيانات الكابتن أو المركبة إلا بعد قبول الطلب." : "Captain and vehicle details will appear only after acceptance.")}
           </p>
         </div>
-        <StatusBadge status={rideStatus} label={statusLabel} />
+        <div className="ride-status-tools">
+          <StatusBadge status={rideStatus} label={statusLabel} />
+          <button className="secondary compact-refresh" type="button" onClick={() => refreshCurrentRide?.()}>
+            {isArabic ? "تحديث حالة الرحلة" : "Refresh ride"}
+          </button>
+        </div>
       </section>
 
       {!hasAcceptedDriver && (
