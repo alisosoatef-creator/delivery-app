@@ -159,6 +159,22 @@ try {
   assert(login.token, "login should return token");
   assert(login.user?.role === "customer", "login should return a customer session user");
 
+  const customers = await request("/api/admin/customers");
+  const smokeCustomer = customers.customers.find((customer) => customer.phone === phone);
+  assert(smokeCustomer?.id, "admin customers should include registered database customers");
+
+  const suspendedCustomer = await request(`/api/admin/customers/${smokeCustomer.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "suspended" })
+  });
+  assert(suspendedCustomer.customer.status === "suspended", "admin customer status patch should suspend customer");
+
+  const activeCustomer = await request(`/api/admin/customers/${smokeCustomer.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "active" })
+  });
+  assert(activeCustomer.customer.status === "active", "admin customer status patch should reactivate customer");
+
   const captainPhone = `+97059999${Date.now().toString().slice(-4)}`;
   const applicationResponse = await request("/api/captain-applications", {
     method: "POST",
@@ -184,6 +200,18 @@ try {
   const driverUser = smokeDriverDb.prepare("SELECT role, status FROM users WHERE phone = ?").get(captainPhone);
   smokeDriverDb.close();
   assert(driverUser?.role === "driver" && driverUser.status === "active", "approved captain should prepare an active driver user");
+
+  const suspendedDriver = await request(`/api/admin/drivers/${approve.captain.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "suspended" })
+  });
+  assert(suspendedDriver.driver.status === "suspended", "admin driver status patch should suspend driver");
+
+  const activeDriver = await request(`/api/admin/drivers/${approve.captain.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "active" })
+  });
+  assert(activeDriver.driver.status === "active", "admin driver status patch should reactivate driver");
 
   const quote = await request("/api/rides/quote", {
     method: "POST",
@@ -211,11 +239,41 @@ try {
   const ticketId = ticket.ticket?.id;
   assert(ticket.ticket?.status === "open", "support ticket should start open");
 
+  const closedTicket = await request(`/api/admin/support/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "closed" })
+  });
+  assert(closedTicket.ticket?.status === "closed", "admin support ticket patch should close a ticket");
+
+  const reopenedTicket = await request(`/api/admin/support/tickets/${ticketId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "open" })
+  });
+  assert(reopenedTicket.ticket?.status === "open", "admin support ticket patch should reopen a ticket");
+
   const pricing = await request("/api/admin/pricing/nablus", {
     method: "PATCH",
-    body: JSON.stringify({ baseFareIls: 13 })
+    body: JSON.stringify({ baseFareIls: 13, perKmIls: 4, minimumFareIls: 18, isActive: false })
   });
   assert(pricing.rule.baseFareIls === 13, "pricing patch should update base fare");
+  assert(pricing.rule.perKmIls === 4, "pricing patch should update per-km fare");
+  assert(pricing.rule.minimumFareIls === 18, "pricing patch should update minimum fare");
+  assert(pricing.rule.isActive === false, "pricing patch should update active state");
+
+  const settings = await request("/api/admin/settings");
+  assert(settings.settings?.appName, "admin settings endpoint should return system settings");
+  const settingsPatch = await request("/api/admin/settings", {
+    method: "PATCH",
+    body: JSON.stringify({ appName: "Wasel Smoke", appStatus: "maintenance", supportPhone: "+970599900001", welcomeMessage: "Smoke hello" })
+  });
+  assert(settingsPatch.settings.appName === "Wasel Smoke", "admin settings patch should update app name");
+  assert(settingsPatch.settings.appStatus === "maintenance", "admin settings patch should update app status");
+
+  const dashboard = await request("/api/admin/dashboard");
+  assert(dashboard.stats?.customers >= 1, "admin dashboard should include database customer count");
+  assert(dashboard.stats?.captains >= 1, "admin dashboard should include database captain count");
+  assert(dashboard.stats?.pendingCaptainApplications >= 0, "admin dashboard should include pending captain applications");
+  assert(typeof dashboard.stats?.estimatedRevenue === "number", "admin dashboard should include estimated revenue");
 
   await stopServer(child);
   child = startServer();
@@ -247,9 +305,12 @@ try {
 
   const persistedPricing = await request("/api/admin/pricing");
   assert(
-    persistedPricing.pricingRules.some((rule) => rule.cityId === "nablus" && rule.baseFareIls === 13),
+    persistedPricing.pricingRules.some((rule) => rule.cityId === "nablus" && rule.baseFareIls === 13 && rule.isActive === false),
     "pricing update should persist after server restart"
   );
+
+  const persistedSettings = await request("/api/admin/settings");
+  assert(persistedSettings.settings.appName === "Wasel Smoke", "settings update should persist after server restart");
 
   console.log("backend-smoke-ok");
 } finally {

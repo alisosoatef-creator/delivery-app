@@ -71,17 +71,20 @@ function mergeById(localItems, remoteItems) {
 export function AdminShell({ state, dispatch, isArabic, logout }) {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [routePath, setRoutePath] = useState(APP_ROUTE_PATHS.admin.dashboard);
-  const adminEnabled = state.role === "admin" && Boolean(state.session);
+  const adminEnabled = ["admin", "owner"].includes(state.role) && Boolean(state.session);
   const captainApplicationsQuery = useCaptainApplications({ enabled: adminEnabled });
   const adminData = useAdminData({ enabled: adminEnabled });
+  const backendError = captainApplicationsQuery.backendError || adminData.backendError;
+  const canUseRemoteData = adminEnabled && !backendError;
   const pendingCaptainApplications = useMemo(
     () => mergeById(state.pendingCaptainApplications || [], captainApplicationsQuery.applications || []),
     [captainApplicationsQuery.applications, state.pendingCaptainApplications]
   );
   const approvedCaptains = state.approvedCaptains || [];
-  const supportTickets = adminData.supportTickets.length ? adminData.supportTickets : state.supportTickets || [];
-  const pricingRules = adminData.pricingRules.length ? adminData.pricingRules : state.pricingRules || [];
-  const adminCustomers = adminData.customers.length ? adminData.customers : mockCustomers;
+  const supportTickets = canUseRemoteData ? adminData.supportTickets : state.supportTickets || [];
+  const pricingRules = canUseRemoteData ? adminData.pricingRules : state.pricingRules || [];
+  const adminSettings = canUseRemoteData && adminData.settings ? adminData.settings : state.systemSettings;
+  const adminCustomers = canUseRemoteData ? adminData.customers : mockCustomers;
   const fallbackDrivers = useMemo(
     () => [
       ...state.drivers.map((driver) => ({ ...driver, status: "active", availability: driver.online ? "online" : "offline" })),
@@ -89,13 +92,23 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     ],
     [approvedCaptains, state.drivers]
   );
-  const adminDrivers = adminData.drivers.length ? adminData.drivers : fallbackDrivers;
-  const adminRides = adminData.rides.length ? adminData.rides : null;
-  const backendError = captainApplicationsQuery.backendError || adminData.backendError;
+  const adminDrivers = canUseRemoteData ? adminData.drivers : fallbackDrivers;
+  const adminRides = canUseRemoteData ? adminData.rides : null;
   const adminLoading = captainApplicationsQuery.isLoading || adminData.isLoading;
   const adminMutating = captainApplicationsQuery.isMutating || adminData.isMutating;
 
   const dashboardStats = useMemo(() => {
+    if (adminData.dashboardStats) {
+      return {
+        customers: adminData.dashboardStats.customers ?? 0,
+        captains: adminData.dashboardStats.captains ?? 0,
+        pendingCaptainApplications: adminData.dashboardStats.pendingCaptainApplications ?? 0,
+        todayRides: adminData.dashboardStats.todayRides ?? 0,
+        activeRides: adminData.dashboardStats.activeRides ?? 0,
+        estimatedRevenue: adminData.dashboardStats.estimatedRevenue ?? 0,
+        openSupportTickets: adminData.dashboardStats.openSupportTickets ?? 0
+      };
+    }
     const activeRides = state.ride ? 1 : state.admin.activeRides;
     const estimatedRevenue = mockPaymentRecords.reduce((sum, payment) => sum + payment.amountIls, 0) + (state.admin.todayRevenueIls || 0);
     const rideCount = adminRides?.length || mockRideRecords.length + (state.ride ? 1 : 0);
@@ -108,7 +121,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
       estimatedRevenue,
       openSupportTickets: supportTickets.filter((ticket) => ticket.status === "open").length
     };
-  }, [adminCustomers.length, adminDrivers.length, adminRides, pendingCaptainApplications, state.admin.activeRides, state.admin.todayRevenueIls, state.ride, supportTickets]);
+  }, [adminData.dashboardStats, adminCustomers.length, adminDrivers.length, adminRides, pendingCaptainApplications, state.admin.activeRides, state.admin.todayRevenueIls, state.ride, supportTickets]);
 
   function switchSection(section) {
     setActiveSection(section.key);
@@ -217,13 +230,61 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     });
   }
 
-  async function closeSupportTicket(ticketId) {
+  async function updateCustomerStatus(customerId, status) {
     try {
-      await adminData.closeSupportTicketRemote({ ticketId, status: "closed" });
+      const result = await adminData.updateCustomerStatusRemote({ customerId, status });
       dispatch({
         type: "patch",
         patch: {
-          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status: "closed" } : ticket)),
+          backendLive: true,
+          toast: isArabic ? "تم تحديث حالة الزبون عبر Backend." : "Customer status updated through the Backend."
+        }
+      });
+      return result;
+    } catch {
+      dispatch({
+        type: "patch",
+        patch: {
+          backendLive: false,
+          toast: isArabic ? "تعذر تحديث حالة الزبون عبر Backend." : "Backend unavailable; customer status was not updated."
+        }
+      });
+      return null;
+    }
+  }
+
+  async function updateDriverStatus(driverId, patch) {
+    try {
+      const result = await adminData.updateDriverStatusRemote({ driverId, patch });
+      dispatch({
+        type: "patch",
+        patch: {
+          approvedCaptains: approvedCaptains.map((driver) => (driver.id === driverId ? { ...driver, ...patch } : driver)),
+          backendLive: true,
+          toast: isArabic ? "تم تحديث حالة الكابتن عبر Backend." : "Captain status updated through the Backend."
+        }
+      });
+      return result;
+    } catch {
+      dispatch({
+        type: "patch",
+        patch: {
+          approvedCaptains: approvedCaptains.map((driver) => (driver.id === driverId ? { ...driver, ...patch } : driver)),
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم تحديث الكابتن محليًا." : "Backend unavailable; captain status updated locally."
+        }
+      });
+      return null;
+    }
+  }
+
+  async function closeSupportTicket(ticketId, status = "closed") {
+    try {
+      await adminData.closeSupportTicketRemote({ ticketId, status });
+      dispatch({
+        type: "patch",
+        patch: {
+          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status } : ticket)),
           backendLive: true,
           toast: isArabic ? "تم إغلاق التذكرة عبر الـ Backend." : "Ticket closed through the Backend."
         }
@@ -233,7 +294,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
       dispatch({
         type: "patch",
         patch: {
-          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status: "closed" } : ticket)),
+          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status } : ticket)),
           backendLive: false,
           toast: isArabic ? "تعذر الاتصال بالـ Backend، تم إغلاق التذكرة محليًا." : "Backend unavailable; ticket closed locally."
         }
@@ -244,7 +305,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     dispatch({
       type: "patch",
       patch: {
-        supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status: "closed" } : ticket)),
+        supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status } : ticket)),
         toast: isArabic ? "تم إغلاق التذكرة محليًا." : "Ticket closed locally."
       }
     });
@@ -269,7 +330,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
       dispatch({
         type: "patch",
         patch: {
-          pricingRules: pricingRules.map((rule) => (rule.id === ruleId ? { ...rule, ...patch, updatedAt: new Date().toISOString() } : rule)),
+          pricingRules: pricingRules.map((rule) => (rule.id === ruleId || rule.cityId === cityId ? { ...rule, ...patch, updatedAt: new Date().toISOString() } : rule)),
           backendLive: false,
           toast: isArabic ? "تعذر الاتصال بالـ Backend، تم تحديث السعر محليًا." : "Backend unavailable; pricing updated locally."
         }
@@ -280,13 +341,13 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     dispatch({
       type: "patch",
       patch: {
-        pricingRules: pricingRules.map((rule) => (rule.id === ruleId ? { ...rule, ...patch, updatedAt: new Date().toISOString() } : rule)),
+        pricingRules: pricingRules.map((rule) => (rule.id === ruleId || rule.cityId === cityId ? { ...rule, ...patch, updatedAt: new Date().toISOString() } : rule)),
         toast: isArabic ? "تم تحديث السعر محليًا." : "Pricing updated locally."
       }
     });
   }
 
-  function updateSystemSettings(patch) {
+  function updateSystemSettingsLocal(patch) {
     dispatch({
       type: "patch",
       patch: {
@@ -294,6 +355,32 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
         toast: isArabic ? "تم تحديث إعدادات النظام محليًا." : "System settings updated locally."
       }
     });
+  }
+
+  async function updateSystemSettings(patch) {
+    try {
+      const result = await adminData.updateSystemSettingsRemote(patch);
+      dispatch({
+        type: "patch",
+        patch: {
+          systemSettings: result?.settings || { ...adminSettings, ...patch },
+          backendLive: true,
+          toast: isArabic ? "تم تحديث إعدادات النظام عبر Backend." : "System settings updated through the Backend."
+        }
+      });
+      return result;
+    } catch {
+      updateSystemSettingsLocal(patch);
+      dispatch({
+        type: "patch",
+        patch: {
+          systemSettings: { ...adminSettings, ...patch },
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم تحديث الإعدادات محليًا." : "Backend unavailable; settings updated locally."
+        }
+      });
+      return null;
+    }
   }
 
   function placeholder(messageAr, messageEn) {
@@ -310,6 +397,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     adminCustomers,
     adminDrivers,
     adminRides,
+    adminSettings,
     supportTickets,
     pricingRules,
     backendError,
@@ -318,6 +406,8 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     cityName,
     approveCaptainApplication,
     rejectCaptainApplication,
+    updateCustomerStatus,
+    updateDriverStatus,
     closeSupportTicket,
     updatePricingRule,
     updateSystemSettings,

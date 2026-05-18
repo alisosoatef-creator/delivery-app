@@ -209,26 +209,32 @@ export function getPricingRule(cityId = "nablus") {
   return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ? AND isActive = 1", cityId));
 }
 
+export function getPricingRuleByCity(cityId = "nablus") {
+  return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ?", cityId));
+}
+
 export function updatePricingRule(cityId, patch) {
-  const current = getPricingRule(cityId);
+  const current = getPricingRuleByCity(cityId);
   if (!current) return null;
   const nextBaseFare = patch.baseFareIls ?? patch.baseFare ?? current.baseFare;
   const nextPricePerKm = patch.perKmIls ?? patch.pricePerKm ?? current.pricePerKm;
   const nextMinimumFare = patch.minimumFareIls ?? patch.minimumFare ?? current.minimumFare;
+  const nextIsActive = typeof patch.isActive === "boolean" ? (patch.isActive ? 1 : 0) : current.isActive ? 1 : 0;
   const updatedAt = nowIso();
   run(
     `
       UPDATE pricing_rules
-      SET baseFare = ?, pricePerKm = ?, minimumFare = ?, updatedAt = ?
+      SET baseFare = ?, pricePerKm = ?, minimumFare = ?, isActive = ?, updatedAt = ?
       WHERE cityId = ?
     `,
     nextBaseFare,
     nextPricePerKm,
     nextMinimumFare,
+    nextIsActive,
     updatedAt,
     cityId
   );
-  return getPricingRule(cityId);
+  return getPricingRuleByCity(cityId);
 }
 
 export function getSystemSettings() {
@@ -242,6 +248,31 @@ export function getSystemSettings() {
     notificationsPlaceholder: true,
     updatedAt: row.updatedAt
   };
+}
+
+export function updateSystemSettings(patch = {}) {
+  const current = getSystemSettings();
+  const nextSettings = {
+    appName: patch.appName ?? current.appName,
+    appStatus: patch.appStatus ?? current.appStatus,
+    supportPhone: patch.supportPhone ?? patch.adminSupportPhone ?? current.supportPhone,
+    welcomeMessage: patch.welcomeMessage ?? current.welcomeMessage
+  };
+
+  run(
+    `
+      UPDATE system_settings
+      SET appName = ?, appStatus = ?, supportPhone = ?, welcomeMessage = ?, updatedAt = ?
+      WHERE id = 'default'
+    `,
+    nextSettings.appName,
+    nextSettings.appStatus,
+    nextSettings.supportPhone,
+    nextSettings.welcomeMessage,
+    nowIso()
+  );
+
+  return getSystemSettings();
 }
 
 export function createOtpCode({ phone, purpose = "auth", code = "1234" }) {
@@ -558,12 +589,15 @@ export function updateSupportTicketStatus(ticketId, status = "closed") {
 export function adminOverview() {
   const activeRides = one("SELECT COUNT(*) AS count FROM rides WHERE status != 'completed'").count;
   const todayRevenueIls = one("SELECT COALESCE(SUM(price), 0) AS total FROM rides").total;
+  const todayRides = one("SELECT COUNT(*) AS count FROM rides").count;
   const pendingCaptainApplications = one("SELECT COUNT(*) AS count FROM captain_applications WHERE status = 'pending'").count;
   const openSupportTickets = one("SELECT COUNT(*) AS count FROM support_tickets WHERE status = 'open'").count;
   return {
     activeRides,
     onlineDrivers: listDrivers().filter((driver) => driver.online).length,
     todayRevenueIls,
+    todayRides,
+    estimatedRevenue: todayRevenueIls,
     customers: listCustomers().length,
     captains: listDrivers().length,
     pendingCaptainApplications,

@@ -1144,6 +1144,53 @@ textarea:focus-visible {
   grid-template-columns: .8fr .9fr .9fr 1.5fr .7fr .8fr .8fr .8fr;
 }
 
+.admin-filter-bar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(170px, .35fr);
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.admin-data-table.applications-table .admin-table-row {
+  grid-template-columns: 1fr .95fr .85fr .55fr .85fr .75fr .8fr 1fr 1.45fr;
+  min-width: 1160px;
+}
+
+.admin-data-table.customers-table .admin-table-row {
+  grid-template-columns: 1fr .95fr .85fr .55fr .8fr .55fr .8fr .9fr .8fr;
+  min-width: 1120px;
+}
+
+.admin-data-table.drivers-table .admin-table-row {
+  grid-template-columns: 1fr .95fr .85fr .85fr .75fr .75fr .75fr .55fr .9fr .8fr;
+  min-width: 1180px;
+}
+
+.admin-data-table.rides-table .admin-table-row {
+  grid-template-columns: .95fr 1fr .9fr 1fr 1.5fr .75fr .75fr .65fr .75fr .75fr 1fr .7fr;
+  min-width: 1440px;
+}
+
+.admin-data-table.support-table .admin-table-row {
+  grid-template-columns: 1fr .9fr .85fr 1.6fr .75fr 1fr .75fr;
+  min-width: 980px;
+}
+
+.admin-data-table.pricing-table .admin-table-row {
+  grid-template-columns: 1fr .85fr .85fr .85fr .85fr .7fr;
+  min-width: 900px;
+}
+
+.admin-data-table.payments-table .admin-table-row {
+  grid-template-columns: 1fr 1fr .8fr .7fr .75fr;
+  min-width: 700px;
+}
+
+.admin-data-table.pricing-table input,
+.admin-data-table.pricing-table select {
+  min-height: 42px;
+}
+
 .admin-table-head {
   background: transparent;
   box-shadow: none;
@@ -4214,13 +4261,21 @@ small,
   .admin-stat-grid.three,
   .admin-detail-list,
   .admin-settings-grid,
-  .admin-permission-grid {
+  .admin-permission-grid,
+  .admin-filter-bar {
     grid-template-columns: 1fr;
   }
 
   .admin-table-row,
   .admin-data-table.compact .admin-table-row,
-  .admin-data-table.wide-table .admin-table-row {
+  .admin-data-table.wide-table .admin-table-row,
+  .admin-data-table.applications-table .admin-table-row,
+  .admin-data-table.customers-table .admin-table-row,
+  .admin-data-table.drivers-table .admin-table-row,
+  .admin-data-table.rides-table .admin-table-row,
+  .admin-data-table.support-table .admin-table-row,
+  .admin-data-table.pricing-table .admin-table-row,
+  .admin-data-table.payments-table .admin-table-row {
     min-width: 0;
     grid-template-columns: 1fr;
   }

@@ -340,8 +340,13 @@ for (const serviceLayerToken of [
   "approveCaptainApplication",
   "rejectCaptainApplication",
   "fetchAdminCustomers",
+  "fetchAdminDashboard",
   "fetchAdminDrivers",
   "fetchAdminRides",
+  "fetchAdminSettings",
+  "updateAdminCustomerStatus",
+  "updateAdminDriverStatus",
+  "updateAdminSettings",
   "fetchSupportTickets",
   "fetchPricingRules",
   "fetchBootstrap",
@@ -789,6 +794,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/auth/logout"',
   'url.pathname === "/api/captain-applications"',
   'url.pathname === "/api/admin/captain-applications"',
+  'url.pathname === "/api/admin/dashboard"',
   'url.pathname === "/api/admin/customers"',
   'url.pathname === "/api/admin/drivers"',
   'url.pathname === "/api/rides"',
@@ -796,6 +802,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/support/tickets"',
   'url.pathname === "/api/admin/support/tickets"',
   'url.pathname === "/api/admin/pricing"',
+  'url.pathname === "/api/admin/settings"',
   'url.pathname === "/api/bootstrap"',
   'url.pathname === "/api/events"',
   'captainApplicationApproveMatch',
@@ -883,7 +890,8 @@ for (const persistenceSmokeToken of [
   "approved captain should persist as driver after server restart",
   "ride should persist after server restart",
   "support ticket should persist after server restart",
-  "pricing update should persist after server restart"
+  "pricing update should persist after server restart",
+  "settings update should persist after server restart"
 ]) {
   if (!backendSmokeSource.includes(persistenceSmokeToken)) {
     throw new Error(`Backend smoke persistence check is missing: ${persistenceSmokeToken}`);

@@ -24,12 +24,19 @@ export function useCaptainApplications({ enabled = true } = {}) {
 
   const approveMutation = useMutation({
     mutationFn: approveCaptainApplication,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CAPTAIN_APPLICATIONS_QUERY_KEY })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CAPTAIN_APPLICATIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    }
   });
 
   const rejectMutation = useMutation({
     mutationFn: rejectCaptainApplication,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: CAPTAIN_APPLICATIONS_QUERY_KEY })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CAPTAIN_APPLICATIONS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+    }
   });
 
   const backendError =

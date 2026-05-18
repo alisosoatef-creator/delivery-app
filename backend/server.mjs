@@ -34,6 +34,7 @@ import {
   updateDriverStatus,
   updatePricingRule,
   updateRideStatus,
+  updateSystemSettings,
   updateSupportTicketStatus,
   verifyUserByPhone
 } from "./db/database.mjs";
@@ -269,7 +270,7 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "customer_not_found" });
       return;
     }
-    sendJson(response, 200, { customer, placeholder: true });
+    sendJson(response, 200, { customer });
     return;
   }
 
@@ -286,7 +287,7 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "driver_not_found" });
       return;
     }
-    sendJson(response, 200, { driver, placeholder: true });
+    sendJson(response, 200, { driver });
     return;
   }
 
@@ -371,6 +372,18 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/admin/settings") {
+    sendJson(response, 200, { settings: getSystemSettings() });
+    return;
+  }
+
+  if (request.method === "PATCH" && url.pathname === "/api/admin/settings") {
+    const body = await readJson(request);
+    const settings = updateSystemSettings(body);
+    sendJson(response, 200, { settings });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/drivers/status") {
     const body = await readJson(request);
     const driver = updateDriverStatus(body.driverId, { online: Boolean(body.online) }) || listDrivers()[0];
@@ -387,6 +400,25 @@ async function handleApi(request, response) {
 
   if (request.method === "GET" && url.pathname === "/api/admin/overview") {
     sendJson(response, 200, adminOverview());
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/dashboard") {
+    const overview = adminOverview();
+    sendJson(response, 200, {
+      stats: {
+        customers: overview.customers,
+        captains: overview.captains,
+        pendingCaptainApplications: overview.pendingCaptainApplications,
+        todayRides: overview.todayRides,
+        activeRides: overview.activeRides,
+        estimatedRevenue: overview.estimatedRevenue,
+        openSupportTickets: overview.openSupportTickets
+      },
+      recentRides: overview.recentRides,
+      pricingRules: listPricingRules(),
+      supportTickets: listSupportTickets()
+    });
     return;
   }
 
