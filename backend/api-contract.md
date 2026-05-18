@@ -1,84 +1,79 @@
 # Backend API Contract
 
+All routes below are currently backed by in-memory data only. There is no database in this phase.
+
+## Bootstrap
+
+- `GET /api/bootstrap`
+  - Returns: `cities`, `drivers`, `pricingRules`, `settings`, `admin`
+
+- `GET /api/events`
+  - Server-sent events stream used by the frontend.
+
 ## Auth
 
-- `POST /auth/request-otp`
-  - Body: `{ "phone": "+970599000000", "role": "customer" | "driver" }`
-  - Response: `{ "requestId": "otp_123", "expiresInSeconds": 120 }`
+- `POST /api/auth/request-otp`
+  - Body: `{ "phone": "+970599000000", "role": "customer" }`
+  - Returns demo OTP request data.
 
-- `POST /auth/verify-otp`
-  - Body: `{ "requestId": "otp_123", "code": "1234" }`
-  - Response: `{ "token": "jwt", "user": { "id": "u_1", "role": "customer" } }`
+- `POST /api/auth/register`
+  - Body: `{ "fullName": "Name", "phone": "+970...", "password": "demo", "cityId": "nablus" }`
+  - Stores a temporary in-memory customer and returns an OTP request.
 
-## Customer Rides
+- `POST /api/auth/verify-otp`
+  - Body: `{ "requestId": "otp_...", "code": "1234" }`
+  - Demo OTP is always `1234`.
 
-- `POST /rides/quote`
-  - Body: `{ "city": "Nablus", "pickup": { "lat": 32.22, "lng": 35.26 }, "dropoff": { "lat": 32.21, "lng": 35.29 } }`
-  - Response: `{ "distanceKm": 5.8, "etaMinutes": 7, "fareIls": 24 }`
+- `POST /api/auth/login`
+  - Body: `{ "identifier": "phone or name", "password": "demo" }`
+  - Requires a verified in-memory user.
 
-- `POST /rides`
-  - Body: `{ "quoteId": "q_1", "paymentMethod": "cash" | "wallet" }`
-  - Response: `{ "rideId": "r_1", "status": "searching" }`
+- `POST /api/auth/logout`
+  - Placeholder endpoint returning `{ "ok": true }`.
 
-- `GET /rides/:rideId`
-  - Response includes customer, driver, vehicle, route, fare, status, and timestamps.
+## Captain Applications
 
-- `POST /rides/:rideId/cancel`
-  - Body: `{ "reason": "driver_too_far" }`
+- `POST /api/captain-applications`
+- `GET /api/admin/captain-applications`
+- `PATCH /api/admin/captain-applications/:id/approve`
+- `PATCH /api/admin/captain-applications/:id/reject`
 
-## Driver
-
-- `POST /drivers/status`
-  - Body: `{ "online": true, "location": { "lat": 32.22, "lng": 35.26 } }`
-
-- `GET /drivers/requests`
-  - Response: nearby ride requests ordered by distance and score.
-
-- `POST /drivers/rides/:rideId/accept`
-  - Response: assigned ride details.
-
-- `POST /drivers/rides/:rideId/status`
-  - Body: `{ "status": "accepted" | "arriving" | "picked_up" | "completed" }`
-
-## Wallet
-
-- `GET /wallet`
-  - Response: `{ "balanceIls": 82, "transactions": [] }`
-
-- `POST /wallet/top-up`
-  - Body: `{ "amountIls": 50, "method": "cash_agent" }`
-
-## Ratings
-
-- `POST /ratings`
-  - Body: `{ "rideId": "r_1", "rating": 5, "comment": "ممتاز" }`
-
-## Notifications
-
-- `GET /notifications`
-  - Response: unread and recent notifications.
-
-- `POST /notifications/read`
-  - Body: `{ "ids": ["n_1", "n_2"] }`
+Approving a captain application changes its status to `approved` and creates an in-memory approved captain. It does not log the captain in.
 
 ## Admin
 
-- `GET /admin/overview`
-  - Response: active rides, online drivers, revenue, complaints, city demand.
+- `GET /api/admin/customers`
+- `PATCH /api/admin/customers/:id/status`
+- `GET /api/admin/drivers`
+- `PATCH /api/admin/drivers/:id/status`
+- `GET /api/admin/rides`
+- `GET /api/admin/support/tickets`
+- `PATCH /api/admin/support/tickets/:id/status`
+- `GET /api/admin/pricing`
+- `PATCH /api/admin/pricing/:cityId`
+- `GET /api/admin/overview`
 
-- `GET /admin/rides`
-  - Query: `city`, `status`, `from`, `to`
+Status updates are placeholders until persistence and permissions are connected.
 
-- `GET /admin/drivers`
-  - Query: `city`, `online`, `verified`
+## Rides
 
-## Realtime Events
+- `GET /api/rides`
+- `POST /api/rides/quote`
+- `POST /api/rides`
+- `PATCH /api/rides/:id/status`
+- `POST /api/rides/:id/status`
 
-Use WebSocket or Socket.IO channels:
+`POST /api/rides/:id/status` remains supported for the current frontend.
 
-- `driver.location.updated`
-- `ride.status.changed`
-- `ride.driver.matched`
-- `ride.cancelled`
-- `notification.created`
-- `admin.metrics.updated`
+## Support
+
+- `POST /api/support/tickets`
+- `GET /api/admin/support/tickets`
+- `PATCH /api/admin/support/tickets/:id/status`
+
+## Driver Compatibility
+
+- `POST /api/drivers/status`
+- `GET /api/drivers/requests`
+
+These routes remain for the current driver-facing mock flow.

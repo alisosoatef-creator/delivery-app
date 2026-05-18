@@ -1,10 +1,22 @@
 import http from "node:http";
 import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
-import { adminRides, cities, drivers } from "./data.mjs";
+import {
+  adminRides,
+  approvedCaptains,
+  captainApplications,
+  cities,
+  customers,
+  drivers,
+  pricingRules,
+  supportTickets,
+  systemSettings,
+  users
+} from "./data.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
+const authConfig = { demoOtpCode: "1234" };
 const otpRequests = new Map();
 const rides = new Map(adminRides.map((ride) => [ride.id, { ...ride }]));
 const sseClients = new Set();
@@ -16,9 +28,15 @@ function sendJson(response, status, payload) {
     "Content-Length": Buffer.byteLength(body),
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS"
   });
   response.end(body);
+}
+
+function publicUser(user) {
+  if (!user) return null;
+  const { password, ...safeUser } = user;
+  return safeUser;
 }
 
 function readJson(request) {
@@ -46,6 +64,11 @@ function cityById(cityId) {
   return cities.find((city) => city.id === cityId) || cities[0];
 }
 
+function cityLabel(cityId) {
+  const city = cityById(cityId);
+  return city.en || city.id;
+}
+
 function nearbyDrivers(cityId) {
   return drivers
     .filter((driver) => driver.cityId === cityId && driver.online)
@@ -54,10 +77,15 @@ function nearbyDrivers(cityId) {
 
 function calculateQuote({ cityId = "nablus", distanceKm = 5.8 }) {
   const city = cityById(cityId);
+  const numericDistance = Number(distanceKm) || 5.8;
+  const rule = pricingRules.find((item) => item.cityId === city.id);
+  const baseFare = rule?.baseFareIls ?? city.baseFare;
+  const perKm = rule?.perKmIls ?? 2.35;
+  const minimumFare = rule?.minimumFareIls ?? 15;
   const surge = city.demand > 85 ? 1.16 : city.demand > 70 ? 1.08 : 1;
-  const fareIls = Math.max(15, Math.round((city.baseFare + Number(distanceKm) * 2.35) * surge));
-  const etaMinutes = Math.max(4, Math.round(Number(distanceKm) * 1.1 + 3));
-  return { cityId: city.id, distanceKm: Number(distanceKm), etaMinutes, fareIls, currency: "ILS" };
+  const fareIls = Math.max(minimumFare, Math.round((baseFare + numericDistance * perKm) * surge));
+  const etaMinutes = Math.max(4, Math.round(numericDistance * 1.1 + 3));
+  return { cityId: city.id, distanceKm: numericDistance, etaMinutes, fareIls, currency: "ILS" };
 }
 
 function broadcast(event, payload) {
@@ -65,15 +93,70 @@ function broadcast(event, payload) {
   for (const client of sseClients) client.write(frame);
 }
 
+function allDrivers() {
+  return [...drivers, ...approvedCaptains];
+}
+
 function adminOverview() {
   const activeRides = [...rides.values()].filter((ride) => ride.status !== "completed").length;
   return {
     activeRides,
-    onlineDrivers: drivers.filter((driver) => driver.online).length,
+    onlineDrivers: allDrivers().filter((driver) => driver.online || driver.availability === "online").length,
     todayRevenueIls: [...rides.values()].reduce((sum, ride) => sum + (ride.fareIls || 0), 0),
+    customers: customers.length + users.filter((user) => user.role === "customer").length,
+    captains: allDrivers().length,
+    pendingCaptainApplications: captainApplications.filter((application) => application.status === "pending").length,
+    openSupportTickets: supportTickets.filter((ticket) => ticket.status === "open").length,
     cities,
     recentRides: [...rides.values()].slice(-8).reverse()
   };
+}
+
+function createOtpRequest({ phone, role = "customer", userId = "" }) {
+  const requestId = `otp_${randomUUID()}`;
+  otpRequests.set(requestId, {
+    phone,
+    role,
+    userId,
+    code: authConfig.demoOtpCode,
+    createdAt: Date.now()
+  });
+  return requestId;
+}
+
+function findUserByIdentifier(identifier) {
+  const normalized = String(identifier || "").trim().toLowerCase();
+  return users.find((user) =>
+    [user.phone, user.fullName, user.id].some((value) => String(value || "").trim().toLowerCase() === normalized)
+  );
+}
+
+function createCaptainFromApplication(application) {
+  return {
+    id: `captain_${application.id}`,
+    applicationId: application.id,
+    fullName: application.fullName,
+    nameAr: application.fullName,
+    nameEn: application.fullName,
+    phone: application.phone,
+    cityId: application.city,
+    cityLabel: application.cityLabel,
+    vehicle: application.vehicleType,
+    vehicleType: application.vehicleType,
+    plate: application.vehiclePlate || "Not provided",
+    experienceYears: application.experienceYears,
+    online: false,
+    availability: "offline",
+    status: "active",
+    approvedAt: new Date().toISOString()
+  };
+}
+
+function updateItemStatus(collection, id, patch = {}) {
+  const item = collection.find((entry) => entry.id === id);
+  if (!item) return null;
+  Object.assign(item, patch, { updatedAt: new Date().toISOString() });
+  return item;
 }
 
 async function handleApi(request, response) {
@@ -90,7 +173,13 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/bootstrap") {
-    sendJson(response, 200, { cities, drivers, admin: adminOverview() });
+    sendJson(response, 200, {
+      cities,
+      drivers: allDrivers(),
+      pricingRules,
+      settings: systemSettings,
+      admin: adminOverview()
+    });
     return;
   }
 
@@ -101,7 +190,7 @@ async function handleApi(request, response) {
       Connection: "keep-alive",
       "Access-Control-Allow-Origin": "*"
     });
-    response.write("event: connected\ndata: {\"ok\":true}\n\n");
+    response.write("event: connected\ndata: {\"ok\":true,\"events\":[]}\n\n");
     sseClients.add(response);
     request.on("close", () => sseClients.delete(response));
     return;
@@ -109,29 +198,186 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/auth/request-otp") {
     const body = await readJson(request);
-    const requestId = `otp_${randomUUID()}`;
-    otpRequests.set(requestId, { phone: body.phone, role: body.role, code: "1234", createdAt: Date.now() });
-    sendJson(response, 200, { requestId, expiresInSeconds: 120, demoCode: "1234" });
+    const requestId = createOtpRequest({ phone: body.phone, role: body.role });
+    sendJson(response, 200, { requestId, expiresInSeconds: 120, demoCode: authConfig.demoOtpCode });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/auth/register") {
+    const body = await readJson(request);
+    if (!body.fullName || !body.phone || !body.password) {
+      sendJson(response, 400, { error: "missing_required_fields" });
+      return;
+    }
+
+    let user = users.find((item) => item.phone === body.phone);
+    if (!user) {
+      user = {
+        id: `usr_${randomUUID()}`,
+        fullName: body.fullName,
+        phone: body.phone,
+        password: body.password,
+        cityId: body.cityId || body.city || "nablus",
+        role: "customer",
+        verified: false,
+        createdAt: new Date().toISOString()
+      };
+      users.push(user);
+    }
+
+    const requestId = createOtpRequest({ phone: user.phone, role: user.role, userId: user.id });
+    sendJson(response, 201, { user: publicUser(user), requestId, demoCode: authConfig.demoOtpCode });
     return;
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/verify-otp") {
     const body = await readJson(request);
-    const otp = otpRequests.get(body.requestId);
-    if (!otp || body.code !== otp.code) {
+    if (body.code !== authConfig.demoOtpCode) {
       sendJson(response, 401, { error: "invalid_otp" });
       return;
     }
+
+    const otp = body.requestId ? otpRequests.get(body.requestId) : null;
+    const user = users.find((item) => item.id === body.userId || item.id === otp?.userId || item.phone === body.phone || item.phone === otp?.phone);
+    if (user) user.verified = true;
+
     sendJson(response, 200, {
       token: `demo_${randomUUID()}`,
-      user: { id: `usr_${randomUUID()}`, phone: otp.phone, role: otp.role || "customer" }
+      user: publicUser(user) || {
+        id: `usr_${randomUUID()}`,
+        phone: otp?.phone || body.phone,
+        role: otp?.role || "customer",
+        verified: true
+      }
     });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/auth/login") {
+    const body = await readJson(request);
+    const user = findUserByIdentifier(body.identifier || body.phone || body.fullName);
+    if (!user || user.password !== body.password || !user.verified) {
+      sendJson(response, 401, { error: "invalid_login" });
+      return;
+    }
+    sendJson(response, 200, { token: `demo_${randomUUID()}`, user: publicUser(user) });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/auth/logout") {
+    sendJson(response, 200, { ok: true, placeholder: true });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/captain-applications") {
+    const body = await readJson(request);
+    if (!body.fullName || !body.phone || !body.city || !body.age || !body.vehicleType) {
+      sendJson(response, 400, { error: "missing_required_fields" });
+      return;
+    }
+    const application = {
+      id: `captain_app_${randomUUID()}`,
+      fullName: body.fullName,
+      phone: body.phone,
+      city: body.city,
+      cityLabel: body.cityLabel || cityLabel(body.city),
+      age: Number(body.age),
+      vehicleType: body.vehicleType,
+      vehiclePlate: body.vehiclePlate || "",
+      experienceYears: body.experienceYears || "",
+      notes: body.notes || "",
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+    captainApplications.push(application);
+    sendJson(response, 201, { application });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/captain-applications") {
+    sendJson(response, 200, { applications: captainApplications });
+    return;
+  }
+
+  const captainApplicationApproveMatch = url.pathname.match(/^\/api\/admin\/captain-applications\/([^/]+)\/approve$/);
+  if (request.method === "PATCH" && captainApplicationApproveMatch) {
+    const application = captainApplications.find((item) => item.id === captainApplicationApproveMatch[1]);
+    if (!application) {
+      sendJson(response, 404, { error: "captain_application_not_found" });
+      return;
+    }
+    application.status = "approved";
+    application.reviewedAt = new Date().toISOString();
+    let captain = approvedCaptains.find((item) => item.applicationId === application.id);
+    if (!captain) {
+      captain = createCaptainFromApplication(application);
+      approvedCaptains.push(captain);
+    }
+    sendJson(response, 200, { application, captain });
+    return;
+  }
+
+  const captainApplicationRejectMatch = url.pathname.match(/^\/api\/admin\/captain-applications\/([^/]+)\/reject$/);
+  if (request.method === "PATCH" && captainApplicationRejectMatch) {
+    const application = captainApplications.find((item) => item.id === captainApplicationRejectMatch[1]);
+    if (!application) {
+      sendJson(response, 404, { error: "captain_application_not_found" });
+      return;
+    }
+    application.status = "rejected";
+    application.reviewedAt = new Date().toISOString();
+    sendJson(response, 200, { application });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/customers") {
+    sendJson(response, 200, { customers: [...customers, ...users.filter((user) => user.role === "customer").map(publicUser)] });
+    return;
+  }
+
+  const customerStatusMatch = url.pathname.match(/^\/api\/admin\/customers\/([^/]+)\/status$/);
+  if (request.method === "PATCH" && customerStatusMatch) {
+    const body = await readJson(request);
+    const customer = updateItemStatus(customers, customerStatusMatch[1], { status: body.status || "active" });
+    if (!customer) {
+      sendJson(response, 404, { error: "customer_not_found" });
+      return;
+    }
+    sendJson(response, 200, { customer, placeholder: true });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/drivers") {
+    sendJson(response, 200, { drivers: allDrivers() });
+    return;
+  }
+
+  const driverStatusMatch = url.pathname.match(/^\/api\/admin\/drivers\/([^/]+)\/status$/);
+  if (request.method === "PATCH" && driverStatusMatch) {
+    const body = await readJson(request);
+    const driver = allDrivers().find((item) => item.id === driverStatusMatch[1]);
+    if (!driver) {
+      sendJson(response, 404, { error: "driver_not_found" });
+      return;
+    }
+    driver.status = body.status || driver.status || "active";
+    if (typeof body.online === "boolean") {
+      driver.online = body.online;
+      driver.availability = body.online ? "online" : "offline";
+    }
+    driver.updatedAt = new Date().toISOString();
+    sendJson(response, 200, { driver, placeholder: true });
     return;
   }
 
   if (request.method === "POST" && url.pathname === "/api/rides/quote") {
     const body = await readJson(request);
     sendJson(response, 200, { quoteId: `quote_${randomUUID()}`, ...calculateQuote(body) });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/rides") {
+    sendJson(response, 200, { rides: [...rides.values()] });
     return;
   }
 
@@ -160,7 +406,7 @@ async function handleApi(request, response) {
   }
 
   const rideStatusMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/status$/);
-  if (request.method === "POST" && rideStatusMatch) {
+  if ((request.method === "POST" || request.method === "PATCH") && rideStatusMatch) {
     const body = await readJson(request);
     const ride = rides.get(rideStatusMatch[1]);
     if (!ride) {
@@ -168,9 +414,70 @@ async function handleApi(request, response) {
       return;
     }
     ride.status = body.status || ride.status;
+    ride.updatedAt = new Date().toISOString();
     if (ride.status === "completed") ride.completedAt = new Date().toISOString();
     broadcast("ride.status.changed", { ride });
     sendJson(response, 200, { ride });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/rides") {
+    sendJson(response, 200, { rides: [...rides.values()].slice().reverse() });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/support/tickets") {
+    const body = await readJson(request);
+    const ticket = {
+      id: `support_${randomUUID()}`,
+      userName: body.userName || body.name || "Guest",
+      type: body.type || "general",
+      message: body.message || "",
+      status: "open",
+      createdAt: new Date().toISOString()
+    };
+    supportTickets.push(ticket);
+    sendJson(response, 201, { ticket });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/support/tickets") {
+    sendJson(response, 200, { tickets: supportTickets });
+    return;
+  }
+
+  const supportTicketStatusMatch = url.pathname.match(/^\/api\/admin\/support\/tickets\/([^/]+)\/status$/);
+  if (request.method === "PATCH" && supportTicketStatusMatch) {
+    const body = await readJson(request);
+    const ticket = updateItemStatus(supportTickets, supportTicketStatusMatch[1], { status: body.status || "closed" });
+    if (!ticket) {
+      sendJson(response, 404, { error: "support_ticket_not_found" });
+      return;
+    }
+    sendJson(response, 200, { ticket });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/pricing") {
+    sendJson(response, 200, { pricingRules });
+    return;
+  }
+
+  const pricingPatchMatch = url.pathname.match(/^\/api\/admin\/pricing\/([^/]+)$/);
+  if (request.method === "PATCH" && pricingPatchMatch) {
+    const body = await readJson(request);
+    const rule = pricingRules.find((item) => item.cityId === pricingPatchMatch[1]);
+    if (!rule) {
+      sendJson(response, 404, { error: "pricing_rule_not_found" });
+      return;
+    }
+    Object.assign(rule, {
+      baseFareIls: body.baseFareIls ?? rule.baseFareIls,
+      perKmIls: body.perKmIls ?? rule.perKmIls,
+      minimumFareIls: body.minimumFareIls ?? rule.minimumFareIls,
+      updatedAt: new Date().toISOString()
+    });
+    sendJson(response, 200, { rule });
     return;
   }
 

@@ -89,6 +89,8 @@ const appSource = sourceOrder
   .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
   .join("\n");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
+const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
+const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
 const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
   ? fs.readFileSync("src/routes/guards.jsx", "utf8")
   : "";
@@ -632,5 +634,51 @@ for (const premiumMotionToken of [
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
+
+for (const backendEndpointToken of [
+  'url.pathname === "/api/auth/register"',
+  'url.pathname === "/api/auth/verify-otp"',
+  'url.pathname === "/api/auth/login"',
+  'url.pathname === "/api/auth/logout"',
+  'url.pathname === "/api/captain-applications"',
+  'url.pathname === "/api/admin/captain-applications"',
+  'url.pathname === "/api/admin/customers"',
+  'url.pathname === "/api/admin/drivers"',
+  'url.pathname === "/api/rides"',
+  'url.pathname === "/api/admin/rides"',
+  'url.pathname === "/api/support/tickets"',
+  'url.pathname === "/api/admin/support/tickets"',
+  'url.pathname === "/api/admin/pricing"',
+  'url.pathname === "/api/bootstrap"',
+  'url.pathname === "/api/events"',
+  'captainApplicationApproveMatch',
+  'captainApplicationRejectMatch',
+  'customerStatusMatch',
+  'driverStatusMatch',
+  'rideStatusMatch',
+  'supportTicketStatusMatch',
+  'pricingPatchMatch',
+  'approvedCaptains',
+  'demoOtpCode: "1234"',
+  'Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS"'
+]) {
+  if (!backendSource.includes(backendEndpointToken)) {
+    throw new Error(`Backend API surface is missing: ${backendEndpointToken}`);
+  }
+}
+
+for (const backendDataToken of [
+  "export const users",
+  "export const captainApplications",
+  "export const approvedCaptains",
+  "export const customers",
+  "export const supportTickets",
+  "export const pricingRules",
+  "export const systemSettings"
+]) {
+  if (!backendDataSource.includes(backendDataToken)) {
+    throw new Error(`Backend in-memory data is missing: ${backendDataToken}`);
+  }
+}
 
 console.log("project-check-ok");
