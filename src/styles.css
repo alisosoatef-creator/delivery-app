@@ -2257,6 +2257,34 @@ small,
   background: rgba(212, 72, 95, .14);
 }
 
+.route-source-badge.ready {
+  border-color: rgba(14, 159, 110, .32);
+  background: rgba(14, 159, 110, .18);
+}
+
+.route-source-badge.loading {
+  border-color: rgba(201, 145, 47, .32);
+  background: rgba(201, 145, 47, .18);
+}
+
+.route-source-badge.fallback {
+  border-color: rgba(45, 108, 223, .28);
+  background: rgba(45, 108, 223, .16);
+}
+
+.road-route-polyline {
+  filter: drop-shadow(0 0 8px rgba(14, 159, 110, .32));
+}
+
+.fallback-route-polyline {
+  filter: drop-shadow(0 0 8px rgba(45, 108, 223, .24));
+}
+
+.route-warning {
+  color: #ffd9a8 !important;
+  white-space: normal !important;
+}
+
 .map-picker-actions button {
   min-height: 40px;
   padding: 8px 12px;

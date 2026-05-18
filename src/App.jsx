@@ -64,11 +64,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const mapDistanceKm = estimatePickupDestinationDistance(state);
+    const mapDistanceKm = state.routeInfo?.routeDistanceKm || estimatePickupDestinationDistance(state);
     requestRideQuote({ cityId: state.cityId, distanceKm: mapDistanceKm || 5.8 })
       .then((quote) => dispatch({ type: "patch", patch: { quote, backendLive: true } }))
       .catch(() => dispatch({ type: "patch", patch: { quote: localQuote(state), backendLive: false } }));
-  }, [state.cityId, state.pickupLocation, state.destinationLocation]);
+  }, [state.cityId, state.pickupLocation, state.destinationLocation, state.routeInfo?.routeDistanceKm]);
 
   useEffect(() => {
     if (!state.toast) return undefined;

@@ -51,13 +51,21 @@ export function RideMap({
   pickupLocation,
   destinationLocation,
   driverLocation,
+  routeCoordinates,
+  routeSource,
   onMapPointChange,
   onTileError,
   isArabic,
   showDrivers
 }) {
-  const pickupDestinationLine = pickupLocation && destinationLocation ? [pickupLocation, destinationLocation] : null;
+  const pickupDestinationLine =
+    routeCoordinates?.length > 1
+      ? routeCoordinates
+      : pickupLocation && destinationLocation
+        ? [pickupLocation, destinationLocation]
+        : null;
   const driverLine = showDrivers && driverLocation && customerLocation ? [customerLocation, driverLocation] : null;
+  const isRoadRoute = routeSource === "osrm" && routeCoordinates?.length > 1;
 
   return (
     <MapContainer
@@ -78,7 +86,13 @@ export function RideMap({
       {pickupDestinationLine && (
         <Polyline
           positions={pickupDestinationLine.map((point) => [point.lat, point.lng])}
-          pathOptions={{ color: "#0e9f6e", dashArray: "10 9", opacity: 0.9, weight: 4 }}
+          pathOptions={{
+            className: isRoadRoute ? "road-route-polyline" : "fallback-route-polyline",
+            color: isRoadRoute ? "#0e9f6e" : "#2d6cdf",
+            dashArray: isRoadRoute ? "" : "10 9",
+            opacity: 0.92,
+            weight: isRoadRoute ? 5 : 4
+          }}
         />
       )}
       {driverLine && (

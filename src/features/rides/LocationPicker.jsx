@@ -2,6 +2,7 @@ import { formatDistanceKm } from "../../utils/mapUtils.js";
 
 export function LocationPicker({
   cityName,
+  durationMinutes,
   distanceKm,
   gpsStatus,
   isArabic,
@@ -10,14 +11,28 @@ export function LocationPicker({
   onSelectMode,
   onSetPickup,
   onSetDestination,
+  routeSource,
+  routeStatus,
   selectedMapPoint
 }) {
+  const routeLabel =
+    routeStatus === "loading"
+      ? isArabic ? "جاري حساب المسار..." : "Calculating route..."
+      : routeSource === "osrm"
+        ? isArabic ? "حسب الطرق" : "Road route"
+        : isArabic ? "تقدير خطي" : "Straight-line fallback";
+
   return (
     <div className="location-picker-panel">
       <div className="map-badge-row">
         <span>{isArabic ? "المدينة" : "City"}: <strong>{cityName}</strong></span>
         <span className={`gps-badge ${gpsStatus}`}>GPS: <strong>{gpsStatus}</strong></span>
-        <span>{isArabic ? "المسافة" : "Distance"}: <strong>{distanceKm ? `${formatDistanceKm(distanceKm)} km` : "-"}</strong></span>
+        <span>
+          {routeSource === "osrm" ? (isArabic ? "المسافة عبر الطرق" : "Road distance") : (isArabic ? "المسافة التقديرية" : "Estimated distance")}:{" "}
+          <strong>{distanceKm ? `${formatDistanceKm(distanceKm)} km` : "-"}</strong>
+        </span>
+        <span>{isArabic ? "الوقت المتوقع" : "ETA"}: <strong>{durationMinutes ? `${durationMinutes} min` : "-"}</strong></span>
+        <span className={`route-source-badge ${routeStatus}`}>{routeLabel}</span>
       </div>
       <div className="map-picker-actions">
         <button className="secondary use-my-current-location" type="button" onClick={onUseCurrentLocation}>

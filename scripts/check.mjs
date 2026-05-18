@@ -90,6 +90,7 @@ const sourceOrder = [
   "src/features/auth/LegacyAuthScreen.jsx",
   "src/utils/constants.js",
   "src/utils/westBankCities.js",
+  "src/utils/routeUtils.js",
   "src/utils/mapUtils.js",
   "src/utils/paymentUtils.js",
   "src/utils/i18n.js",
@@ -737,6 +738,28 @@ for (const mapToken of [
 ]) {
   if (!appSource.includes(mapToken)) {
     throw new Error(`Real Leaflet map integration is missing: ${mapToken}`);
+  }
+}
+
+for (const routeToken of [
+  "OSRM_PUBLIC_DEMO_URL",
+  "router.project-osrm.org/route/v1/driving",
+  "TODO production routing",
+  "fetchRoute",
+  "normalizeRouteResponse",
+  "fallbackToHaversine",
+  "routeDistanceKm",
+  "durationMinutes",
+  "routeCoordinates",
+  "routeStatus",
+  "routeSource",
+  "road-route-polyline",
+  "fallback-route-polyline",
+  "routeInfo",
+  "state.routeInfo?.routeDistanceKm"
+]) {
+  if (!appSource.includes(routeToken)) {
+    throw new Error(`Phase 11B road routing integration is missing: ${routeToken}`);
   }
 }
 
