@@ -1,11 +1,6 @@
-export const fallbackCities = [
-  { id: "nablus", ar: "نابلس", en: "Nablus", demand: 82, baseFare: 12 },
-  { id: "ramallah", ar: "رام الله", en: "Ramallah", demand: 91, baseFare: 14 },
-  { id: "jenin", ar: "جنين", en: "Jenin", demand: 64, baseFare: 11 },
-  { id: "qalqilya", ar: "قلقيلية", en: "Qalqilya", demand: 48, baseFare: 10 },
-  { id: "hebron", ar: "الخليل", en: "Hebron", demand: 76, baseFare: 13 },
-  { id: "bethlehem", ar: "بيت لحم", en: "Bethlehem", demand: 58, baseFare: 12 }
-];
+import { WEST_BANK_CITIES } from "./westBankCities.js";
+
+export const fallbackCities = WEST_BANK_CITIES.map(({ id, ar, en, demand, baseFare }) => ({ id, ar, en, demand, baseFare }));
 
 export const fallbackDrivers = [
   {

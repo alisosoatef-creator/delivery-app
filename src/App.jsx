@@ -13,6 +13,7 @@ import { localQuote } from "./services/rides.js";
 import { createRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
+import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
 import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "./utils/roles.js";
 
 function App() {
@@ -63,10 +64,11 @@ function App() {
   }, []);
 
   useEffect(() => {
-    requestRideQuote({ cityId: state.cityId, distanceKm: 5.8 })
+    const mapDistanceKm = estimatePickupDestinationDistance(state);
+    requestRideQuote({ cityId: state.cityId, distanceKm: mapDistanceKm || 5.8 })
       .then((quote) => dispatch({ type: "patch", patch: { quote, backendLive: true } }))
       .catch(() => dispatch({ type: "patch", patch: { quote: localQuote(state), backendLive: false } }));
-  }, [state.cityId]);
+  }, [state.cityId, state.pickupLocation, state.destinationLocation]);
 
   useEffect(() => {
     if (!state.toast) return undefined;

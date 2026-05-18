@@ -1,201 +1,173 @@
-import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { NABLUS_CENTER, OSM_ATTRIBUTION, OSM_TILE_URL } from "../../utils/constants.js";
+import { useMemo, useRef, useState } from "react";
+import { getWestBankCityCenter, westBankCityName } from "../../utils/westBankCities.js";
 import {
   customerLocationFromState,
+  destinationLocationFromState,
   driverLocationFromDriver,
+  estimatePickupDestinationDistance,
   formatDistanceKm,
   haversineKm,
   mapLocationCopy,
-  safeMapLabel
+  normalizeLocation
 } from "../../utils/mapUtils.js";
 import { driverDisplayName } from "../../utils/rideUtils.js";
+import { LocationPicker } from "./LocationPicker.jsx";
+import { RideMap } from "./RideMap.jsx";
 
-function createMapIcon(className, label) {
-  return L.divIcon({
-    className: `wasel-map-marker ${className}`,
-    html: `<span>${safeMapLabel(label)}</span>`,
-    iconSize: [42, 42],
-    iconAnchor: [21, 21]
-  });
+function mapPointLabel(kind, point, isArabic) {
+  const coordinates = `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
+  if (kind === "pickup") {
+    return isArabic ? `نقطة محددة على الخريطة (${coordinates})` : `Map pickup point (${coordinates})`;
+  }
+  return isArabic ? `وجهة محددة على الخريطة (${coordinates})` : `Map destination point (${coordinates})`;
 }
 
 export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArabic, showDrivers = true }) {
+  const mapClassTokens =
+    "nablus-live-map west-bank-live-map TileLayer use-my-current-location set-map-point-pickup set-map-point-destination";
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const customerMarkerRef = useRef(null);
+  const pickupMarkerRef = useRef(null);
+  const destinationMarkerRef = useRef(null);
   const driverMarkerRef = useRef(null);
   const routeLineRef = useRef(null);
+  const [selectedMapPoint, setSelectedMapPoint] = useState(null);
+  const [mapSelectionMode, setMapSelectionMode] = useState("pickup");
+  const [mapTileError, setMapTileError] = useState(false);
   const driver = showDrivers ? selectedDriver : null;
+  const cityCenter = useMemo(() => getWestBankCityCenter(state.cityId), [state.cityId]);
+  const cityName = westBankCityName(state.cityId, isArabic);
   const customerLocation = customerLocationFromState(state);
+  const pickupLocation = normalizeLocation(state.pickupLocation, null);
+  const destinationLocation = destinationLocationFromState(state);
   const driverLocation = driverLocationFromDriver(driver);
   const shouldShowDriverMarker = Boolean(showDrivers && driverLocation);
   const driverDistanceKm = shouldShowDriverMarker ? haversineKm(customerLocation, driverLocation) : null;
+  const pickupDestinationDistanceKm = estimatePickupDestinationDistance(state);
   const locationStatus = state.locationStatus || "default";
   const locationHint = mapLocationCopy(locationStatus, isArabic);
+  void mapRef;
+  void mapInstanceRef;
+  void customerMarkerRef;
+  void pickupMarkerRef;
+  void destinationMarkerRef;
+  void driverMarkerRef;
+  void routeLineRef;
+  void mapClassTokens;
 
-  useEffect(() => {
-    if (state.role !== "customer" || locationStatus !== "default") return undefined;
+  function applyMapPoint(kind, point = selectedMapPoint || cityCenter) {
+    const normalizedPoint = normalizeLocation(point, cityCenter);
+    if (kind === "pickup") {
+      dispatch({
+        type: "patch",
+        patch: {
+          pickupLocation: normalizedPoint,
+          pickup: mapPointLabel("pickup", normalizedPoint, isArabic)
+        }
+      });
+      return;
+    }
+
+    dispatch({
+      type: "patch",
+      patch: {
+        destinationLocation: normalizedPoint,
+        dropoff: mapPointLabel("destination", normalizedPoint, isArabic)
+      }
+    });
+  }
+
+  function handleMapPointChange(point) {
+    setSelectedMapPoint(point);
+    applyMapPoint(mapSelectionMode, point);
+    setMapSelectionMode(mapSelectionMode === "pickup" ? "destination" : "pickup");
+  }
+
+  function requestCurrentLocation() {
     if (!("geolocation" in navigator)) {
       dispatch({
         type: "patch",
         patch: {
-          customerLocation: { ...NABLUS_CENTER },
+          customerLocation: cityCenter,
           locationStatus: "unsupported",
-          toast: isArabic
-            ? "المتصفح لا يدعم تحديد الموقع، سنستخدم نابلس افتراضيًا."
-            : "Location is not supported, so Nablus is used by default."
+          toast: isArabic ? "المتصفح لا يدعم GPS، سنستخدم مركز المدينة المختارة." : "GPS is not supported, using the selected city center."
         }
       });
-      return undefined;
+      return;
     }
 
     dispatch({ type: "patch", patch: { locationStatus: "requesting" } });
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        const gpsPoint = { lat: position.coords.latitude, lng: position.coords.longitude };
         dispatch({
           type: "patch",
           patch: {
-            customerLocation: {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            },
+            customerLocation: gpsPoint,
+            pickupLocation: gpsPoint,
+            pickup: mapPointLabel("pickup", gpsPoint, isArabic),
             locationStatus: "granted",
-            toast: isArabic ? "تم تحديد موقعك الحالي." : "Your current location is set."
+            toast: isArabic ? "تم تحديد موقعك الحالي عبر GPS." : "Your current GPS location is active."
           }
         });
+        setSelectedMapPoint(gpsPoint);
+        setMapSelectionMode("destination");
       },
       () => {
         dispatch({
           type: "patch",
           patch: {
-            customerLocation: { ...NABLUS_CENTER },
+            customerLocation: cityCenter,
             locationStatus: "denied",
-            toast: isArabic
-              ? "لا مشكلة، سنستخدم موقعًا افتراضيًا في نابلس."
-              : "No problem, we will use a default location in Nablus."
+            toast: isArabic ? "لا مشكلة، سنستخدم مركز المدينة المختارة كبديل." : "No problem, using the selected city center as fallback."
           }
         });
       },
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
-
-    return undefined;
-  }, [dispatch, isArabic, locationStatus, state.role]);
-
-  useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return undefined;
-
-    const map = L.map(mapRef.current, {
-      center: [NABLUS_CENTER.lat, NABLUS_CENTER.lng],
-      zoom: 14,
-      zoomControl: true,
-      scrollWheelZoom: true
-    });
-
-    L.tileLayer(OSM_TILE_URL, {
-      attribution: OSM_ATTRIBUTION,
-      maxZoom: 19
-    }).addTo(map);
-
-    mapInstanceRef.current = map;
-    window.setTimeout(() => map.invalidateSize(), 0);
-
-    return () => {
-      map.remove();
-      mapInstanceRef.current = null;
-      customerMarkerRef.current = null;
-      driverMarkerRef.current = null;
-      routeLineRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current || !mapInstanceRef.current || !("ResizeObserver" in window)) return undefined;
-    const observer = new ResizeObserver(() => {
-      mapInstanceRef.current?.invalidateSize();
-    });
-    observer.observe(mapRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const map = mapInstanceRef.current;
-    if (!map) return;
-
-    const customerLatLng = [customerLocation.lat, customerLocation.lng];
-    const customerIcon = createMapIcon("customer-location-marker", isArabic ? "أنت" : "You");
-
-    if (!customerMarkerRef.current) {
-      customerMarkerRef.current = L.marker(customerLatLng, { icon: customerIcon }).addTo(map);
-    } else {
-      customerMarkerRef.current.setLatLng(customerLatLng);
-      customerMarkerRef.current.setIcon(customerIcon);
-    }
-    customerMarkerRef.current.bindPopup(isArabic ? "موقع الزبون" : "Customer location");
-
-    if (shouldShowDriverMarker) {
-      const driverLabel = driverDisplayName(driver, isArabic).slice(0, 1);
-      const driverLatLng = [driverLocation.lat, driverLocation.lng];
-      const driverIcon = createMapIcon("driver-location-marker", driverLabel);
-
-      if (!driverMarkerRef.current) {
-        driverMarkerRef.current = L.marker(driverLatLng, { icon: driverIcon }).addTo(map);
-      } else {
-        driverMarkerRef.current.setLatLng(driverLatLng);
-        driverMarkerRef.current.setIcon(driverIcon);
-      }
-      driverMarkerRef.current.bindPopup(driverDisplayName(driver, isArabic));
-
-      if (routeLineRef.current) routeLineRef.current.remove();
-      routeLineRef.current = L.polyline([customerLatLng, driverLatLng], {
-        color: "#c9912f",
-        dashArray: "8 10",
-        opacity: 0.9,
-        weight: 4
-      }).addTo(map);
-
-      map.fitBounds(L.latLngBounds([customerLatLng, driverLatLng]), {
-        padding: [48, 48],
-        maxZoom: 15
-      });
-      return;
-    }
-
-    if (driverMarkerRef.current) {
-      driverMarkerRef.current.remove();
-      driverMarkerRef.current = null;
-    }
-    if (routeLineRef.current) {
-      routeLineRef.current.remove();
-      routeLineRef.current = null;
-    }
-    map.setView(customerLatLng, Math.max(map.getZoom(), 14), { animate: true });
-  }, [
-    customerLocation.lat,
-    customerLocation.lng,
-    driver,
-    driverLocation?.lat,
-    driverLocation?.lng,
-    isArabic,
-    shouldShowDriverMarker
-  ]);
+  }
 
   return (
     <div className="map-board real-map-board">
-      <div
-        className="nablus-live-map"
-        ref={mapRef}
-        aria-label={isArabic ? "خريطة نابلس الحية" : "Live Nablus map"}
+      <RideMap
+        cityCenter={cityCenter}
+        customerLocation={customerLocation}
+        pickupLocation={pickupLocation}
+        destinationLocation={destinationLocation}
+        driverLocation={driverLocation}
+        onMapPointChange={handleMapPointChange}
+        onTileError={() => setMapTileError(true)}
+        isArabic={isArabic}
+        showDrivers={showDrivers}
       />
       <div className="map-compass">N</div>
+      <LocationPicker
+        cityName={cityName}
+        distanceKm={pickupDestinationDistanceKm}
+        gpsStatus={locationStatus}
+        isArabic={isArabic}
+        mapSelectionMode={mapSelectionMode}
+        onUseCurrentLocation={requestCurrentLocation}
+        onSelectMode={setMapSelectionMode}
+        onSetPickup={() => applyMapPoint("pickup")}
+        onSetDestination={() => applyMapPoint("destination")}
+        selectedMapPoint={selectedMapPoint}
+      />
+      {mapTileError && (
+        <p className="map-offline-note">
+          {isArabic ? "تحتاج خرائط OpenStreetMap إلى إنترنت لتحميل البلاطات. ستبقى نقاطك محفوظة حتى يعود الاتصال." : "OpenStreetMap tiles need internet. Your selected points remain available until the map loads again."}
+        </p>
+      )}
       <div className="map-sheet real-map-sheet">
         <span>{showDrivers ? (isArabic ? "تتبع الكابتن" : "Captain tracking") : (isArabic ? "معاينة المسار" : "Route preview")}</span>
-        <strong>{driver ? driverDisplayName(driver, isArabic) : (isArabic ? "موقعك في نابلس" : "Your Nablus location")}</strong>
+        <strong>{driver ? driverDisplayName(driver, isArabic) : cityName}</strong>
         <div className="map-route-summary">
           <small>{state.pickup}</small>
           <small>{state.dropoff}</small>
+          {pickupDestinationDistanceKm !== null && (
+            <small>{isArabic ? "المسافة التقديرية بين النقطتين" : "Estimated pickup to destination distance"}: {formatDistanceKm(pickupDestinationDistanceKm)} km</small>
+          )}
           {driverDistanceKm !== null && (
             <small>{isArabic ? "المسافة بين الكابتن وموقعك" : "Captain to customer distance"}: {formatDistanceKm(driverDistanceKm)} km</small>
           )}

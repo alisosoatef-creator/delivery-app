@@ -75,6 +75,8 @@ const sourceOrder = [
   "src/features/admin/AdminPermissions.jsx",
   "src/features/admin/adminMockData.js",
   "src/features/rides/RouteSearchCard.jsx",
+  "src/features/rides/RideMap.jsx",
+  "src/features/rides/LocationPicker.jsx",
   "src/components/layout/TopBar.jsx",
   "src/features/rides/MapBoard.jsx",
   "src/features/rides/LegacyMapBoard.jsx",
@@ -87,6 +89,7 @@ const sourceOrder = [
   "src/components/ui/Toast.jsx",
   "src/features/auth/LegacyAuthScreen.jsx",
   "src/utils/constants.js",
+  "src/utils/westBankCities.js",
   "src/utils/mapUtils.js",
   "src/utils/paymentUtils.js",
   "src/utils/i18n.js",
@@ -699,17 +702,37 @@ if (!packageJson.dependencies?.leaflet) {
   throw new Error("Real map integration must add the leaflet dependency");
 }
 
+if (!packageJson.dependencies?.["react-leaflet"]) {
+  throw new Error("Phase 11A map integration must add react-leaflet");
+}
+
 for (const mapToken of [
   'import L from "leaflet"',
   'import "leaflet/dist/leaflet.css"',
+  'from "react-leaflet"',
+  "WEST_BANK_CITIES",
+  "getWestBankCityCenter",
+  "Nablus",
+  "Ramallah",
+  "Hebron",
+  "Jenin",
+  "Tulkarm",
+  "Bethlehem",
+  "Qalqilya",
+  "Jericho",
+  "Salfit",
+  "Tubas",
   "const NABLUS_CENTER",
   "navigator.geolocation.getCurrentPosition",
   "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   "L.map",
   "L.tileLayer",
   "customer-location-marker",
+  "pickup-location-marker",
+  "destination-location-marker",
   "driver-location-marker",
   "haversineKm",
+  "estimatePickupDestinationDistance",
   "locationStatus"
 ]) {
   if (!appSource.includes(mapToken)) {
@@ -726,10 +749,20 @@ if (mapBoardStart === -1 || fieldStart === -1) {
 const mapBoardSource = appSource.slice(mapBoardStart, fieldStart);
 for (const mapBoardToken of [
   "nablus-live-map",
+  "west-bank-live-map",
   "mapRef",
   "mapInstanceRef",
   "customerMarkerRef",
+  "pickupMarkerRef",
+  "destinationMarkerRef",
   "driverMarkerRef",
+  "cityCenter",
+  "use-my-current-location",
+  "set-map-point-pickup",
+  "set-map-point-destination",
+  "mapSelectionMode",
+  "selectedMapPoint",
+  "TileLayer",
   "driverDistanceKm",
   "showDrivers && driverLocation",
   "const driver = showDrivers ? selectedDriver : null"

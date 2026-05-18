@@ -28,6 +28,8 @@ export const initialState = {
   ride: null,
   quote: { fareIls: 24, distanceKm: 5.8, etaMinutes: 7 },
   customerLocation: { ...NABLUS_CENTER },
+  pickupLocation: null,
+  destinationLocation: null,
   locationStatus: "default",
   driverOnline: false,
   pendingCaptainApplications: [],
@@ -87,6 +89,14 @@ export const initialState = {
   toast: ""
 };
 
+function mergeCities(localCities, backendCities = []) {
+  const merged = new Map(localCities.map((city) => [city.id, city]));
+  for (const city of backendCities) {
+    if (city?.id) merged.set(city.id, { ...(merged.get(city.id) || {}), ...city });
+  }
+  return [...merged.values()];
+}
+
 export function reducer(state, action) {
   switch (action.type) {
     case "patch":
@@ -95,7 +105,7 @@ export function reducer(state, action) {
       return {
         ...state,
         backendLive: true,
-        cities: action.payload.cities || state.cities,
+        cities: mergeCities(fallbackCities, action.payload.cities || state.cities),
         drivers: action.payload.drivers || state.drivers,
         pricingRules: action.payload.pricingRules || state.pricingRules,
         systemSettings: action.payload.settings || state.systemSettings,

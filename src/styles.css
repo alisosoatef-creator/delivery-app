@@ -2181,8 +2181,101 @@ small,
   color: #f7f2e8;
 }
 
+.pickup-location-marker span {
+  background: var(--green);
+  color: #f7f2e8;
+}
+
+.destination-location-marker span {
+  background: var(--blue);
+  color: #f7f2e8;
+}
+
 .real-map-sheet {
   z-index: 650;
+}
+
+.location-picker-panel,
+.map-offline-note {
+  position: absolute;
+  z-index: 660;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: var(--radius);
+  background: rgba(13, 18, 27, .76);
+  color: #f7f2e8;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .24);
+  backdrop-filter: blur(16px);
+}
+
+.location-picker-panel {
+  inset-inline: var(--space-4);
+  top: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+  max-width: 720px;
+  padding: var(--space-3);
+}
+
+.location-picker-panel p,
+.map-offline-note {
+  margin: 0;
+  color: rgba(247, 242, 232, .78);
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.55;
+}
+
+.map-badge-row,
+.map-picker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.map-badge-row span {
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  color: rgba(247, 242, 232, .78);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.map-badge-row strong {
+  color: #fffaf0;
+}
+
+.gps-badge.granted {
+  border-color: rgba(14, 159, 110, .32);
+  background: rgba(14, 159, 110, .18);
+}
+
+.gps-badge.denied,
+.gps-badge.unsupported {
+  border-color: rgba(212, 72, 95, .26);
+  background: rgba(212, 72, 95, .14);
+}
+
+.map-picker-actions button {
+  min-height: 40px;
+  padding: 8px 12px;
+  color: #f7f2e8;
+}
+
+.map-picker-actions button.active {
+  border-color: rgba(201, 145, 47, .62);
+  background: rgba(201, 145, 47, .2);
+}
+
+.map-picker-actions.compact button {
+  flex: 1 1 210px;
+}
+
+.map-offline-note {
+  inset-inline: var(--space-4);
+  bottom: calc(var(--space-4) + 122px);
+  padding: var(--space-3);
 }
 
 .location-hint {
@@ -5155,6 +5248,23 @@ textarea:focus-visible,
   .map-sheet {
     inset-inline: var(--space-3);
     bottom: var(--space-3);
+  }
+
+  .location-picker-panel {
+    inset-inline: var(--space-3);
+    top: var(--space-3);
+    max-height: 48%;
+    overflow: auto;
+  }
+
+  .map-badge-row,
+  .map-picker-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .map-offline-note {
+    inset-inline: var(--space-3);
   }
 }
 
