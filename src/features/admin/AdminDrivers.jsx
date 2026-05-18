@@ -2,11 +2,12 @@ function driverName(driver, isArabic) {
   return isArabic ? driver.nameAr || driver.fullName || driver.nameEn : driver.nameEn || driver.fullName || driver.nameAr;
 }
 
-export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, placeholder }) {
-  const drivers = [
+export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, placeholder, adminDrivers }) {
+  const fallbackDrivers = [
     ...state.drivers.map((driver) => ({ ...driver, status: "active", availability: driver.online ? "online" : "offline" })),
     ...approvedCaptains
   ];
+  const drivers = adminDrivers?.length ? adminDrivers : fallbackDrivers;
 
   return (
     <section className="admin-panel">

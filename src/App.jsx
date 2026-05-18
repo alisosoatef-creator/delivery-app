@@ -4,15 +4,18 @@ import { AdminPanel } from "./features/admin/AdminPanel.jsx";
 import { AuthScreen } from "./features/auth/AuthScreen.jsx";
 import { CustomerShell } from "./features/customer/CustomerShell.jsx";
 import { DriverPanel } from "./features/driver/DriverPanel.jsx";
+import { useBootstrap } from "./hooks/useBootstrap.js";
 import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, roleRouteFallback } from "./routes/index.js";
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
+import { createRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
   const pendingAcceptanceTimerRef = useRef(null);
+  const bootstrapQuery = useBootstrap();
   const t = text[state.language];
   const isArabic = state.language === "ar";
 
@@ -27,10 +30,16 @@ function App() {
   }, [isArabic, state.language, state.themeMode]);
 
   useEffect(() => {
-    api("/api/bootstrap")
-      .then((payload) => dispatch({ type: "bootstrap", payload }))
-      .catch(() => dispatch({ type: "patch", patch: { backendLive: false } }));
-  }, []);
+    if (bootstrapQuery.data) {
+      dispatch({ type: "bootstrap", payload: bootstrapQuery.data });
+    }
+  }, [bootstrapQuery.data]);
+
+  useEffect(() => {
+    if (bootstrapQuery.isError) {
+      dispatch({ type: "patch", patch: { backendLive: false } });
+    }
+  }, [bootstrapQuery.isError]);
 
   useEffect(() => {
     const events = new EventSource("/api/events");
@@ -48,10 +57,7 @@ function App() {
   }, []);
 
   useEffect(() => {
-    api("/api/rides/quote", {
-      method: "POST",
-      body: JSON.stringify({ cityId: state.cityId, distanceKm: 5.8 })
-    })
+    requestRideQuote({ cityId: state.cityId, distanceKm: 5.8 })
       .then((quote) => dispatch({ type: "patch", patch: { quote, backendLive: true } }))
       .catch(() => dispatch({ type: "patch", patch: { quote: localQuote(state), backendLive: false } }));
   }, [state.cityId]);
@@ -131,7 +137,7 @@ function App() {
       distanceKm: state.quote.distanceKm
     };
     try {
-      const result = await api("/api/rides", { method: "POST", body: JSON.stringify(payload) });
+      const result = await createRide(payload);
       const backendAcceptedRide =
         result.ride?.status !== "searching" && Boolean(result.ride?.driverId || result.driver?.id);
       const visibleRide = backendAcceptedRide
@@ -186,10 +192,7 @@ function App() {
   async function updateRideStatus(status) {
     if (!state.ride) return;
     try {
-      const payload = await api(`/api/rides/${state.ride.id}/status`, {
-        method: "POST",
-        body: JSON.stringify({ status })
-      });
+      const payload = await patchRideStatus(state.ride.id, status);
       dispatch({ type: "patch", patch: { ride: payload.ride, backendLive: true } });
     } catch {
       dispatch({ type: "patch", patch: { ride: { ...state.ride, status }, backendLive: false } });

@@ -1,0 +1,24 @@
+import { apiGet, apiPatch } from "./apiClient.js";
+
+export async function fetchAdminCustomers() {
+  const payload = await apiGet("/admin/customers");
+  return payload?.customers || [];
+}
+
+export function updateAdminCustomerStatus(customerId, status) {
+  return apiPatch(`/admin/customers/${customerId}/status`, { status });
+}
+
+export async function fetchAdminDrivers() {
+  const payload = await apiGet("/admin/drivers");
+  return payload?.drivers || [];
+}
+
+export function updateAdminDriverStatus(driverId, patch) {
+  return apiPatch(`/admin/drivers/${driverId}/status`, patch);
+}
+
+export async function fetchAdminRides() {
+  const payload = await apiGet("/admin/rides");
+  return payload?.rides || [];
+}

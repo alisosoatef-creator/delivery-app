@@ -1,7 +1,20 @@
 import { mockRideRecords } from "./adminMockData.js";
 
-export function AdminRides({ state, isArabic, placeholder }) {
-  const rides = state.ride
+export function AdminRides({ state, isArabic, placeholder, adminRides }) {
+  const backendRides = adminRides?.map((ride) => ({
+    id: ride.id,
+    customer: ride.customer || ride.customerName || "Customer",
+    captain: ride.captain || ride.driverId || "Pending captain acceptance",
+    pickup: ride.pickup,
+    dropoff: ride.dropoff,
+    fareIls: ride.fareIls,
+    paymentMethod: ride.paymentMethod,
+    status: ride.status,
+    time: ride.createdAt || ride.time || "-"
+  }));
+  const rides = backendRides?.length
+    ? backendRides
+    : state.ride
     ? [
         {
           id: state.ride.id,

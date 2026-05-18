@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
 import { AuthField } from "../auth/AuthField.jsx";
 
 const MIN_CAPTAIN_AGE = 18;
@@ -38,7 +39,14 @@ function createCaptainApplication(form, cityLabel) {
   };
 }
 
+function upsertCaptainApplication(applications, application) {
+  const existingIndex = applications.findIndex((item) => item.id === application.id);
+  if (existingIndex === -1) return [...applications, application];
+  return applications.map((item) => (item.id === application.id ? application : item));
+}
+
 export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) {
+  const { createApplication, isMutating } = useCaptainApplications({ enabled: false });
   const [captainApplicationForm, setCaptainApplicationForm] = useState({
     fullName: "",
     phone: state.phone,
@@ -95,6 +103,11 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
         ]
       };
 
+  const localFallbackMessage = isArabic
+    ? "تعذر الاتصال بالـ Backend، تم حفظ طلبك محليًا مؤقتًا للمراجعة."
+    : "Backend is not reachable, so the application was saved locally for now.";
+  const sendingMessage = isArabic ? "جاري إرسال الطلب..." : "Sending application...";
+
   function updateCaptainApplication(field, value) {
     setCaptainApplicationForm((current) => ({ ...current, [field]: value }));
     setApplicationError("");
@@ -116,7 +129,7 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
     });
   }
 
-  function handleCaptainApplicationSubmit(event) {
+  async function handleCaptainApplicationSubmit(event) {
     event.preventDefault();
     setApplicationError("");
     setApplicationNotice("");
@@ -144,15 +157,34 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
       selectedCity ? (isArabic ? selectedCity.ar : selectedCity.en) : captainApplicationForm.city
     );
 
-    dispatch({
-      type: "patch",
-      patch: {
-        pendingCaptainApplications: [...(state.pendingCaptainApplications || []), application],
-        toast: copy.success
-      }
-    });
-    setSubmittedApplication(application);
-    setApplicationNotice(copy.success);
+    setApplicationNotice(sendingMessage);
+    try {
+      const result = await createApplication(application);
+      const submitted = result?.application || application;
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: upsertCaptainApplication(state.pendingCaptainApplications || [], submitted),
+          backendLive: true,
+          toast: copy.success
+        }
+      });
+      setSubmittedApplication(submitted);
+      setApplicationNotice(copy.success);
+    } catch (error) {
+      const backendError = error?.message || "Backend unavailable";
+      const localApplication = { ...application, backendError };
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: upsertCaptainApplication(state.pendingCaptainApplications || [], localApplication),
+          backendLive: false,
+          toast: localFallbackMessage
+        }
+      });
+      setSubmittedApplication(localApplication);
+      setApplicationNotice(localFallbackMessage);
+    }
   }
 
   return (
@@ -176,7 +208,7 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
 
         {submittedApplication ? (
           <div className="captain-application-summary">
-            <strong>{copy.success}</strong>
+            <strong>{applicationNotice || copy.success}</strong>
             <dl>
               <div>
                 <dt>{isArabic ? "الاسم" : "Name"}</dt>
@@ -242,7 +274,7 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
             {applicationError && <p className="auth-error">{applicationError}</p>}
             <div className="auth-actions">
               <button className="secondary" type="button" onClick={onClose}>{copy.close}</button>
-              <button className="primary" type="submit">{copy.send}</button>
+              <button className="primary" type="submit" disabled={isMutating}>{isMutating ? sendingMessage : copy.send}</button>
             </div>
           </form>
         )}

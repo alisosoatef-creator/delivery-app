@@ -92,9 +92,11 @@ export function reducer(state, action) {
       return {
         ...state,
         backendLive: true,
-        cities: action.payload.cities,
-        drivers: action.payload.drivers,
-        admin: action.payload.admin
+        cities: action.payload.cities || state.cities,
+        drivers: action.payload.drivers || state.drivers,
+        pricingRules: action.payload.pricingRules || state.pricingRules,
+        systemSettings: action.payload.settings || state.systemSettings,
+        admin: action.payload.admin || state.admin
       };
     case "driverLocation":
       return {

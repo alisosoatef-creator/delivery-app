@@ -946,12 +946,27 @@ textarea:focus-visible {
 .admin-header p,
 .admin-panel-title p,
 .admin-empty,
+.admin-loading,
+.admin-error,
 .admin-permission-card p {
   margin: 0;
   color: var(--muted);
   font-size: 13px;
   font-weight: 750;
   line-height: 1.7;
+}
+
+.admin-loading,
+.admin-error {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.admin-error {
+  border-color: rgba(212, 72, 95, .24);
+  color: var(--rose);
 }
 
 .admin-header-actions,

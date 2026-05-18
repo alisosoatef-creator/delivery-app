@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { Toast } from "../../components/ui/index.js";
+import { useAdminData } from "../../hooks/useAdminData.js";
+import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
 import { APP_ROUTE_PATHS } from "../../routes/index.js";
 import { AdminCustomers } from "./AdminCustomers.jsx";
 import { AdminDashboard } from "./AdminDashboard.jsx";
@@ -55,36 +57,104 @@ function captainFromApplication(application, isArabic) {
   };
 }
 
+function mergeById(localItems, remoteItems) {
+  const merged = new Map();
+  localItems.forEach((item) => {
+    if (item?.id) merged.set(item.id, item);
+  });
+  remoteItems.forEach((item) => {
+    if (item?.id) merged.set(item.id, { ...(merged.get(item.id) || {}), ...item });
+  });
+  return [...merged.values()];
+}
+
 export function AdminShell({ state, dispatch, isArabic }) {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [routePath, setRoutePath] = useState(APP_ROUTE_PATHS.admin.dashboard);
-  const pendingCaptainApplications = state.pendingCaptainApplications || [];
+  const adminEnabled = state.role === "admin" && Boolean(state.session);
+  const captainApplicationsQuery = useCaptainApplications({ enabled: adminEnabled });
+  const adminData = useAdminData({ enabled: adminEnabled });
+  const pendingCaptainApplications = useMemo(
+    () => mergeById(state.pendingCaptainApplications || [], captainApplicationsQuery.applications || []),
+    [captainApplicationsQuery.applications, state.pendingCaptainApplications]
+  );
   const approvedCaptains = state.approvedCaptains || [];
-  const supportTickets = state.supportTickets || [];
-  const pricingRules = state.pricingRules || [];
+  const supportTickets = adminData.supportTickets.length ? adminData.supportTickets : state.supportTickets || [];
+  const pricingRules = adminData.pricingRules.length ? adminData.pricingRules : state.pricingRules || [];
+  const adminCustomers = adminData.customers.length ? adminData.customers : mockCustomers;
+  const fallbackDrivers = useMemo(
+    () => [
+      ...state.drivers.map((driver) => ({ ...driver, status: "active", availability: driver.online ? "online" : "offline" })),
+      ...approvedCaptains
+    ],
+    [approvedCaptains, state.drivers]
+  );
+  const adminDrivers = adminData.drivers.length ? adminData.drivers : fallbackDrivers;
+  const adminRides = adminData.rides.length ? adminData.rides : null;
+  const backendError = captainApplicationsQuery.backendError || adminData.backendError;
+  const adminLoading = captainApplicationsQuery.isLoading || adminData.isLoading;
+  const adminMutating = captainApplicationsQuery.isMutating || adminData.isMutating;
 
   const dashboardStats = useMemo(() => {
     const activeRides = state.ride ? 1 : state.admin.activeRides;
     const estimatedRevenue = mockPaymentRecords.reduce((sum, payment) => sum + payment.amountIls, 0) + (state.admin.todayRevenueIls || 0);
+    const rideCount = adminRides?.length || mockRideRecords.length + (state.ride ? 1 : 0);
     return {
-      customers: mockCustomers.length,
-      captains: state.drivers.length + approvedCaptains.length,
+      customers: adminCustomers.length,
+      captains: adminDrivers.length,
       pendingCaptainApplications: pendingCaptainApplications.filter((application) => application.status === "pending").length,
-      todayRides: mockRideRecords.length + (state.ride ? 1 : 0),
+      todayRides: rideCount,
       activeRides,
       estimatedRevenue,
       openSupportTickets: supportTickets.filter((ticket) => ticket.status === "open").length
     };
-  }, [approvedCaptains.length, pendingCaptainApplications, state.admin.activeRides, state.admin.todayRevenueIls, state.drivers.length, state.ride, supportTickets]);
+  }, [adminCustomers.length, adminDrivers.length, adminRides, pendingCaptainApplications, state.admin.activeRides, state.admin.todayRevenueIls, state.ride, supportTickets]);
 
   function switchSection(section) {
     setActiveSection(section.key);
     setRoutePath(section.path);
   }
 
-  function approveCaptainApplication(applicationId) {
+  async function approveCaptainApplication(applicationId) {
     const application = pendingCaptainApplications.find((item) => item.id === applicationId);
     if (!application) return;
+
+    const remoteReviewedAt = new Date().toISOString();
+    try {
+      const result = await captainApplicationsQuery.approveApplication(applicationId);
+      const approvedApplication = result?.application || { ...application, status: "approved", reviewedAt: remoteReviewedAt };
+      const captain = result?.captain || captainFromApplication(approvedApplication, isArabic);
+      const alreadyApproved = approvedCaptains.some((item) => item.applicationId === applicationId || item.id === captain.id);
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: pendingCaptainApplications.map((item) =>
+            item.id === applicationId ? approvedApplication : item
+          ),
+          approvedCaptains: alreadyApproved ? approvedCaptains : [...approvedCaptains, captain],
+          backendLive: true,
+          toast: isArabic ? "تم قبول طلب الكابتن عبر الـ Backend بدون تسجيل دخول مباشر." : "Captain application approved through the Backend without direct sign-in."
+        }
+      });
+      return;
+    } catch (error) {
+      const backendError = error?.message || "Backend unavailable";
+      const approvedApplication = { ...application, status: "approved", reviewedAt: remoteReviewedAt, backendError };
+      const alreadyApproved = approvedCaptains.some((captain) => captain.applicationId === applicationId);
+      const nextCaptains = alreadyApproved ? approvedCaptains : [...approvedCaptains, captainFromApplication(approvedApplication, isArabic)];
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: pendingCaptainApplications.map((item) =>
+            item.id === applicationId ? approvedApplication : item
+          ),
+          approvedCaptains: nextCaptains,
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم قبول الطلب محليًا مؤقتًا." : "Backend unavailable; application approved locally for now."
+        }
+      });
+      return;
+    }
 
     const reviewedAt = new Date().toISOString();
     const nextApplications = pendingCaptainApplications.map((item) =>
@@ -103,7 +173,38 @@ export function AdminShell({ state, dispatch, isArabic }) {
     });
   }
 
-  function rejectCaptainApplication(applicationId) {
+  async function rejectCaptainApplication(applicationId) {
+    const application = pendingCaptainApplications.find((item) => item.id === applicationId);
+    const remoteReviewedAt = new Date().toISOString();
+    try {
+      const result = await captainApplicationsQuery.rejectApplication(applicationId);
+      const rejectedApplication = result?.application || { ...application, id: applicationId, status: "rejected", reviewedAt: remoteReviewedAt };
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: pendingCaptainApplications.map((item) =>
+            item.id === applicationId ? { ...item, ...rejectedApplication } : item
+          ),
+          backendLive: true,
+          toast: isArabic ? "تم رفض الطلب عبر الـ Backend وبقي محفوظًا للمراجعة." : "Application rejected through the Backend and kept for review."
+        }
+      });
+      return;
+    } catch (error) {
+      const backendError = error?.message || "Backend unavailable";
+      dispatch({
+        type: "patch",
+        patch: {
+          pendingCaptainApplications: pendingCaptainApplications.map((item) =>
+            item.id === applicationId ? { ...item, status: "rejected", reviewedAt: remoteReviewedAt, backendError } : item
+          ),
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم رفض الطلب محليًا مؤقتًا." : "Backend unavailable; application rejected locally for now."
+        }
+      });
+      return;
+    }
+
     const reviewedAt = new Date().toISOString();
     dispatch({
       type: "patch",
@@ -116,7 +217,30 @@ export function AdminShell({ state, dispatch, isArabic }) {
     });
   }
 
-  function closeSupportTicket(ticketId) {
+  async function closeSupportTicket(ticketId) {
+    try {
+      await adminData.closeSupportTicketRemote({ ticketId, status: "closed" });
+      dispatch({
+        type: "patch",
+        patch: {
+          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status: "closed" } : ticket)),
+          backendLive: true,
+          toast: isArabic ? "تم إغلاق التذكرة عبر الـ Backend." : "Ticket closed through the Backend."
+        }
+      });
+      return;
+    } catch {
+      dispatch({
+        type: "patch",
+        patch: {
+          supportTickets: supportTickets.map((ticket) => (ticket.id === ticketId ? { ...ticket, status: "closed" } : ticket)),
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم إغلاق التذكرة محليًا." : "Backend unavailable; ticket closed locally."
+        }
+      });
+      return;
+    }
+
     dispatch({
       type: "patch",
       patch: {
@@ -126,7 +250,33 @@ export function AdminShell({ state, dispatch, isArabic }) {
     });
   }
 
-  function updatePricingRule(ruleId, patch) {
+  async function updatePricingRule(ruleId, patch) {
+    const currentRule = pricingRules.find((rule) => rule.id === ruleId || rule.cityId === ruleId);
+    const cityId = currentRule?.cityId || ruleId;
+    try {
+      const result = await adminData.updatePricingRuleRemote({ cityId, patch });
+      const updatedRule = result?.rule || { ...currentRule, ...patch, updatedAt: new Date().toISOString() };
+      dispatch({
+        type: "patch",
+        patch: {
+          pricingRules: pricingRules.map((rule) => (rule.cityId === cityId ? updatedRule : rule)),
+          backendLive: true,
+          toast: isArabic ? "تم تحديث السعر عبر الـ Backend." : "Pricing updated through the Backend."
+        }
+      });
+      return;
+    } catch {
+      dispatch({
+        type: "patch",
+        patch: {
+          pricingRules: pricingRules.map((rule) => (rule.id === ruleId ? { ...rule, ...patch, updatedAt: new Date().toISOString() } : rule)),
+          backendLive: false,
+          toast: isArabic ? "تعذر الاتصال بالـ Backend، تم تحديث السعر محليًا." : "Backend unavailable; pricing updated locally."
+        }
+      });
+      return;
+    }
+
     dispatch({
       type: "patch",
       patch: {
@@ -157,8 +307,14 @@ export function AdminShell({ state, dispatch, isArabic }) {
     dashboardStats,
     pendingCaptainApplications,
     approvedCaptains,
+    adminCustomers,
+    adminDrivers,
+    adminRides,
     supportTickets,
     pricingRules,
+    backendError,
+    adminLoading,
+    adminMutating,
     cityName,
     approveCaptainApplication,
     rejectCaptainApplication,
@@ -183,6 +339,14 @@ export function AdminShell({ state, dispatch, isArabic }) {
           isArabic={isArabic}
           activeSection={ADMIN_SECTIONS.find((section) => section.key === activeSection)}
         />
+        {adminLoading && (
+          <p className="admin-loading">{isArabic ? "جاري تحميل بيانات الإدارة من الـ Backend..." : "Loading admin data from the Backend..."}</p>
+        )}
+        {backendError && (
+          <p className="admin-error">
+            {isArabic ? "تعذر الاتصال بالـ Backend، يتم استخدام البيانات المحلية مؤقتًا." : "Backend is unavailable, using local data for now."}
+          </p>
+        )}
         {activeSection === "dashboard" && <AdminDashboard {...sharedAdminProps} />}
         {activeSection === "applications" && <AdminDriverApplications {...sharedAdminProps} />}
         {activeSection === "customers" && <AdminCustomers {...sharedAdminProps} />}

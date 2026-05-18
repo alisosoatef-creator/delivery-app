@@ -9,6 +9,9 @@ export function AdminDriverApplications({
   pendingCaptainApplications,
   approveCaptainApplication,
   rejectCaptainApplication,
+  adminLoading,
+  backendError,
+  adminMutating,
   isArabic
 }) {
   const [selectedApplication, setSelectedApplication] = useState(null);
@@ -22,6 +25,13 @@ export function AdminDriverApplications({
         </div>
         <span>{pendingCaptainApplications.length}</span>
       </div>
+
+      {adminLoading && <p className="admin-loading">{isArabic ? "جاري تحميل طلبات الكباتن..." : "Loading captain applications..."}</p>}
+      {backendError && (
+        <p className="admin-error">
+          {isArabic ? "تعذر جلب الطلبات من الـ Backend، تظهر البيانات المحلية مؤقتًا." : "Could not load Backend applications, showing local data for now."}
+        </p>
+      )}
 
       <div className="admin-data-table">
         <div className="admin-table-row admin-table-head">
@@ -40,10 +50,10 @@ export function AdminDriverApplications({
             <span>{application.vehicleType}</span>
             <b className={`admin-badge ${application.status}`}>{application.status}</b>
             <div className="admin-action-row">
-              <button className="primary" type="button" onClick={() => approveCaptainApplication(application.id)} disabled={application.status === "approved"}>
+              <button className="primary" type="button" onClick={() => approveCaptainApplication(application.id)} disabled={adminMutating || application.status === "approved"}>
                 {isArabic ? "قبول" : "Approve"}
               </button>
-              <button className="danger-button" type="button" onClick={() => rejectCaptainApplication(application.id)} disabled={application.status === "rejected"}>
+              <button className="danger-button" type="button" onClick={() => rejectCaptainApplication(application.id)} disabled={adminMutating || application.status === "rejected"}>
                 {isArabic ? "رفض" : "Reject"}
               </button>
               <button className="secondary" type="button" onClick={() => setSelectedApplication(application)}>

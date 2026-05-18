@@ -80,14 +80,28 @@ const sourceOrder = [
   "src/utils/paymentUtils.js",
   "src/utils/i18n.js",
   "src/store/appState.js",
+  "src/services/apiClient.js",
   "src/services/api.js",
-  "src/services/rides.js"
+  "src/services/rides.js",
+  "src/services/authApi.js",
+  "src/services/captainApplicationsApi.js",
+  "src/services/adminApi.js",
+  "src/services/ridesApi.js",
+  "src/services/supportApi.js",
+  "src/services/pricingApi.js",
+  "src/services/bootstrapApi.js",
+  "src/hooks/useAuthApi.js",
+  "src/hooks/useCaptainApplications.js",
+  "src/hooks/useAdminData.js",
+  "src/hooks/useRidesApi.js",
+  "src/hooks/useBootstrap.js"
 ];
 
 const appSource = sourceOrder
   .filter((file) => fs.existsSync(file))
   .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
   .join("\n");
+const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
 const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
@@ -235,6 +249,48 @@ for (const adminStyleToken of [
 ]) {
   if (!stylesSource.includes(adminStyleToken)) {
     throw new Error(`Admin system styles are missing: ${adminStyleToken}`);
+  }
+}
+
+if (!packageJson.dependencies?.["@tanstack/react-query"]) {
+  throw new Error("Phase 7A must install @tanstack/react-query");
+}
+
+for (const queryProviderToken of [
+  "QueryClient",
+  "QueryClientProvider",
+  "<QueryClientProvider client={queryClient}>"
+]) {
+  if (!mainSource.includes(queryProviderToken)) {
+    throw new Error(`React Query provider is missing: ${queryProviderToken}`);
+  }
+}
+
+for (const serviceLayerToken of [
+  'API_BASE = "/api"',
+  "apiGet",
+  "apiPost",
+  "apiPatch",
+  "ApiError",
+  "createCaptainApplication",
+  "fetchCaptainApplications",
+  "approveCaptainApplication",
+  "rejectCaptainApplication",
+  "fetchAdminCustomers",
+  "fetchAdminDrivers",
+  "fetchAdminRides",
+  "fetchSupportTickets",
+  "fetchPricingRules",
+  "fetchBootstrap",
+  "requestRideQuote",
+  "useQuery",
+  "useMutation",
+  "useQueryClient",
+  "invalidateQueries",
+  "backendError"
+]) {
+  if (!appSource.includes(serviceLayerToken)) {
+    throw new Error(`Phase 7A API/query integration is missing: ${serviceLayerToken}`);
   }
 }
 const authStart = appSource.indexOf("function AuthScreen");
