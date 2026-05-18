@@ -33,6 +33,7 @@ const sourceOrder = [
   "src/routes/index.js",
   "src/features/auth/AuthScreen.jsx",
   "src/features/auth/AuthField.jsx",
+  "src/features/driver/CaptainApplicationPanel.jsx",
   "src/components/layout/Shell.jsx",
   "src/features/customer/CustomerShell.jsx",
   "src/components/ui/SettingsIcon.jsx",
@@ -175,22 +176,9 @@ for (const blockedDriverSignupToken of ['login("driver")', 'role: "driver"', "se
   }
 }
 
-for (const blockedCaptainApplicationToken of [
-  "auth-mode-captain",
-  "captainRequestSubmitted",
-  "captainForm",
-  "handleCaptainRequest",
-  "captain-request-card",
-  "name=\"captainFullName\"",
-  "name=\"captainPhone\"",
-  "name=\"captainCity\"",
-  "name=\"captainAge\"",
-  "name=\"captainVehicleType\"",
-  "name=\"captainVehicleNumber\"",
-  "name=\"captainNotes\""
-]) {
+for (const blockedCaptainApplicationToken of ["role: \"driver\"", "session: { role: \"driver\"", "login(\"driver\")"]) {
   if (authSource.includes(blockedCaptainApplicationToken)) {
-    throw new Error(`AuthScreen must keep captain signup as a placeholder for this phase: ${blockedCaptainApplicationToken}`);
+    throw new Error(`Captain application must not create direct driver access: ${blockedCaptainApplicationToken}`);
   }
 }
 
@@ -199,11 +187,34 @@ for (const authPhaseThreeToken of [
   "isReasonableAge",
   "pendingUser",
   "verifiedUser",
-  "handleCaptainPlaceholder",
-  "captainPlaceholder"
+  "setCaptainApplicationOpen(true)"
 ]) {
   if (!appSource.includes(authPhaseThreeToken)) {
     throw new Error(`Customer auth phase three is missing: ${authPhaseThreeToken}`);
+  }
+}
+
+for (const captainApplicationToken of [
+  "function CaptainApplicationPanel",
+  "pendingCaptainApplications",
+  "captainApplicationForm",
+  "createCaptainApplication",
+  "status: \"pending\"",
+  "createdAt",
+  "name=\"captainFullName\"",
+  "name=\"captainPhone\"",
+  "name=\"captainCity\"",
+  "name=\"captainAge\"",
+  "name=\"captainVehicleType\"",
+  "name=\"captainVehiclePlate\"",
+  "name=\"captainExperienceYears\"",
+  "name=\"captainNotes\"",
+  "captain-application-panel",
+  "captain-application-modal",
+  "تم إرسال طلبك بنجاح. سيتم مراجعة بياناتك من الإدارة والتواصل معك."
+]) {
+  if (!appSource.includes(captainApplicationToken)) {
+    throw new Error(`Captain application flow is missing: ${captainApplicationToken}`);
   }
 }
 
@@ -211,8 +222,15 @@ if (!stylesSource.includes(".welcome-auth")) {
   throw new Error("Welcome/auth screen styles are missing");
 }
 
-if (!stylesSource.includes(".welcome-auth-support")) {
-  throw new Error("Auth support placeholder styles are missing");
+for (const captainStyleToken of [
+  ".welcome-auth-support",
+  ".captain-application-modal",
+  ".captain-application-panel",
+  ".captain-application-summary"
+]) {
+  if (!stylesSource.includes(captainStyleToken)) {
+    throw new Error(`Captain application styles are missing: ${captainStyleToken}`);
+  }
 }
 
 const customerShellStart = appSource.indexOf("function CustomerShell");

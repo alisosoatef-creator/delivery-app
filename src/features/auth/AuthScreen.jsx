@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Toast } from "../../components/ui/index.js";
+import { CaptainApplicationPanel } from "../driver/CaptainApplicationPanel.jsx";
 import { AuthField } from "./AuthField.jsx";
 
 const DEMO_OTP = "1234";
@@ -40,6 +41,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
   const [otpCode, setOtpCode] = useState("");
   const [pendingUser, setPendingUser] = useState(null);
   const [verifiedUser, setVerifiedUser] = useState(null);
+  const [captainApplicationOpen, setCaptainApplicationOpen] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
 
@@ -58,7 +60,6 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
           "أنشئ حسابًا جديدًا وتأكد من استخدام كلمة السر نفسها بعد OTP."
         ],
         captainJoin: "انضم ككابتن توصيل",
-        captainPlaceholder: "طلبات الكباتن سيتم تجهيزها لاحقًا من الإدارة.",
         success: "تم التحقق من الحساب. يمكنك تسجيل الدخول الآن.",
         loginSuccess: "تم تسجيل الدخول بنجاح",
         missing: "يرجى تعبئة كل الحقول المطلوبة.",
@@ -82,7 +83,6 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
           "Create a new account and use the same password after OTP."
         ],
         captainJoin: "Join as delivery captain",
-        captainPlaceholder: "Captain applications will be prepared later by management.",
         success: "Account verified. You can log in now.",
         loginSuccess: "Logged in successfully",
         missing: "Please fill all required fields.",
@@ -212,10 +212,10 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     dispatch({ type: "toast", message: copy.supportMessages[index] });
   }
 
-  function handleCaptainPlaceholder() {
+  function openCaptainApplication() {
     setAuthError("");
-    setAuthNotice(copy.captainPlaceholder);
-    dispatch({ type: "toast", message: copy.captainPlaceholder });
+    setAuthNotice("");
+    setCaptainApplicationOpen(true);
   }
 
   const supportItems = [...copy.support, copy.captainJoin];
@@ -247,7 +247,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             <button
               type="button"
               key={item}
-              onClick={() => (index === copy.support.length ? handleCaptainPlaceholder() : showSupportMessage(index))}
+              onClick={() => (index === copy.support.length ? openCaptainApplication() : showSupportMessage(index))}
             >
               <span>{index + 1}</span>
               <strong>{item}</strong>
@@ -363,6 +363,14 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
 
         {authNotice && authMode !== "login" && <p className="auth-notice">{authNotice}</p>}
       </section>
+      {captainApplicationOpen && (
+        <CaptainApplicationPanel
+          state={state}
+          dispatch={dispatch}
+          isArabic={isArabic}
+          onClose={() => setCaptainApplicationOpen(false)}
+        />
+      )}
       <Toast message={state.toast} />
     </main>
   );

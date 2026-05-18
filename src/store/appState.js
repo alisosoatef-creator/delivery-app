@@ -27,6 +27,7 @@ export const initialState = {
   customerLocation: { ...NABLUS_CENTER },
   locationStatus: "default",
   driverOnline: false,
+  pendingCaptainApplications: [],
   admin: { activeRides: 3, onlineDrivers: 2, todayRevenueIls: 83, recentRides: [] },
   backendLive: false,
   liveTicks: 0,
