@@ -2,6 +2,29 @@ import { useState } from "react";
 import { Toast } from "../../components/ui/index.js";
 import { AuthField } from "./AuthField.jsx";
 
+const DEMO_OTP = "1234";
+const MIN_CUSTOMER_AGE = 1;
+const MAX_CUSTOMER_AGE = 120;
+
+function cleanValue(value) {
+  return String(value || "").trim();
+}
+
+function isReasonableAge(value) {
+  const ageNumber = Number(value);
+  return Number.isInteger(ageNumber) && ageNumber >= MIN_CUSTOMER_AGE && ageNumber <= MAX_CUSTOMER_AGE;
+}
+
+function matchesVerifiedUser(identifier, password, verifiedUser) {
+  if (!verifiedUser) return false;
+
+  const normalizedIdentifier = cleanValue(identifier).toLowerCase();
+  const normalizedPhone = cleanValue(verifiedUser.phone).toLowerCase();
+  const normalizedName = cleanValue(verifiedUser.fullName).toLowerCase();
+
+  return password === verifiedUser.password && (normalizedIdentifier === normalizedPhone || normalizedIdentifier === normalizedName);
+}
+
 export function AuthScreen({ state, dispatch, t, isArabic }) {
   const [authMode, setAuthMode] = useState("login");
   const [registerForm, setRegisterForm] = useState({
@@ -13,68 +36,61 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     password: "",
     confirmPassword: ""
   });
-  const [captainForm, setCaptainForm] = useState({
-    fullName: "",
-    phone: state.phone,
-    city: state.cityId,
-    age: "",
-    vehicleType: "",
-    vehicleNumber: "",
-    notes: ""
-  });
   const [loginForm, setLoginForm] = useState({ identifier: "", password: "" });
   const [otpCode, setOtpCode] = useState("");
   const [pendingUser, setPendingUser] = useState(null);
   const [verifiedUser, setVerifiedUser] = useState(null);
-  const [captainRequestSubmitted, setCaptainRequestSubmitted] = useState(false);
   const [authError, setAuthError] = useState("");
   const [authNotice, setAuthNotice] = useState("");
+
   const copy = isArabic
     ? {
-        description: "تنقل آمن وسريع داخل مدينتك، من طلب المشوار حتى متابعة السائق والدفع بطريقة واضحة.",
+        description: "تجربة دخول خاصة بالزبون فقط. أنشئ حسابك أو سجل دخولك، وبعدها تنتقل مباشرة إلى واجهة طلب المشوار.",
         trust: "واجهة الزبون",
-        headline: "ابدأ رحلتك بعد تسجيل الدخول فقط",
-        loginHelp: "ادخل باسمك أو رقم هاتفك للوصول إلى واجهة طلب المشوار.",
-        registerHelp: "أنشئ حسابك ثم تحقق برمز OTP التجريبي قبل العودة لتسجيل الدخول.",
-        otpHelp: "أدخل رمز التحقق المرسل. في هذه النسخة التجريبية استخدم 1234.",
+        headline: "ابدأ بعد تسجيل الدخول",
+        loginHelp: "استخدم الاسم الكامل أو رقم الهاتف للحساب الذي تم تأكيده برمز OTP.",
+        registerHelp: "أدخل بيانات الزبون الأساسية، ثم تحقق برمز OTP التجريبي قبل تسجيل الدخول.",
+        otpHelp: "أدخل رمز التحقق التجريبي لإكمال إنشاء الحساب. الرمز في هذه المرحلة هو 1234.",
         support: ["المساعدة والدعم", "تواصل مع الإدارة", "مشكلة في الدخول؟"],
-        captainJoin: "طلب الانضمام للكباتن",
-        captainTitle: "انضم ككابتن توصيل",
-        captainIntro: "قدّم طلبك الآن وسيتم التواصل معك من الإدارة بعد مراجعة بياناتك.",
-        captainReview: "حساب الكابتن لا يتم تفعيله إلا بعد موافقة الإدارة/صاحب التطبيق.",
-        captainSuccess: "تم إرسال طلبك للإدارة وهو الآن قيد المراجعة.",
-        captainCta: "إرسال الطلب للإدارة",
-        captainMissing: "يرجى تعبئة بيانات طلب الكابتن الأساسية.",
+        supportMessages: [
+          "الدعم جاهز لمساعدتك داخل التطبيق.",
+          "سيتم تحويل طلبك إلى الإدارة في النسخة المتصلة.",
+          "أنشئ حسابًا جديدًا وتأكد من استخدام كلمة السر نفسها بعد OTP."
+        ],
+        captainJoin: "انضم ككابتن توصيل",
+        captainPlaceholder: "طلبات الكباتن سيتم تجهيزها لاحقًا من الإدارة.",
         success: "تم التحقق من الحساب. يمكنك تسجيل الدخول الآن.",
         loginSuccess: "تم تسجيل الدخول بنجاح",
         missing: "يرجى تعبئة كل الحقول المطلوبة.",
+        invalidAge: "يرجى إدخال عمر منطقي بين 1 و120.",
         passwordMismatch: "كلمتا السر غير متطابقتين.",
-        passwordShort: "كلمة السر يجب أن تكون 6 أحرف على الأقل.",
         wrongOtp: "رمز التحقق غير صحيح.",
-        wrongLogin: "بيانات الدخول لا تطابق الحساب الذي تم إنشاؤه."
+        noVerifiedAccount: "يجب إنشاء حساب وتأكيده برمز OTP قبل تسجيل الدخول.",
+        wrongLogin: "بيانات الدخول لا تطابق الحساب الذي تم تأكيده."
       }
     : {
-        description: "Safe, fast rides in your city, from request to driver tracking and clear payment.",
+        description: "A customer-only entry experience. Create an account or sign in, then move straight into ride request.",
         trust: "Customer app",
-        headline: "Start your trip only after sign in",
-        loginHelp: "Enter your name or phone number to access the ride request interface.",
-        registerHelp: "Create your account, verify with the demo OTP, then return to login.",
-        otpHelp: "Enter the verification code. In this demo build use 1234.",
+        headline: "Start after sign in",
+        loginHelp: "Use the full name or phone number for the account verified with OTP.",
+        registerHelp: "Enter the customer details, then verify with the demo OTP before signing in.",
+        otpHelp: "Enter the demo verification code to complete account creation. For this phase use 1234.",
         support: ["Help and support", "Contact management", "Having login trouble?"],
+        supportMessages: [
+          "Support is ready to help inside the app.",
+          "Your request will be routed to management in the connected build.",
+          "Create a new account and use the same password after OTP."
+        ],
         captainJoin: "Join as delivery captain",
-        captainTitle: "Apply as a delivery captain",
-        captainIntro: "Apply now and management will contact you after reviewing your details.",
-        captainReview: "Captain accounts are activated only after approval from management or the app owner.",
-        captainSuccess: "Your request was sent to management and is now under review.",
-        captainCta: "Send request to management",
-        captainMissing: "Please fill the required captain request details.",
+        captainPlaceholder: "Captain applications will be prepared later by management.",
         success: "Account verified. You can log in now.",
         loginSuccess: "Logged in successfully",
         missing: "Please fill all required fields.",
+        invalidAge: "Please enter a reasonable age between 1 and 120.",
         passwordMismatch: "Passwords do not match.",
-        passwordShort: "Password must be at least 6 characters.",
         wrongOtp: "Wrong verification code.",
-        wrongLogin: "Login details do not match the registered account."
+        noVerifiedAccount: "Create and verify an account with OTP before signing in.",
+        wrongLogin: "Login details do not match the verified account."
       };
 
   function switchMode(mode) {
@@ -91,35 +107,42 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     setLoginForm((current) => ({ ...current, [field]: value }));
   }
 
-  function updateCaptain(field, value) {
-    setCaptainForm((current) => ({ ...current, [field]: value }));
-    setCaptainRequestSubmitted(false);
-  }
-
   function handleRegister(event) {
     event.preventDefault();
     setAuthError("");
     setAuthNotice("");
 
     const requiredFields = ["fullName", "age", "birthDate", "city", "phone", "password", "confirmPassword"];
-    const hasMissingField = requiredFields.some((field) => !String(registerForm[field] || "").trim());
+    const hasMissingField = requiredFields.some((field) => !cleanValue(registerForm[field]));
     if (hasMissingField) {
       setAuthError(copy.missing);
       return;
     }
-    if (registerForm.password.length < 6) {
-      setAuthError(copy.passwordShort);
+
+    if (!isReasonableAge(registerForm.age)) {
+      setAuthError(copy.invalidAge);
       return;
     }
+
     if (registerForm.password !== registerForm.confirmPassword) {
       setAuthError(copy.passwordMismatch);
       return;
     }
 
-    setPendingUser(registerForm);
+    setPendingUser({
+      fullName: cleanValue(registerForm.fullName),
+      age: Number(registerForm.age),
+      birthDate: cleanValue(registerForm.birthDate),
+      city: cleanValue(registerForm.city),
+      phone: cleanValue(registerForm.phone),
+      password: registerForm.password
+    });
     setOtpCode("");
     setAuthMode("otp");
-    dispatch({ type: "toast", message: isArabic ? "رمز التحقق التجريبي 1234" : "Demo verification code 1234" });
+    dispatch({
+      type: "toast",
+      message: isArabic ? `رمز التحقق التجريبي ${DEMO_OTP}` : `Demo verification code ${DEMO_OTP}`
+    });
   }
 
   function handleOtp(event) {
@@ -127,15 +150,23 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     setAuthError("");
     setAuthNotice("");
 
-    if (otpCode.trim() !== "1234") {
+    if (!pendingUser) {
+      setAuthError(copy.missing);
+      setAuthMode("register");
+      return;
+    }
+
+    if (cleanValue(otpCode) !== DEMO_OTP) {
       setAuthError(copy.wrongOtp);
       return;
     }
 
     setVerifiedUser(pendingUser);
-    setLoginForm({ identifier: pendingUser?.phone || "", password: "" });
+    setPendingUser(null);
+    setLoginForm({ identifier: pendingUser.phone, password: "" });
     setAuthMode("login");
     setAuthNotice(copy.success);
+    dispatch({ type: "toast", message: copy.success });
   }
 
   function handleLogin(event) {
@@ -143,26 +174,20 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     setAuthError("");
     setAuthNotice("");
 
-    if (!loginForm.identifier.trim() || !loginForm.password.trim()) {
+    if (!cleanValue(loginForm.identifier) || !cleanValue(loginForm.password)) {
       setAuthError(copy.missing);
       return;
     }
 
-    const normalizedIdentifier = loginForm.identifier.trim();
-    if (
-      verifiedUser &&
-      (loginForm.password !== verifiedUser.password ||
-        (normalizedIdentifier !== verifiedUser.phone && normalizedIdentifier !== verifiedUser.fullName))
-    ) {
-      setAuthError(copy.wrongLogin);
+    if (!verifiedUser) {
+      setAuthError(copy.noVerifiedAccount);
       return;
     }
 
-    const sessionUser = verifiedUser || {
-      fullName: normalizedIdentifier,
-      phone: normalizedIdentifier,
-      city: state.cityId
-    };
+    if (!matchesVerifiedUser(loginForm.identifier, loginForm.password, verifiedUser)) {
+      setAuthError(copy.wrongLogin);
+      return;
+    }
 
     dispatch({
       type: "patch",
@@ -170,53 +195,33 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
         role: "customer",
         session: {
           role: "customer",
-          name: sessionUser.fullName,
-          phone: sessionUser.phone,
-          verified: Boolean(verifiedUser)
+          name: verifiedUser.fullName,
+          phone: verifiedUser.phone,
+          verified: true
         },
-        phone: sessionUser.phone,
-        cityId: sessionUser.city || state.cityId,
+        phone: verifiedUser.phone,
+        cityId: verifiedUser.city || state.cityId,
         toast: copy.loginSuccess
       }
     });
   }
 
-  function handleCaptainRequest(event) {
-    event.preventDefault();
+  function showSupportMessage(index) {
     setAuthError("");
     setAuthNotice("");
-
-    const requiredFields = ["fullName", "phone", "city", "age", "vehicleType"];
-    const hasMissingField = requiredFields.some((field) => !String(captainForm[field] || "").trim());
-    if (hasMissingField) {
-      setAuthError(copy.captainMissing);
-      return;
-    }
-
-    setCaptainRequestSubmitted(true);
-    setAuthNotice(copy.captainSuccess);
-    dispatch({ type: "toast", message: copy.captainSuccess });
+    dispatch({ type: "toast", message: copy.supportMessages[index] });
   }
 
-  function showSupportMessage(index) {
-    const messages = isArabic
-      ? [
-          "الدعم جاهز لمساعدتك داخل التطبيق.",
-          "سيتم تحويل طلبك إلى الإدارة في النسخة المتصلة.",
-          "جرّب إنشاء حساب جديد أو استخدم كلمة السر التي سجلت بها."
-        ]
-      : [
-          "Support is ready to help inside the app.",
-          "Your request will be routed to management in the connected build.",
-          "Try registering a new account or use the password you created."
-        ];
-    dispatch({ type: "toast", message: messages[index] });
+  function handleCaptainPlaceholder() {
+    setAuthError("");
+    setAuthNotice(copy.captainPlaceholder);
+    dispatch({ type: "toast", message: copy.captainPlaceholder });
   }
 
   const supportItems = [...copy.support, copy.captainJoin];
 
   return (
-    <main className={`welcome-auth auth-mode-${authMode}`} data-auth-states="auth-mode-login auth-mode-register auth-mode-otp auth-mode-captain">
+    <main className={`welcome-auth auth-mode-${authMode}`} data-auth-states="auth-mode-login auth-mode-register auth-mode-otp">
       <section className="welcome-auth-hero">
         <div className="welcome-auth-top">
           <div className="welcome-brand">
@@ -242,7 +247,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             <button
               type="button"
               key={item}
-              onClick={() => (index === copy.support.length ? switchMode("captain") : showSupportMessage(index))}
+              onClick={() => (index === copy.support.length ? handleCaptainPlaceholder() : showSupportMessage(index))}
             >
               <span>{index + 1}</span>
               <strong>{item}</strong>
@@ -308,7 +313,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             </div>
             <div className="auth-field-grid">
               <AuthField label={isArabic ? "الاسم الكامل" : "Full name"} name="fullName" value={registerForm.fullName} onChange={(value) => updateRegister("fullName", value)} autoComplete="name" />
-              <AuthField label={isArabic ? "العمر" : "Age"} name="age" type="number" min="1" value={registerForm.age} onChange={(value) => updateRegister("age", value)} inputMode="numeric" />
+              <AuthField label={isArabic ? "العمر" : "Age"} name="age" type="number" min={MIN_CUSTOMER_AGE} max={MAX_CUSTOMER_AGE} value={registerForm.age} onChange={(value) => updateRegister("age", value)} inputMode="numeric" />
               <AuthField label={isArabic ? "تاريخ الميلاد" : "Birth date"} name="birthDate" type="date" value={registerForm.birthDate} onChange={(value) => updateRegister("birthDate", value)} />
               <label className="field auth-field">
                 <span>{isArabic ? "المدينة" : "City"}</span>
@@ -337,7 +342,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             </div>
             <div className="otp-preview">
               <span>{isArabic ? "رمز تجريبي آمن" : "Safe demo code"}</span>
-              <strong>1234</strong>
+              <strong>{DEMO_OTP}</strong>
             </div>
             <AuthField
               label={isArabic ? "أدخل رمز OTP" : "Enter OTP"}
@@ -356,64 +361,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
           </form>
         )}
 
-        {authMode === "captain" && (
-          <form className="auth-form auth-mode-captain captain-request-card" onSubmit={handleCaptainRequest}>
-            <div className="auth-form-title">
-              <h2>{copy.captainTitle}</h2>
-              <p>{copy.captainIntro}</p>
-            </div>
-            <div className="captain-review-note">
-              <span>{isArabic ? "مراجعة إدارية" : "Management review"}</span>
-              <strong>{copy.captainReview}</strong>
-            </div>
-            <div className="auth-field-grid">
-              <AuthField label={isArabic ? "الاسم الكامل" : "Full name"} name="captainFullName" value={captainForm.fullName} onChange={(value) => updateCaptain("fullName", value)} autoComplete="name" />
-              <AuthField label={isArabic ? "رقم الهاتف" : "Phone number"} name="captainPhone" type="tel" value={captainForm.phone} onChange={(value) => updateCaptain("phone", value)} autoComplete="tel" />
-              <label className="field auth-field">
-                <span>{isArabic ? "المدينة" : "City"}</span>
-                <select name="captainCity" value={captainForm.city} onChange={(event) => updateCaptain("city", event.target.value)}>
-                  {state.cities.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {isArabic ? city.ar : city.en}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <AuthField label={isArabic ? "العمر" : "Age"} name="captainAge" type="number" min="18" value={captainForm.age} onChange={(value) => updateCaptain("age", value)} inputMode="numeric" />
-              <label className="field auth-field">
-                <span>{isArabic ? "نوع المركبة" : "Vehicle type"}</span>
-                <select name="captainVehicleType" value={captainForm.vehicleType} onChange={(event) => updateCaptain("vehicleType", event.target.value)}>
-                  <option value="">{isArabic ? "اختر نوع المركبة" : "Select vehicle type"}</option>
-                  <option value="car">{isArabic ? "سيارة" : "Car"}</option>
-                  <option value="motorcycle">{isArabic ? "دراجة نارية" : "Motorcycle"}</option>
-                  <option value="van">{isArabic ? "فان / مركبة توصيل" : "Van / delivery vehicle"}</option>
-                </select>
-              </label>
-              <AuthField label={isArabic ? "رقم المركبة إن وجد" : "Vehicle number if available"} name="captainVehicleNumber" value={captainForm.vehicleNumber} onChange={(value) => updateCaptain("vehicleNumber", value)} />
-              <label className="field auth-field captain-notes-field">
-                <span>{isArabic ? "ملاحظات اختيارية" : "Optional notes"}</span>
-                <textarea
-                  name="captainNotes"
-                  value={captainForm.notes}
-                  onChange={(event) => updateCaptain("notes", event.target.value)}
-                  rows="4"
-                />
-              </label>
-            </div>
-            {authNotice && <p className="auth-notice">{authNotice}</p>}
-            {authError && <p className="auth-error">{authError}</p>}
-            {captainRequestSubmitted && (
-              <div className="captain-success-card">
-                <strong>{copy.captainSuccess}</strong>
-                <span>{copy.captainReview}</span>
-              </div>
-            )}
-            <div className="auth-actions">
-              <button className="secondary" type="button" onClick={() => switchMode("login")}>{isArabic ? "العودة للدخول" : "Back to login"}</button>
-              <button className="primary" type="submit">{copy.captainCta}</button>
-            </div>
-          </form>
-        )}
+        {authNotice && authMode !== "login" && <p className="auth-notice">{authNotice}</p>}
       </section>
       <Toast message={state.toast} />
     </main>

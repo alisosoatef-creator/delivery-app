@@ -175,9 +175,11 @@ for (const blockedDriverSignupToken of ['login("driver")', 'role: "driver"', "se
   }
 }
 
-for (const captainToken of [
+for (const blockedCaptainApplicationToken of [
   "auth-mode-captain",
   "captainRequestSubmitted",
+  "captainForm",
+  "handleCaptainRequest",
   "captain-request-card",
   "name=\"captainFullName\"",
   "name=\"captainPhone\"",
@@ -187,8 +189,21 @@ for (const captainToken of [
   "name=\"captainVehicleNumber\"",
   "name=\"captainNotes\""
 ]) {
-  if (!authSource.includes(captainToken)) {
-    throw new Error(`Captain application flow is missing: ${captainToken}`);
+  if (authSource.includes(blockedCaptainApplicationToken)) {
+    throw new Error(`AuthScreen must keep captain signup as a placeholder for this phase: ${blockedCaptainApplicationToken}`);
+  }
+}
+
+for (const authPhaseThreeToken of [
+  "const DEMO_OTP = \"1234\"",
+  "isReasonableAge",
+  "pendingUser",
+  "verifiedUser",
+  "handleCaptainPlaceholder",
+  "captainPlaceholder"
+]) {
+  if (!appSource.includes(authPhaseThreeToken)) {
+    throw new Error(`Customer auth phase three is missing: ${authPhaseThreeToken}`);
   }
 }
 
@@ -196,8 +211,8 @@ if (!stylesSource.includes(".welcome-auth")) {
   throw new Error("Welcome/auth screen styles are missing");
 }
 
-if (!stylesSource.includes(".captain-request-card")) {
-  throw new Error("Captain application styles are missing");
+if (!stylesSource.includes(".welcome-auth-support")) {
+  throw new Error("Auth support placeholder styles are missing");
 }
 
 const customerShellStart = appSource.indexOf("function CustomerShell");
