@@ -1,4 +1,4 @@
-export function AdminHeader({ state, dispatch, isArabic, activeSection }) {
+export function AdminHeader({ state, dispatch, isArabic, activeSection, logout }) {
   return (
     <header className="admin-header">
       <div>
@@ -15,7 +15,7 @@ export function AdminHeader({ state, dispatch, isArabic, activeSection }) {
         <button className="secondary" type="button" onClick={() => dispatch({ type: "patch", patch: { language: state.language === "ar" ? "en" : "ar" } })}>
           {isArabic ? "English" : "العربية"}
         </button>
-        <button className="primary" type="button" onClick={() => dispatch({ type: "patch", patch: { session: null, role: "customer" } })}>
+        <button className="primary" type="button" onClick={() => (logout ? logout() : dispatch({ type: "patch", patch: { session: null, role: "customer" } }))}>
           {isArabic ? "خروج" : "Logout"}
         </button>
       </div>

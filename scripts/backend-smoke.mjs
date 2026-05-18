@@ -2,6 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { DatabaseSync } from "node:sqlite";
 
 const port = Number(process.env.SMOKE_PORT || 3101);
 const baseUrl = `http://127.0.0.1:${port}`;
@@ -62,6 +63,16 @@ async function request(pathname, options = {}) {
   return payload;
 }
 
+async function requestRaw(pathname, options = {}) {
+  const response = await fetch(`${baseUrl}${pathname}`, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    ...options
+  });
+  const contentType = response.headers.get("content-type") || "";
+  const payload = contentType.includes("application/json") ? await response.json() : await response.text();
+  return { response, payload };
+}
+
 async function waitForServer() {
   const startedAt = Date.now();
   while (Date.now() - startedAt < 8000) {
@@ -90,21 +101,63 @@ try {
   const phone = `+97059000${Date.now().toString().slice(-4)}`;
   const register = await request("/api/auth/register", {
     method: "POST",
-    body: JSON.stringify({ fullName: "Smoke Customer", phone, password: "demo123", cityId: "nablus" })
+    body: JSON.stringify({
+      fullName: "Smoke Customer",
+      phone,
+      password: "demo123",
+      city: "nablus",
+      age: 30,
+      birthDate: "1996-01-01"
+    })
   });
   assert(register.requestId, "register should return requestId");
+  assert(register.otpRequired === true, "register should require OTP instead of logging in directly");
+  assert(!register.token, "register should not return a session token");
+
+  const smokeDb = new DatabaseSync(smokeDbPath, { readOnly: true });
+  const storedUser = smokeDb.prepare("SELECT password, passwordHash, isVerified FROM users WHERE phone = ?").get(phone);
+  smokeDb.close();
+  assert(storedUser?.isVerified === 0, "registered user should start unverified");
+  assert(storedUser?.passwordHash?.startsWith("$2"), "user should store a bcrypt passwordHash");
+  assert(storedUser.password !== "demo123", "database must not store the plain password");
+
+  const loginBeforeVerification = await requestRaw("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ identifier: phone, password: "demo123" })
+  });
+  assert(loginBeforeVerification.response.status === 401, "login before OTP verification should be rejected");
+
+  const duplicate = await requestRaw("/api/auth/register", {
+    method: "POST",
+    body: JSON.stringify({
+      fullName: "Smoke Customer Duplicate",
+      phone,
+      password: "demo123",
+      city: "nablus",
+      age: 30,
+      birthDate: "1996-01-01"
+    })
+  });
+  assert(duplicate.response.status === 409, "duplicate phone should be blocked");
 
   const verified = await request("/api/auth/verify-otp", {
     method: "POST",
-    body: JSON.stringify({ requestId: register.requestId, code: "1234" })
+    body: JSON.stringify({ phone, code: "1234" })
   });
   assert(verified.user?.verified, "verify-otp should mark user verified");
+
+  const wrongPassword = await requestRaw("/api/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ identifier: phone, password: "wrong-password" })
+  });
+  assert(wrongPassword.response.status === 401, "wrong password should be rejected");
 
   const login = await request("/api/auth/login", {
     method: "POST",
     body: JSON.stringify({ identifier: phone, password: "demo123" })
   });
   assert(login.token, "login should return token");
+  assert(login.user?.role === "customer", "login should return a customer session user");
 
   const applicationResponse = await request("/api/captain-applications", {
     method: "POST",

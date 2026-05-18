@@ -3,6 +3,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { hashPassword } from "../auth/passwords.mjs";
 import { createSchema } from "./schema.mjs";
 import { seedDatabase } from "./seed.mjs";
 
@@ -18,7 +19,27 @@ db.exec("PRAGMA foreign_keys = ON;");
 db.exec("PRAGMA journal_mode = WAL;");
 
 createSchema(db);
+migrateDatabase(db);
 seedDatabase(db);
+
+function tableColumns(database, tableName) {
+  return database.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
+}
+
+function migrateDatabase(database) {
+  const userColumns = tableColumns(database, "users");
+  if (!userColumns.includes("passwordHash")) {
+    database.exec("ALTER TABLE users ADD COLUMN passwordHash TEXT;");
+  }
+
+  const legacyUsers = database
+    .prepare("SELECT id, password FROM users WHERE password IS NOT NULL AND password != '' AND (passwordHash IS NULL OR passwordHash = '')")
+    .all();
+  const updateUserPassword = database.prepare("UPDATE users SET passwordHash = ?, password = '' WHERE id = ?");
+  for (const user of legacyUsers) {
+    updateUserPassword.run(hashPassword(user.password), user.id);
+  }
+}
 
 function nowIso() {
   return new Date().toISOString();
@@ -70,7 +91,7 @@ function pricingRow(row) {
 
 export function publicUser(user) {
   if (!user) return null;
-  const { password, isVerified, city, ...safeUser } = user;
+  const { password, passwordHash, isVerified, city, ...safeUser } = user;
   return {
     ...safeUser,
     city,
@@ -247,43 +268,43 @@ export function findOtpCode(id) {
   return one("SELECT * FROM otp_codes WHERE id = ?", id);
 }
 
+export function findOtpCodeByPhone({ phone, code }) {
+  return one(
+    `
+      SELECT * FROM otp_codes
+      WHERE phone = ? AND code = ? AND usedAt IS NULL
+      ORDER BY createdAt DESC
+      LIMIT 1
+    `,
+    phone,
+    code
+  );
+}
+
 export function markOtpUsed(id) {
   run("UPDATE otp_codes SET usedAt = ? WHERE id = ?", nowIso(), id);
 }
 
+export function findUserByPhone(phone) {
+  return one("SELECT * FROM users WHERE phone = ?", phone);
+}
+
 export function createOrUpdateCustomerUser(body) {
-  const existing = one("SELECT * FROM users WHERE phone = ?", body.phone);
-  const createdAt = existing?.createdAt || nowIso();
-  if (existing) {
-    run(
-      `
-        UPDATE users
-        SET fullName = ?, city = ?, age = ?, birthDate = ?, password = ?, role = 'customer', isVerified = 0
-        WHERE phone = ?
-      `,
-      body.fullName,
-      body.cityId || body.city || existing.city || "nablus",
-      body.age ?? existing.age,
-      body.birthDate || existing.birthDate || "",
-      body.password,
-      body.phone
-    );
-  } else {
-    run(
-      `
-        INSERT INTO users (id, fullName, phone, city, age, birthDate, password, role, status, isVerified, trips, createdAt)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'customer', 'active', 0, 0, ?)
-      `,
-      `usr_${randomUUID()}`,
-      body.fullName,
-      body.phone,
-      body.cityId || body.city || "nablus",
-      body.age ?? null,
-      body.birthDate || "",
-      body.password,
-      createdAt
-    );
-  }
+  const createdAt = nowIso();
+  run(
+    `
+      INSERT INTO users (id, fullName, phone, city, age, birthDate, password, passwordHash, role, status, isVerified, trips, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, '', ?, 'customer', 'active', 0, 0, ?)
+    `,
+    `usr_${randomUUID()}`,
+    body.fullName,
+    body.phone,
+    body.cityId || body.city || "nablus",
+    body.age ?? null,
+    body.birthDate || "",
+    body.passwordHash,
+    createdAt
+  );
   return one("SELECT * FROM users WHERE phone = ?", body.phone);
 }
 

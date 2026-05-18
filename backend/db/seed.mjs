@@ -7,6 +7,9 @@ import {
   supportTickets,
   systemSettings
 } from "../data.mjs";
+import { hashPassword } from "../auth/passwords.mjs";
+
+const SEEDED_CUSTOMER_PASSWORD_HASH = hashPassword("demo123");
 
 function tableCount(db, tableName) {
   return db.prepare(`SELECT COUNT(*) AS count FROM ${tableName}`).get().count;
@@ -92,8 +95,8 @@ export function seedDatabase(db) {
 
   if (tableCount(db, "users") === 0) {
     const insertUser = db.prepare(`
-      INSERT INTO users (id, fullName, phone, city, age, birthDate, password, role, status, isVerified, trips, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO users (id, fullName, phone, city, age, birthDate, password, passwordHash, role, status, isVerified, trips, createdAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     for (const customer of customers) {
       insertUser.run(
@@ -103,7 +106,8 @@ export function seedDatabase(db) {
         customer.cityId,
         null,
         "",
-        "demo123",
+        "",
+        SEEDED_CUSTOMER_PASSWORD_HASH,
         "customer",
         customer.status,
         1,

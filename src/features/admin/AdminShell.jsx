@@ -68,7 +68,7 @@ function mergeById(localItems, remoteItems) {
   return [...merged.values()];
 }
 
-export function AdminShell({ state, dispatch, isArabic }) {
+export function AdminShell({ state, dispatch, isArabic, logout }) {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [routePath, setRoutePath] = useState(APP_ROUTE_PATHS.admin.dashboard);
   const adminEnabled = state.role === "admin" && Boolean(state.session);
@@ -337,6 +337,7 @@ export function AdminShell({ state, dispatch, isArabic }) {
           state={state}
           dispatch={dispatch}
           isArabic={isArabic}
+          logout={logout}
           activeSection={ADMIN_SECTIONS.find((section) => section.key === activeSection)}
         />
         {adminLoading && (

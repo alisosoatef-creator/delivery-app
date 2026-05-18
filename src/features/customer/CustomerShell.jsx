@@ -5,7 +5,7 @@ import { AccountSettingsPanel } from "./AccountSettingsPanel.jsx";
 import { CustomerPanel } from "./CustomerPanel.jsx";
 
 export function CustomerShell(props) {
-  const { state, dispatch, t, isArabic } = props;
+  const { state, dispatch, t, isArabic, logout } = props;
   const [activeView, setActiveView] = useState("ride");
   const [settingsPanelOpen, setSettingsPanelOpen] = useState(false);
   const customerName = state.session?.name || (isArabic ? "عميل واصل" : "Wasel rider");
@@ -58,7 +58,7 @@ export function CustomerShell(props) {
           >
             <SettingsIcon />
           </button>
-          <button className="secondary customer-logout" onClick={() => dispatch({ type: "patch", patch: { session: null, role: "customer" } })}>
+          <button className="secondary customer-logout" onClick={() => (logout ? logout() : dispatch({ type: "patch", patch: { session: null, role: "customer" } }))}>
             {t.logout}
           </button>
         </div>

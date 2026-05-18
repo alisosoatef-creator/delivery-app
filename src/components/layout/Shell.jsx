@@ -1,7 +1,7 @@
 import { Toast } from "../ui/index.js";
 import { TopBar } from "./TopBar.jsx";
 
-export function Shell({ children, state, dispatch, t, selectedDriver, routePath }) {
+export function Shell({ children, state, dispatch, t, selectedDriver, routePath, logout }) {
   const title = state.role === "driver" ? t.driver : state.role === "admin" ? t.adminPanel : t.dashboard;
   return (
     <main className="app-layout" data-route={routePath}>
@@ -11,7 +11,7 @@ export function Shell({ children, state, dispatch, t, selectedDriver, routePath 
           <span>{t.backendLive}</span>
           <strong className={state.backendLive ? "good" : "warn"}>{state.backendLive ? "Live" : "Local"}</strong>
         </div>
-        <button className="secondary" onClick={() => dispatch({ type: "patch", patch: { session: null } })}>{t.logout}</button>
+        <button className="secondary" onClick={() => (logout ? logout() : dispatch({ type: "patch", patch: { session: null } }))}>{t.logout}</button>
       </aside>
       <section className="workspace">
         <header className="workspace-header">

@@ -8,6 +8,7 @@ const requiredFiles = [
   "src/styles.css",
   "backend/server.mjs",
   "backend/data.mjs",
+  "backend/auth/passwords.mjs",
   "backend/db/database.mjs",
   "backend/db/schema.mjs",
   "backend/db/seed.mjs",
@@ -109,6 +110,7 @@ const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
 const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
+const backendAuthSource = fs.readFileSync("backend/auth/passwords.mjs", "utf8");
 const backendDatabaseSource = fs.readFileSync("backend/db/database.mjs", "utf8");
 const backendSchemaSource = fs.readFileSync("backend/db/schema.mjs", "utf8");
 const backendSeedSource = fs.readFileSync("backend/db/seed.mjs", "utf8");
@@ -265,6 +267,10 @@ if (!packageJson.dependencies?.["@tanstack/react-query"]) {
   throw new Error("Phase 7A must install @tanstack/react-query");
 }
 
+if (!packageJson.dependencies?.bcryptjs) {
+  throw new Error("Phase 8 auth must install bcryptjs for password hashing");
+}
+
 for (const queryProviderToken of [
   "QueryClient",
   "QueryClientProvider",
@@ -300,6 +306,23 @@ for (const serviceLayerToken of [
 ]) {
   if (!appSource.includes(serviceLayerToken)) {
     throw new Error(`Phase 7A API/query integration is missing: ${serviceLayerToken}`);
+  }
+}
+
+for (const frontendAuthToken of [
+  "useAuthApi",
+  "registerCustomer",
+  "verifyOtp",
+  "loginCustomer",
+  "backendCopy.serverOffline",
+  "authStatus",
+  "currentUser",
+  "token: result.token",
+  "session: { ...user",
+  "logout"
+]) {
+  if (!appSource.includes(frontendAuthToken)) {
+    throw new Error(`Phase 8 frontend auth integration is missing: ${frontendAuthToken}`);
   }
 }
 const authStart = appSource.indexOf("function AuthScreen");
@@ -699,6 +722,7 @@ for (const premiumMotionToken of [
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/database.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/schema.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/seed.mjs"], { stdio: "inherit" });
@@ -818,6 +842,46 @@ for (const ignoredDatabaseToken of [
 ]) {
   if (!gitignoreSource.includes(ignoredDatabaseToken)) {
     throw new Error(`SQLite database files must be ignored by git: ${ignoredDatabaseToken}`);
+  }
+}
+
+for (const passwordHashingToken of [
+  'import bcrypt from "bcryptjs"',
+  "hashPassword",
+  "verifyPassword",
+  "PASSWORD_HASH_ROUNDS"
+]) {
+  if (!backendAuthSource.includes(passwordHashingToken)) {
+    throw new Error(`Password hashing helper is missing: ${passwordHashingToken}`);
+  }
+}
+
+for (const backendAuthToken of [
+  "passwordHash TEXT",
+  "ALTER TABLE users ADD COLUMN passwordHash TEXT",
+  "password = ''",
+  "findUserByPhone",
+  "phone_already_registered",
+  "otpRequired: true",
+  "findOtpCodeByPhone",
+  "verifyPassword(body.password, user.passwordHash)",
+  "dev-session-token-",
+  "user.status !== \"active\""
+]) {
+  if (!backendSchemaSource.includes(backendAuthToken) && !backendDatabaseSource.includes(backendAuthToken) && !backendSource.includes(backendAuthToken)) {
+    throw new Error(`Phase 8 backend auth integration is missing: ${backendAuthToken}`);
+  }
+}
+
+for (const authSmokeToken of [
+  "login before OTP verification should be rejected",
+  "duplicate phone should be blocked",
+  "wrong password should be rejected",
+  "user should store a bcrypt passwordHash",
+  "database must not store the plain password"
+]) {
+  if (!backendSmokeSource.includes(authSmokeToken)) {
+    throw new Error(`Phase 8 auth smoke check is missing: ${authSmokeToken}`);
   }
 }
 

@@ -3,7 +3,20 @@ CREATE TABLE users (
   role TEXT NOT NULL CHECK (role IN ('customer', 'driver', 'admin')),
   full_name TEXT NOT NULL,
   phone TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
   language TEXT NOT NULL DEFAULT 'ar',
+  status TEXT NOT NULL DEFAULT 'active',
+  is_verified INTEGER NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE otp_codes (
+  id TEXT PRIMARY KEY,
+  phone TEXT NOT NULL,
+  code TEXT NOT NULL,
+  purpose TEXT NOT NULL DEFAULT 'auth',
+  expires_at TIMESTAMP,
+  used_at TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

@@ -213,7 +213,26 @@ function App() {
     }
   }
 
-  const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, toggleDriverStatus, login, requestOtp };
+  async function logout() {
+    try {
+      await api("/api/auth/logout", { method: "POST", body: JSON.stringify({ token: state.token }) });
+    } catch {
+      dispatch({ type: "patch", patch: { backendLive: false } });
+    } finally {
+      dispatch({
+        type: "patch",
+        patch: {
+          session: null,
+          currentUser: null,
+          token: "",
+          authStatus: "guest",
+          role: "customer"
+        }
+      });
+    }
+  }
+
+  const sharedProps = { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, toggleDriverStatus, login, requestOtp, logout };
   const activeRoutePath = roleRouteFallback(state);
 
   if (!state.session) {

@@ -8,6 +8,8 @@ import {
   createOtpCode,
   databaseInfo,
   findOtpCode,
+  findOtpCodeByPhone,
+  findUserByPhone,
   findUserByIdentifier,
   getCity,
   getPricingRule,
@@ -35,6 +37,7 @@ import {
   updateSupportTicketStatus,
   verifyUserByPhone
 } from "./db/database.mjs";
+import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
@@ -145,21 +148,32 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/auth/register") {
     const body = await readJson(request);
-    if (!body.fullName || !body.phone || !body.password) {
+    if (!body.fullName || !body.phone || !body.city && !body.cityId || !body.age || !body.birthDate || !body.password) {
       sendJson(response, 400, { error: "missing_required_fields" });
       return;
     }
 
-    const user = createOrUpdateCustomerUser(body);
+    if (findUserByPhone(body.phone)) {
+      sendJson(response, 409, { error: "phone_already_registered" });
+      return;
+    }
+
+    const user = createOrUpdateCustomerUser({ ...body, passwordHash: hashPassword(body.password) });
     const requestId = createOtpCode({ phone: user.phone, purpose: "register", code: authConfig.demoOtpCode });
-    sendJson(response, 201, { user: publicUser(user), requestId, demoCode: authConfig.demoOtpCode });
+    sendJson(response, 201, {
+      user: publicUser(user),
+      requestId,
+      otpRequired: true,
+      message: "otp_required",
+      demoCode: authConfig.demoOtpCode
+    });
     return;
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/verify-otp") {
     const body = await readJson(request);
-    const otp = body.requestId ? findOtpCode(body.requestId) : null;
-    if (body.code !== authConfig.demoOtpCode || (otp && otp.code !== body.code)) {
+    const otp = body.requestId ? findOtpCode(body.requestId) : findOtpCodeByPhone({ phone: body.phone, code: body.code });
+    if (body.code !== authConfig.demoOtpCode || (otp && otp.code !== body.code) || (!otp && !body.phone)) {
       sendJson(response, 401, { error: "invalid_otp" });
       return;
     }
@@ -184,11 +198,11 @@ async function handleApi(request, response) {
   if (request.method === "POST" && url.pathname === "/api/auth/login") {
     const body = await readJson(request);
     const user = findUserByIdentifier(body.identifier || body.phone || body.fullName);
-    if (!user || user.password !== body.password || !Number(user.isVerified)) {
+    if (!user || !Number(user.isVerified) || user.status !== "active" || !verifyPassword(body.password, user.passwordHash)) {
       sendJson(response, 401, { error: "invalid_login" });
       return;
     }
-    sendJson(response, 200, { token: `demo_${randomUUID()}`, user: publicUser(user) });
+    sendJson(response, 200, { token: `dev-session-token-${randomUUID()}`, user: publicUser(user) });
     return;
   }
 

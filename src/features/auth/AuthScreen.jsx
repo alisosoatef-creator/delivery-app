@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Toast } from "../../components/ui/index.js";
+import { useAuthApi } from "../../hooks/useAuthApi.js";
 import { CaptainApplicationPanel } from "../driver/CaptainApplicationPanel.jsx";
 import { AuthField } from "./AuthField.jsx";
 
@@ -16,17 +17,8 @@ function isReasonableAge(value) {
   return Number.isInteger(ageNumber) && ageNumber >= MIN_CUSTOMER_AGE && ageNumber <= MAX_CUSTOMER_AGE;
 }
 
-function matchesVerifiedUser(identifier, password, verifiedUser) {
-  if (!verifiedUser) return false;
-
-  const normalizedIdentifier = cleanValue(identifier).toLowerCase();
-  const normalizedPhone = cleanValue(verifiedUser.phone).toLowerCase();
-  const normalizedName = cleanValue(verifiedUser.fullName).toLowerCase();
-
-  return password === verifiedUser.password && (normalizedIdentifier === normalizedPhone || normalizedIdentifier === normalizedName);
-}
-
 export function AuthScreen({ state, dispatch, t, isArabic }) {
+  const { registerCustomer, verifyOtp, loginCustomer, isMutating } = useAuthApi();
   const [authMode, setAuthMode] = useState("login");
   const [registerForm, setRegisterForm] = useState({
     fullName: "",
@@ -93,6 +85,29 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
         wrongLogin: "Login details do not match the verified account."
       };
 
+  const backendCopy = isArabic
+    ? {
+        duplicatePhone: "رقم الهاتف مسجل مسبقًا. استخدم تسجيل الدخول أو رقمًا آخر.",
+        serverOffline: "تعذر الاتصال بالسيرفر. تأكد من تشغيل npm.cmd run api.",
+        registering: "جاري إنشاء الحساب...",
+        verifying: "جاري التحقق...",
+        loggingIn: "جاري تسجيل الدخول..."
+      }
+    : {
+        duplicatePhone: "This phone number is already registered. Sign in or use another number.",
+        serverOffline: "Could not reach the server. Make sure npm.cmd run api is running.",
+        registering: "Creating account...",
+        verifying: "Verifying...",
+        loggingIn: "Signing in..."
+      };
+
+  function authErrorMessage(error, fallback) {
+    if (error?.status === 0) return backendCopy.serverOffline;
+    if (error?.status === 409) return backendCopy.duplicatePhone;
+    if (error?.status === 401) return fallback;
+    return fallback || backendCopy.serverOffline;
+  }
+
   function switchMode(mode) {
     setAuthMode(mode);
     setAuthError("");
@@ -107,7 +122,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     setLoginForm((current) => ({ ...current, [field]: value }));
   }
 
-  function handleRegister(event) {
+  async function handleRegister(event) {
     event.preventDefault();
     setAuthError("");
     setAuthNotice("");
@@ -129,13 +144,45 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
       return;
     }
 
+    const nextPendingUser = {
+      fullName: cleanValue(registerForm.fullName),
+      age: Number(registerForm.age),
+      birthDate: cleanValue(registerForm.birthDate),
+      city: cleanValue(registerForm.city),
+      phone: cleanValue(registerForm.phone)
+    };
+
+    setAuthNotice(backendCopy.registering);
+    try {
+      const result = await registerCustomer({ ...nextPendingUser, password: registerForm.password, role: "customer" });
+      setPendingUser({ ...nextPendingUser, requestId: result.requestId });
+      setOtpCode("");
+      setAuthMode("otp");
+      setAuthNotice("");
+      setRegisterForm((current) => ({ ...current, password: "", confirmPassword: "" }));
+      dispatch({
+        type: "patch",
+        patch: {
+          authStatus: "otp_required",
+          backendLive: true,
+          toast: isArabic ? `Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ ${DEMO_OTP}` : `Demo verification code ${DEMO_OTP}`
+        }
+      });
+      return;
+    } catch (error) {
+      setAuthNotice("");
+      setAuthError(authErrorMessage(error, copy.missing));
+      dispatch({ type: "patch", patch: { authStatus: "error", backendLive: false } });
+      return;
+    }
+
     setPendingUser({
       fullName: cleanValue(registerForm.fullName),
       age: Number(registerForm.age),
       birthDate: cleanValue(registerForm.birthDate),
       city: cleanValue(registerForm.city),
       phone: cleanValue(registerForm.phone),
-      password: registerForm.password
+      requestId: ""
     });
     setOtpCode("");
     setAuthMode("otp");
@@ -145,7 +192,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     });
   }
 
-  function handleOtp(event) {
+  async function handleOtp(event) {
     event.preventDefault();
     setAuthError("");
     setAuthNotice("");
@@ -161,6 +208,23 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
       return;
     }
 
+    setAuthNotice(backendCopy.verifying);
+    try {
+      const result = await verifyOtp({ phone: pendingUser.phone, requestId: pendingUser.requestId, code: cleanValue(otpCode) });
+      setVerifiedUser(result.user || pendingUser);
+      setPendingUser(null);
+      setLoginForm({ identifier: pendingUser.phone, password: "" });
+      setAuthMode("login");
+      setAuthNotice(copy.success);
+      dispatch({ type: "patch", patch: { authStatus: "verified", backendLive: true, toast: copy.success } });
+      return;
+    } catch (error) {
+      setAuthNotice("");
+      setAuthError(authErrorMessage(error, copy.wrongOtp));
+      dispatch({ type: "patch", patch: { authStatus: "error", backendLive: false } });
+      return;
+    }
+
     setVerifiedUser(pendingUser);
     setPendingUser(null);
     setLoginForm({ identifier: pendingUser.phone, password: "" });
@@ -169,13 +233,39 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     dispatch({ type: "toast", message: copy.success });
   }
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     setAuthError("");
     setAuthNotice("");
 
     if (!cleanValue(loginForm.identifier) || !cleanValue(loginForm.password)) {
       setAuthError(copy.missing);
+      return;
+    }
+
+    setAuthNotice(backendCopy.loggingIn);
+    try {
+      const result = await loginCustomer({ identifier: cleanValue(loginForm.identifier), password: loginForm.password });
+      const user = result.user;
+      dispatch({
+        type: "patch",
+        patch: {
+          role: "customer",
+          session: { ...user, role: "customer", name: user.fullName || user.name, verified: true },
+          currentUser: user,
+          token: result.token,
+          authStatus: "authenticated",
+          phone: user.phone,
+          cityId: user.city || user.cityId || state.cityId,
+          backendLive: true,
+          toast: copy.loginSuccess
+        }
+      });
+      return;
+    } catch (error) {
+      setAuthNotice("");
+      setAuthError(authErrorMessage(error, verifiedUser ? copy.wrongLogin : copy.noVerifiedAccount));
+      dispatch({ type: "patch", patch: { authStatus: "error", backendLive: false } });
       return;
     }
 
@@ -301,7 +391,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             />
             {authNotice && <p className="auth-notice">{authNotice}</p>}
             {authError && <p className="auth-error">{authError}</p>}
-            <button className="primary auth-submit" type="submit">{isArabic ? "دخول إلى التطبيق" : "Enter app"}</button>
+            <button className="primary auth-submit" type="submit" disabled={isMutating}>{isMutating ? backendCopy.loggingIn : (isArabic ? "دخول إلى التطبيق" : "Enter app")}</button>
           </form>
         )}
 
@@ -330,7 +420,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
               <AuthField label={isArabic ? "تأكيد كلمة السر" : "Confirm password"} name="confirmPassword" type="password" value={registerForm.confirmPassword} onChange={(value) => updateRegister("confirmPassword", value)} autoComplete="new-password" />
             </div>
             {authError && <p className="auth-error">{authError}</p>}
-            <button className="primary auth-submit" type="submit">{isArabic ? "إنشاء الحساب" : "Create account"}</button>
+            <button className="primary auth-submit" type="submit" disabled={isMutating}>{isMutating ? backendCopy.registering : (isArabic ? "إنشاء الحساب" : "Create account")}</button>
           </form>
         )}
 
@@ -356,7 +446,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
             {authError && <p className="auth-error">{authError}</p>}
             <div className="auth-actions">
               <button className="secondary" type="button" onClick={() => switchMode("register")}>{isArabic ? "تعديل البيانات" : "Edit details"}</button>
-              <button className="primary" type="submit">{isArabic ? "تحقق" : "Verify"}</button>
+              <button className="primary" type="submit" disabled={isMutating}>{isMutating ? backendCopy.verifying : (isArabic ? "تحقق" : "Verify")}</button>
             </div>
           </form>
         )}
