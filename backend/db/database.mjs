@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { hashPassword } from "../auth/passwords.mjs";
+import { RIDE_STATUSES, isTerminalRideStatus, isValidRideStatus, normalizeRideStatus } from "../rideStatus.mjs";
 import { createSchema } from "./schema.mjs";
 import { seedDatabase } from "./seed.mjs";
 
@@ -32,6 +33,26 @@ function migrateDatabase(database) {
     database.exec("ALTER TABLE users ADD COLUMN passwordHash TEXT;");
   }
 
+  const rideColumns = tableColumns(database, "rides");
+  const rideMigrations = [
+    ["customerId", "TEXT"],
+    ["pickupLat", "REAL"],
+    ["pickupLng", "REAL"],
+    ["destinationLat", "REAL"],
+    ["destinationLng", "REAL"],
+    ["routeDistanceKm", "REAL"],
+    ["durationMinutes", "INTEGER"],
+    ["acceptedAt", "TEXT"],
+    ["cancelledAt", "TEXT"],
+    ["completedAt", "TEXT"]
+  ];
+
+  for (const [columnName, columnType] of rideMigrations) {
+    if (!rideColumns.includes(columnName)) {
+      database.exec(`ALTER TABLE rides ADD COLUMN ${columnName} ${columnType};`);
+    }
+  }
+
   const legacyUsers = database
     .prepare("SELECT id, password FROM users WHERE password IS NOT NULL AND password != '' AND (passwordHash IS NULL OR passwordHash = '')")
     .all();
@@ -47,6 +68,12 @@ function nowIso() {
 
 function bool(value) {
   return Boolean(Number(value));
+}
+
+function numberOrNull(value) {
+  if (value === "" || value == null) return null;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function one(sql, ...params) {
@@ -152,25 +179,40 @@ function driverRow(row) {
 
 function rideRow(row) {
   if (!row) return null;
+  const routeDistanceKm = row.routeDistanceKm ?? row.distanceKm ?? 0;
+  const durationMinutes = row.durationMinutes ?? null;
+  const hasAcceptedDriver = Boolean(row.driverId) && !["searching", "cancelled", "canceled"].includes(row.status);
   return {
     id: row.id,
+    customerId: row.customerId || "",
     customer: row.customerName || "Customer",
     customerName: row.customerName || "Customer",
     customerPhone: row.customerPhone || "",
     driverId: row.driverId || null,
-    captain: row.driverId || "Pending captain acceptance",
+    captain: hasAcceptedDriver ? row.driverId : "Pending captain acceptance",
     pickup: row.pickup,
     destination: row.destination,
     dropoff: row.destination,
     city: row.city,
     cityId: row.city,
+    pickupLat: row.pickupLat ?? null,
+    pickupLng: row.pickupLng ?? null,
+    destinationLat: row.destinationLat ?? null,
+    destinationLng: row.destinationLng ?? null,
     distanceKm: row.distanceKm,
+    routeDistanceKm,
+    durationMinutes,
+    etaMinutes: durationMinutes,
     price: row.price,
     fareIls: row.price,
     paymentMethod: row.paymentMethod,
     status: row.status,
+    hasAcceptedDriver,
     createdAt: row.createdAt,
-    updatedAt: row.updatedAt
+    updatedAt: row.updatedAt,
+    acceptedAt: row.acceptedAt || undefined,
+    cancelledAt: row.cancelledAt || undefined,
+    completedAt: row.completedAt || undefined
   };
 }
 
@@ -505,28 +547,41 @@ export function listNearbyDrivers(cityId = "nablus") {
     .sort((a, b) => a.distanceKm - b.distanceKm);
 }
 
-export function insertRide(body, quote, driver = null) {
+export function insertRide(body, quote) {
   const id = `ride_${randomUUID()}`;
   const createdAt = nowIso();
+  const distanceKm = numberOrNull(body.distanceKm) ?? numberOrNull(quote.distanceKm) ?? 0;
+  const routeDistanceKm = numberOrNull(body.routeDistanceKm) ?? distanceKm;
+  const durationMinutes = numberOrNull(body.durationMinutes) ?? numberOrNull(quote.etaMinutes);
+  const pickupLabel = body.pickupLabel || body.pickup || "Pickup point";
+  const destinationLabel = body.destinationLabel || body.destination || body.dropoff || "Destination point";
   run(
     `
       INSERT INTO rides (
-        id, customerName, customerPhone, driverId, pickup, destination, city, distanceKm,
+        id, customerId, customerName, customerPhone, driverId, pickup, destination, city,
+        pickupLat, pickupLng, destinationLat, destinationLng, distanceKm, routeDistanceKm, durationMinutes,
         price, paymentMethod, status, createdAt, updatedAt
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `,
     id,
+    body.customerId || "",
     body.customerName || body.customer || "Customer",
     body.customerPhone || body.phone || "",
-    driver?.id || null,
-    body.pickup || "An-Najah University",
-    body.dropoff || body.destination || "Rafidia",
+    null,
+    pickupLabel,
+    destinationLabel,
     quote.cityId,
-    quote.distanceKm,
+    numberOrNull(body.pickupLat),
+    numberOrNull(body.pickupLng),
+    numberOrNull(body.destinationLat),
+    numberOrNull(body.destinationLng),
+    distanceKm,
+    routeDistanceKm,
+    durationMinutes,
     quote.fareIls,
     body.paymentMethod || "cash",
-    driver ? "accepted" : "searching",
+    RIDE_STATUSES.searching,
     createdAt,
     createdAt
   );
@@ -541,12 +596,70 @@ export function listRides() {
   return many("SELECT * FROM rides ORDER BY createdAt DESC").map(rideRow);
 }
 
+export function listCustomerRides({ customerId = "", customerPhone = "" } = {}) {
+  const normalizedCustomerId = String(customerId || "").trim();
+  const normalizedPhone = String(customerPhone || "").trim();
+  if (!normalizedCustomerId && !normalizedPhone) return [];
+  return many(
+    `
+      SELECT * FROM rides
+      WHERE (? != '' AND customerId = ?) OR (? != '' AND customerPhone = ?)
+      ORDER BY createdAt DESC
+    `,
+    normalizedCustomerId,
+    normalizedCustomerId,
+    normalizedPhone,
+    normalizedPhone
+  ).map(rideRow);
+}
+
 export function listDriverRequests(cityId = "nablus") {
   return many("SELECT * FROM rides WHERE city = ? AND status = 'searching' ORDER BY createdAt DESC", cityId).map(rideRow);
 }
 
 export function updateRideStatus(rideId, status) {
-  run("UPDATE rides SET status = ?, updatedAt = ? WHERE id = ?", status, nowIso(), rideId);
+  const current = getRide(rideId);
+  if (!current) return null;
+  const nextStatus = normalizeRideStatus(status);
+  if (!isValidRideStatus(nextStatus)) return null;
+  if (isTerminalRideStatus(current.status) && normalizeRideStatus(current.status) !== nextStatus) return null;
+  const updatedAt = nowIso();
+  run(
+    `
+      UPDATE rides
+      SET status = ?,
+          updatedAt = ?,
+          cancelledAt = CASE WHEN ? = 'cancelled' THEN ? ELSE cancelledAt END,
+          completedAt = CASE WHEN ? = 'completed' THEN ? ELSE completedAt END
+      WHERE id = ?
+    `,
+    nextStatus,
+    updatedAt,
+    nextStatus,
+    updatedAt,
+    nextStatus,
+    updatedAt,
+    rideId
+  );
+  return getRide(rideId);
+}
+
+export function acceptRide(rideId, driverId) {
+  const current = getRide(rideId);
+  const driver = getDriver(driverId);
+  if (!current || !driver || isTerminalRideStatus(current.status)) return null;
+  const updatedAt = nowIso();
+  run(
+    `
+      UPDATE rides
+      SET driverId = ?, status = 'accepted', acceptedAt = ?, updatedAt = ?
+      WHERE id = ?
+    `,
+    driver.id,
+    updatedAt,
+    updatedAt,
+    rideId
+  );
   return getRide(rideId);
 }
 
@@ -587,7 +700,7 @@ export function updateSupportTicketStatus(ticketId, status = "closed") {
 }
 
 export function adminOverview() {
-  const activeRides = one("SELECT COUNT(*) AS count FROM rides WHERE status != 'completed'").count;
+  const activeRides = one("SELECT COUNT(*) AS count FROM rides WHERE status NOT IN ('completed', 'cancelled', 'canceled')").count;
   const todayRevenueIls = one("SELECT COALESCE(SUM(price), 0) AS total FROM rides").total;
   const todayRides = one("SELECT COUNT(*) AS count FROM rides").count;
   const pendingCaptainApplications = one("SELECT COUNT(*) AS count FROM captain_applications WHERE status = 'pending'").count;

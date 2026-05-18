@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { mockRideRecords } from "./adminMockData.js";
 
-const RIDE_STATUSES = ["all", "searching", "accepted", "arriving", "picked_up", "completed", "cancelled"];
+const RIDE_STATUSES = ["all", "searching", "accepted", "driver_arriving", "arrived", "in_progress", "completed", "cancelled"];
 
 function formatDate(value) {
   if (!value) return "-";
@@ -18,7 +18,8 @@ function normalizeRide(ride) {
     pickup: ride.pickup,
     dropoff: ride.dropoff || ride.destination,
     city: ride.city || ride.cityId || "-",
-    distanceKm: ride.distanceKm ?? "-",
+    distanceKm: ride.routeDistanceKm ?? ride.distanceKm ?? "-",
+    durationMinutes: ride.durationMinutes ?? ride.etaMinutes ?? "-",
     fareIls: ride.fareIls ?? ride.price ?? 0,
     paymentMethod: ride.paymentMethod,
     status: ride.status,
@@ -127,6 +128,7 @@ export function AdminRides({ state, isArabic, adminRides }) {
             <div><dt>{isArabic ? "الهاتف" : "Phone"}</dt><dd>{selectedRide.customerPhone || "-"}</dd></div>
             <div><dt>{isArabic ? "الكابتن" : "Captain"}</dt><dd>{selectedRide.captain}</dd></div>
             <div><dt>{isArabic ? "المسار" : "Route"}</dt><dd>{selectedRide.pickup} / {selectedRide.dropoff}</dd></div>
+            <div><dt>{isArabic ? "المدة" : "Duration"}</dt><dd>{selectedRide.durationMinutes} min</dd></div>
             <div><dt>{isArabic ? "السعر" : "Fare"}</dt><dd>{selectedRide.fareIls} ₪</dd></div>
             <div><dt>{isArabic ? "طريقة الدفع" : "Payment"}</dt><dd>{selectedRide.paymentMethod}</dd></div>
             <div><dt>{isArabic ? "الحالة" : "Status"}</dt><dd>{selectedRide.status}</dd></div>

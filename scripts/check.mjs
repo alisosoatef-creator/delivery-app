@@ -6,10 +6,12 @@ const requiredFiles = [
   "src/main.jsx",
   "src/App.jsx",
   "src/styles.css",
+  "src/utils/rideStatus.js",
   "src/utils/roles.js",
   "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AdminDevLogin.jsx",
   "backend/server.mjs",
+  "backend/rideStatus.mjs",
   "backend/data.mjs",
   "backend/auth/passwords.mjs",
   "backend/db/database.mjs",
@@ -34,6 +36,7 @@ for (const script of ["dev", "api", "db:init", "db:seed", "build", "check", "api
 }
 
 const sourceOrder = [
+  "src/utils/rideStatus.js",
   "src/utils/rideUtils.js",
   "src/App.jsx",
   "src/routes/guards.jsx",
@@ -604,14 +607,23 @@ if (requestRideStart === -1 || updateRideStatusStart === -1 || phaseTwoStart ===
 const requestRideSource = appSource.slice(requestRideStart, updateRideStatusStart);
 const phaseTwoSource = appSource.slice(phaseTwoStart, rideTimelineStart);
 
-for (const backendAcceptanceToken of ["backendAcceptedRide", "visibleRide", "pendingAcceptanceTimerRef"]) {
-  if (!requestRideSource.includes(backendAcceptanceToken)) {
-    throw new Error(`Backend-immediate accepted rides must be normalized before showing driver details: ${backendAcceptanceToken}`);
+for (const rideLifecycleToken of [
+  "RIDE_STATUSES.searching",
+  "state.pickupLocation",
+  "state.destinationLocation",
+  "routeDistanceKm",
+  "durationMinutes",
+  "createRide(payload)",
+  "customerRides",
+  "rideRequestStatus"
+]) {
+  if (!requestRideSource.includes(rideLifecycleToken)) {
+    throw new Error(`Phase 12 ride creation flow is missing: ${rideLifecycleToken}`);
   }
 }
 
-if (requestRideSource.includes("ride: result.ride,")) {
-  throw new Error("Backend ride responses must not be shown directly before the customer sees the searching state");
+if (requestRideSource.includes("result.driver") || requestRideSource.includes("backendAcceptedRide")) {
+  throw new Error("Customer ride creation must not expose or normalize an immediate captain match");
 }
 
 for (const searchFlowToken of [
@@ -619,7 +631,9 @@ for (const searchFlowToken of [
   "captain-search-card",
   "captain-pending-card",
   "accepted-driver-card",
-  "جاري البحث عن كابتن قريب"
+  "جاري البحث عن كابتن قريب",
+  "بانتظار قبول أحد الكباتن",
+  "cancelRide"
 ]) {
   if (!phaseTwoSource.includes(searchFlowToken)) {
     throw new Error(`Driver search flow is missing: ${searchFlowToken}`);
@@ -838,6 +852,7 @@ for (const premiumMotionToken of [
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/rideStatus.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/database.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/schema.mjs"], { stdio: "inherit" });
@@ -854,6 +869,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/admin/customers"',
   'url.pathname === "/api/admin/drivers"',
   'url.pathname === "/api/rides"',
+  'url.pathname === "/api/customer/rides"',
   'url.pathname === "/api/admin/rides"',
   'url.pathname === "/api/support/tickets"',
   'url.pathname === "/api/admin/support/tickets"',
@@ -866,6 +882,8 @@ for (const backendEndpointToken of [
   'customerStatusMatch',
   'driverStatusMatch',
   'rideStatusMatch',
+  'customerRideDetailsMatch',
+  'rideAcceptMatch',
   'supportTicketStatusMatch',
   'pricingPatchMatch',
   'approvedCaptains',
@@ -902,6 +920,8 @@ for (const sqliteToken of [
   "insertCaptainApplication",
   "createDriverFromApplication",
   "insertRide",
+  "listCustomerRides",
+  "acceptRide",
   "insertSupportTicket",
   "updatePricingRule"
 ]) {
@@ -917,6 +937,9 @@ for (const sqliteTableToken of [
   "CREATE TABLE IF NOT EXISTS captain_applications",
   "CREATE TABLE IF NOT EXISTS drivers",
   "CREATE TABLE IF NOT EXISTS rides",
+  "customerId TEXT",
+  "routeDistanceKm REAL",
+  "durationMinutes INTEGER",
   "CREATE TABLE IF NOT EXISTS support_tickets",
   "CREATE TABLE IF NOT EXISTS pricing_rules",
   "CREATE TABLE IF NOT EXISTS system_settings"
@@ -945,6 +968,9 @@ for (const persistenceSmokeToken of [
   "captain application should persist after server restart",
   "approved captain should persist as driver after server restart",
   "ride should persist after server restart",
+  "new customer ride should start searching",
+  "customer rides should include the newly created ride",
+  "ride accept endpoint should set accepted status",
   "support ticket should persist after server restart",
   "pricing update should persist after server restart",
   "settings update should persist after server restart"

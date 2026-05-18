@@ -46,10 +46,15 @@ CREATE TABLE rides (
   dropoff_lat REAL NOT NULL,
   dropoff_lng REAL NOT NULL,
   distance_km REAL NOT NULL,
+  route_distance_km REAL,
+  duration_minutes INTEGER,
   fare_ils INTEGER NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('searching', 'accepted', 'arriving', 'picked_up', 'completed', 'cancelled')),
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'wallet')),
+  status TEXT NOT NULL CHECK (status IN ('draft', 'searching', 'accepted', 'driver_arriving', 'arrived', 'in_progress', 'completed', 'cancelled')),
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('cash', 'wallet', 'visa')),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP,
+  accepted_at TIMESTAMP,
+  cancelled_at TIMESTAMP,
   completed_at TIMESTAMP
 );
 

@@ -26,6 +26,9 @@ export const initialState = {
   drivers: fallbackDrivers,
   selectedDriverId: "drv_ahmad",
   ride: null,
+  customerRides: [],
+  rideRequestStatus: "idle",
+  rideRequestError: "",
   quote: { fareIls: 24, distanceKm: 5.8, etaMinutes: 7 },
   customerLocation: { ...NABLUS_CENTER },
   pickupLocation: null,
@@ -125,7 +128,14 @@ export function reducer(state, action) {
         )
       };
     case "rideStatus":
-      return { ...state, ride: action.payload.ride, toast: statusText[state.language][action.payload.ride.status] };
+      return {
+        ...state,
+        ride: state.ride?.id === action.payload.ride.id ? action.payload.ride : state.ride,
+        customerRides: (state.customerRides || []).map((ride) =>
+          ride.id === action.payload.ride.id ? action.payload.ride : ride
+        ),
+        toast: statusText[state.language][action.payload.ride.status] || ""
+      };
     case "toast":
       return { ...state, toast: action.message };
     default:

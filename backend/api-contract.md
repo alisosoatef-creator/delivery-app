@@ -63,10 +63,15 @@ Admin writes are persisted in SQLite for development. API authorization is still
 - `GET /api/rides`
 - `POST /api/rides/quote`
 - `POST /api/rides`
+- `GET /api/customer/rides`
+- `GET /api/customer/rides/:id`
 - `PATCH /api/rides/:id/status`
 - `POST /api/rides/:id/status`
+- `PATCH /api/rides/:id/accept`
 
 `POST /api/rides/:id/status` remains supported for the current frontend.
+New customer rides start with `status = "searching"` and do not include captain details before a driver accepts the ride.
+`PATCH /api/rides/:id/accept` is a development placeholder for the next driver phase and assigns a driver without logging anyone in.
 
 ## Support
 

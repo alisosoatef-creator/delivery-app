@@ -219,12 +219,63 @@ try {
   });
   assert(quote.fareIls, "quote should include fareIls");
 
+  const ridePayload = {
+    customerId: login.user.id,
+    customerName: "Smoke Customer",
+    customerPhone: phone,
+    cityId: "nablus",
+    pickup: "A",
+    destination: "B",
+    pickupLat: 32.2211,
+    pickupLng: 35.2544,
+    destinationLat: 32.225,
+    destinationLng: 35.26,
+    paymentMethod: "cash",
+    distanceKm: 4.1,
+    routeDistanceKm: 5.2,
+    durationMinutes: 14
+  };
+
+  const searchingRide = await request("/api/rides", {
+    method: "POST",
+    body: JSON.stringify(ridePayload)
+  });
+  const cancelledRideId = searchingRide.ride?.id;
+  assert(cancelledRideId, "ride request should create ride");
+  assert(searchingRide.ride.status === "searching", "new customer ride should start searching");
+  assert(!searchingRide.ride.driverId && !searchingRide.driver, "new customer ride must not expose captain before acceptance");
+  assert(searchingRide.ride.routeDistanceKm === 5.2, "ride should persist route distance");
+  assert(searchingRide.ride.durationMinutes === 14, "ride should persist route duration");
+
+  const customerRides = await request(`/api/customer/rides?phone=${encodeURIComponent(phone)}`);
+  assert(
+    customerRides.rides.some((customerRide) => customerRide.id === cancelledRideId),
+    "customer rides should include the newly created ride"
+  );
+
+  const customerRideDetails = await request(`/api/customer/rides/${cancelledRideId}?phone=${encodeURIComponent(phone)}`);
+  assert(customerRideDetails.ride?.id === cancelledRideId, "customer ride details should return the requested ride");
+
+  const cancelledRide = await request(`/api/rides/${cancelledRideId}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "cancelled" })
+  });
+  assert(cancelledRide.ride.status === "cancelled", "ride status should update to cancelled");
+
   const ride = await request("/api/rides", {
     method: "POST",
-    body: JSON.stringify({ cityId: "nablus", pickup: "A", dropoff: "B", paymentMethod: "cash", distanceKm: 5.8 })
+    body: JSON.stringify({ ...ridePayload, pickup: "Accept A", destination: "Accept B" })
   });
   const rideId = ride.ride?.id;
   assert(rideId, "ride request should create ride");
+  assert(ride.ride.status === "searching", "second ride should also start searching");
+
+  const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
+    method: "PATCH",
+    body: JSON.stringify({ driverId: approve.captain.id })
+  });
+  assert(acceptedRide.ride.status === "accepted", "ride accept endpoint should set accepted status");
+  assert(acceptedRide.ride.driverId === approve.captain.id, "ride accept endpoint should assign driver id");
 
   const status = await request(`/api/rides/${rideId}/status`, {
     method: "PATCH",

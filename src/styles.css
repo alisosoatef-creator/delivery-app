@@ -1230,6 +1230,10 @@ textarea:focus-visible {
 
 .admin-badge.approved,
 .admin-badge.active,
+.admin-badge.accepted,
+.admin-badge.driver_arriving,
+.admin-badge.arrived,
+.admin-badge.in_progress,
 .admin-badge.completed,
 .admin-badge.collected,
 .admin-badge.online,
@@ -2793,6 +2797,45 @@ small,
   gap: var(--space-3);
 }
 
+.ride-searching-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.ride-searching-summary span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.ride-searching-summary small {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.ride-searching-summary strong {
+  overflow-wrap: anywhere;
+  color: var(--ink);
+}
+
+.searching-ride-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.route-request-error {
+  margin: 10px 0 0;
+  color: #b91c1c;
+  font-size: 0.86rem;
+}
+
 .accepted-driver-card {
   animation: softPulse 2.6s ease-in-out 1;
 }
@@ -4259,6 +4302,7 @@ small,
   color: var(--green);
 }
 
+.status-driver_arriving,
 .status-arriving,
 .status-arrived {
   border-color: rgba(45, 108, 223, .24);
@@ -4266,6 +4310,7 @@ small,
   color: var(--blue);
 }
 
+.status-in_progress,
 .status-picked_up {
   border-color: rgba(201, 145, 47, .28);
   background: var(--accent-soft);

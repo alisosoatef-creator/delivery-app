@@ -1,13 +1,14 @@
 import { Avatar, Metric, PanelTitle, StatusBadge } from "../../components/ui/index.js";
 import { customerLocationFromState, driverLocationFromDriver, formatDistanceKm, haversineKm } from "../../utils/mapUtils.js";
-import { driverDisplayName, findRideDriver, rideHasAcceptedDriver } from "../../utils/rideUtils.js";
+import { cityNameById, driverDisplayName, findRideDriver, paymentMethodLabel, rideHasAcceptedDriver } from "../../utils/rideUtils.js";
 import { statusText } from "../../utils/i18n.js";
 import { MapBoard } from "./MapBoard.jsx";
 import { RideTimeline } from "./RideTimeline.jsx";
 
-export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver }) {
+export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver, cancelRide }) {
   const ride = state.ride;
   const rideStatus = ride?.status || "searching";
+  const isCancelled = rideStatus === "cancelled" || rideStatus === "canceled";
   const hasAcceptedDriver = rideHasAcceptedDriver(ride);
   const driver = hasAcceptedDriver ? findRideDriver(ride, state, selectedDriver) : null;
   const statusLabel = statusText[state.language][rideStatus] || (isArabic ? "جاري البحث" : "Searching");
@@ -22,7 +23,10 @@ export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDrive
   const eta = hasAcceptedDriver ? ride?.etaMinutes || driver?.etaMinutes || state.quote.etaMinutes : state.quote.etaMinutes;
   const fare = ride?.fareIls || state.quote.fareIls;
   const distance = ride?.distanceKm || state.quote.distanceKm;
+  const routeDistance = ride?.routeDistanceKm || distance;
   const rideCode = ride ? `R-${ride.id.replace("ride_", "").slice(0, 6).toUpperCase()}` : "-";
+  const cityName = cityNameById(state.cities, ride?.cityId || state.cityId, isArabic);
+  const paymentLabel = paymentMethodLabel(ride?.paymentMethod || state.paymentMethod, isArabic);
 
   function notify(messageAr, messageEn) {
     dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
@@ -53,10 +57,31 @@ export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDrive
 
       {!hasAcceptedDriver && (
         <section className="phase-two-card captain-pending-card">
-          <PanelTitle title={isArabic ? "طلبك قيد المطابقة" : "Your request is being matched"} meta={rideCode} />
+          <PanelTitle
+            title={isCancelled ? (isArabic ? "تم إلغاء الرحلة" : "Ride cancelled") : (isArabic ? "طلبك قيد المطابقة" : "Your request is being matched")}
+            meta={rideCode}
+          />
           <div className="detail-empty compact">
-            {isArabic ? "نبحث عن كابتن مناسب قريب منك. ستظهر التفاصيل فور قبول الطلب." : "We are looking for a suitable nearby captain. Details will appear once accepted."}
+            {isCancelled
+              ? (isArabic ? "تم حفظ الرحلة كملغية في السجل ولن تظهر بيانات كابتن لها." : "The ride is saved as cancelled in your history and no captain details are shown.")
+              : (isArabic ? "بانتظار قبول أحد الكباتن. لن تظهر بيانات الكابتن أو المركبة قبل القبول." : "Waiting for a captain to accept. Captain and vehicle details stay hidden until acceptance.")}
           </div>
+          <div className="ride-searching-summary">
+            <span><small>{t.city}</small><strong>{cityName}</strong></span>
+            <span><small>{t.pickup}</small><strong>{ride?.pickup || state.pickup}</strong></span>
+            <span><small>{t.dropoff}</small><strong>{ride?.dropoff || ride?.destination || state.dropoff}</strong></span>
+            <span><small>{t.fare}</small><strong>{fare} ₪</strong></span>
+            <span><small>{t.distance}</small><strong>{routeDistance} km</strong></span>
+            <span><small>{t.eta}</small><strong>{eta} min</strong></span>
+            <span><small>{t.payment}</small><strong>{paymentLabel}</strong></span>
+          </div>
+          {!isCancelled && (
+            <div className="searching-ride-actions">
+              <button className="secondary danger-soft" type="button" onClick={() => (cancelRide ? cancelRide() : notify("تعذر إلغاء الرحلة الآن.", "Unable to cancel the ride now."))}>
+                {isArabic ? "إلغاء الرحلة" : "Cancel ride"}
+              </button>
+            </div>
+          )}
         </section>
       )}
 

@@ -1,28 +1,31 @@
 import { statusText } from "./i18n.js";
+import { RIDE_STATUSES, isAcceptedRideStatus, normalizeRideStatus } from "./rideStatus.js";
 
 
 
 export function tripTimeline(isArabic) {
   return [
-    { key: "searching", label: isArabic ? "طلب المشوار" : "Ride requested" },
-    { key: "accepted", label: isArabic ? "تم قبول السائق" : "Driver accepted" },
-    { key: "arriving", label: isArabic ? "السائق بالطريق" : "Driver on the way" },
-    { key: "arrived", label: isArabic ? "وصل السائق" : "Driver arrived" },
-    { key: "picked_up", label: isArabic ? "بدأت الرحلة" : "Trip started" },
-    { key: "completed", label: isArabic ? "انتهت الرحلة" : "Trip completed" }
+    { key: RIDE_STATUSES.searching, label: isArabic ? "طلب المشوار" : "Ride requested" },
+    { key: RIDE_STATUSES.accepted, label: isArabic ? "تم قبول الكابتن" : "Captain accepted" },
+    { key: RIDE_STATUSES.driverArriving, label: isArabic ? "الكابتن بالطريق" : "Captain on the way" },
+    { key: RIDE_STATUSES.arrived, label: isArabic ? "وصل الكابتن" : "Captain arrived" },
+    { key: RIDE_STATUSES.inProgress, label: isArabic ? "بدأت الرحلة" : "Trip started" },
+    { key: RIDE_STATUSES.completed, label: isArabic ? "انتهت الرحلة" : "Trip completed" }
   ];
 }
 
 export function tripTimelineIndex(status) {
+  const normalizedStatus = normalizeRideStatus(status);
   const indexes = {
-    searching: 0,
-    accepted: 1,
-    arriving: 2,
-    arrived: 3,
-    picked_up: 4,
-    completed: 5
+    [RIDE_STATUSES.searching]: 0,
+    [RIDE_STATUSES.accepted]: 1,
+    [RIDE_STATUSES.driverArriving]: 2,
+    [RIDE_STATUSES.arrived]: 3,
+    [RIDE_STATUSES.inProgress]: 4,
+    [RIDE_STATUSES.completed]: 5,
+    [RIDE_STATUSES.cancelled]: 0
   };
-  return indexes[status] ?? 0;
+  return indexes[normalizedStatus] ?? 0;
 }
 
 export function rideDisplayCode(ride) {
@@ -31,8 +34,9 @@ export function rideDisplayCode(ride) {
 }
 
 export function rideStatusGroup(status) {
-  if (status === "completed") return "completed";
-  if (status === "cancelled" || status === "canceled") return "cancelled";
+  const normalizedStatus = normalizeRideStatus(status);
+  if (normalizedStatus === RIDE_STATUSES.completed) return "completed";
+  if (normalizedStatus === RIDE_STATUSES.cancelled) return "cancelled";
   return "active";
 }
 
@@ -62,8 +66,7 @@ export function findRideDriver(ride, state, selectedDriver) {
 }
 
 export function rideHasAcceptedDriver(ride) {
-  const status = ride?.status || "";
-  return Boolean(ride?.driverId) && !["searching", "cancelled", "canceled"].includes(status);
+  return Boolean(ride?.driverId) && isAcceptedRideStatus(ride?.status);
 }
 
 export function driverDisplayName(driver, isArabic) {
@@ -79,7 +82,7 @@ export function paymentMethodLabel(paymentMethod, isArabic) {
 
 export function buildRideHistory(state, selectedDriver, isArabic) {
   const currentRide = state.ride ? [{ ...state.ride, isCurrent: true }] : [];
-  const sourceRides = [...currentRide, ...(state.admin.recentRides || [])];
+  const sourceRides = [...currentRide, ...(state.customerRides || []), ...(state.admin.recentRides || [])];
   const seen = new Set();
 
   return sourceRides
@@ -96,7 +99,7 @@ export function buildRideHistory(state, selectedDriver, isArabic) {
       const pickupFallback = isArabic ? `مركز ${cityName}` : `${cityName} center`;
       const dropoffFallback = isArabic ? `وجهة داخل ${cityName}` : `${cityName} destination`;
       const paymentMethod = ride.paymentMethod || state.paymentMethod || "cash";
-      const status = ride.status || "completed";
+      const status = normalizeRideStatus(ride.status || "completed");
 
       return {
         id: ride.id || `ride_${index}`,
@@ -110,7 +113,7 @@ export function buildRideHistory(state, selectedDriver, isArabic) {
         etaMinutes: ride.etaMinutes || state.quote.etaMinutes,
         status,
         statusGroup: rideStatusGroup(status),
-        statusLabel: statusText[state.language][status] || status,
+        statusLabel: statusText[state.language][status] || statusText[state.language][ride.status] || status,
         cityName,
         hasAcceptedDriver,
         driver,

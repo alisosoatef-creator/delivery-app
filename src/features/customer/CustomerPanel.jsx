@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRidesApi } from "../../hooks/useRidesApi.js";
 import { buildRideHistory, rideHasAcceptedDriver } from "../../utils/rideUtils.js";
+import { RIDE_STATUSES } from "../../utils/rideStatus.js";
 import { MapBoard } from "../rides/MapBoard.jsx";
 import { PhaseTwoExperience } from "../rides/PhaseTwoExperience.jsx";
 import { RideDetailPage } from "../rides/RideDetailPage.jsx";
@@ -10,13 +12,23 @@ import { CustomerSupportPanel } from "../support/CustomerSupportPanel.jsx";
 import { AccountProfilePanel } from "./AccountProfilePanel.jsx";
 
 export function CustomerPanel(props) {
-  const { state, dispatch, t, isArabic, selectedDriver, requestRide, activeView, setActiveView } = props;
+  const { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, activeView, setActiveView } = props;
   const [historyFilter, setHistoryFilter] = useState("all");
   const [selectedHistoryId, setSelectedHistoryId] = useState("");
+  const customerId = state.currentUser?.id || state.session?.id || "";
+  const customerPhone = state.currentUser?.phone || state.session?.phone || state.phone || "";
+  const ridesApi = useRidesApi({ enabled: Boolean(state.session), customerId, customerPhone });
+
+  useEffect(() => {
+    if (!ridesApi.customerRidesLoaded) return;
+    dispatch({ type: "patch", patch: { customerRides: ridesApi.customerRides, backendLive: !ridesApi.backendError } });
+  }, [dispatch, ridesApi.backendError, ridesApi.customerRides, ridesApi.customerRidesLoaded]);
+
   const rideHistory = useMemo(
     () => buildRideHistory(state, selectedDriver, isArabic),
     [
       state.ride,
+      state.customerRides,
       state.admin.recentRides,
       state.drivers,
       state.pickup,
@@ -132,6 +144,7 @@ export function CustomerPanel(props) {
             t={t}
             isArabic={isArabic}
             selectedDriver={selectedDriver}
+            cancelRide={() => updateRideStatus?.(RIDE_STATUSES.cancelled)}
           />
         </section>
       )}

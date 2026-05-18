@@ -95,8 +95,12 @@ export const text = {
 
 export const statusText = {
   ar: {
+    draft: "مسودة",
     searching: "بحث عن سائق",
     accepted: "تم قبول الطلب",
+    driver_arriving: "الكابتن بالطريق",
+    arrived: "وصل الكابتن",
+    in_progress: "الرحلة جارية",
     arriving: "السائق بالطريق",
     picked_up: "تم الاستلام",
     completed: "مكتمل",
@@ -104,8 +108,12 @@ export const statusText = {
     canceled: "ملغية"
   },
   en: {
+    draft: "Draft",
     searching: "Searching",
     accepted: "Accepted",
+    driver_arriving: "Captain arriving",
+    arrived: "Arrived",
+    in_progress: "In progress",
     arriving: "Driver arriving",
     picked_up: "Picked up",
     completed: "Completed",

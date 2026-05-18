@@ -69,18 +69,28 @@ export function createSchema(db) {
 
     CREATE TABLE IF NOT EXISTS rides (
       id TEXT PRIMARY KEY,
+      customerId TEXT,
       customerName TEXT,
       customerPhone TEXT,
       driverId TEXT,
       pickup TEXT NOT NULL,
       destination TEXT NOT NULL,
       city TEXT NOT NULL,
+      pickupLat REAL,
+      pickupLng REAL,
+      destinationLat REAL,
+      destinationLng REAL,
       distanceKm REAL NOT NULL DEFAULT 0,
+      routeDistanceKm REAL,
+      durationMinutes INTEGER,
       price REAL NOT NULL DEFAULT 0,
       paymentMethod TEXT NOT NULL DEFAULT 'cash',
       status TEXT NOT NULL DEFAULT 'searching',
       createdAt TEXT NOT NULL,
-      updatedAt TEXT
+      updatedAt TEXT,
+      acceptedAt TEXT,
+      cancelledAt TEXT,
+      completedAt TEXT
     );
 
     CREATE TABLE IF NOT EXISTS support_tickets (

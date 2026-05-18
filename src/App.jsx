@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { Shell } from "./components/layout/Shell.jsx";
 import { AccessDenied } from "./components/ui/AccessDenied.jsx";
 import { AdminPanel } from "./features/admin/AdminPanel.jsx";
@@ -14,11 +14,11 @@ import { createRide, patchRideStatus, requestRideQuote } from "./services/ridesA
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
 import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
+import { RIDE_STATUSES } from "./utils/rideStatus.js";
 import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "./utils/roles.js";
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  const pendingAcceptanceTimerRef = useRef(null);
   const bootstrapQuery = useBootstrap();
   const t = text[state.language];
   const isArabic = state.language === "ar";
@@ -76,12 +76,6 @@ function App() {
     return () => window.clearTimeout(timer);
   }, [state.toast]);
 
-  useEffect(() => () => {
-    if (pendingAcceptanceTimerRef.current) {
-      window.clearTimeout(pendingAcceptanceTimerRef.current);
-    }
-  }, []);
-
   const selectedDriver = useMemo(
     () => state.drivers.find((driver) => driver.id === state.selectedDriverId) || state.drivers[0],
     [state.drivers, state.selectedDriverId]
@@ -122,11 +116,6 @@ function App() {
   }
 
   async function requestRide() {
-    if (pendingAcceptanceTimerRef.current) {
-      window.clearTimeout(pendingAcceptanceTimerRef.current);
-      pendingAcceptanceTimerRef.current = null;
-    }
-
     if (state.paymentMethod === "visa" && !state.visaCardReady) {
       dispatch({
         type: "toast",
@@ -137,61 +126,65 @@ function App() {
       return;
     }
 
+    if (!state.pickupLocation || !state.destinationLocation) {
+      dispatch({
+        type: "toast",
+        message: isArabic ? "حدد نقطة الانطلاق والوجهة من الخريطة قبل طلب المشوار." : "Select pickup and destination on the map before requesting a ride."
+      });
+      return;
+    }
+
+    if (!state.quote?.fareIls) {
+      dispatch({
+        type: "toast",
+        message: isArabic ? "انتظر لحظة حتى يتم حساب السعر ثم حاول مرة أخرى." : "Wait for the fare quote, then try again."
+      });
+      return;
+    }
+
+    const customer = state.currentUser || state.session || {};
+    const routeDistanceKm = state.routeInfo?.routeDistanceKm || state.quote.distanceKm || estimatePickupDestinationDistance(state);
+    const durationMinutes = state.routeInfo?.durationMinutes || state.quote.etaMinutes || null;
     const payload = {
+      customerId: customer.id || "",
+      customerName: customer.fullName || customer.name || (isArabic ? "زبون واصل" : "Wasel customer"),
+      customerPhone: customer.phone || state.phone || "",
       cityId: state.cityId,
       pickup: state.pickup,
-      dropoff: state.dropoff,
+      destination: state.dropoff,
+      pickupLat: state.pickupLocation.lat,
+      pickupLng: state.pickupLocation.lng,
+      destinationLat: state.destinationLocation.lat,
+      destinationLng: state.destinationLocation.lng,
       paymentMethod: state.paymentMethod,
-      distanceKm: state.quote.distanceKm
+      distanceKm: state.quote.distanceKm || routeDistanceKm,
+      routeDistanceKm,
+      durationMinutes,
+      price: state.quote.fareIls
     };
+    dispatch({ type: "patch", patch: { rideRequestStatus: "loading", rideRequestError: "" } });
     try {
       const result = await createRide(payload);
-      const backendAcceptedRide =
-        result.ride?.status !== "searching" && Boolean(result.ride?.driverId || result.driver?.id);
-      const visibleRide = backendAcceptedRide
-        ? { ...result.ride, status: "searching", driverId: null }
-        : result.ride;
+      const visibleRide = { ...result.ride, status: RIDE_STATUSES.searching, driverId: null };
       dispatch({
         type: "patch",
         patch: {
           ride: visibleRide,
-          selectedDriverId: backendAcceptedRide ? state.selectedDriverId : result.driver?.id || state.selectedDriverId,
+          customerRides: [visibleRide, ...(state.customerRides || []).filter((ride) => ride.id !== visibleRide.id)],
           backendLive: true,
+          rideRequestStatus: "success",
+          rideRequestError: "",
           toast: isArabic ? "جاري البحث عن كابتن قريب..." : "Searching for a nearby captain..."
         }
       });
-
-      if (backendAcceptedRide) {
-        pendingAcceptanceTimerRef.current = window.setTimeout(() => {
-          pendingAcceptanceTimerRef.current = null;
-          dispatch({
-            type: "patch",
-            patch: {
-              ride: {
-                ...result.ride,
-                status: "accepted",
-                driverId: result.ride.driverId || result.driver.id
-              },
-              selectedDriverId: result.driver?.id || result.ride.driverId || state.selectedDriverId,
-              toast: isArabic ? "تم قبول الطلب من كابتن قريب." : "A nearby captain accepted your request."
-            }
-          });
-        }, 3500);
-      }
-    } catch {
+    } catch (error) {
       dispatch({
         type: "patch",
         patch: {
-          ride: {
-            id: "local_ride",
-            status: "searching",
-            pickup: state.pickup,
-            dropoff: state.dropoff,
-            fareIls: state.quote.fareIls,
-            distanceKm: state.quote.distanceKm,
-            etaMinutes: state.quote.etaMinutes
-          },
-          toast: isArabic ? "جاري البحث عن كابتن قريب..." : "Searching for a nearby captain..."
+          backendLive: false,
+          rideRequestStatus: "error",
+          rideRequestError: error?.message || "Backend unavailable",
+          toast: isArabic ? "تعذر إرسال طلب المشوار. تأكد أن السيرفر يعمل ثم حاول مرة أخرى." : "Could not create the ride. Make sure the Backend is running, then try again."
         }
       });
     }
@@ -201,9 +194,27 @@ function App() {
     if (!state.ride) return;
     try {
       const payload = await patchRideStatus(state.ride.id, status);
-      dispatch({ type: "patch", patch: { ride: payload.ride, backendLive: true } });
+      dispatch({
+        type: "patch",
+        patch: {
+          ride: payload.ride,
+          customerRides: (state.customerRides || []).map((ride) => (ride.id === payload.ride.id ? payload.ride : ride)),
+          backendLive: true,
+          rideRequestStatus: status === RIDE_STATUSES.cancelled ? "cancelled" : state.rideRequestStatus,
+          toast: status === RIDE_STATUSES.cancelled ? (isArabic ? "تم إلغاء الرحلة." : "Ride cancelled.") : ""
+        }
+      });
     } catch {
-      dispatch({ type: "patch", patch: { ride: { ...state.ride, status }, backendLive: false } });
+      const localRide = { ...state.ride, status };
+      dispatch({
+        type: "patch",
+        patch: {
+          ride: localRide,
+          customerRides: (state.customerRides || []).map((ride) => (ride.id === localRide.id ? localRide : ride)),
+          backendLive: false,
+          rideRequestStatus: status === RIDE_STATUSES.cancelled ? "cancelled" : state.rideRequestStatus
+        }
+      });
     }
   }
 

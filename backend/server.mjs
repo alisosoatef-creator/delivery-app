@@ -3,12 +3,14 @@ import { randomUUID } from "node:crypto";
 import { URL } from "node:url";
 import {
   adminOverview,
+  acceptRide,
   createDriverFromApplication,
   createOrUpdateCustomerUser,
   createOtpCode,
   databaseInfo,
   findOtpCode,
   findOtpCodeByPhone,
+  getRide,
   findUserByPhone,
   findUserByIdentifier,
   getCity,
@@ -19,10 +21,10 @@ import {
   insertSupportTicket,
   listCaptainApplications,
   listCities,
+  listCustomerRides,
   listCustomers,
   listDriverRequests,
   listDrivers,
-  listNearbyDrivers,
   listPricingRules,
   listRides,
   listSupportTickets,
@@ -80,9 +82,9 @@ function readJson(request) {
   });
 }
 
-function calculateQuote({ cityId = "nablus", distanceKm = 5.8 }) {
+function calculateQuote({ cityId = "nablus", distanceKm = 5.8, routeDistanceKm = null }) {
   const city = getCity(cityId) || getCity("nablus");
-  const numericDistance = Number(distanceKm) || 5.8;
+  const numericDistance = Number(routeDistanceKm || distanceKm) || 5.8;
   const rule = getPricingRule(city.id);
   const baseFare = rule?.baseFare ?? city.baseFare;
   const perKm = rule?.pricePerKm ?? 2.35;
@@ -302,14 +304,42 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/customer/rides") {
+    const rides = listCustomerRides({
+      customerId: url.searchParams.get("customerId") || "",
+      customerPhone: url.searchParams.get("phone") || url.searchParams.get("customerPhone") || ""
+    });
+    sendJson(response, 200, { rides });
+    return;
+  }
+
+  const customerRideDetailsMatch = url.pathname.match(/^\/api\/customer\/rides\/([^/]+)$/);
+  if (request.method === "GET" && customerRideDetailsMatch) {
+    const ride = getRide(customerRideDetailsMatch[1]);
+    const customerId = url.searchParams.get("customerId") || "";
+    const customerPhone = url.searchParams.get("phone") || url.searchParams.get("customerPhone") || "";
+    const belongsToCustomer =
+      (!customerId && !customerPhone) ||
+      (customerId && ride?.customerId === customerId) ||
+      (customerPhone && ride?.customerPhone === customerPhone);
+    if (!ride || !belongsToCustomer) {
+      sendJson(response, 404, { error: "ride_not_found" });
+      return;
+    }
+    sendJson(response, 200, { ride });
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/rides") {
     const body = await readJson(request);
-    const availableDrivers = listNearbyDrivers(body.cityId || "nablus");
-    const driver = availableDrivers[0] || null;
+    if ((!body.pickup && !body.pickupLabel) || (!body.destination && !body.dropoff && !body.destinationLabel)) {
+      sendJson(response, 400, { error: "pickup_and_destination_required" });
+      return;
+    }
     const quote = calculateQuote(body);
-    const ride = insertRide(body, quote, driver);
-    broadcast("ride.driver.matched", { ride, driver });
-    sendJson(response, 201, { ride, driver });
+    const ride = insertRide(body, quote);
+    broadcast("ride.created", { ride });
+    sendJson(response, 201, { ride });
     return;
   }
 
@@ -319,6 +349,23 @@ async function handleApi(request, response) {
     const ride = updateRideStatus(rideStatusMatch[1], body.status);
     if (!ride) {
       sendJson(response, 404, { error: "ride_not_found" });
+      return;
+    }
+    broadcast("ride.status.changed", { ride });
+    sendJson(response, 200, { ride });
+    return;
+  }
+
+  const rideAcceptMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/accept$/);
+  if (request.method === "PATCH" && rideAcceptMatch) {
+    const body = await readJson(request);
+    if (!body.driverId) {
+      sendJson(response, 400, { error: "driver_id_required" });
+      return;
+    }
+    const ride = acceptRide(rideAcceptMatch[1], body.driverId);
+    if (!ride) {
+      sendJson(response, 404, { error: "ride_or_driver_not_found" });
       return;
     }
     broadcast("ride.status.changed", { ride });

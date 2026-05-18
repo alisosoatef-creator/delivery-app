@@ -174,7 +174,12 @@ export function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onA
         </form>
       )}
       <QuoteStrip state={state} t={t} />
-      <button className="primary ride-cta" onClick={onAction}>{actionLabel}</button>
+      {state.rideRequestError && (
+        <p className="route-request-error">{isArabic ? "تعذر إنشاء الرحلة عبر السيرفر. حاول مرة أخرى." : state.rideRequestError}</p>
+      )}
+      <button className="primary ride-cta" onClick={onAction} disabled={state.rideRequestStatus === "loading"}>
+        {state.rideRequestStatus === "loading" ? (isArabic ? "جاري إرسال الطلب..." : "Sending request...") : actionLabel}
+      </button>
     </div>
   );
 }
