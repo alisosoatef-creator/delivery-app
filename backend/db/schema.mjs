@@ -97,10 +97,13 @@ export function createSchema(db) {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       phone TEXT,
+      role TEXT NOT NULL DEFAULT 'customer',
       type TEXT NOT NULL DEFAULT 'general',
       message TEXT NOT NULL,
+      rideId TEXT,
       status TEXT NOT NULL DEFAULT 'open',
       createdAt TEXT NOT NULL,
+      updatedAt TEXT,
       closedAt TEXT
     );
 

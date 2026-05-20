@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar, Metric, PanelTitle, StatusBadge } from "../../components/ui/index.js";
 import { useDriverData } from "../../hooks/useDriverData.js";
+import { useSupportTickets } from "../../hooks/useSupportTickets.js";
 import { sendDriverLocationUnavailable, sendDriverLocationUpdate } from "../../services/socketClient.js";
 import { statusText } from "../../utils/i18n.js";
 import { RIDE_STATUSES } from "../../utils/rideStatus.js";
@@ -19,6 +20,15 @@ const DRIVER_STATUS_ACTIONS = [
   { from: RIDE_STATUSES.driverArriving, next: RIDE_STATUSES.arrived, labelAr: "وصلت", labelEn: "Arrived" },
   { from: RIDE_STATUSES.arrived, next: RIDE_STATUSES.inProgress, labelAr: "بدأت الرحلة", labelEn: "Start ride" },
   { from: RIDE_STATUSES.inProgress, next: RIDE_STATUSES.completed, labelAr: "إنهاء الرحلة", labelEn: "Complete ride" }
+];
+
+const DRIVER_SUPPORT_TYPES = [
+  { value: "customer_issue", ar: "مشكلة مع زبون", en: "Customer issue" },
+  { value: "ride_issue", ar: "مشكلة في رحلة", en: "Ride issue" },
+  { value: "earnings_issue", ar: "مشكلة في الأرباح", en: "Earnings issue" },
+  { value: "account_issue", ar: "مشكلة في الحساب", en: "Account issue" },
+  { value: "gps_issue", ar: "مشكلة في GPS", en: "GPS issue" },
+  { value: "other", ar: "أخرى", en: "Other" }
 ];
 
 function formatDate(value, isArabic) {
@@ -52,9 +62,15 @@ function normalizeDriverRide(ride, state, isArabic) {
   };
 }
 
+function supportTypeLabel(type, isArabic) {
+  const match = DRIVER_SUPPORT_TYPES.find((item) => item.value === type);
+  return match ? (isArabic ? match.ar : match.en) : type;
+}
+
 export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   const watchIdRef = useRef(null);
   const [trackingMessage, setTrackingMessage] = useState("");
+  const [supportForm, setSupportForm] = useState({ type: "ride_issue", message: "", rideId: "" });
   const sessionDriver = state.session?.driver || {};
   const driver = {
     ...selectedDriver,
@@ -76,6 +92,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     driverId,
     phone: driver.phone,
     cityId: driver.cityId
+  });
+  const supportData = useSupportTickets({
+    enabled: Boolean(driver.phone) && isDriverActive,
+    phone: driver.phone,
+    role: "driver"
   });
 
   const availableRides = driverData.availableRides.map((ride) => normalizeDriverRide(ride, state, isArabic));
@@ -100,6 +121,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
             : (isArabic ? "ØºÙŠØ± Ù…ÙØ¹Ù„" : "Not active");
   const completedTrips = driverRides.filter((ride) => ride.status === RIDE_STATUSES.completed);
   const historyRides = driverRides.length ? driverRides : currentRide ? [currentRide] : [];
+  const supportRideOptions = currentRide ? [currentRide, ...historyRides.filter((ride) => ride.id !== currentRide.id)] : historyRides;
   const todayEarnings = completedTrips.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
 
   useEffect(() => {
@@ -112,6 +134,33 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
 
   function showToast(messageAr, messageEn) {
     dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
+  }
+
+  function updateSupportForm(field, value) {
+    setSupportForm((current) => ({ ...current, [field]: value }));
+  }
+
+  async function submitSupportTicket(event) {
+    event.preventDefault();
+    if (!supportForm.message.trim()) {
+      showToast("اكتب تفاصيل المشكلة قبل إرسال تذكرة الدعم.", "Write issue details before sending support.");
+      return;
+    }
+
+    try {
+      await supportData.createTicket({
+        name: driver.fullName || driverName,
+        phone: driver.phone,
+        role: "driver",
+        type: supportForm.type,
+        message: supportForm.message.trim(),
+        rideId: supportForm.rideId
+      });
+      setSupportForm({ type: "ride_issue", message: "", rideId: "" });
+      showToast("تم إرسال تذكرة دعم الكابتن.", "Captain support ticket sent.");
+    } catch {
+      showToast("تعذر إرسال تذكرة الدعم. تأكد أن السيرفر يعمل.", "Unable to send support ticket. Make sure the backend is running.");
+    }
   }
 
   function publishLocation(position) {
@@ -406,6 +455,59 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         ) : (
           <div className="empty">{isArabic ? "لا توجد رحلة حالية. اقبل رحلة من القائمة المتاحة." : "No current ride. Accept one from the available list."}</div>
         )}
+      </section>
+
+      <section className="driver-support-card">
+        <PanelTitle title={isArabic ? "دعم الكابتن" : "Captain support"} meta={`${supportData.tickets.length}`} />
+        <form className="support-ticket-form" onSubmit={submitSupportTicket}>
+          <label className="field">
+            <span>{isArabic ? "نوع المشكلة" : "Issue type"}</span>
+            <select value={supportForm.type} onChange={(event) => updateSupportForm("type", event.target.value)}>
+              {DRIVER_SUPPORT_TYPES.map((type) => (
+                <option key={type.value} value={type.value}>{isArabic ? type.ar : type.en}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field">
+            <span>{isArabic ? "رحلة مرتبطة - اختياري" : "Linked ride - optional"}</span>
+            <select value={supportForm.rideId} onChange={(event) => updateSupportForm("rideId", event.target.value)}>
+              <option value="">{isArabic ? "بدون رحلة" : "No linked ride"}</option>
+              {supportRideOptions.map((ride) => (
+                <option key={ride.id} value={ride.id}>{ride.code} - {ride.pickup} / {ride.dropoff}</option>
+              ))}
+            </select>
+          </label>
+          <label className="field support-message-field">
+            <span>{isArabic ? "الرسالة" : "Message"}</span>
+            <textarea value={supportForm.message} rows={4} onChange={(event) => updateSupportForm("message", event.target.value)} placeholder={isArabic ? "اشرح المشكلة لفريق العمليات..." : "Explain the issue for operations..."} />
+          </label>
+          <div className="driver-action-row">
+            <button className="primary" type="submit" disabled={supportData.isCreating || !driver.phone}>
+              {supportData.isCreating ? (isArabic ? "جار الإرسال..." : "Sending...") : (isArabic ? "إرسال تذكرة" : "Send ticket")}
+            </button>
+            <button className="secondary" type="button" onClick={() => supportData.refetchTickets()} disabled={supportData.isLoading}>
+              {isArabic ? "تحديث التذاكر" : "Refresh tickets"}
+            </button>
+          </div>
+        </form>
+        <div className="support-ticket-list">
+          {supportData.isLoading && <p className="support-ticket-empty">{isArabic ? "جار تحميل تذاكر الكابتن..." : "Loading captain tickets..."}</p>}
+          {supportData.backendError && <p className="support-ticket-error">{isArabic ? "تعذر تحميل تذاكر الدعم." : "Unable to load support tickets."}</p>}
+          {!supportData.isLoading && !supportData.tickets.length && (
+            <p className="support-ticket-empty">{isArabic ? "لا توجد تذاكر دعم للكابتن بعد." : "No captain support tickets yet."}</p>
+          )}
+          {supportData.tickets.map((ticket) => (
+            <article className="support-ticket-card" key={ticket.id}>
+              <div>
+                <strong>{supportTypeLabel(ticket.type, isArabic)}</strong>
+                <p>{ticket.message}</p>
+                {ticket.rideId && <small>{isArabic ? "رحلة مرتبطة" : "Linked ride"}: {ticket.rideId}</small>}
+              </div>
+              <StatusBadge status={ticket.status} label={ticket.status} />
+              <small>{formatDate(ticket.createdAt, isArabic)}</small>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="driver-history-card">

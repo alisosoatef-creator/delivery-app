@@ -148,6 +148,19 @@ export function emitDriverLocationUnavailable({ rideId, driverId, reason = "gps-
   target.emit("driver:location-unavailable", payload);
 }
 
+export function emitSupportTicketEvent(eventName, { ticket } = {}) {
+  if (!io || !ticket) return;
+  const payload = {
+    event: eventName,
+    ticket,
+    emittedAt: new Date().toISOString()
+  };
+  let target = io.to("admin");
+  const phone = safeRoomValue(ticket.phone);
+  if (phone) target = target.to(`customer-phone:${phone}`);
+  target.emit(eventName, payload);
+}
+
 export function realtimeInfo() {
   return { enabled: Boolean(io), transport: "socket.io" };
 }

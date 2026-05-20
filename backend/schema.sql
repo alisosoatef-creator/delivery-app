@@ -93,6 +93,20 @@ CREATE TABLE notifications (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE support_tickets (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  phone TEXT,
+  role TEXT NOT NULL CHECK (role IN ('customer', 'driver')) DEFAULT 'customer',
+  type TEXT NOT NULL DEFAULT 'general',
+  message TEXT NOT NULL,
+  ride_id TEXT REFERENCES rides(id),
+  status TEXT NOT NULL CHECK (status IN ('open', 'closed')) DEFAULT 'open',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP,
+  closed_at TIMESTAMP
+);
+
 CREATE TABLE admin_audit_logs (
   id TEXT PRIMARY KEY,
   admin_user_id TEXT NOT NULL REFERENCES users(id),
@@ -107,3 +121,4 @@ CREATE INDEX idx_rides_city_status ON rides(city, status);
 CREATE INDEX idx_rides_customer ON rides(customer_id);
 CREATE INDEX idx_rides_driver ON rides(driver_id);
 CREATE INDEX idx_notifications_user_read ON notifications(user_id, read_at);
+CREATE INDEX idx_support_tickets_phone_role ON support_tickets(phone, role);

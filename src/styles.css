@@ -1172,8 +1172,8 @@ textarea:focus-visible {
 }
 
 .admin-data-table.support-table .admin-table-row {
-  grid-template-columns: 1fr .9fr .85fr 1.6fr .75fr 1fr .75fr;
-  min-width: 980px;
+  grid-template-columns: 1fr .9fr .7fr .85fr 1.5fr .85fr .7fr 1fr .75fr .75fr;
+  min-width: 1320px;
 }
 
 .admin-data-table.pricing-table .admin-table-row {
@@ -1383,6 +1383,64 @@ textarea:focus-visible {
   color: var(--text-strong);
   font-size: 16px;
   font-weight: 950;
+}
+
+.support-system-card,
+.driver-support-card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.support-ticket-form {
+  display: grid;
+  gap: var(--space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.support-message-field,
+.support-ticket-form .account-action-row,
+.support-ticket-form .driver-action-row {
+  grid-column: 1 / -1;
+}
+
+.support-ticket-form textarea {
+  resize: vertical;
+  min-height: 118px;
+}
+
+.support-ticket-list {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.support-ticket-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+  padding: var(--space-3);
+}
+
+.support-ticket-card strong {
+  color: var(--text-strong);
+  font-weight: 950;
+}
+
+.support-ticket-card p,
+.support-ticket-card small,
+.support-ticket-empty {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.support-ticket-error {
+  margin: 0;
+  color: #b91c1c;
+  font-weight: 850;
 }
 
 .home-layout {
@@ -3976,6 +4034,7 @@ small,
     "map"
     "requests"
     "current"
+    "support"
     "history";
   align-items: start;
 }
@@ -3984,6 +4043,7 @@ small,
 .driver-map-card,
 .driver-requests-card,
 .driver-current-card,
+.driver-support-card,
 .driver-history-card {
   position: relative;
   overflow: hidden;
@@ -4001,6 +4061,7 @@ small,
 .driver-map-card::before,
 .driver-requests-card::before,
 .driver-current-card::before,
+.driver-support-card::before,
 .driver-history-card::before {
   content: "";
   position: absolute;
@@ -4038,6 +4099,10 @@ small,
 
 .driver-current-card {
   grid-area: current;
+}
+
+.driver-support-card {
+  grid-area: support;
 }
 
 .driver-history-card {
@@ -4642,6 +4707,11 @@ small,
     grid-template-columns: 1fr;
   }
 
+  .support-ticket-form,
+  .support-ticket-card {
+    grid-template-columns: 1fr;
+  }
+
   .history-filter-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -4930,6 +5000,7 @@ small,
       "hero map"
       "kpis map"
       "requests current"
+      "support current"
       "history history";
   }
 

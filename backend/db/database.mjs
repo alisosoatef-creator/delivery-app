@@ -53,6 +53,19 @@ function migrateDatabase(database) {
     }
   }
 
+  const supportColumns = tableColumns(database, "support_tickets");
+  const supportMigrations = [
+    ["role", "TEXT NOT NULL DEFAULT 'customer'"],
+    ["rideId", "TEXT"],
+    ["updatedAt", "TEXT"]
+  ];
+
+  for (const [columnName, columnType] of supportMigrations) {
+    if (!supportColumns.includes(columnName)) {
+      database.exec(`ALTER TABLE support_tickets ADD COLUMN ${columnName} ${columnType};`);
+    }
+  }
+
   const legacyUsers = database
     .prepare("SELECT id, password FROM users WHERE password IS NOT NULL AND password != '' AND (passwordHash IS NULL OR passwordHash = '')")
     .all();
@@ -226,10 +239,13 @@ function supportTicketRow(row) {
     name: row.name,
     userName: row.name,
     phone: row.phone || "",
+    role: row.role || "customer",
     type: row.type,
     message: row.message,
+    rideId: row.rideId || "",
     status: row.status,
     createdAt: row.createdAt,
+    updatedAt: row.updatedAt || undefined,
     closedAt: row.closedAt || undefined
   };
 }
@@ -740,17 +756,22 @@ export function updateDriverRideStatus(rideId, { driverId, status }) {
 
 export function insertSupportTicket(body) {
   const id = `support_${randomUUID()}`;
+  const createdAt = nowIso();
+  const role = ["customer", "driver"].includes(body.role) ? body.role : "customer";
   run(
     `
-      INSERT INTO support_tickets (id, name, phone, type, message, status, createdAt, closedAt)
-      VALUES (?, ?, ?, ?, ?, 'open', ?, ?)
+      INSERT INTO support_tickets (id, name, phone, role, type, message, rideId, status, createdAt, updatedAt, closedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'open', ?, ?, ?)
     `,
     id,
     body.userName || body.name || "Guest",
     body.phone || "",
+    role,
     body.type || "general",
     body.message || "",
-    nowIso(),
+    body.rideId || "",
+    createdAt,
+    createdAt,
     null
   );
   return getSupportTicket(id);
@@ -764,11 +785,30 @@ export function listSupportTickets() {
   return many("SELECT * FROM support_tickets ORDER BY createdAt DESC").map(supportTicketRow);
 }
 
+export function listMySupportTickets({ phone = "", role = "" } = {}) {
+  const normalizedPhone = String(phone || "").trim();
+  const normalizedRole = String(role || "").trim();
+  if (!normalizedPhone) return [];
+  return many(
+    `
+      SELECT * FROM support_tickets
+      WHERE phone = ? AND (? = '' OR role = ?)
+      ORDER BY createdAt DESC
+    `,
+    normalizedPhone,
+    normalizedRole,
+    normalizedRole
+  ).map(supportTicketRow);
+}
+
 export function updateSupportTicketStatus(ticketId, status = "closed") {
+  const nextStatus = status === "open" ? "open" : "closed";
+  const updatedAt = nowIso();
   run(
-    "UPDATE support_tickets SET status = ?, closedAt = ? WHERE id = ?",
-    status,
-    status === "closed" ? nowIso() : null,
+    "UPDATE support_tickets SET status = ?, updatedAt = ?, closedAt = ? WHERE id = ?",
+    nextStatus,
+    updatedAt,
+    nextStatus === "closed" ? updatedAt : null,
     ticketId
   );
   return getSupportTicket(ticketId);

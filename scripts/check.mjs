@@ -23,7 +23,8 @@ const requiredFiles = [
   "backend/api-contract.md",
   "scripts/backend-smoke.mjs",
   "vite.config.js",
-  "src/services/socketClient.js"
+  "src/services/socketClient.js",
+  "src/hooks/useSupportTickets.js"
 ];
 
 for (const file of requiredFiles) {
@@ -120,6 +121,7 @@ const sourceOrder = [
   "src/hooks/useAdminData.js",
   "src/hooks/useRidesApi.js",
   "src/hooks/useDriverData.js",
+  "src/hooks/useSupportTickets.js",
   "src/hooks/useBootstrap.js"
 ];
 
@@ -410,6 +412,8 @@ for (const realtimeFrontendToken of [
   "driver:online-status-updated",
   "driver:location-updated",
   "driver:location-unavailable",
+  "support:ticket-created",
+  "support:ticket-updated",
   "queryClient.invalidateQueries",
   "realtimeConnected",
   "realtimeStatus",
@@ -419,6 +423,26 @@ for (const realtimeFrontendToken of [
 ]) {
   if (!appSource.includes(realtimeFrontendToken)) {
     throw new Error(`Phase 14 frontend realtime integration is missing: ${realtimeFrontendToken}`);
+  }
+}
+
+for (const supportSystemToken of [
+  "useSupportTickets",
+  "fetchMySupportTickets",
+  "createSupportTicket",
+  "updateSupportTicketStatus",
+  "support-ticket-form",
+  "support-ticket-list",
+  "support-ticket-card",
+  "support-ticket-filters",
+  "roleFilter",
+  "statusFilter",
+  "rideId",
+  "customer-support-card",
+  "driver-support-card"
+]) {
+  if (!appSource.includes(supportSystemToken)) {
+    throw new Error(`Phase 16 support system is missing: ${supportSystemToken}`);
   }
 }
 
@@ -953,6 +977,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/customer/rides"',
   'url.pathname === "/api/admin/rides"',
   'url.pathname === "/api/support/tickets"',
+  'url.pathname === "/api/support/my-tickets"',
   'url.pathname === "/api/admin/support/tickets"',
   'url.pathname === "/api/admin/pricing"',
   'url.pathname === "/api/admin/settings"',
@@ -998,6 +1023,8 @@ for (const backendRealtimeToken of [
   "driver:online-status-updated",
   "driver:location-updated",
   "driver:location-unavailable",
+  "support:ticket-created",
+  "support:ticket-updated",
   "admin:captain-application-created",
   "admin:captain-application-reviewed"
 ]) {
@@ -1100,6 +1127,13 @@ for (const persistenceSmokeToken of [
   "driver:location-updated should include driver longitude",
   "ride:status-updated should emit driver_arriving",
   "ride:completed should emit the completed ride",
+  "customer support ticket should persist customer role",
+  "customer support ticket should persist linked ride id",
+  "support:ticket-created should emit new support ticket",
+  "customer support tickets should include the customer's ticket",
+  "driver support ticket should persist driver role",
+  "driver support tickets should include the driver's ticket",
+  "support:ticket-updated should emit closed support ticket",
   "support ticket should persist after server restart",
   "pricing update should persist after server restart",
   "settings update should persist after server restart"

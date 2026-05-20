@@ -31,6 +31,8 @@ Events emitted by ride/admin actions:
 - `driver:online-status-updated`
 - `driver:location-updated`
 - `driver:location-unavailable`
+- `support:ticket-created`
+- `support:ticket-updated`
 - `admin:captain-application-created`
 - `admin:captain-application-reviewed`
 
@@ -114,8 +116,15 @@ Driver development login is limited to active approved captains in the local dat
 ## Support
 
 - `POST /api/support/tickets`
+  - Body: `{ "name": "User", "phone": "+970...", "role": "customer|driver", "type": "ride_issue", "message": "...", "rideId": "ride_..." }`
+  - Creates an `open` SQLite ticket and emits `support:ticket-created`.
+- `GET /api/support/my-tickets?phone=...&role=customer|driver`
+  - Returns tickets for the current local user phone and role.
 - `GET /api/admin/support/tickets`
+  - Returns all tickets for admin review.
 - `PATCH /api/admin/support/tickets/:id/status`
+  - Body: `{ "status": "open|closed" }`
+  - Updates ticket state and emits `support:ticket-updated`.
 
 ## Driver Compatibility
 

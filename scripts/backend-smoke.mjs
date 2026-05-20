@@ -394,18 +394,53 @@ try {
   assert(status.ride.status === "completed", "ride status should update");
   assert(completedPayload.ride?.id === rideId, "ride:completed should emit the completed ride");
 
+  const supportCreatedEvent = waitForSocketEvent(socket, "support:ticket-created");
   const ticket = await request("/api/support/tickets", {
     method: "POST",
-    body: JSON.stringify({ userName: "Smoke Customer", phone, type: "general", message: "Need help" })
+    body: JSON.stringify({ name: "Smoke Customer", phone, role: "customer", type: "ride_issue", message: "Need help", rideId })
   });
+  const supportCreatedPayload = await supportCreatedEvent;
   const ticketId = ticket.ticket?.id;
   assert(ticket.ticket?.status === "open", "support ticket should start open");
+  assert(ticket.ticket?.role === "customer", "customer support ticket should persist customer role");
+  assert(ticket.ticket?.rideId === rideId, "customer support ticket should persist linked ride id");
+  assert(supportCreatedPayload.ticket?.id === ticketId, "support:ticket-created should emit new support ticket");
 
+  const myCustomerTickets = await request(`/api/support/my-tickets?phone=${encodeURIComponent(phone)}&role=customer`);
+  assert(
+    myCustomerTickets.tickets.some((supportTicket) => supportTicket.id === ticketId),
+    "customer support tickets should include the customer's ticket"
+  );
+
+  const driverSupportCreatedEvent = waitForSocketEvent(socket, "support:ticket-created");
+  const driverTicket = await request("/api/support/tickets", {
+    method: "POST",
+    body: JSON.stringify({
+      name: "Smoke Captain",
+      phone: captainPhone,
+      role: "driver",
+      type: "gps_issue",
+      message: "GPS needs help",
+      rideId
+    })
+  });
+  await driverSupportCreatedEvent;
+  assert(driverTicket.ticket?.role === "driver", "driver support ticket should persist driver role");
+
+  const myDriverTickets = await request(`/api/support/my-tickets?phone=${encodeURIComponent(captainPhone)}&role=driver`);
+  assert(
+    myDriverTickets.tickets.some((supportTicket) => supportTicket.id === driverTicket.ticket.id),
+    "driver support tickets should include the driver's ticket"
+  );
+
+  const supportUpdatedEvent = waitForSocketEvent(socket, "support:ticket-updated");
   const closedTicket = await request(`/api/admin/support/tickets/${ticketId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status: "closed" })
   });
+  const supportUpdatedPayload = await supportUpdatedEvent;
   assert(closedTicket.ticket?.status === "closed", "admin support ticket patch should close a ticket");
+  assert(supportUpdatedPayload.ticket?.status === "closed", "support:ticket-updated should emit closed support ticket");
 
   const reopenedTicket = await request(`/api/admin/support/tickets/${ticketId}/status`, {
     method: "PATCH",

@@ -28,6 +28,7 @@ import {
   listDriverRides,
   listDriverRequests,
   listDrivers,
+  listMySupportTickets,
   listPricingRules,
   listRides,
   listSupportTickets,
@@ -45,7 +46,7 @@ import {
   verifyUserByPhone
 } from "./db/database.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
-import { emitDriverEvent, emitRideEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
+import { emitDriverEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
@@ -466,8 +467,31 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/support/tickets") {
     const body = await readJson(request);
+    if (!body.name && !body.userName) {
+      sendJson(response, 400, { error: "support_name_required" });
+      return;
+    }
+    if (!body.phone) {
+      sendJson(response, 400, { error: "support_phone_required" });
+      return;
+    }
+    if (!body.message) {
+      sendJson(response, 400, { error: "support_message_required" });
+      return;
+    }
     const ticket = insertSupportTicket(body);
+    emitSupportTicketEvent("support:ticket-created", { ticket });
     sendJson(response, 201, { ticket });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/support/my-tickets") {
+    sendJson(response, 200, {
+      tickets: listMySupportTickets({
+        phone: url.searchParams.get("phone") || "",
+        role: url.searchParams.get("role") || ""
+      })
+    });
     return;
   }
 
@@ -484,6 +508,7 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "support_ticket_not_found" });
       return;
     }
+    emitSupportTicketEvent("support:ticket-updated", { ticket });
     sendJson(response, 200, { ticket });
     return;
   }
