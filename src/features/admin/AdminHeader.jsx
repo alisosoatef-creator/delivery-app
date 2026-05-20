@@ -12,6 +12,9 @@ export function AdminHeader({ state, dispatch, isArabic, activeSection, logout }
       </div>
       <div className="admin-header-actions">
         <strong className={state.backendLive ? "good" : "warn"}>{state.backendLive ? "Live" : "Local"}</strong>
+        <strong className={state.realtimeConnected ? "good" : "warn"}>
+          {state.realtimeConnected ? (isArabic ? "مباشر" : "Realtime") : (isArabic ? "يدوي" : "Manual")}
+        </strong>
         <button className="secondary" type="button" onClick={() => dispatch({ type: "patch", patch: { language: state.language === "ar" ? "en" : "ar" } })}>
           {isArabic ? "English" : "العربية"}
         </button>

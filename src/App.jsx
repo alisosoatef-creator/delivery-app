@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Shell } from "./components/layout/Shell.jsx";
 import { AccessDenied } from "./components/ui/AccessDenied.jsx";
 import { AdminPanel } from "./features/admin/AdminPanel.jsx";
@@ -12,14 +13,21 @@ import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, ro
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
 import { createRide, fetchCustomerRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
+import { connectSocket, disconnectSocket, subscribeToAdminEvents, subscribeToDriverEvents, subscribeToRideEvents } from "./services/socketClient.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
 import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
 import { RIDE_STATUSES } from "./utils/rideStatus.js";
 import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "./utils/roles.js";
 
+function upsertRide(rides = [], ride) {
+  if (!ride?.id) return rides;
+  return [ride, ...rides.filter((item) => item.id !== ride.id)];
+}
+
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const queryClient = useQueryClient();
   const bootstrapQuery = useBootstrap();
   const t = text[state.language];
   const isArabic = state.language === "ar";
@@ -64,6 +72,94 @@ function App() {
     events.onerror = () => dispatch({ type: "patch", patch: { backendLive: false } });
     return () => events.close();
   }, []);
+
+  useEffect(() => {
+    if (!state.session) {
+      disconnectSocket();
+      dispatch({ type: "patch", patch: { realtimeConnected: false, realtimeStatus: "offline" } });
+      return undefined;
+    }
+
+    const customerId = state.currentUser?.id || state.session?.id || "";
+    const customerPhone = state.currentUser?.phone || state.session?.phone || state.phone || "";
+    const driverId = state.session?.driverId || state.session?.driver?.id || state.selectedDriverId || "";
+    const isAdmin = canAccessAdmin(state);
+    const isDriver = activeRole === ROLES.driver;
+    const isCustomer = activeRole === ROLES.customer;
+
+    connectSocket({
+      customerId,
+      customerPhone,
+      driverId: isDriver ? driverId : "",
+      rideId: state.ride?.id || "",
+      isAdmin,
+      onConnectionChange: (connected) => {
+        dispatch({ type: "patch", patch: { realtimeConnected: connected, realtimeStatus: connected ? "connected" : "fallback" } });
+      }
+    });
+
+    function invalidateRideQueries() {
+      queryClient.invalidateQueries({ queryKey: ["driver", "availableRides"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "myRides"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", "rides"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "rides"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["rides"] });
+    }
+
+    function applyRidePayload(payload, eventName) {
+      const ride = payload?.ride;
+      if (!ride?.id) return;
+      invalidateRideQueries();
+
+      const belongsToCustomer =
+        isCustomer &&
+        (state.ride?.id === ride.id ||
+          (customerId && ride.customerId === customerId) ||
+          (customerPhone && ride.customerPhone === customerPhone));
+      const belongsToDriver =
+        isDriver &&
+        (eventName === "ride:created" || ride.driverId === driverId || state.ride?.id === ride.id);
+
+      if (belongsToCustomer || belongsToDriver) {
+        dispatch({
+          type: "patch",
+          patch: {
+            ride: state.ride?.id === ride.id || ride.driverId === driverId || belongsToCustomer ? ride : state.ride,
+            selectedDriverId: ride.driverId || state.selectedDriverId,
+            customerRides: upsertRide(state.customerRides || [], ride),
+            backendLive: true
+          }
+        });
+      }
+    }
+
+    const unsubscribeRideEvents = subscribeToRideEvents(applyRidePayload);
+    const unsubscribeDriverEvents = subscribeToDriverEvents(() => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "availableRides"] });
+    });
+    const unsubscribeAdminEvents = subscribeToAdminEvents(() => {
+      queryClient.invalidateQueries({ queryKey: ["admin"] });
+      queryClient.invalidateQueries({ queryKey: ["captainApplications"] });
+    });
+
+    return () => {
+      unsubscribeRideEvents();
+      unsubscribeDriverEvents();
+      unsubscribeAdminEvents();
+    };
+  }, [
+    activeRole,
+    queryClient,
+    state.currentUser?.id,
+    state.currentUser?.phone,
+    state.customerRides,
+    state.phone,
+    state.ride,
+    state.selectedDriverId,
+    state.session
+  ]);
 
   useEffect(() => {
     const mapDistanceKm = state.routeInfo?.routeDistanceKm || estimatePickupDestinationDistance(state);

@@ -161,6 +161,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           <button className="secondary" onClick={() => driverData.refetchAvailableRides()} disabled={driverData.isAvailableLoading}>
             {isArabic ? "تحديث الطلبات" : "Refresh requests"}
           </button>
+          <span className={state.realtimeConnected ? "realtime-status-pill live" : "realtime-status-pill fallback"}>
+            {state.realtimeConnected
+              ? (isArabic ? "التحديث المباشر فعال" : "Realtime active")
+              : (isArabic ? "التحديث التلقائي غير متاح" : "Realtime unavailable")}
+          </span>
           <StatusBadge status={isDriverActive ? "accepted" : "cancelled"} label={isDriverActive ? (isArabic ? "نشط" : "Active") : (isArabic ? "موقوف" : "Suspended")} />
         </div>
       </section>

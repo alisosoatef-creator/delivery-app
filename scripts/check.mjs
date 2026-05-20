@@ -12,6 +12,7 @@ const requiredFiles = [
   "src/features/auth/AdminDevLogin.jsx",
   "src/features/auth/DriverDevLogin.jsx",
   "backend/server.mjs",
+  "backend/realtime.mjs",
   "backend/rideStatus.mjs",
   "backend/data.mjs",
   "backend/auth/passwords.mjs",
@@ -20,7 +21,9 @@ const requiredFiles = [
   "backend/db/seed.mjs",
   "backend/schema.sql",
   "backend/api-contract.md",
-  "scripts/backend-smoke.mjs"
+  "scripts/backend-smoke.mjs",
+  "vite.config.js",
+  "src/services/socketClient.js"
 ];
 
 for (const file of requiredFiles) {
@@ -102,6 +105,7 @@ const sourceOrder = [
   "src/store/appState.js",
   "src/services/apiClient.js",
   "src/services/api.js",
+  "src/services/socketClient.js",
   "src/services/rides.js",
   "src/services/authApi.js",
   "src/services/captainApplicationsApi.js",
@@ -126,12 +130,14 @@ const appSource = sourceOrder
 const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
+const backendRealtimeSource = fs.readFileSync("backend/realtime.mjs", "utf8");
 const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
 const backendAuthSource = fs.readFileSync("backend/auth/passwords.mjs", "utf8");
 const backendDatabaseSource = fs.readFileSync("backend/db/database.mjs", "utf8");
 const backendSchemaSource = fs.readFileSync("backend/db/schema.mjs", "utf8");
 const backendSeedSource = fs.readFileSync("backend/db/seed.mjs", "utf8");
 const backendSmokeSource = fs.readFileSync("scripts/backend-smoke.mjs", "utf8");
+const viteSource = fs.readFileSync("vite.config.js", "utf8");
 const gitignoreSource = fs.existsSync(".gitignore") ? fs.readFileSync(".gitignore", "utf8") : "";
 const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
   ? fs.readFileSync("src/routes/guards.jsx", "utf8")
@@ -332,6 +338,14 @@ if (!packageJson.dependencies?.bcryptjs) {
   throw new Error("Phase 8 auth must install bcryptjs for password hashing");
 }
 
+if (!packageJson.dependencies?.["socket.io"]) {
+  throw new Error("Phase 14 realtime must install socket.io");
+}
+
+if (!packageJson.dependencies?.["socket.io-client"]) {
+  throw new Error("Phase 14 realtime must install socket.io-client");
+}
+
 for (const queryProviderToken of [
   "QueryClient",
   "QueryClientProvider",
@@ -372,6 +386,51 @@ for (const serviceLayerToken of [
 ]) {
   if (!appSource.includes(serviceLayerToken)) {
     throw new Error(`Phase 7A API/query integration is missing: ${serviceLayerToken}`);
+  }
+}
+
+for (const realtimeFrontendToken of [
+  "connectSocket",
+  "disconnectSocket",
+  "subscribeToRideEvents",
+  "subscribeToAdminEvents",
+  "subscribeToDriverEvents",
+  "join:customer",
+  "join:driver",
+  "join:admin",
+  "join:ride",
+  "ride:created",
+  "ride:accepted",
+  "ride:status-updated",
+  "ride:cancelled",
+  "ride:completed",
+  "driver:online-status-updated",
+  "queryClient.invalidateQueries",
+  "realtimeConnected",
+  "realtimeStatus"
+]) {
+  if (!appSource.includes(realtimeFrontendToken)) {
+    throw new Error(`Phase 14 frontend realtime integration is missing: ${realtimeFrontendToken}`);
+  }
+}
+
+for (const realtimeStyleToken of [
+  ".realtime-status-pill",
+  ".realtime-status-pill.live",
+  ".realtime-status-pill.fallback"
+]) {
+  if (!stylesSource.includes(realtimeStyleToken)) {
+    throw new Error(`Phase 14 realtime status styles are missing: ${realtimeStyleToken}`);
+  }
+}
+
+for (const viteRealtimeToken of [
+  '"/socket.io"',
+  "ws: true",
+  "http://127.0.0.1:3001"
+]) {
+  if (!viteSource.includes(viteRealtimeToken)) {
+    throw new Error(`Vite Socket.IO proxy is missing: ${viteRealtimeToken}`);
   }
 }
 
@@ -857,6 +916,7 @@ for (const premiumMotionToken of [
 }
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/realtime.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/rideStatus.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdio: "inherit" });
@@ -903,6 +963,31 @@ for (const backendEndpointToken of [
 ]) {
   if (!backendSource.includes(backendEndpointToken)) {
     throw new Error(`Backend API surface is missing: ${backendEndpointToken}`);
+  }
+}
+
+for (const backendRealtimeToken of [
+  "setupRealtime(server)",
+  "new Server(server",
+  "io.on(\"connection\"",
+  "join:customer",
+  "join:driver",
+  "join:admin",
+  "join:ride",
+  "emitRideEvent",
+  "emitDriverEvent",
+  "realtimeInfo",
+  "ride:created",
+  "ride:accepted",
+  "ride:status-updated",
+  "ride:cancelled",
+  "ride:completed",
+  "driver:online-status-updated",
+  "admin:captain-application-created",
+  "admin:captain-application-reviewed"
+]) {
+  if (!backendRealtimeSource.includes(backendRealtimeToken) && !backendSource.includes(backendRealtimeToken)) {
+    throw new Error(`Phase 14 backend realtime integration is missing: ${backendRealtimeToken}`);
   }
 }
 
@@ -990,6 +1075,12 @@ for (const persistenceSmokeToken of [
   "driver should update ride to driver_arriving",
   "driver should update ride to arrived",
   "driver should update ride to in_progress",
+  "socket.io should connect to the backend",
+  "ride:created should emit the created ride",
+  "ride:cancelled should emit the cancelled ride",
+  "ride:accepted should emit the accepted ride",
+  "ride:status-updated should emit driver_arriving",
+  "ride:completed should emit the completed ride",
   "support ticket should persist after server restart",
   "pricing update should persist after server restart",
   "settings update should persist after server restart"

@@ -10,6 +10,30 @@ Routes below are currently backed by the local SQLite development database. Ther
 - `GET /api/events`
   - Server-sent events stream used by the frontend.
 
+## Realtime
+
+Socket.IO runs on the same local backend server on `/socket.io`. It is development-only for now and keeps REST APIs as the source of truth.
+
+Rooms currently supported:
+
+- `join:customer` with `{ customerId, customerPhone }`
+- `join:driver` with `{ driverId }`
+- `join:admin`
+- `join:ride` with `{ rideId }`
+
+Events emitted by ride/admin actions:
+
+- `ride:created`
+- `ride:accepted`
+- `ride:status-updated`
+- `ride:cancelled`
+- `ride:completed`
+- `driver:online-status-updated`
+- `admin:captain-application-created`
+- `admin:captain-application-reviewed`
+
+TODO: protect rooms with real authenticated tokens before production and replace broad admin/dev subscriptions with stricter authorization.
+
 ## Auth
 
 - `POST /api/auth/request-otp`

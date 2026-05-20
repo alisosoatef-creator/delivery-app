@@ -2850,6 +2850,32 @@ small,
   font-size: 0.86rem;
 }
 
+.realtime-status-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  max-width: 100%;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.realtime-status-pill.live {
+  border-color: rgba(14, 159, 110, .24);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.realtime-status-pill.fallback {
+  border-color: rgba(196, 122, 16, .24);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
 .accepted-driver-card {
   animation: softPulse 2.6s ease-in-out 1;
 }

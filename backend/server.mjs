@@ -45,6 +45,7 @@ import {
   verifyUserByPhone
 } from "./db/database.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
+import { emitDriverEvent, emitRideEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
@@ -104,6 +105,12 @@ function broadcast(event, payload) {
   for (const client of sseClients) client.write(frame);
 }
 
+function rideRealtimeEventName(ride) {
+  if (ride?.status === "cancelled" || ride?.status === "canceled") return "ride:cancelled";
+  if (ride?.status === "completed") return "ride:completed";
+  return "ride:status-updated";
+}
+
 function requireAdminDev(request) {
   // TODO phase-10: replace this development placeholder with real token/session authorization for /api/admin.
   const token = request.headers.authorization || "";
@@ -123,7 +130,8 @@ async function handleApi(request, response) {
       ok: true,
       service: "wasel-api",
       time: new Date().toISOString(),
-      database: databaseInfo()
+      database: databaseInfo(),
+      realtime: realtimeInfo()
     });
     return;
   }
@@ -231,6 +239,7 @@ async function handleApi(request, response) {
       return;
     }
     const application = insertCaptainApplication(body);
+    emitDriverEvent("admin:captain-application-created", { application });
     sendJson(response, 201, { application });
     return;
   }
@@ -248,6 +257,7 @@ async function handleApi(request, response) {
       return;
     }
     const captain = createDriverFromApplication(application);
+    emitDriverEvent("admin:captain-application-reviewed", { application, captain });
     sendJson(response, 200, { application, captain });
     return;
   }
@@ -259,6 +269,7 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "captain_application_not_found" });
       return;
     }
+    emitDriverEvent("admin:captain-application-reviewed", { application });
     sendJson(response, 200, { application });
     return;
   }
@@ -390,6 +401,7 @@ async function handleApi(request, response) {
     const quote = calculateQuote(body);
     const ride = insertRide(body, quote);
     broadcast("ride.created", { ride });
+    emitRideEvent("ride:created", { ride });
     sendJson(response, 201, { ride });
     return;
   }
@@ -403,6 +415,7 @@ async function handleApi(request, response) {
       return;
     }
     broadcast("ride.status.changed", { ride });
+    emitRideEvent(rideRealtimeEventName(ride), { ride });
     sendJson(response, 200, { ride });
     return;
   }
@@ -420,6 +433,7 @@ async function handleApi(request, response) {
       return;
     }
     broadcast("ride.status.changed", { ride });
+    emitRideEvent("ride:accepted", { ride });
     sendJson(response, 200, { ride });
     return;
   }
@@ -440,6 +454,7 @@ async function handleApi(request, response) {
       return;
     }
     broadcast("ride.status.changed", { ride });
+    emitRideEvent(rideRealtimeEventName(ride), { ride });
     sendJson(response, 200, { ride });
     return;
   }
@@ -506,6 +521,7 @@ async function handleApi(request, response) {
     const body = await readJson(request);
     const driver = updateDriverStatus(body.driverId, { online: Boolean(body.online) }) || listDrivers()[0];
     broadcast("driver.status.changed", { driver });
+    emitDriverEvent("driver:online-status-updated", { driver });
     sendJson(response, 200, { driver });
     return;
   }
@@ -549,6 +565,8 @@ const server = http.createServer((request, response) => {
     sendJson(response, 500, { error: "server_error" });
   });
 });
+
+setupRealtime(server);
 
 setInterval(() => {
   const onlineDrivers = listDrivers().filter((item) => item.online);

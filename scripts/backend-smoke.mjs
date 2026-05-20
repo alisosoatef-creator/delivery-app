@@ -3,12 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
+import { io as createSocketClient } from "socket.io-client";
 
 const port = Number(process.env.SMOKE_PORT || 3101);
 const baseUrl = `http://127.0.0.1:${port}`;
 const smokeDbPath = path.join(os.tmpdir(), `wasel-smoke-${process.pid}-${Date.now()}.sqlite`);
 
 let logs = "";
+let socket = null;
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -86,12 +88,48 @@ async function waitForServer() {
   throw new Error(`Backend smoke server did not become ready\n${logs}`);
 }
 
+function connectSocket() {
+  return new Promise((resolve, reject) => {
+    const client = createSocketClient(baseUrl, {
+      reconnection: false,
+      timeout: 3000,
+      transports: ["websocket", "polling"]
+    });
+    const timer = setTimeout(() => {
+      client.close();
+      reject(new Error("socket.io should connect to the backend"));
+    }, 3500);
+    client.once("connect", () => {
+      clearTimeout(timer);
+      resolve(client);
+    });
+    client.once("connect_error", (error) => {
+      clearTimeout(timer);
+      client.close();
+      reject(error);
+    });
+  });
+}
+
+function waitForSocketEvent(client, eventName) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`socket event not received: ${eventName}`)), 3000);
+    client.once(eventName, (payload) => {
+      clearTimeout(timer);
+      resolve(payload);
+    });
+  });
+}
+
 let child = startServer();
 
 try {
   const health = await waitForServer();
   assert(health.database?.engine === "sqlite", "health should report sqlite database");
   assert(health.database?.path, "health should report database path");
+  socket = await connectSocket();
+  assert(socket.connected, "socket.io should connect to the backend");
+  socket.emit("join:admin");
 
   const bootstrap = await request("/api/bootstrap");
   assert(Array.isArray(bootstrap.cities), "bootstrap should include cities");
@@ -236,12 +274,15 @@ try {
     durationMinutes: 14
   };
 
+  const rideCreatedEvent = waitForSocketEvent(socket, "ride:created");
   const searchingRide = await request("/api/rides", {
     method: "POST",
     body: JSON.stringify(ridePayload)
   });
+  const createdPayload = await rideCreatedEvent;
   const cancelledRideId = searchingRide.ride?.id;
   assert(cancelledRideId, "ride request should create ride");
+  assert(createdPayload.ride?.id === cancelledRideId, "ride:created should emit the created ride");
   assert(searchingRide.ride.status === "searching", "new customer ride should start searching");
   assert(!searchingRide.ride.driverId && !searchingRide.driver, "new customer ride must not expose captain before acceptance");
   assert(searchingRide.ride.routeDistanceKm === 5.2, "ride should persist route distance");
@@ -262,11 +303,14 @@ try {
   const customerRideDetails = await request(`/api/customer/rides/${cancelledRideId}?phone=${encodeURIComponent(phone)}`);
   assert(customerRideDetails.ride?.id === cancelledRideId, "customer ride details should return the requested ride");
 
+  const rideCancelledEvent = waitForSocketEvent(socket, "ride:cancelled");
   const cancelledRide = await request(`/api/rides/${cancelledRideId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status: "cancelled" })
   });
+  const cancelledPayload = await rideCancelledEvent;
   assert(cancelledRide.ride.status === "cancelled", "ride status should update to cancelled");
+  assert(cancelledPayload.ride?.id === cancelledRideId, "ride:cancelled should emit the cancelled ride");
 
   const ride = await request("/api/rides", {
     method: "POST",
@@ -282,13 +326,16 @@ try {
     "driver available rides should include the ride before acceptance"
   );
 
+  const rideAcceptedEvent = waitForSocketEvent(socket, "ride:accepted");
   const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
     method: "PATCH",
     body: JSON.stringify({ driverId: approve.captain.id })
   });
+  const acceptedPayload = await rideAcceptedEvent;
   assert(acceptedRide.ride.status === "accepted", "ride accept endpoint should set accepted status");
   assert(acceptedRide.ride.driverId === approve.captain.id, "ride accept endpoint should assign driver id");
   assert(acceptedRide.ride.driver?.id === approve.captain.id, "accepted ride should include driver details");
+  assert(acceptedPayload.ride?.id === rideId, "ride:accepted should emit the accepted ride");
 
   const availableAfterAccept = await request("/api/driver/available-rides?cityId=nablus");
   assert(
@@ -302,11 +349,14 @@ try {
     "accepted ride should appear in driver my-rides"
   );
 
+  const rideStatusUpdatedEvent = waitForSocketEvent(socket, "ride:status-updated");
   const driverArriving = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ driverId: approve.captain.id, status: "driver_arriving" })
   });
+  const statusUpdatedPayload = await rideStatusUpdatedEvent;
   assert(driverArriving.ride.status === "driver_arriving", "driver should update ride to driver_arriving");
+  assert(statusUpdatedPayload.ride?.status === "driver_arriving", "ride:status-updated should emit driver_arriving");
 
   const driverArrived = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
@@ -320,11 +370,14 @@ try {
   });
   assert(inProgress.ride.status === "in_progress", "driver should update ride to in_progress");
 
+  const rideCompletedEvent = waitForSocketEvent(socket, "ride:completed");
   const status = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ driverId: approve.captain.id, status: "completed" })
   });
+  const completedPayload = await rideCompletedEvent;
   assert(status.ride.status === "completed", "ride status should update");
+  assert(completedPayload.ride?.id === rideId, "ride:completed should emit the completed ride");
 
   const ticket = await request("/api/support/tickets", {
     method: "POST",
@@ -408,6 +461,7 @@ try {
 
   console.log("backend-smoke-ok");
 } finally {
+  if (socket) socket.close();
   await stopServer(child);
   fs.rmSync(smokeDbPath, { force: true });
   fs.rmSync(`${smokeDbPath}-shm`, { force: true });

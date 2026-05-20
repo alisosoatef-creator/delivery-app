@@ -91,6 +91,8 @@ export const initialState = {
   },
   admin: { activeRides: 3, onlineDrivers: 2, todayRevenueIls: 83, recentRides: [] },
   backendLive: false,
+  realtimeConnected: false,
+  realtimeStatus: "offline",
   liveTicks: 0,
   toast: ""
 };

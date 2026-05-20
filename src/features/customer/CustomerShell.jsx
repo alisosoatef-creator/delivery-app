@@ -50,6 +50,11 @@ export function CustomerShell(props) {
         </nav>
 
         <div className="customer-actions">
+          <span className={state.realtimeConnected ? "realtime-status-pill live" : "realtime-status-pill fallback"}>
+            {state.realtimeConnected
+              ? (isArabic ? "متصل مباشر" : "Live updates")
+              : (isArabic ? "تحديث يدوي" : "Manual refresh")}
+          </span>
           <button
             type="button"
             className={settingsPanelOpen ? "customer-settings-button active" : "customer-settings-button"}
