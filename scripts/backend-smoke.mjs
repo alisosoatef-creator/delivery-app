@@ -197,6 +197,9 @@ try {
   assert(login.token, "login should return token");
   assert(login.user?.role === "customer", "login should return a customer session user");
 
+  const logout = await request("/api/auth/logout", { method: "POST" });
+  assert(logout.ok === true, "logout endpoint should return ok for the development session");
+
   const customers = await request("/api/admin/customers");
   const smokeCustomer = customers.customers.find((customer) => customer.phone === phone);
   assert(smokeCustomer?.id, "admin customers should include registered database customers");
@@ -251,6 +254,12 @@ try {
   });
   assert(activeDriver.driver.status === "active", "admin driver status patch should reactivate driver");
 
+  const adminDrivers = await request("/api/admin/drivers");
+  assert(
+    adminDrivers.drivers.some((driver) => driver.id === approve.captain.id && driver.status === "active"),
+    "admin drivers should include the approved active captain"
+  );
+
   const quote = await request("/api/rides/quote", {
     method: "POST",
     body: JSON.stringify({ cityId: "nablus", distanceKm: 5.8 })
@@ -287,6 +296,12 @@ try {
   assert(!searchingRide.ride.driverId && !searchingRide.driver, "new customer ride must not expose captain before acceptance");
   assert(searchingRide.ride.routeDistanceKm === 5.2, "ride should persist route distance");
   assert(searchingRide.ride.durationMinutes === 14, "ride should persist route duration");
+
+  const allRides = await request("/api/rides");
+  assert(
+    allRides.rides.some((listedRide) => listedRide.id === cancelledRideId),
+    "public rides endpoint should include the newly created ride"
+  );
 
   const availableBeforeCancel = await request("/api/driver/available-rides?cityId=nablus");
   assert(
@@ -496,6 +511,13 @@ try {
   assert(
     myDriverTickets.tickets.some((supportTicket) => supportTicket.id === driverTicket.ticket.id),
     "driver support tickets should include the driver's ticket"
+  );
+
+  const adminSupportTickets = await request("/api/admin/support/tickets");
+  assert(
+    adminSupportTickets.tickets.some((supportTicket) => supportTicket.id === ticketId) &&
+      adminSupportTickets.tickets.some((supportTicket) => supportTicket.id === driverTicket.ticket.id),
+    "admin support tickets should include customer and driver tickets"
   );
 
   const supportUpdatedEvent = waitForSocketEvent(socket, "support:ticket-updated");

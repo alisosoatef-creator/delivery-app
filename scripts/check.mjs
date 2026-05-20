@@ -26,7 +26,22 @@ const requiredFiles = [
   "src/services/socketClient.js",
   "src/hooks/useSupportTickets.js",
   "src/services/paymentsApi.js",
-  "src/hooks/usePayments.js"
+  "src/hooks/usePayments.js",
+  "src/components/ui/Button.jsx",
+  "src/components/ui/Card.jsx",
+  "src/components/ui/Input.jsx",
+  "src/components/ui/Select.jsx",
+  "src/components/ui/Badge.jsx",
+  "src/components/ui/ModalDrawer.jsx",
+  "src/components/ui/EmptyState.jsx",
+  "src/components/ui/ErrorState.jsx",
+  "src/components/ui/LoadingSkeleton.jsx",
+  "src/components/ui/StatCard.jsx",
+  "src/components/ui/SectionHeader.jsx",
+  "src/components/ui/DataTable.jsx",
+  "src/features/admin/AdminDetailDrawer.jsx",
+  "src/features/admin/adminFormatters.js",
+  "docs/qa-checklist.md"
 ];
 
 for (const file of requiredFiles) {
@@ -84,6 +99,8 @@ const sourceOrder = [
   "src/features/admin/AdminPricing.jsx",
   "src/features/admin/AdminSettings.jsx",
   "src/features/admin/AdminPermissions.jsx",
+  "src/features/admin/AdminDetailDrawer.jsx",
+  "src/features/admin/adminFormatters.js",
   "src/features/admin/adminMockData.js",
   "src/features/rides/RouteSearchCard.jsx",
   "src/features/rides/RideMap.jsx",
@@ -92,6 +109,18 @@ const sourceOrder = [
   "src/features/rides/MapBoard.jsx",
   "src/features/rides/LegacyMapBoard.jsx",
   "src/components/ui/Field.jsx",
+  "src/components/ui/Button.jsx",
+  "src/components/ui/Card.jsx",
+  "src/components/ui/Input.jsx",
+  "src/components/ui/Select.jsx",
+  "src/components/ui/Badge.jsx",
+  "src/components/ui/ModalDrawer.jsx",
+  "src/components/ui/EmptyState.jsx",
+  "src/components/ui/ErrorState.jsx",
+  "src/components/ui/LoadingSkeleton.jsx",
+  "src/components/ui/StatCard.jsx",
+  "src/components/ui/SectionHeader.jsx",
+  "src/components/ui/DataTable.jsx",
   "src/components/ui/PanelTitle.jsx",
   "src/components/ui/StatusBadge.jsx",
   "src/components/ui/QuoteStrip.jsx",
@@ -151,6 +180,30 @@ const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
 const routeConfigSource = fs.existsSync("src/routes/routeConfig.js")
   ? fs.readFileSync("src/routes/routeConfig.js", "utf8")
   : "";
+const adminUiFiles = [
+  "src/features/admin/AdminShell.jsx",
+  "src/features/admin/AdminSidebar.jsx",
+  "src/features/admin/AdminHeader.jsx",
+  "src/features/admin/AdminStats.jsx",
+  "src/features/admin/AdminDashboard.jsx",
+  "src/features/admin/AdminDriverApplications.jsx",
+  "src/features/admin/AdminCustomers.jsx",
+  "src/features/admin/AdminDrivers.jsx",
+  "src/features/admin/AdminRides.jsx",
+  "src/features/admin/AdminPayments.jsx",
+  "src/features/admin/AdminSupport.jsx",
+  "src/features/admin/AdminPricing.jsx",
+  "src/features/admin/AdminSettings.jsx",
+  "src/features/admin/AdminPermissions.jsx",
+  "src/features/admin/AdminDetailDrawer.jsx",
+  "src/features/admin/adminFormatters.js",
+  "src/features/admin/adminMockData.js"
+];
+const adminUiSource = adminUiFiles
+  .filter((file) => fs.existsSync(file))
+  .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
+  .join("\n");
+const qaChecklistSource = fs.existsSync("docs/qa-checklist.md") ? fs.readFileSync("docs/qa-checklist.md", "utf8") : "";
 
 for (const routeFile of [
   "src/routes/guards.jsx",
@@ -333,6 +386,78 @@ for (const adminStyleToken of [
 ]) {
   if (!stylesSource.includes(adminStyleToken)) {
     throw new Error(`Admin system styles are missing: ${adminStyleToken}`);
+  }
+}
+
+for (const designSystemToken of [
+  "function Button",
+  "function Card",
+  "function Input",
+  "function Select",
+  "function Badge",
+  "function ModalDrawer",
+  "function EmptyState",
+  "function ErrorState",
+  "function LoadingSkeleton",
+  "function StatCard",
+  "function SectionHeader",
+  "function DataTable",
+  "ds-button",
+  "ds-card",
+  "ds-field",
+  "ds-badge",
+  "ds-data-table"
+]) {
+  if (!appSource.includes(designSystemToken) && !stylesSource.includes(designSystemToken)) {
+    throw new Error(`Design system surface is missing: ${designSystemToken}`);
+  }
+}
+
+for (const advancedAdminToken of [
+  "function AdminDetailDrawer",
+  "function AdminTimeline",
+  "function DrawerPlaceholder",
+  "exportRowsToCsv",
+  "Export CSV",
+  "admin-settings-tabs",
+  "SETTINGS_TABS",
+  "\"general\"",
+  "\"pricing\"",
+  "\"payments\"",
+  "\"support\"",
+  "\"security\"",
+  "\"team\"",
+  "ADMIN_TEAM_ROLES",
+  "\"owner\"",
+  "\"admin\"",
+  "\"support\"",
+  "admin-timeline",
+  "admin-detail-grid",
+  "advanced-admin-table"
+]) {
+  if (!appSource.includes(advancedAdminToken) && !stylesSource.includes(advancedAdminToken)) {
+    throw new Error(`Advanced Admin UX is missing: ${advancedAdminToken}`);
+  }
+}
+
+for (const blockedAdminRoleToken of ["Operations", "Finance", "Dispatcher", "operations dashboard", "finance dashboard", "dispatcher"]) {
+  if (adminUiSource.includes(blockedAdminRoleToken)) {
+    throw new Error(`Admin UI must not expose deferred admin role: ${blockedAdminRoleToken}`);
+  }
+}
+
+for (const qaChecklistToken of [
+  "Manual Test Checklist",
+  "npm.cmd run api",
+  "npm.cmd run dev",
+  "Customer",
+  "Driver",
+  "Admin",
+  "GPS",
+  "CSV"
+]) {
+  if (!qaChecklistSource.includes(qaChecklistToken)) {
+    throw new Error(`QA checklist is missing: ${qaChecklistToken}`);
   }
 }
 
