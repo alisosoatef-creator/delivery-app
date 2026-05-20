@@ -1,21 +1,22 @@
-import { useMemo, useState } from "react";
+import { lazy, Suspense, useMemo, useState } from "react";
 import { Toast } from "../../components/ui/index.js";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
 import { APP_ROUTE_PATHS } from "../../routes/index.js";
-import { AdminCustomers } from "./AdminCustomers.jsx";
-import { AdminDashboard } from "./AdminDashboard.jsx";
-import { AdminDriverApplications } from "./AdminDriverApplications.jsx";
-import { AdminDrivers } from "./AdminDrivers.jsx";
 import { AdminHeader } from "./AdminHeader.jsx";
-import { AdminPayments } from "./AdminPayments.jsx";
-import { AdminPermissions } from "./AdminPermissions.jsx";
-import { AdminPricing } from "./AdminPricing.jsx";
-import { AdminRides } from "./AdminRides.jsx";
-import { AdminSettings } from "./AdminSettings.jsx";
 import { AdminSidebar } from "./AdminSidebar.jsx";
-import { AdminSupport } from "./AdminSupport.jsx";
 import { mockCustomers, mockPaymentRecords, mockRideRecords } from "./adminMockData.js";
+
+const AdminCustomers = lazy(() => import("./AdminCustomers.jsx").then((module) => ({ default: module.AdminCustomers })));
+const AdminDashboard = lazy(() => import("./AdminDashboard.jsx").then((module) => ({ default: module.AdminDashboard })));
+const AdminDriverApplications = lazy(() => import("./AdminDriverApplications.jsx").then((module) => ({ default: module.AdminDriverApplications })));
+const AdminDrivers = lazy(() => import("./AdminDrivers.jsx").then((module) => ({ default: module.AdminDrivers })));
+const AdminPayments = lazy(() => import("./AdminPayments.jsx").then((module) => ({ default: module.AdminPayments })));
+const AdminPermissions = lazy(() => import("./AdminPermissions.jsx").then((module) => ({ default: module.AdminPermissions })));
+const AdminPricing = lazy(() => import("./AdminPricing.jsx").then((module) => ({ default: module.AdminPricing })));
+const AdminRides = lazy(() => import("./AdminRides.jsx").then((module) => ({ default: module.AdminRides })));
+const AdminSettings = lazy(() => import("./AdminSettings.jsx").then((module) => ({ default: module.AdminSettings })));
+const AdminSupport = lazy(() => import("./AdminSupport.jsx").then((module) => ({ default: module.AdminSupport })));
 
 const ADMIN_SECTIONS = [
   { key: "dashboard", labelAr: "الرئيسية", labelEn: "Dashboard", path: APP_ROUTE_PATHS.admin.dashboard },
@@ -29,6 +30,15 @@ const ADMIN_SECTIONS = [
   { key: "settings", labelAr: "الإعدادات", labelEn: "Settings", path: APP_ROUTE_PATHS.admin.settings },
   { key: "permissions", labelAr: "الصلاحيات", labelEn: "Permissions", path: "/admin/permissions" }
 ];
+
+function AdminSectionFallback({ isArabic }) {
+  return (
+    <div className="admin-section-loading lazy-screen-fallback" role="status">
+      <span />
+      <strong>{isArabic ? "جاري تحميل قسم الإدارة..." : "Loading admin section..."}</strong>
+    </div>
+  );
+}
 
 function cityName(state, cityId, isArabic) {
   const city = state.cities.find((item) => item.id === cityId);
@@ -438,16 +448,18 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
             {isArabic ? "تعذر الاتصال بالـ Backend، يتم استخدام البيانات المحلية مؤقتًا." : "Backend is unavailable, using local data for now."}
           </p>
         )}
-        {activeSection === "dashboard" && <AdminDashboard {...sharedAdminProps} />}
-        {activeSection === "applications" && <AdminDriverApplications {...sharedAdminProps} />}
-        {activeSection === "customers" && <AdminCustomers {...sharedAdminProps} />}
-        {activeSection === "drivers" && <AdminDrivers {...sharedAdminProps} />}
-        {activeSection === "rides" && <AdminRides {...sharedAdminProps} />}
-        {activeSection === "payments" && <AdminPayments {...sharedAdminProps} />}
-        {activeSection === "support" && <AdminSupport {...sharedAdminProps} />}
-        {activeSection === "pricing" && <AdminPricing {...sharedAdminProps} />}
-        {activeSection === "settings" && <AdminSettings {...sharedAdminProps} />}
-        {activeSection === "permissions" && <AdminPermissions {...sharedAdminProps} />}
+        <Suspense fallback={<AdminSectionFallback isArabic={isArabic} />}>
+          {activeSection === "dashboard" && <AdminDashboard {...sharedAdminProps} />}
+          {activeSection === "applications" && <AdminDriverApplications {...sharedAdminProps} />}
+          {activeSection === "customers" && <AdminCustomers {...sharedAdminProps} />}
+          {activeSection === "drivers" && <AdminDrivers {...sharedAdminProps} />}
+          {activeSection === "rides" && <AdminRides {...sharedAdminProps} />}
+          {activeSection === "payments" && <AdminPayments {...sharedAdminProps} />}
+          {activeSection === "support" && <AdminSupport {...sharedAdminProps} />}
+          {activeSection === "pricing" && <AdminPricing {...sharedAdminProps} />}
+          {activeSection === "settings" && <AdminSettings {...sharedAdminProps} />}
+          {activeSection === "permissions" && <AdminPermissions {...sharedAdminProps} />}
+        </Suspense>
       </section>
       <Toast message={state.toast} />
     </main>

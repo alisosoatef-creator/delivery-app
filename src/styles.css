@@ -4607,6 +4607,48 @@ small,
   box-shadow: 0 0 0 6px var(--accent-soft);
 }
 
+.lazy-screen-fallback,
+.lazy-section-fallback {
+  display: grid;
+  place-items: center;
+  gap: var(--space-3);
+  min-height: 180px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(145deg, var(--surface-raised), var(--surface-muted)),
+    var(--surface);
+  color: var(--text);
+  padding: var(--space-5);
+  text-align: center;
+}
+
+.lazy-screen-fallback {
+  min-height: 100vh;
+  border-radius: 0;
+}
+
+.lazy-screen-fallback span,
+.lazy-section-fallback span {
+  width: 38px;
+  height: 38px;
+  border: 3px solid rgba(201, 145, 47, .18);
+  border-block-start-color: var(--accent-strong);
+  border-radius: 50%;
+  animation: lazySpin .8s linear infinite;
+}
+
+.lazy-screen-fallback strong,
+.lazy-section-fallback strong {
+  font-size: 15px;
+}
+
+@keyframes lazySpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 700px) {
   .role-grid,
   .button-row,

@@ -1,15 +1,25 @@
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useRidesApi } from "../../hooks/useRidesApi.js";
 import { buildRideHistory, rideHasAcceptedDriver } from "../../utils/rideUtils.js";
 import { RIDE_STATUSES } from "../../utils/rideStatus.js";
-import { MapBoard } from "../rides/MapBoard.jsx";
-import { PhaseTwoExperience } from "../rides/PhaseTwoExperience.jsx";
-import { RideDetailPage } from "../rides/RideDetailPage.jsx";
 import { RideHistoryPanel } from "../rides/RideHistoryPanel.jsx";
-import { RouteSearchCard } from "../rides/RouteSearchCard.jsx";
-import { WalletPaymentPanel } from "../payments/WalletPaymentPanel.jsx";
-import { CustomerSupportPanel } from "../support/CustomerSupportPanel.jsx";
-import { AccountProfilePanel } from "./AccountProfilePanel.jsx";
+
+const AccountProfilePanel = lazy(() => import("./AccountProfilePanel.jsx").then((module) => ({ default: module.AccountProfilePanel })));
+const CustomerSupportPanel = lazy(() => import("../support/CustomerSupportPanel.jsx").then((module) => ({ default: module.CustomerSupportPanel })));
+const MapBoard = lazy(() => import("../rides/MapBoard.jsx").then((module) => ({ default: module.MapBoard })));
+const PhaseTwoExperience = lazy(() => import("../rides/PhaseTwoExperience.jsx").then((module) => ({ default: module.PhaseTwoExperience })));
+const RideDetailPage = lazy(() => import("../rides/RideDetailPage.jsx").then((module) => ({ default: module.RideDetailPage })));
+const RouteSearchCard = lazy(() => import("../rides/RouteSearchCard.jsx").then((module) => ({ default: module.RouteSearchCard })));
+const WalletPaymentPanel = lazy(() => import("../payments/WalletPaymentPanel.jsx").then((module) => ({ default: module.WalletPaymentPanel })));
+
+function CustomerSectionFallback({ label }) {
+  return (
+    <div className="lazy-section-fallback" role="status">
+      <span />
+      <strong>{label}</strong>
+    </div>
+  );
+}
 
 export function CustomerPanel(props) {
   const { state, dispatch, t, isArabic, selectedDriver, requestRide, updateRideStatus, activeView, setActiveView } = props;
@@ -66,7 +76,9 @@ export function CustomerPanel(props) {
           />
         </section>
         <section className="ride-detail-page">
-          <RideDetailPage ride={selectedHistoryRide} state={state} dispatch={dispatch} t={t} isArabic={isArabic} />
+          <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل تفاصيل الرحلة..." : "Loading ride details..."} />}>
+            <RideDetailPage ride={selectedHistoryRide} state={state} dispatch={dispatch} t={t} isArabic={isArabic} />
+          </Suspense>
         </section>
       </div>
     );
@@ -75,7 +87,9 @@ export function CustomerPanel(props) {
   if (activeView === "wallet") {
     return (
       <div className="customer-view-shell single-view">
-        <WalletPaymentPanel state={state} dispatch={dispatch} t={t} isArabic={isArabic} rideHistory={rideHistory} />
+        <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل المحفظة..." : "Loading wallet..."} />}>
+          <WalletPaymentPanel state={state} dispatch={dispatch} t={t} isArabic={isArabic} rideHistory={rideHistory} />
+        </Suspense>
       </div>
     );
   }
@@ -83,7 +97,9 @@ export function CustomerPanel(props) {
   if (activeView === "support") {
     return (
       <div className="customer-view-shell single-view">
-        <CustomerSupportPanel state={state} dispatch={dispatch} isArabic={isArabic} setActiveView={setActiveView} />
+        <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل الدعم..." : "Loading support..."} />}>
+          <CustomerSupportPanel state={state} dispatch={dispatch} isArabic={isArabic} setActiveView={setActiveView} />
+        </Suspense>
       </div>
     );
   }
@@ -91,14 +107,16 @@ export function CustomerPanel(props) {
   if (activeView === "account") {
     return (
       <div className="customer-view-shell single-view">
-        <AccountProfilePanel
-          state={state}
-          dispatch={dispatch}
-          t={t}
-          isArabic={isArabic}
-          rideHistory={rideHistory}
-          selectedDriver={selectedDriver}
-        />
+        <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل الحساب..." : "Loading account..."} />}>
+          <AccountProfilePanel
+            state={state}
+            dispatch={dispatch}
+            t={t}
+            isArabic={isArabic}
+            rideHistory={rideHistory}
+            selectedDriver={selectedDriver}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -115,38 +133,44 @@ export function CustomerPanel(props) {
       </section>
 
       <section className="booking-panel">
-        <RouteSearchCard
-          state={state}
-          dispatch={dispatch}
-          t={t}
-          isArabic={isArabic}
-          actionLabel={t.requestRide}
-          onAction={requestRide}
-        />
-      </section>
-
-      <section className="panel wide map-panel">
-        <MapBoard
-          state={state}
-          dispatch={dispatch}
-          selectedDriver={customerHasAcceptedDriver ? selectedDriver : null}
-          t={t}
-          isArabic={isArabic}
-          showDrivers={customerHasAcceptedDriver}
-        />
-      </section>
-
-      {state.ride && (
-        <section className="phase-two-panel">
-          <PhaseTwoExperience
+        <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل نموذج الطلب..." : "Loading request form..."} />}>
+          <RouteSearchCard
             state={state}
             dispatch={dispatch}
             t={t}
             isArabic={isArabic}
-            selectedDriver={selectedDriver}
-            cancelRide={() => updateRideStatus?.(RIDE_STATUSES.cancelled)}
-            refreshCurrentRide={props.refreshCurrentRide}
+            actionLabel={t.requestRide}
+            onAction={requestRide}
           />
+        </Suspense>
+      </section>
+
+      <section className="panel wide map-panel">
+        <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل الخريطة..." : "Loading map..."} />}>
+          <MapBoard
+            state={state}
+            dispatch={dispatch}
+            selectedDriver={customerHasAcceptedDriver ? selectedDriver : null}
+            t={t}
+            isArabic={isArabic}
+            showDrivers={customerHasAcceptedDriver}
+          />
+        </Suspense>
+      </section>
+
+      {state.ride && (
+        <section className="phase-two-panel">
+          <Suspense fallback={<CustomerSectionFallback label={isArabic ? "جاري تحميل حالة الرحلة..." : "Loading ride status..."} />}>
+            <PhaseTwoExperience
+              state={state}
+              dispatch={dispatch}
+              t={t}
+              isArabic={isArabic}
+              selectedDriver={selectedDriver}
+              cancelRide={() => updateRideStatus?.(RIDE_STATUSES.cancelled)}
+              refreshCurrentRide={props.refreshCurrentRide}
+            />
+          </Suspense>
         </section>
       )}
 

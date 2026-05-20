@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Avatar, Metric, PanelTitle, StatusBadge } from "../../components/ui/index.js";
 import { useDriverData } from "../../hooks/useDriverData.js";
 import { usePayments } from "../../hooks/usePayments.js";
@@ -7,7 +7,8 @@ import { sendDriverLocationUnavailable, sendDriverLocationUpdate } from "../../s
 import { statusText } from "../../utils/i18n.js";
 import { RIDE_STATUSES } from "../../utils/rideStatus.js";
 import { cityNameById, paymentMethodLabel, rideDisplayCode } from "../../utils/rideUtils.js";
-import { MapBoard } from "../rides/MapBoard.jsx";
+
+const MapBoard = lazy(() => import("../rides/MapBoard.jsx").then((module) => ({ default: module.MapBoard })));
 
 const ACTIVE_DRIVER_RIDE_STATUSES = [
   RIDE_STATUSES.accepted,
@@ -66,6 +67,15 @@ function normalizeDriverRide(ride, state, isArabic) {
 function supportTypeLabel(type, isArabic) {
   const match = DRIVER_SUPPORT_TYPES.find((item) => item.value === type);
   return match ? (isArabic ? match.ar : match.en) : type;
+}
+
+function DriverSectionFallback({ isArabic }) {
+  return (
+    <div className="lazy-section-fallback" role="status">
+      <span />
+      <strong>{isArabic ? "جاري تحميل الخريطة..." : "Loading map..."}</strong>
+    </div>
+  );
 }
 
 export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
@@ -396,7 +406,9 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
 
       <section className="driver-map-card">
         <PanelTitle title={isArabic ? "نطاق العمل والخريطة" : "Work zone and map"} meta={cityNameById(state.cities, driver.cityId, isArabic)} />
-        <MapBoard state={state} dispatch={dispatch} selectedDriver={driver} t={t} isArabic={isArabic} />
+        <Suspense fallback={<DriverSectionFallback isArabic={isArabic} />}>
+          <MapBoard state={state} dispatch={dispatch} selectedDriver={driver} t={t} isArabic={isArabic} />
+        </Suspense>
       </section>
 
       <section className="driver-requests-card">

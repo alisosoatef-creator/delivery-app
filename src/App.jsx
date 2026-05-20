@@ -1,13 +1,7 @@
-import { useEffect, useMemo, useReducer } from "react";
+import { lazy, Suspense, useEffect, useMemo, useReducer } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Shell } from "./components/layout/Shell.jsx";
 import { AccessDenied } from "./components/ui/AccessDenied.jsx";
-import { AdminPanel } from "./features/admin/AdminPanel.jsx";
-import { AdminDevLogin } from "./features/auth/AdminDevLogin.jsx";
-import { AuthScreen } from "./features/auth/AuthScreen.jsx";
-import { DriverDevLogin } from "./features/auth/DriverDevLogin.jsx";
-import { CustomerShell } from "./features/customer/CustomerShell.jsx";
-import { DriverPanel } from "./features/driver/DriverPanel.jsx";
 import { useBootstrap } from "./hooks/useBootstrap.js";
 import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, roleRouteFallback } from "./routes/index.js";
 import { api } from "./services/api.js";
@@ -29,9 +23,25 @@ import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
 import { RIDE_STATUSES } from "./utils/rideStatus.js";
 import { ROLES, canAccessAdmin, canAccessDriver, currentRole, homePathForRole } from "./utils/roles.js";
 
+const AdminPanel = lazy(() => import("./features/admin/AdminPanel.jsx").then((module) => ({ default: module.AdminPanel })));
+const AdminDevLogin = lazy(() => import("./features/auth/AdminDevLogin.jsx").then((module) => ({ default: module.AdminDevLogin })));
+const AuthScreen = lazy(() => import("./features/auth/AuthScreen.jsx").then((module) => ({ default: module.AuthScreen })));
+const CustomerShell = lazy(() => import("./features/customer/CustomerShell.jsx").then((module) => ({ default: module.CustomerShell })));
+const DriverDevLogin = lazy(() => import("./features/auth/DriverDevLogin.jsx").then((module) => ({ default: module.DriverDevLogin })));
+const DriverPanel = lazy(() => import("./features/driver/DriverPanel.jsx").then((module) => ({ default: module.DriverPanel })));
+
 function upsertRide(rides = [], ride) {
   if (!ride?.id) return rides;
   return [ride, ...rides.filter((item) => item.id !== ride.id)];
+}
+
+function LazyRouteFallback({ label }) {
+  return (
+    <div className="lazy-screen-fallback" role="status">
+      <span />
+      <strong>{label}</strong>
+    </div>
+  );
 }
 
 function App() {
@@ -435,7 +445,9 @@ function App() {
   if (isAdminDevLoginRoute && import.meta.env.DEV) {
     return (
       <GuestRoute state={state} fallback={accessDenied}>
-        <AdminDevLogin {...sharedProps} />
+        <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل دخول الأدمن..." : "Loading admin login..."} />}>
+          <AdminDevLogin {...sharedProps} />
+        </Suspense>
       </GuestRoute>
     );
   }
@@ -443,7 +455,9 @@ function App() {
   if (isDriverDevLoginRoute && import.meta.env.DEV) {
     return (
       <GuestRoute state={state} fallback={accessDenied}>
-        <DriverDevLogin {...sharedProps} />
+        <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل دخول الكابتن..." : "Loading captain login..."} />}>
+          <DriverDevLogin {...sharedProps} />
+        </Suspense>
       </GuestRoute>
     );
   }
@@ -451,7 +465,9 @@ function App() {
   if (!state.session) {
     return (
       <GuestRoute state={state}>
-        <AuthScreen {...sharedProps} routePath={APP_ROUTE_PATHS.login} />
+        <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل شاشة الدخول..." : "Loading sign in..."} />}>
+          <AuthScreen {...sharedProps} routePath={APP_ROUTE_PATHS.login} />
+        </Suspense>
       </GuestRoute>
     );
   }
@@ -459,7 +475,9 @@ function App() {
   if (activeRole === ROLES.customer) {
     return (
       <CustomerRoute state={state} fallback={accessDenied}>
-        <CustomerShell {...sharedProps} routePath={activeRoutePath} />
+        <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل واجهة الزبون..." : "Loading customer workspace..."} />}>
+          <CustomerShell {...sharedProps} routePath={activeRoutePath} />
+        </Suspense>
       </CustomerRoute>
     );
   }
@@ -468,7 +486,9 @@ function App() {
     return (
       <DriverRoute state={state} fallback={accessDenied}>
         <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.driver.dashboard}>
-          <DriverPanel {...sharedProps} />
+          <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل لوحة الكابتن..." : "Loading captain dashboard..."} />}>
+            <DriverPanel {...sharedProps} />
+          </Suspense>
         </Shell>
       </DriverRoute>
     );
@@ -477,7 +497,9 @@ function App() {
   if (canAccessAdmin(state)) {
     return (
       <AdminRoute state={state} fallback={accessDenied}>
-        <AdminPanel {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard} />
+        <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل لوحة الأدمن..." : "Loading admin dashboard..."} />}>
+          <AdminPanel {...sharedProps} routePath={APP_ROUTE_PATHS.admin.dashboard} />
+        </Suspense>
       </AdminRoute>
     );
   }
@@ -486,7 +508,9 @@ function App() {
     return (
       <DriverRoute state={state} fallback={accessDenied}>
         <Shell {...sharedProps} routePath={APP_ROUTE_PATHS.driver.dashboard}>
-          <DriverPanel {...sharedProps} />
+          <Suspense fallback={<LazyRouteFallback label={isArabic ? "جاري تحميل لوحة الكابتن..." : "Loading captain dashboard..."} />}>
+            <DriverPanel {...sharedProps} />
+          </Suspense>
         </Shell>
       </DriverRoute>
     );

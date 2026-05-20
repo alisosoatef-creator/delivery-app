@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { SettingsIcon, Toast } from "../../components/ui/index.js";
 import { APP_ROUTE_PATHS, routePathForCustomerView } from "../../routes/index.js";
-import { AccountSettingsPanel } from "./AccountSettingsPanel.jsx";
 import { CustomerPanel } from "./CustomerPanel.jsx";
+
+const AccountSettingsPanel = lazy(() => import("./AccountSettingsPanel.jsx").then((module) => ({ default: module.AccountSettingsPanel })));
+
+function CustomerShellFallback({ isArabic }) {
+  return (
+    <div className="lazy-section-fallback" role="status">
+      <span />
+      <strong>{isArabic ? "جاري تحميل الإعدادات..." : "Loading settings..."}</strong>
+    </div>
+  );
+}
 
 export function CustomerShell(props) {
   const { state, dispatch, t, isArabic, logout } = props;
@@ -97,13 +107,15 @@ export function CustomerShell(props) {
             if (event.target === event.currentTarget) setSettingsPanelOpen(false);
           }}
         >
-          <AccountSettingsPanel
-            state={state}
-            dispatch={dispatch}
-            t={t}
-            isArabic={isArabic}
-            onClose={() => setSettingsPanelOpen(false)}
-          />
+          <Suspense fallback={<CustomerShellFallback isArabic={isArabic} />}>
+            <AccountSettingsPanel
+              state={state}
+              dispatch={dispatch}
+              t={t}
+              isArabic={isArabic}
+              onClose={() => setSettingsPanelOpen(false)}
+            />
+          </Suspense>
         </div>
       )}
       <Toast message={state.toast} />
