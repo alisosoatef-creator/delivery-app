@@ -7,6 +7,7 @@ import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, ro
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
 import { createRide, fetchCustomerRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
+import { clearSessionToken } from "./services/sessionToken.js";
 import {
   connectSocket,
   disconnectSocket,
@@ -416,6 +417,7 @@ function App() {
     } catch {
       dispatch({ type: "patch", patch: { backendLive: false } });
     } finally {
+      clearSessionToken();
       dispatch({
         type: "patch",
         patch: {

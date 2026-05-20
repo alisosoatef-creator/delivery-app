@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi.js";
+import { setSessionToken } from "../../services/sessionToken.js";
 import { ROLES } from "../../utils/roles.js";
 import { AuthField } from "./AuthField.jsx";
 
@@ -48,6 +49,7 @@ export function DriverDevLogin({ dispatch, isArabic }) {
         driverId: driver.id,
         name: payload.user?.name || driver.fullName
       };
+      setSessionToken(payload.token, ROLES.driver);
       dispatch({
         type: "patch",
         patch: {
@@ -81,7 +83,7 @@ export function DriverDevLogin({ dispatch, isArabic }) {
         <form className="auth-form auth-mode-login" onSubmit={handleSubmit}>
           <div className="auth-form-title">
             <h2>{isArabic ? "دخول كابتن للتطوير" : "Development captain login"}</h2>
-            <p>{isArabic ? "مدخل مؤقت للكباتن الموافق عليهم فقط، وسيستبدل لاحقًا بنظام دخول حقيقي." : "Temporary development-only entry for approved captains, to be replaced by real driver auth later."}</p>
+            <p>{isArabic ? "Development Only: مدخل مؤقت للكباتن الموافق عليهم فقط، وسيستبدل لاحقًا بنظام دخول حقيقي." : "Development Only: temporary entry for approved captains only, to be replaced by real driver auth later."}</p>
           </div>
           <label className="field auth-field">
             <span>{isArabic ? "كابتن موافق عليه" : "Approved captain"}</span>

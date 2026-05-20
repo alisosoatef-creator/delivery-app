@@ -58,6 +58,20 @@ import {
 } from "./db/database.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
 import { emitDriverEvent, emitPaymentEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
+import { checkRateLimit, requireAdminDev, requireAuthDev, requireCustomerDev, requireDriverDev, securityHeaders } from "./security.mjs";
+import {
+  ACCOUNT_STATUSES,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
+  RIDE_STATUSES,
+  SUPPORT_STATUSES,
+  hasOnlyAllowedRole,
+  isAllowedStatus,
+  isFiniteNumber,
+  isPhoneLike,
+  isReasonableAge,
+  requiredFields
+} from "./validation.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
@@ -66,14 +80,12 @@ const sseClients = new Set();
 
 // approvedCaptains now live in the persistent drivers table after application approval.
 
-function sendJson(response, status, payload) {
+function sendJson(response, status, payload, request = null) {
   const body = JSON.stringify(payload);
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Content-Length": Buffer.byteLength(body),
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
+    ...securityHeaders(request)
   });
   response.end(body);
 }
@@ -131,17 +143,51 @@ function emitPaymentSideEffects(paymentResult) {
   if (walletTransaction) emitPaymentEvent("wallet:updated", { payment, walletTransaction });
 }
 
-function requireAdminDev(request) {
-  // TODO phase-10: replace this development placeholder with real token/session authorization for /api/admin.
-  const token = request.headers.authorization || "";
-  return token.startsWith("Bearer dev-admin-session-token") || process.env.NODE_ENV !== "production";
+function isAdminPath(pathname) {
+  return pathname === "/api/admin" || pathname.startsWith("/api/admin/");
+}
+
+function isDriverPath(pathname) {
+  return pathname === "/api/driver" || pathname.startsWith("/api/driver/") || pathname === "/api/drivers/status";
+}
+
+function isCustomerPath(pathname) {
+  return pathname === "/api/customer" || pathname.startsWith("/api/customer/");
+}
+
+function rejectUnauthorized(response, request, scope) {
+  sendJson(response, 401, { error: "unauthorized", scope, mode: process.env.NODE_ENV === "production" ? "enforced" : "soft-dev" }, request);
+}
+
+function rejectRateLimited(response, request) {
+  sendJson(response, 429, { error: "rate_limited" }, request);
 }
 
 async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
   if (request.method === "OPTIONS") {
-    sendJson(response, 200, { ok: true });
+    sendJson(response, 200, { ok: true }, request);
+    return;
+  }
+
+  if (isAdminPath(url.pathname) && !requireAdminDev(request)) {
+    rejectUnauthorized(response, request, "admin");
+    return;
+  }
+
+  if (isDriverPath(url.pathname) && !url.pathname.includes("/dev-login") && !url.pathname.includes("/dev-drivers") && !requireDriverDev(request)) {
+    rejectUnauthorized(response, request, "driver");
+    return;
+  }
+
+  if (isCustomerPath(url.pathname) && !requireCustomerDev(request)) {
+    rejectUnauthorized(response, request, "customer");
+    return;
+  }
+
+  if (url.pathname === "/api/support/my-tickets" && !requireAuthDev(request)) {
+    rejectUnauthorized(response, request, "support");
     return;
   }
 
@@ -170,9 +216,8 @@ async function handleApi(request, response) {
   if (request.method === "GET" && url.pathname === "/api/events") {
     response.writeHead(200, {
       "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache",
       Connection: "keep-alive",
-      "Access-Control-Allow-Origin": "*"
+      ...securityHeaders(request, { "Cache-Control": "no-cache" })
     });
     response.write("event: connected\ndata: {\"ok\":true,\"events\":[]}\n\n");
     sseClients.add(response);
@@ -181,16 +226,33 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/request-otp") {
+    if (!checkRateLimit(request, "auth:request-otp", { limit: 12, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
+    if (!isPhoneLike(body.phone)) {
+      sendJson(response, 400, { error: "invalid_phone" });
+      return;
+    }
     const requestId = createOtpCode({ phone: body.phone, purpose: body.role || "customer", code: authConfig.demoOtpCode });
     sendJson(response, 200, { requestId, expiresInSeconds: 120, demoCode: authConfig.demoOtpCode });
     return;
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/register") {
+    if (!checkRateLimit(request, "auth:register", { limit: 8, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
-    if (!body.fullName || !body.phone || !body.city && !body.cityId || !body.age || !body.birthDate || !body.password) {
+    if (requiredFields(body, ["fullName", "phone", "age", "birthDate", "password"]).length || (!body.city && !body.cityId)) {
       sendJson(response, 400, { error: "missing_required_fields" });
+      return;
+    }
+
+    if (!isPhoneLike(body.phone) || !isReasonableAge(Number(body.age)) || !hasOnlyAllowedRole(body.role || "customer")) {
+      sendJson(response, 400, { error: "invalid_auth_payload" });
       return;
     }
 
@@ -212,7 +274,15 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/verify-otp") {
+    if (!checkRateLimit(request, "auth:verify-otp", { limit: 15, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
+    if (!body.requestId && !isPhoneLike(body.phone)) {
+      sendJson(response, 400, { error: "invalid_phone" });
+      return;
+    }
     const otp = body.requestId ? findOtpCode(body.requestId) : findOtpCodeByPhone({ phone: body.phone, code: body.code });
     if (body.code !== authConfig.demoOtpCode || (otp && otp.code !== body.code) || (!otp && !body.phone)) {
       sendJson(response, 401, { error: "invalid_otp" });
@@ -237,6 +307,10 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/auth/login") {
+    if (!checkRateLimit(request, "auth:login", { limit: 15, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
     const user = findUserByIdentifier(body.identifier || body.phone || body.fullName);
     if (!user || !Number(user.isVerified) || user.status !== "active" || !verifyPassword(body.password, user.passwordHash)) {
@@ -253,9 +327,17 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/captain-applications") {
+    if (!checkRateLimit(request, "captain-application:create", { limit: 10, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
     if (!body.fullName || !body.phone || !body.city || !body.age || !body.vehicleType) {
       sendJson(response, 400, { error: "missing_required_fields" });
+      return;
+    }
+    if (!isPhoneLike(body.phone) || !isReasonableAge(Number(body.age))) {
+      sendJson(response, 400, { error: "invalid_captain_application" });
       return;
     }
     const application = insertCaptainApplication(body);
@@ -302,6 +384,10 @@ async function handleApi(request, response) {
   const customerStatusMatch = url.pathname.match(/^\/api\/admin\/customers\/([^/]+)\/status$/);
   if (request.method === "PATCH" && customerStatusMatch) {
     const body = await readJson(request);
+    if (!isAllowedStatus(body.status || "active", ACCOUNT_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_account_status" });
+      return;
+    }
     const customer = updateCustomerStatus(customerStatusMatch[1], body.status || "active");
     if (!customer) {
       sendJson(response, 404, { error: "customer_not_found" });
@@ -351,6 +437,10 @@ async function handleApi(request, response) {
   const driverStatusMatch = url.pathname.match(/^\/api\/admin\/drivers\/([^/]+)\/status$/);
   if (request.method === "PATCH" && driverStatusMatch) {
     const body = await readJson(request);
+    if (body.status && !isAllowedStatus(body.status, ACCOUNT_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_driver_status" });
+      return;
+    }
     const driver = updateDriverStatus(driverStatusMatch[1], body);
     if (!driver) {
       sendJson(response, 404, { error: "driver_not_found" });
@@ -362,6 +452,11 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/rides/quote") {
     const body = await readJson(request);
+    if ((body.distanceKm !== undefined && !isFiniteNumber(body.distanceKm, { min: 0, max: 500 })) ||
+      (body.routeDistanceKm !== undefined && body.routeDistanceKm !== null && !isFiniteNumber(body.routeDistanceKm, { min: 0, max: 500 }))) {
+      sendJson(response, 400, { error: "invalid_distance" });
+      return;
+    }
     sendJson(response, 200, { quoteId: `quote_${randomUUID()}`, ...calculateQuote(body) });
     return;
   }
@@ -423,6 +518,10 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/customer/payment-methods") {
     const body = await readJson(request);
+    if (body.type && body.type !== "visa") {
+      sendJson(response, 400, { error: "invalid_payment_method_type" });
+      return;
+    }
     const method = createSavedPaymentMethod(body);
     if (!method) {
       sendJson(response, 400, { error: "invalid_payment_method" });
@@ -469,6 +568,14 @@ async function handleApi(request, response) {
       sendJson(response, 400, { error: "pickup_and_destination_required" });
       return;
     }
+    if (body.customerPhone && !isPhoneLike(body.customerPhone)) {
+      sendJson(response, 400, { error: "invalid_customer_phone" });
+      return;
+    }
+    if (body.paymentMethod && !PAYMENT_METHODS.has(body.paymentMethod)) {
+      sendJson(response, 400, { error: "invalid_payment_method" });
+      return;
+    }
     const quote = calculateQuote(body);
     const ride = insertRide(body, quote);
     broadcast("ride.created", { ride });
@@ -480,6 +587,10 @@ async function handleApi(request, response) {
   const rideStatusMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/status$/);
   if ((request.method === "POST" || request.method === "PATCH") && rideStatusMatch) {
     const body = await readJson(request);
+    if (!isAllowedStatus(body.status, RIDE_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_ride_status" });
+      return;
+    }
     const ride = updateRideStatus(rideStatusMatch[1], body.status);
     if (!ride) {
       sendJson(response, 404, { error: "ride_not_found" });
@@ -497,6 +608,10 @@ async function handleApi(request, response) {
   const ridePayMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/pay$/);
   if (request.method === "POST" && ridePayMatch) {
     const body = await readJson(request);
+    if (body.method && !PAYMENT_METHODS.has(body.method)) {
+      sendJson(response, 400, { error: "invalid_payment_method" });
+      return;
+    }
     const paymentResult = createRidePayment(ridePayMatch[1], body);
     if (!paymentResult.payment) {
       sendJson(response, 404, { error: "ride_not_found" });
@@ -530,6 +645,10 @@ async function handleApi(request, response) {
     const body = await readJson(request);
     if (!body.driverId) {
       sendJson(response, 400, { error: "driver_id_required" });
+      return;
+    }
+    if (!isAllowedStatus(body.status, RIDE_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_ride_status" });
       return;
     }
     const ride = updateDriverRideStatus(driverRideStatusMatch[1], {
@@ -567,6 +686,10 @@ async function handleApi(request, response) {
   const adminPaymentStatusMatch = url.pathname.match(/^\/api\/admin\/payments\/([^/]+)\/status$/);
   if (request.method === "PATCH" && adminPaymentStatusMatch) {
     const body = await readJson(request);
+    if (!isAllowedStatus(body.status || "paid", PAYMENT_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_payment_status" });
+      return;
+    }
     const paymentResult = updatePaymentStatus(adminPaymentStatusMatch[1], body.status || "paid");
     if (!paymentResult.payment) {
       sendJson(response, 404, { error: "payment_not_found" });
@@ -594,6 +717,10 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "POST" && url.pathname === "/api/support/tickets") {
+    if (!checkRateLimit(request, "support:tickets", { limit: 20, windowMs: 60_000 }).ok) {
+      rejectRateLimited(response, request);
+      return;
+    }
     const body = await readJson(request);
     if (!body.name && !body.userName) {
       sendJson(response, 400, { error: "support_name_required" });
@@ -601,6 +728,10 @@ async function handleApi(request, response) {
     }
     if (!body.phone) {
       sendJson(response, 400, { error: "support_phone_required" });
+      return;
+    }
+    if (!isPhoneLike(body.phone) || (body.role && !["customer", "driver"].includes(body.role))) {
+      sendJson(response, 400, { error: "invalid_support_payload" });
       return;
     }
     if (!body.message) {
@@ -631,6 +762,10 @@ async function handleApi(request, response) {
   const supportTicketStatusMatch = url.pathname.match(/^\/api\/admin\/support\/tickets\/([^/]+)\/status$/);
   if (request.method === "PATCH" && supportTicketStatusMatch) {
     const body = await readJson(request);
+    if (!isAllowedStatus(body.status || "closed", SUPPORT_STATUSES)) {
+      sendJson(response, 400, { error: "invalid_support_status" });
+      return;
+    }
     const ticket = updateSupportTicketStatus(supportTicketStatusMatch[1], body.status || "closed");
     if (!ticket) {
       sendJson(response, 404, { error: "support_ticket_not_found" });
@@ -649,6 +784,12 @@ async function handleApi(request, response) {
   const pricingPatchMatch = url.pathname.match(/^\/api\/admin\/pricing\/([^/]+)$/);
   if (request.method === "PATCH" && pricingPatchMatch) {
     const body = await readJson(request);
+    if ((body.baseFareIls !== undefined && !isFiniteNumber(body.baseFareIls, { min: 0, max: 1000 })) ||
+      (body.perKmIls !== undefined && !isFiniteNumber(body.perKmIls, { min: 0, max: 1000 })) ||
+      (body.minimumFareIls !== undefined && !isFiniteNumber(body.minimumFareIls, { min: 0, max: 1000 }))) {
+      sendJson(response, 400, { error: "invalid_pricing_payload" });
+      return;
+    }
     const rule = updatePricingRule(pricingPatchMatch[1], body);
     if (!rule) {
       sendJson(response, 404, { error: "pricing_rule_not_found" });

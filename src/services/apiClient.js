@@ -1,3 +1,5 @@
+import { getSessionRole, getSessionToken } from "./sessionToken.js";
+
 export const API_BASE = "/api";
 
 export class ApiError extends Error {
@@ -28,6 +30,8 @@ async function parseResponse(response) {
 export async function apiRequest(path, options = {}) {
   const { body, headers, ...requestOptions } = options;
   const hasBody = typeof body !== "undefined";
+  const token = getSessionToken();
+  const role = getSessionRole();
 
   let response;
   try {
@@ -36,6 +40,8 @@ export async function apiRequest(path, options = {}) {
       headers: {
         Accept: "application/json",
         ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(role ? { "X-Dev-Role": role } : {}),
         ...(headers || {})
       },
       ...(hasBody ? { body: typeof body === "string" ? body : JSON.stringify(body) } : {})

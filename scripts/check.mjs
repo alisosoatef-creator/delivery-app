@@ -13,6 +13,8 @@ const requiredFiles = [
   "src/features/auth/DriverDevLogin.jsx",
   "backend/server.mjs",
   "backend/realtime.mjs",
+  "backend/security.mjs",
+  "backend/validation.mjs",
   "backend/rideStatus.mjs",
   "backend/data.mjs",
   "backend/auth/passwords.mjs",
@@ -23,6 +25,7 @@ const requiredFiles = [
   "backend/api-contract.md",
   "scripts/backend-smoke.mjs",
   "vite.config.js",
+  "src/services/sessionToken.js",
   "src/services/socketClient.js",
   "src/hooks/useSupportTickets.js",
   "src/services/paymentsApi.js",
@@ -41,7 +44,8 @@ const requiredFiles = [
   "src/components/ui/DataTable.jsx",
   "src/features/admin/AdminDetailDrawer.jsx",
   "src/features/admin/adminFormatters.js",
-  "docs/qa-checklist.md"
+  "docs/qa-checklist.md",
+  "docs/security-notes.md"
 ];
 
 for (const file of requiredFiles) {
@@ -135,6 +139,7 @@ const sourceOrder = [
   "src/utils/paymentUtils.js",
   "src/utils/i18n.js",
   "src/store/appState.js",
+  "src/services/sessionToken.js",
   "src/services/apiClient.js",
   "src/services/api.js",
   "src/services/socketClient.js",
@@ -166,6 +171,8 @@ const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
 const backendRealtimeSource = fs.readFileSync("backend/realtime.mjs", "utf8");
+const backendSecuritySource = fs.readFileSync("backend/security.mjs", "utf8");
+const backendValidationSource = fs.readFileSync("backend/validation.mjs", "utf8");
 const backendDataSource = fs.readFileSync("backend/data.mjs", "utf8");
 const backendAuthSource = fs.readFileSync("backend/auth/passwords.mjs", "utf8");
 const backendDatabaseSource = fs.readFileSync("backend/db/database.mjs", "utf8");
@@ -204,6 +211,7 @@ const adminUiSource = adminUiFiles
   .map((file) => `\n/* ${file} */\n${fs.readFileSync(file, "utf8")}`)
   .join("\n");
 const qaChecklistSource = fs.existsSync("docs/qa-checklist.md") ? fs.readFileSync("docs/qa-checklist.md", "utf8") : "";
+const securityNotesSource = fs.existsSync("docs/security-notes.md") ? fs.readFileSync("docs/security-notes.md", "utf8") : "";
 
 for (const routeFile of [
   "src/routes/guards.jsx",
@@ -458,6 +466,113 @@ for (const qaChecklistToken of [
 ]) {
   if (!qaChecklistSource.includes(qaChecklistToken)) {
     throw new Error(`QA checklist is missing: ${qaChecklistToken}`);
+  }
+}
+
+for (const securityNotesToken of [
+  "JWT or secure server-side sessions",
+  "HTTPS",
+  "Lock CORS",
+  "Socket.IO authentication",
+  "Payment gateway",
+  "PostgreSQL",
+  "backups",
+  "Dev-Only Behavior"
+]) {
+  if (!securityNotesSource.includes(securityNotesToken)) {
+    throw new Error(`Security notes are missing production hardening item: ${securityNotesToken}`);
+  }
+}
+
+for (const securityHelperToken of [
+  "securityHeaders",
+  "requireAuthDev",
+  "requireAdminDev",
+  "requireDriverDev",
+  "requireCustomerDev",
+  "checkRateLimit",
+  "X-Content-Type-Options",
+  "Referrer-Policy",
+  "Cache-Control",
+  "TODO production-auth",
+  "TODO production-cors",
+  "TODO production-rate-limit"
+]) {
+  if (!backendSecuritySource.includes(securityHelperToken) && !backendSource.includes(securityHelperToken)) {
+    throw new Error(`Security helper surface is missing: ${securityHelperToken}`);
+  }
+}
+
+for (const validationHelperToken of [
+  "ADMIN_ROLES",
+  "PAYMENT_METHODS",
+  "PAYMENT_STATUSES",
+  "ACCOUNT_STATUSES",
+  "SUPPORT_STATUSES",
+  "RIDE_STATUSES",
+  "requiredFields",
+  "isPhoneLike",
+  "isReasonableAge",
+  "isAllowedStatus",
+  "normalizePaymentMethod"
+]) {
+  if (!backendValidationSource.includes(validationHelperToken)) {
+    throw new Error(`Backend validation helper is missing: ${validationHelperToken}`);
+  }
+}
+
+for (const sessionTokenToken of [
+  "setSessionToken",
+  "getSessionToken",
+  "getSessionRole",
+  "clearSessionToken",
+  "wasel.dev.sessionToken",
+  "Authorization",
+  "X-Dev-Role",
+  "socket.auth",
+  "handshake.auth"
+]) {
+  if (!appSource.includes(sessionTokenToken) && !backendRealtimeSource.includes(sessionTokenToken)) {
+    throw new Error(`Session/token hardening integration is missing: ${sessionTokenToken}`);
+  }
+}
+
+for (const devLoginSecurityToken of [
+  "import.meta.env.DEV",
+  "Development Only",
+  "setSessionToken",
+  "dev-admin-session-token",
+  "dev-driver-session-token"
+]) {
+  if (!appSource.includes(devLoginSecurityToken) && !backendSource.includes(devLoginSecurityToken)) {
+    throw new Error(`Development login protection is missing: ${devLoginSecurityToken}`);
+  }
+}
+
+for (const socketSecurityToken of [
+  "socketSession",
+  "canJoin",
+  "join:customer",
+  "join:driver",
+  "join:admin",
+  "join:ride",
+  "TODO production-socket-auth",
+  "driver:location-updated"
+]) {
+  if (!backendRealtimeSource.includes(socketSecurityToken)) {
+    throw new Error(`Socket.IO security hardening is missing: ${socketSecurityToken}`);
+  }
+}
+
+for (const sensitiveDataToken of [
+  "passwordHash",
+  "const { password, passwordHash",
+  "cardNumber",
+  "cvv",
+  "saved VISA placeholder must not expose card number or CVV"
+]) {
+  if (!appSource.includes(sensitiveDataToken) && !backendDatabaseSource.includes(sensitiveDataToken) && !backendSmokeSource.includes(sensitiveDataToken)) {
+    throw new Error(`Sensitive data guard/check is missing: ${sensitiveDataToken}`);
   }
 }
 
@@ -1091,6 +1206,8 @@ for (const premiumMotionToken of [
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/realtime.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/security.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/validation.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/rideStatus.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdio: "inherit" });
@@ -1146,7 +1263,7 @@ for (const backendEndpointToken of [
   'demoOtpCode: "1234"',
   'Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"'
 ]) {
-  if (!backendSource.includes(backendEndpointToken)) {
+  if (!backendSource.includes(backendEndpointToken) && !backendSecuritySource.includes(backendEndpointToken)) {
     throw new Error(`Backend API surface is missing: ${backendEndpointToken}`);
   }
 }
@@ -1297,7 +1414,10 @@ for (const persistenceSmokeToken of [
   "support:ticket-updated should emit closed support ticket",
   "support ticket should persist after server restart",
   "pricing update should persist after server restart",
-  "settings update should persist after server restart"
+  "settings update should persist after server restart",
+  "admin endpoints should work with dev admin token",
+  "driver endpoints should work with dev driver token",
+  "customer endpoints should work with dev customer token"
 ]) {
   if (!backendSmokeSource.includes(persistenceSmokeToken)) {
     throw new Error(`Backend smoke persistence check is missing: ${persistenceSmokeToken}`);

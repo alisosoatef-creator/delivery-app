@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Toast } from "../../components/ui/index.js";
 import { useAuthApi } from "../../hooks/useAuthApi.js";
+import { setSessionToken } from "../../services/sessionToken.js";
 import { ROLES } from "../../utils/roles.js";
 import { CaptainApplicationPanel } from "../driver/CaptainApplicationPanel.jsx";
 import { AuthField } from "./AuthField.jsx";
@@ -248,6 +249,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     try {
       const result = await loginCustomer({ identifier: cleanValue(loginForm.identifier), password: loginForm.password });
       const user = result.user;
+      setSessionToken(result.token, user.role || ROLES.customer);
       dispatch({
         type: "patch",
         patch: {

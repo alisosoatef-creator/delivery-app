@@ -2,6 +2,8 @@ import { Server } from "socket.io";
 
 let io = null;
 
+const DEV_ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:4173", "http://localhost:4173"];
+
 function safeRoomValue(value) {
   return String(value || "").trim();
 }
@@ -9,6 +11,22 @@ function safeRoomValue(value) {
 function safeCoordinate(value) {
   const coordinate = Number(value);
   return Number.isFinite(coordinate) ? coordinate : null;
+}
+
+function socketSession(socket) {
+  const token = String(socket.handshake.auth?.token || socket.handshake.headers?.authorization || "").replace(/^Bearer\s+/i, "");
+  const role = String(socket.handshake.auth?.role || socket.handshake.headers?.["x-dev-role"] || "").trim();
+  if (token.startsWith("dev-admin-session-token")) return { token, role: "admin" };
+  if (token.startsWith("dev-driver-session-token")) return { token, role: "driver" };
+  if (token.startsWith("dev-session-token") || token.startsWith("demo_")) return { token, role: role || "customer" };
+  return { token, role };
+}
+
+function canJoin(socket, allowedRoles = []) {
+  // TODO production-socket-auth: verify signed sessions and per-ride membership before joining rooms.
+  const session = socketSession(socket);
+  if (process.env.NODE_ENV !== "production") return true;
+  return Boolean(session.token) && allowedRoles.includes(session.role);
 }
 
 function rideRooms(ride = {}) {
@@ -27,7 +45,7 @@ function rideRooms(ride = {}) {
 export function setupRealtime(server) {
   io = new Server(server, {
     cors: {
-      origin: "*",
+      origin: process.env.NODE_ENV === "production" ? DEV_ORIGINS : "*",
       methods: ["GET", "POST", "PATCH", "OPTIONS"]
     }
   });
@@ -36,6 +54,7 @@ export function setupRealtime(server) {
     socket.emit("realtime:ready", { ok: true, connectedAt: new Date().toISOString() });
 
     socket.on("join:customer", ({ customerId, customerPhone } = {}) => {
+      if (!canJoin(socket, ["customer", "admin", "owner", "support"])) return;
       const id = safeRoomValue(customerId);
       const phone = safeRoomValue(customerPhone);
       if (id) socket.join(`customer:${id}`);
@@ -43,21 +62,25 @@ export function setupRealtime(server) {
     });
 
     socket.on("join:driver", ({ driverId } = {}) => {
+      if (!canJoin(socket, ["driver", "admin", "owner"])) return;
       const id = safeRoomValue(driverId);
       if (id) socket.join(`driver:${id}`);
       socket.join("available-drivers");
     });
 
     socket.on("join:admin", () => {
+      if (!canJoin(socket, ["admin", "owner", "support"])) return;
       socket.join("admin");
     });
 
     socket.on("join:ride", ({ rideId } = {}) => {
+      if (!canJoin(socket, ["customer", "driver", "admin", "owner", "support"])) return;
       const id = safeRoomValue(rideId);
       if (id) socket.join(`ride:${id}`);
     });
 
     socket.on("driver:location-updated", (payload = {}) => {
+      if (!canJoin(socket, ["driver", "admin", "owner"])) return;
       const rideId = safeRoomValue(payload.rideId);
       const driverId = safeRoomValue(payload.driverId);
       const lat = safeCoordinate(payload.lat ?? payload.location?.lat);
@@ -79,6 +102,7 @@ export function setupRealtime(server) {
     });
 
     socket.on("driver:location-unavailable", (payload = {}) => {
+      if (!canJoin(socket, ["driver", "admin", "owner"])) return;
       emitDriverLocationUnavailable({
         rideId: safeRoomValue(payload.rideId),
         driverId: safeRoomValue(payload.driverId),

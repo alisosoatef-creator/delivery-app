@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { setSessionToken } from "../../services/sessionToken.js";
 import { ROLES } from "../../utils/roles.js";
 import { AuthField } from "./AuthField.jsx";
 
@@ -30,6 +31,7 @@ export function AdminDevLogin({ dispatch, isArabic }) {
       status: "active"
     };
 
+    setSessionToken("dev-admin-session-token", ROLES.admin);
     dispatch({
       type: "patch",
       patch: {
@@ -50,7 +52,7 @@ export function AdminDevLogin({ dispatch, isArabic }) {
         <form className="auth-form auth-mode-login" onSubmit={handleSubmit}>
           <div className="auth-form-title">
             <h2>{isArabic ? "دخول أدمن للتطوير" : "Development admin login"}</h2>
-            <p>{isArabic ? "مدخل مؤقت في بيئة التطوير فقط، وسيستبدل لاحقًا بنظام أدمن حقيقي." : "Temporary development-only entry, to be replaced by real admin auth later."}</p>
+            <p>{isArabic ? "Development Only: مدخل مؤقت يظهر في بيئة التطوير فقط، وسيستبدل لاحقًا بنظام أدمن حقيقي." : "Development Only: temporary entry shown only in development, to be replaced by real admin auth later."}</p>
           </div>
           <AuthField
             label={isArabic ? "اسم المستخدم" : "Username"}

@@ -8,6 +8,9 @@ import { io as createSocketClient } from "socket.io-client";
 const port = Number(process.env.SMOKE_PORT || 3101);
 const baseUrl = `http://127.0.0.1:${port}`;
 const smokeDbPath = path.join(os.tmpdir(), `wasel-smoke-${process.pid}-${Date.now()}.sqlite`);
+const adminHeaders = { Authorization: "Bearer dev-admin-session-token-smoke", "X-Dev-Role": "admin" };
+const driverHeaders = { Authorization: "Bearer dev-driver-session-token-smoke", "X-Dev-Role": "driver" };
+const customerHeaders = { Authorization: "Bearer dev-session-token-smoke", "X-Dev-Role": "customer" };
 
 let logs = "";
 let socket = null;
@@ -91,6 +94,7 @@ async function waitForServer() {
 function connectSocket() {
   return new Promise((resolve, reject) => {
     const client = createSocketClient(baseUrl, {
+      auth: { token: "dev-admin-session-token-smoke", role: "admin" },
       reconnection: false,
       timeout: 3000,
       transports: ["websocket", "polling"]
@@ -340,6 +344,8 @@ try {
     availableBeforeAccept.rides.some((availableRide) => availableRide.id === rideId),
     "driver available rides should include the ride before acceptance"
   );
+  const protectedAvailableRides = await request("/api/driver/available-rides?cityId=nablus", { headers: driverHeaders });
+  assert(Array.isArray(protectedAvailableRides.rides), "driver endpoints should work with dev driver token");
 
   const rideAcceptedEvent = waitForSocketEvent(socket, "ride:accepted");
   const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
@@ -415,6 +421,10 @@ try {
 
   const customerWallet = await request(`/api/customer/wallet?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`);
   assert(typeof customerWallet.wallet?.balance === "number", "customer wallet should return a numeric balance");
+  const protectedCustomerWallet = await request(`/api/customer/wallet?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`, {
+    headers: customerHeaders
+  });
+  assert(typeof protectedCustomerWallet.wallet?.balance === "number", "customer endpoints should work with dev customer token");
 
   const savedMethod = await request("/api/customer/payment-methods", {
     method: "POST",
@@ -558,6 +568,8 @@ try {
   assert(dashboard.stats?.captains >= 1, "admin dashboard should include database captain count");
   assert(dashboard.stats?.pendingCaptainApplications >= 0, "admin dashboard should include pending captain applications");
   assert(typeof dashboard.stats?.estimatedRevenue === "number", "admin dashboard should include estimated revenue");
+  const protectedDashboard = await request("/api/admin/dashboard", { headers: adminHeaders });
+  assert(protectedDashboard.stats?.customers >= 1, "admin endpoints should work with dev admin token");
 
   await stopServer(child);
   child = startServer();

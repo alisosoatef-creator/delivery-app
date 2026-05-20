@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { getSessionRole, getSessionToken } from "./sessionToken.js";
 
 const RIDE_EVENTS = [
   "ride:created",
@@ -29,6 +30,10 @@ export function connectSocket({ customerId = "", customerPhone = "", driverId = 
     socket = io("/", {
       path: "/socket.io",
       autoConnect: false,
+      auth: {
+        token: getSessionToken(),
+        role: getSessionRole()
+      },
       reconnectionAttempts: 3,
       timeout: 3000,
       transports: ["websocket", "polling"]
@@ -38,6 +43,7 @@ export function connectSocket({ customerId = "", customerPhone = "", driverId = 
   socket.off("connect");
   socket.off("disconnect");
   socket.off("connect_error");
+  socket.auth = { token: getSessionToken(), role: getSessionRole() };
 
   socket.on("connect", () => {
     onConnectionChange?.(true);
