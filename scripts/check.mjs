@@ -471,6 +471,38 @@ for (const blockedAdminRoleToken of ["Operations", "Finance", "Dispatcher", "ope
   }
 }
 
+for (const blockedRideProductTerm of ["دلفري", "مطعم", "مطاعم", "منتج", "منتجات", "وجبة", "طعام", "طلب طعام", "Delivery captain application", "delivery vehicle"]) {
+  if (appSource.includes(blockedRideProductTerm)) {
+    throw new Error(`Core ride UI must use people-ride language, not product/food delivery wording: ${blockedRideProductTerm}`);
+  }
+}
+
+if (/[ÃØÙâ€™€]/.test(appSource)) {
+  throw new Error("Core frontend source still contains mojibake-like encoded Arabic text.");
+}
+
+for (const finalUxPolishToken of [
+  "phase-24-final-ux-polish",
+  "تطبيق واحد للزبون والكابتن والإدارة",
+  "نقطة الانطلاق",
+  "جاري البحث عن كابتن",
+  "تم قبول الرحلة",
+  "الكابتن بالطريق",
+  "بدأت الرحلة",
+  "انتهت الرحلة",
+  "Socket غير متاح",
+  "GPS مرفوض",
+  "مباشر",
+  "touch-action: manipulation",
+  "button:focus-visible",
+  "live-driver-tracking-card.active",
+  "advanced-admin-table"
+]) {
+  if (!appSource.includes(finalUxPolishToken) && !stylesSource.includes(finalUxPolishToken)) {
+    throw new Error(`Final UX polish is missing: ${finalUxPolishToken}`);
+  }
+}
+
 for (const qaChecklistToken of [
   "Manual Test Checklist",
   "npm.cmd run api",

@@ -83,7 +83,7 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
         ]
       }
     : {
-        title: "Delivery captain application",
+        title: "Captain application",
         intro: "Add your basic details and the request will stay pending until management approves it.",
         review: "This form does not open the driver dashboard or create a captain account directly.",
         success: "Your request was sent successfully. Management will review your details and contact you.",
@@ -99,7 +99,7 @@ export function CaptainApplicationPanel({ state, dispatch, isArabic, onClose }) 
           ["", "Select vehicle type"],
           ["car", "Car"],
           ["motorcycle", "Motorcycle"],
-          ["van", "Van / delivery vehicle"]
+          ["van", "Van"]
         ]
       };
 

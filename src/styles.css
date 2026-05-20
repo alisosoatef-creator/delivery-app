@@ -6786,3 +6786,287 @@ textarea:focus-visible,
     flex-direction: column;
   }
 }
+
+/* phase-24-final-ux-polish */
+.welcome-auth,
+.customer-app-layout,
+.driver-dashboard,
+.admin-app-layout {
+  text-rendering: optimizeLegibility;
+}
+
+.auth-form-title h2,
+.customer-ride-hero h1,
+.driver-hero-top h2,
+.admin-section-header h2,
+.ds-section-header h2 {
+  letter-spacing: 0;
+  line-height: 1.16;
+}
+
+.auth-form-title p,
+.customer-ride-hero p,
+.phase-two-copy p,
+.admin-section-header p,
+.ds-section-header p,
+.driver-hero-top p {
+  line-height: 1.75;
+}
+
+.auth-tabs,
+.customer-nav,
+.admin-settings-tabs,
+.driver-action-row,
+.ride-action-row {
+  scrollbar-width: thin;
+}
+
+.auth-tabs button,
+.customer-nav button,
+.customer-bottom-nav button,
+.admin-settings-tabs button,
+.ds-button,
+.primary,
+.secondary {
+  min-height: 42px;
+  touch-action: manipulation;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.ds-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  box-shadow: var(--ring);
+}
+
+.auth-notice,
+.auth-error,
+.driver-panel-error,
+.support-ticket-error {
+  border-radius: var(--radius);
+  padding: 10px 12px;
+}
+
+.auth-notice {
+  border: 1px solid rgba(14, 159, 110, .22);
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+.auth-error,
+.driver-panel-error,
+.support-ticket-error {
+  border: 1px solid rgba(212, 72, 95, .24);
+  background: var(--rose-soft);
+  color: var(--rose);
+}
+
+.customer-ride-hero,
+.booking-panel,
+.map-panel,
+.phase-two-card,
+.driver-hero-card,
+.driver-earnings-card,
+.driver-current-card,
+.driver-requests-card,
+.driver-support-card,
+.driver-history-card,
+.admin-panel {
+  border-color: var(--border);
+}
+
+.customer-ride-hero {
+  display: grid;
+  gap: var(--space-2);
+  padding-block: var(--space-5);
+}
+
+.customer-ride-hero h1 {
+  max-width: 760px;
+  margin: 0;
+}
+
+.customer-ride-hero p {
+  max-width: 720px;
+  margin: 0;
+  color: var(--muted-strong);
+}
+
+.ride-searching-summary,
+.driver-meta-grid,
+.driver-request-meta,
+.detail-metrics,
+.driver-earnings-grid {
+  align-items: stretch;
+}
+
+.ride-searching-summary span,
+.driver-meta-grid span,
+.driver-request-meta span,
+.driver-earnings-grid span,
+.live-driver-tracking-card span,
+.driver-tracking-panel span {
+  min-width: 0;
+}
+
+.ride-searching-summary strong,
+.driver-meta-grid strong,
+.driver-request-meta strong,
+.driver-route-line b,
+.trip-route strong {
+  overflow-wrap: anywhere;
+}
+
+.captain-search-card,
+.captain-pending-card,
+.accepted-driver-card,
+.tracking-card,
+.trip-details-card {
+  isolation: isolate;
+}
+
+.live-driver-tracking-card.active,
+.driver-tracking-panel.active {
+  border-color: rgba(14, 159, 110, .32);
+  background:
+    linear-gradient(135deg, rgba(14, 159, 110, .12), transparent 58%),
+    var(--surface);
+}
+
+.live-driver-tracking-card.fallback,
+.driver-tracking-panel.denied,
+.driver-tracking-panel.socket-unavailable {
+  border-color: rgba(196, 122, 16, .28);
+  background:
+    linear-gradient(135deg, rgba(196, 122, 16, .12), transparent 58%),
+    var(--surface);
+}
+
+.driver-request-card,
+.driver-history-row,
+.driver-wallet-row,
+.support-ticket-card {
+  transition: transform .18s var(--ease-out), box-shadow .18s var(--ease-out), border-color .18s var(--ease-out);
+}
+
+@media (hover: hover) {
+  .driver-request-card:hover,
+  .support-ticket-card:hover,
+  .advanced-admin-table .admin-table-row:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+  }
+}
+
+.advanced-admin-table {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.advanced-admin-table .admin-table-row,
+.advanced-admin-table .ds-table-head {
+  align-items: center;
+}
+
+.admin-settings-tabs {
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.admin-settings-tabs button {
+  white-space: nowrap;
+}
+
+.admin-role-lockup .ds-badge,
+.permission-premium-card .ds-badge {
+  text-transform: lowercase;
+}
+
+.otp-preview {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-muted);
+}
+
+[dir="rtl"] .customer-nav,
+[dir="rtl"] .admin-settings-tabs,
+[dir="rtl"] .driver-action-row,
+[dir="rtl"] .ride-action-row {
+  direction: rtl;
+}
+
+@media (max-width: 780px) {
+  .customer-navbar,
+  .driver-hero-top,
+  .driver-hero-actions,
+  .admin-header-main {
+    gap: var(--space-3);
+  }
+
+  .customer-nav {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding-bottom: 3px;
+  }
+
+  .customer-nav button,
+  .customer-bottom-nav button {
+    white-space: nowrap;
+  }
+
+  .customer-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .driver-action-row,
+  .ride-action-row,
+  .searching-ride-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .driver-action-row button,
+  .ride-action-row button,
+  .searching-ride-actions button {
+    width: 100%;
+  }
+
+  .ride-searching-summary,
+  .driver-meta-grid,
+  .detail-metrics,
+  .driver-earnings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .auth-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-field-grid,
+  .admin-settings-grid,
+  .visa-field-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-auth-support {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-two-card,
+  .driver-hero-card,
+  .driver-earnings-card,
+  .driver-current-card,
+  .driver-requests-card,
+  .driver-support-card,
+  .driver-history-card {
+    padding: var(--space-4);
+  }
+}

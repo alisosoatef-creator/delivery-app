@@ -76,7 +76,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
           "Your request will be routed to management in the connected build.",
           "Create a new account and use the same password after OTP."
         ],
-        captainJoin: "Join as delivery captain",
+        captainJoin: "Join as captain",
         success: "Account verified. You can log in now.",
         loginSuccess: "Logged in successfully",
         missing: "Please fill all required fields.",
@@ -167,7 +167,7 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
         patch: {
           authStatus: "otp_required",
           backendLive: true,
-          toast: isArabic ? `Ø±Ù…Ø² Ø§Ù„ØªØ­Ù‚Ù‚ Ø§Ù„ØªØ¬Ø±ÙŠØ¨ÙŠ ${DEMO_OTP}` : `Demo verification code ${DEMO_OTP}`
+          toast: isArabic ? `رمز التحقق التجريبي ${DEMO_OTP}` : `Demo verification code ${DEMO_OTP}`
         }
       });
       return;

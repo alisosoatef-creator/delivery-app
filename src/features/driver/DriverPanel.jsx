@@ -128,14 +128,14 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   const liveTrackingStatus = state.liveTrackingStatus || "idle";
   const liveTrackingLabel =
     liveTrackingStatus === "active"
-      ? (isArabic ? "Ù…Ø¨Ø§Ø´Ø±" : "Live")
+      ? (isArabic ? "مباشر" : "Live")
       : liveTrackingStatus === "requesting"
-        ? (isArabic ? "Ø·Ù„Ø¨ GPS" : "Requesting GPS")
+        ? (isArabic ? "طلب GPS" : "Requesting GPS")
         : liveTrackingStatus === "denied"
-          ? (isArabic ? "GPS Ù…Ø±ÙÙˆØ¶" : "GPS denied")
+          ? (isArabic ? "GPS مرفوض" : "GPS denied")
           : liveTrackingStatus === "socket-unavailable"
-            ? (isArabic ? "Socket ØºÙŠØ± Ù…ØªØ§Ø­" : "Socket unavailable")
-            : (isArabic ? "ØºÙŠØ± Ù…ÙØ¹Ù„" : "Not active");
+            ? (isArabic ? "Socket غير متاح" : "Socket unavailable")
+            : (isArabic ? "غير مفعل" : "Not active");
   const completedTrips = driverRides.filter((ride) => ride.status === RIDE_STATUSES.completed);
   const historyRides = driverRides.length ? driverRides : currentRide ? [currentRide] : [];
   const supportRideOptions = currentRide ? [currentRide, ...historyRides.filter((ride) => ride.id !== currentRide.id)] : historyRides;
@@ -209,8 +209,8 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     });
     setTrackingMessage(
       delivered
-        ? (isArabic ? "ØªÙ… Ø¥Ø±Ø³Ø§Ù„ Ù…ÙˆÙ‚Ø¹Ùƒ Ø§Ù„Ù…Ø¨Ø§Ø´Ø± Ù„Ù„Ø±Ø­Ù„Ø©." : "Live location sent for this ride.")
-        : (isArabic ? "Ø§Ù„ØªØªØ¨Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø´Ø± ØºÙŠØ± Ù…ØªØ§Ø­ Ø­Ø§Ù„ÙŠÙ‹Ø§." : "Live tracking is currently unavailable.")
+        ? (isArabic ? "تم إرسال موقعك المباشر للرحلة." : "Live location sent for this ride.")
+        : (isArabic ? "التتبع المباشر غير متاح حاليًا." : "Live tracking is currently unavailable.")
     );
   }
 
@@ -234,36 +234,36 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
       patch: {
         liveTrackingStatus: "idle",
         liveTrackingError: "",
-        toast: isArabic ? "ØªÙ… Ø¥ÙŠÙ‚Ø§Ù ØªØªØ¨Ø¹ Ø§Ù„Ù…ÙˆÙ‚Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø´Ø±." : "Live location tracking stopped."
+        toast: isArabic ? "تم إيقاف تتبع الموقع المباشر." : "Live location tracking stopped."
       }
     });
-    setTrackingMessage(isArabic ? "ØªÙˆÙ‚Ù Ø§Ù„ØªØªØ¨Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø´Ø±." : "Live tracking stopped.");
+    setTrackingMessage(isArabic ? "توقف التتبع المباشر." : "Live tracking stopped.");
   }
 
   function handleStartLiveTracking() {
     if (!canTrackCurrentRide) {
-      showToast("ÙØ¹Ù‘Ù„ Ø§Ù„ØªØªØ¨Ø¹ Ø¨Ø¹Ø¯ Ù‚Ø¨ÙˆÙ„ Ø±Ø­Ù„Ø© Ù†Ø´Ø·Ø©.", "Start tracking after accepting an active ride.");
+      showToast("فعّل التتبع بعد قبول رحلة نشطة.", "Start tracking after accepting an active ride.");
       return;
     }
     if (!state.realtimeConnected) {
       dispatch({ type: "patch", patch: { liveTrackingStatus: "socket-unavailable", liveTrackingError: "socket-unavailable" } });
-      setTrackingMessage(isArabic ? "Ø§Ù„ØªØªØ¨Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø´Ø± ØºÙŠØ± Ù…ØªØ§Ø­ Ø­Ø§Ù„ÙŠÙ‹Ø§." : "Live tracking is currently unavailable.");
+      setTrackingMessage(isArabic ? "التتبع المباشر غير متاح حاليًا." : "Live tracking is currently unavailable.");
       return;
     }
     if (!("geolocation" in navigator)) {
       publishLocationUnavailable("gps-unsupported");
       dispatch({ type: "patch", patch: { liveTrackingStatus: "denied", liveTrackingError: "gps-unsupported" } });
-      setTrackingMessage(isArabic ? "Ø§Ù„Ù…ØªØµÙØ­ Ù„Ø§ ÙŠØ¯Ø¹Ù… GPS." : "This browser does not support GPS.");
+      setTrackingMessage(isArabic ? "المتصفح لا يدعم GPS." : "This browser does not support GPS.");
       return;
     }
 
     dispatch({ type: "patch", patch: { liveTrackingStatus: "requesting", liveTrackingError: "" } });
-    setTrackingMessage(isArabic ? "Ù†Ø·Ù„Ø¨ Ø¥Ø°Ù† GPS Ù„Ø¨Ø¯Ø¡ Ø§Ù„ØªØªØ¨Ø¹." : "Requesting GPS permission to start tracking.");
+    setTrackingMessage(isArabic ? "نطلب إذن GPS لبدء التتبع." : "Requesting GPS permission to start tracking.");
 
     const handleError = () => {
       publishLocationUnavailable("gps-denied");
       dispatch({ type: "patch", patch: { liveTrackingStatus: "denied", liveTrackingError: "gps-denied" } });
-      setTrackingMessage(isArabic ? "Ù„Ù… ÙŠØªÙ… Ø§Ù„Ø³Ù…Ø§Ø­ Ø¨Ø§Ù„ÙˆØµÙˆÙ„ Ù„Ù„Ù…ÙˆÙ‚Ø¹." : "Location permission was not allowed.");
+      setTrackingMessage(isArabic ? "لم يتم السماح بالوصول للموقع." : "Location permission was not allowed.");
     };
 
     try {
@@ -376,16 +376,16 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
 
       <section className="driver-earnings-card">
         <PanelTitle
-          title={isArabic ? "Ø£Ø±Ø¨Ø§Ø­ ÙˆÙ…Ø­ÙØ¸Ø© Ø§Ù„ÙƒØ§Ø¨ØªÙ†" : "Captain earnings and wallet"}
-          meta={paymentsData.isLoading ? (isArabic ? "ØªØ­Ù…ÙŠÙ„" : "Loading") : `${driverWalletTransactions.length}`}
+          title={isArabic ? "أرباح ومحفظة الكابتن" : "Captain earnings and wallet"}
+          meta={paymentsData.isLoading ? (isArabic ? "تحميل" : "Loading") : `${driverWalletTransactions.length}`}
         />
         {paymentsData.backendError && (
-          <p className="driver-panel-error">{isArabic ? "ØªØ¹Ø°Ø± ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø±Ø¨Ø§Ø­ Ù…Ù† Ù†Ø¸Ø§Ù… Ø§Ù„Ø¯ÙØ¹." : "Unable to load earnings from the payment system."}</p>
+          <p className="driver-panel-error">{isArabic ? "تعذر تحميل الأرباح من نظام الدفع." : "Unable to load earnings from the payment system."}</p>
         )}
         <div className="driver-earnings-grid">
-          <span><small>{isArabic ? "Ø£Ø±Ø¨Ø§Ø­ Ø§Ù„ÙŠÙˆÙ…" : "Today earnings"}</small><strong>{todayEarnings} â‚ª</strong></span>
-          <span><small>{isArabic ? "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ" : "Total"}</small><strong>{totalEarnings} â‚ª</strong></span>
-          <span><small>{isArabic ? "Ø±Ø­Ù„Ø§Øª Ù…ÙƒØªÙ…Ù„Ø©" : "Completed rides"}</small><strong>{earningsSummary.completedRides ?? completedTrips.length}</strong></span>
+          <span><small>{isArabic ? "أرباح اليوم" : "Today earnings"}</small><strong>{todayEarnings} ₪</strong></span>
+          <span><small>{isArabic ? "الإجمالي" : "Total"}</small><strong>{totalEarnings} ₪</strong></span>
+          <span><small>{isArabic ? "رحلات مكتملة" : "Completed rides"}</small><strong>{earningsSummary.completedRides ?? completedTrips.length}</strong></span>
         </div>
         <div className="driver-wallet-list">
           {driverWalletTransactions.length ? (
@@ -395,11 +395,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
                   <strong>{transaction.referenceId || transaction.referenceType}</strong>
                   <small>{transaction.note || transaction.type}</small>
                 </span>
-                <b>{transaction.amountIls ?? transaction.amount} â‚ª</b>
+                <b>{transaction.amountIls ?? transaction.amount} ₪</b>
               </div>
             ))
           ) : (
-            <div className="detail-empty compact">{isArabic ? "Ø³ØªØ¸Ù‡Ø± Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù…Ø­ÙØ¸Ø© Ø¨Ø¹Ø¯ Ø¥ÙƒÙ…Ø§Ù„ Ø±Ø­Ù„Ø©." : "Wallet transactions appear after completing rides."}</div>
+            <div className="detail-empty compact">{isArabic ? "ستظهر عمليات المحفظة بعد إكمال رحلة." : "Wallet transactions appear after completing rides."}</div>
           )}
         </div>
       </section>
@@ -471,22 +471,22 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
             </div>
             <div className={`driver-tracking-panel ${liveTrackingStatus}`}>
               <span>
-                <small>{isArabic ? "ØªØªØ¨Ø¹ Ù…ÙˆÙ‚Ø¹ÙŠ" : "My live location"}</small>
+                <small>{isArabic ? "تتبع موقعي" : "My live location"}</small>
                 <strong>{liveTrackingLabel}</strong>
               </span>
               {state.lastDriverLocationAt && (
                 <span>
-                  <small>{isArabic ? "Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«" : "Last update"}</small>
+                  <small>{isArabic ? "آخر تحديث" : "Last update"}</small>
                   <strong>{formatDate(state.lastDriverLocationAt, isArabic)}</strong>
                 </span>
               )}
               {trackingMessage && <p>{trackingMessage}</p>}
               <div className="driver-action-row">
                 <button className="secondary" type="button" onClick={handleStartLiveTracking} disabled={!canTrackCurrentRide || liveTrackingStatus === "requesting"}>
-                  {liveTrackingStatus === "active" ? (isArabic ? "ØªØ­Ø¯ÙŠØ« Ù…ÙˆÙ‚Ø¹ÙŠ" : "Update my location") : (isArabic ? "ØªÙØ¹ÙŠÙ„ Ù…ÙˆÙ‚Ø¹ÙŠ Ø§Ù„Ù…Ø¨Ø§Ø´Ø±" : "Start live location")}
+                  {liveTrackingStatus === "active" ? (isArabic ? "تحديث موقعي" : "Update my location") : (isArabic ? "تفعيل موقعي المباشر" : "Start live location")}
                 </button>
                 <button className="secondary danger-soft" type="button" onClick={() => stopLiveTracking()} disabled={liveTrackingStatus !== "active" && liveTrackingStatus !== "requesting"}>
-                  {isArabic ? "Ø¥ÙŠÙ‚Ø§Ù Ø§Ù„ØªØªØ¨Ø¹" : "Stop tracking"}
+                  {isArabic ? "إيقاف التتبع" : "Stop tracking"}
                 </button>
               </div>
             </div>
