@@ -161,6 +161,32 @@ export function emitSupportTicketEvent(eventName, { ticket } = {}) {
   target.emit(eventName, payload);
 }
 
+export function emitPaymentEvent(eventName, { payment, walletTransaction = null } = {}) {
+  if (!io || !payment) return;
+  const payload = {
+    event: eventName,
+    payment,
+    walletTransaction,
+    emittedAt: new Date().toISOString()
+  };
+  const rooms = ["admin"];
+  const customerId = safeRoomValue(payment.customerId);
+  const customerPhone = safeRoomValue(payment.customerPhone);
+  const driverId = safeRoomValue(payment.driverId);
+  const rideId = safeRoomValue(payment.rideId);
+  if (customerId) rooms.push(`customer:${customerId}`);
+  if (customerPhone) rooms.push(`customer-phone:${customerPhone}`);
+  if (driverId) rooms.push(`driver:${driverId}`);
+  if (rideId) rooms.push(`ride:${rideId}`);
+
+  // TODO production payments: protect payment rooms with real auth and emit only sanitized finance payloads.
+  let target = io;
+  for (const room of rooms) {
+    target = target.to(room);
+  }
+  target.emit(eventName, payload);
+}
+
 export function realtimeInfo() {
   return { enabled: Boolean(io), transport: "socket.io" };
 }

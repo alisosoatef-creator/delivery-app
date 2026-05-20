@@ -63,3 +63,7 @@ export function apiPost(path, body, options = {}) {
 export function apiPatch(path, body, options = {}) {
   return apiRequest(path, { ...options, method: "PATCH", body });
 }
+
+export function apiDelete(path, options = {}) {
+  return apiRequest(path, { ...options, method: "DELETE" });
+}

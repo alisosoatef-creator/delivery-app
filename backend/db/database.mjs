@@ -66,6 +66,54 @@ function migrateDatabase(database) {
     }
   }
 
+  const paymentColumns = tableColumns(database, "payments");
+  const paymentMigrations = [
+    ["customerId", "TEXT"],
+    ["customerPhone", "TEXT"],
+    ["driverId", "TEXT"],
+    ["provider", "TEXT NOT NULL DEFAULT 'cash/manual'"],
+    ["updatedAt", "TEXT"]
+  ];
+
+  for (const [columnName, columnType] of paymentMigrations) {
+    if (!paymentColumns.includes(columnName)) {
+      database.exec(`ALTER TABLE payments ADD COLUMN ${columnName} ${columnType};`);
+    }
+  }
+
+  const walletColumns = tableColumns(database, "wallet_transactions");
+  const walletMigrations = [
+    ["userId", "TEXT"],
+    ["userPhone", "TEXT"],
+    ["role", "TEXT NOT NULL DEFAULT 'customer'"],
+    ["referenceType", "TEXT"],
+    ["referenceId", "TEXT"],
+    ["note", "TEXT"]
+  ];
+
+  for (const [columnName, columnType] of walletMigrations) {
+    if (!walletColumns.includes(columnName)) {
+      database.exec(`ALTER TABLE wallet_transactions ADD COLUMN ${columnName} ${columnType};`);
+    }
+  }
+
+  const savedPaymentMethodColumns = tableColumns(database, "saved_payment_methods");
+  const savedPaymentMethodMigrations = [
+    ["userId", "TEXT"],
+    ["userPhone", "TEXT"],
+    ["cardholderName", "TEXT"],
+    ["last4", "TEXT NOT NULL DEFAULT ''"],
+    ["brand", "TEXT NOT NULL DEFAULT 'VISA'"],
+    ["expiryMonth", "TEXT"],
+    ["expiryYear", "TEXT"]
+  ];
+
+  for (const [columnName, columnType] of savedPaymentMethodMigrations) {
+    if (!savedPaymentMethodColumns.includes(columnName)) {
+      database.exec(`ALTER TABLE saved_payment_methods ADD COLUMN ${columnName} ${columnType};`);
+    }
+  }
+
   const legacyUsers = database
     .prepare("SELECT id, password FROM users WHERE password IS NOT NULL AND password != '' AND (passwordHash IS NULL OR passwordHash = '')")
     .all();
@@ -248,6 +296,79 @@ function supportTicketRow(row) {
     updatedAt: row.updatedAt || undefined,
     closedAt: row.closedAt || undefined
   };
+}
+
+function paymentRow(row) {
+  if (!row) return null;
+  const amount = Number(row.amount || 0);
+  return {
+    id: row.id,
+    rideId: row.rideId,
+    customerId: row.customerId || "",
+    customerPhone: row.customerPhone || "",
+    customerName: row.customerName || "",
+    driverId: row.driverId || "",
+    driverName: row.driverName || "",
+    amount,
+    amountIls: amount,
+    method: row.method || "cash",
+    status: row.status || "pending",
+    provider: row.provider || "cash/manual",
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt || row.createdAt
+  };
+}
+
+function walletTransactionRow(row) {
+  if (!row) return null;
+  const amount = Number(row.amount || 0);
+  return {
+    id: row.id,
+    userId: row.userId || "",
+    userPhone: row.userPhone || "",
+    role: row.role || "customer",
+    type: row.type,
+    amount,
+    amountIls: amount,
+    referenceType: row.referenceType || "",
+    referenceId: row.referenceId || "",
+    note: row.note || "",
+    createdAt: row.createdAt
+  };
+}
+
+function savedPaymentMethodRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    userId: row.userId || "",
+    userPhone: row.userPhone || "",
+    type: row.type || "visa",
+    cardholderName: row.cardholderName || "",
+    last4: row.last4 || "",
+    brand: row.brand || "VISA",
+    expiryMonth: row.expiryMonth || "",
+    expiryYear: row.expiryYear || "",
+    createdAt: row.createdAt
+  };
+}
+
+function normalizePaymentMethod(method = "cash") {
+  const normalized = String(method || "cash").trim().toLowerCase();
+  if (normalized === "visa-placeholder" || normalized === "visa") return "visa";
+  if (normalized === "wallet") return "wallet";
+  return "cash";
+}
+
+function paymentProvider(method = "cash", requestedMethod = "") {
+  const requested = String(requestedMethod || "").trim().toLowerCase();
+  if (requested === "visa-placeholder" || method === "visa") return "visa-placeholder";
+  if (method === "wallet") return "wallet/internal";
+  return "cash/manual";
+}
+
+function paidWalletTypes() {
+  return new Set(["credit", "refund", "release"]);
 }
 
 export function databaseInfo() {
@@ -814,9 +935,364 @@ export function updateSupportTicketStatus(ticketId, status = "closed") {
   return getSupportTicket(ticketId);
 }
 
+export function getPayment(paymentId) {
+  return paymentRow(one(
+    `
+      SELECT payments.*, rides.customerName, drivers.fullName AS driverName
+      FROM payments
+      LEFT JOIN rides ON rides.id = payments.rideId
+      LEFT JOIN drivers ON drivers.id = payments.driverId
+      WHERE payments.id = ?
+    `,
+    paymentId
+  ));
+}
+
+export function getPaymentByRide(rideId) {
+  return paymentRow(one(
+    `
+      SELECT payments.*, rides.customerName, drivers.fullName AS driverName
+      FROM payments
+      LEFT JOIN rides ON rides.id = payments.rideId
+      LEFT JOIN drivers ON drivers.id = payments.driverId
+      WHERE payments.rideId = ?
+      ORDER BY payments.createdAt DESC
+      LIMIT 1
+    `,
+    rideId
+  ));
+}
+
+export function listPayments({ customerId = "", customerPhone = "", driverId = "" } = {}) {
+  const filters = [];
+  const params = [];
+  if (customerId) {
+    filters.push("(payments.customerId = ? OR rides.customerId = ?)");
+    params.push(customerId, customerId);
+  }
+  if (customerPhone) {
+    filters.push("(payments.customerPhone = ? OR rides.customerPhone = ?)");
+    params.push(customerPhone, customerPhone);
+  }
+  if (driverId) {
+    filters.push("(payments.driverId = ? OR rides.driverId = ?)");
+    params.push(driverId, driverId);
+  }
+  const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+  return many(
+    `
+      SELECT payments.*, rides.customerName, drivers.fullName AS driverName
+      FROM payments
+      LEFT JOIN rides ON rides.id = payments.rideId
+      LEFT JOIN drivers ON drivers.id = payments.driverId
+      ${whereClause}
+      ORDER BY payments.createdAt DESC
+    `,
+    ...params
+  ).map(paymentRow);
+}
+
+export function createWalletTransaction(body = {}) {
+  const id = `wallet_tx_${randomUUID()}`;
+  run(
+    `
+      INSERT INTO wallet_transactions (
+        id, userId, userPhone, role, type, amount, referenceType, referenceId, note, createdAt
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    body.userId || "",
+    body.userPhone || "",
+    body.role || "customer",
+    body.type || "credit",
+    Number(body.amount || 0),
+    body.referenceType || "",
+    body.referenceId || "",
+    body.note || "",
+    nowIso()
+  );
+  return walletTransactionRow(one("SELECT * FROM wallet_transactions WHERE id = ?", id));
+}
+
+function ensureDriverEarningForPayment(payment) {
+  if (!payment?.driverId || payment.status !== "paid") return null;
+  const existing = one(
+    `
+      SELECT * FROM wallet_transactions
+      WHERE role = 'driver' AND type = 'credit' AND referenceType = 'ride' AND referenceId = ? AND userId = ?
+      LIMIT 1
+    `,
+    payment.rideId,
+    payment.driverId
+  );
+  if (existing) return walletTransactionRow(existing);
+
+  const driver = getDriver(payment.driverId);
+  return createWalletTransaction({
+    userId: payment.driverId,
+    userPhone: driver?.phone || "",
+    role: "driver",
+    type: "credit",
+    amount: payment.amount,
+    referenceType: "ride",
+    referenceId: payment.rideId,
+    note: `Development earning for ride ${payment.rideId}`
+  });
+}
+
+export function ensurePaymentForRide(rideOrId, options = {}) {
+  const ride = typeof rideOrId === "string" ? getRide(rideOrId) : rideOrId;
+  if (!ride?.id) return { payment: null, walletTransaction: null, created: false };
+
+  const requestedMethod = options.method || options.paymentMethod || ride.paymentMethod || "cash";
+  const method = normalizePaymentMethod(requestedMethod);
+  const provider = options.provider || paymentProvider(method, requestedMethod);
+  const amount = Number(options.amount ?? ride.fareIls ?? ride.price ?? 0);
+  const nextStatus = options.status || options.paymentStatus || (ride.status === RIDE_STATUSES.completed || options.forcePaid ? "paid" : "pending");
+  const timestamp = nowIso();
+  const existing = one("SELECT * FROM payments WHERE rideId = ? ORDER BY createdAt DESC LIMIT 1", ride.id);
+
+  if (existing) {
+    const shouldPromote = nextStatus === "paid" && existing.status !== "paid";
+    if (
+      shouldPromote ||
+      existing.method !== method ||
+      existing.provider !== provider ||
+      existing.driverId !== (ride.driverId || "")
+    ) {
+      run(
+        `
+          UPDATE payments
+          SET method = ?, status = ?, provider = ?, driverId = ?, amount = ?, updatedAt = ?
+          WHERE id = ?
+        `,
+        method,
+        shouldPromote ? "paid" : existing.status,
+        provider,
+        ride.driverId || "",
+        amount,
+        timestamp,
+        existing.id
+      );
+    }
+    const payment = getPayment(existing.id);
+    return { payment, walletTransaction: ensureDriverEarningForPayment(payment), created: false };
+  }
+
+  const id = `payment_${randomUUID()}`;
+  run(
+    `
+      INSERT INTO payments (
+        id, rideId, customerId, customerPhone, driverId, amount, method, status, provider, createdAt, updatedAt
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    ride.id,
+    ride.customerId || "",
+    ride.customerPhone || "",
+    ride.driverId || "",
+    amount,
+    method,
+    nextStatus,
+    provider,
+    timestamp,
+    timestamp
+  );
+
+  const payment = getPayment(id);
+  return { payment, walletTransaction: ensureDriverEarningForPayment(payment), created: true };
+}
+
+export function createRidePayment(rideId, body = {}) {
+  return ensurePaymentForRide(rideId, {
+    method: body.method || body.paymentMethod || "cash",
+    status: "paid",
+    forcePaid: true,
+    provider: body.provider
+  });
+}
+
+export function updatePaymentStatus(paymentId, status = "paid") {
+  const nextStatus = ["pending", "paid", "failed", "refunded"].includes(status) ? status : "paid";
+  run("UPDATE payments SET status = ?, updatedAt = ? WHERE id = ?", nextStatus, nowIso(), paymentId);
+  const payment = getPayment(paymentId);
+  const walletTransaction = ensureDriverEarningForPayment(payment);
+  return { payment, walletTransaction };
+}
+
+export function listWalletTransactions({ userId = "", userPhone = "", role = "", driverId = "" } = {}) {
+  let normalizedUserId = String(userId || "").trim();
+  let normalizedPhone = String(userPhone || "").trim();
+  let normalizedRole = String(role || "").trim();
+
+  if (driverId) {
+    const driver = getDriver(driverId);
+    normalizedUserId = driver?.id || driverId;
+    normalizedPhone = driver?.phone || normalizedPhone;
+    normalizedRole = "driver";
+  }
+
+  const filters = [];
+  const params = [];
+  if (normalizedUserId) {
+    filters.push("userId = ?");
+    params.push(normalizedUserId);
+  }
+  if (normalizedPhone) {
+    filters.push("userPhone = ?");
+    params.push(normalizedPhone);
+  }
+  if (normalizedRole) {
+    filters.push("role = ?");
+    params.push(normalizedRole);
+  }
+  const whereClause = filters.length ? `WHERE ${filters.join(" AND ")}` : "";
+  return many(
+    `
+      SELECT * FROM wallet_transactions
+      ${whereClause}
+      ORDER BY createdAt DESC
+    `,
+    ...params
+  ).map(walletTransactionRow);
+}
+
+export function getCustomerWallet({ userId = "", phone = "" } = {}) {
+  const transactions = listWalletTransactions({ userId, userPhone: phone, role: "customer" });
+  const positiveTypes = paidWalletTypes();
+  const devStartingBalance = 120;
+  const balance = transactions.reduce((sum, transaction) => {
+    const amount = Number(transaction.amount || 0);
+    return positiveTypes.has(transaction.type) ? sum + amount : sum - amount;
+  }, devStartingBalance);
+  return {
+    userId,
+    phone,
+    role: "customer",
+    currency: "ILS",
+    balance,
+    balanceIls: balance,
+    transactions
+  };
+}
+
+export function createSavedPaymentMethod(body = {}) {
+  const digits = String(body.cardNumber || body.last4 || "").replace(/\D/g, "");
+  const last4 = digits.slice(-4);
+  if (!last4 || last4.length !== 4) return null;
+
+  const id = `pay_method_${randomUUID()}`;
+  run(
+    `
+      INSERT INTO saved_payment_methods (
+        id, userId, userPhone, type, cardholderName, last4, brand, expiryMonth, expiryYear, createdAt
+      )
+      VALUES (?, ?, ?, 'visa', ?, ?, ?, ?, ?, ?)
+    `,
+    id,
+    body.userId || "",
+    body.userPhone || body.phone || "",
+    body.cardholderName || "",
+    last4,
+    body.brand || "VISA",
+    body.expiryMonth || "",
+    body.expiryYear || "",
+    nowIso()
+  );
+  return savedPaymentMethodRow(one("SELECT * FROM saved_payment_methods WHERE id = ?", id));
+}
+
+export function listSavedPaymentMethods({ userId = "", phone = "" } = {}) {
+  const normalizedUserId = String(userId || "").trim();
+  const normalizedPhone = String(phone || "").trim();
+  if (!normalizedUserId && !normalizedPhone) return [];
+  return many(
+    `
+      SELECT * FROM saved_payment_methods
+      WHERE (? != '' AND userId = ?) OR (? != '' AND userPhone = ?)
+      ORDER BY createdAt DESC
+    `,
+    normalizedUserId,
+    normalizedUserId,
+    normalizedPhone,
+    normalizedPhone
+  ).map(savedPaymentMethodRow);
+}
+
+export function deleteSavedPaymentMethod(methodId, { userId = "", phone = "" } = {}) {
+  const method = savedPaymentMethodRow(one("SELECT * FROM saved_payment_methods WHERE id = ?", methodId));
+  if (!method) return false;
+  const canDelete =
+    (!userId && !phone) ||
+    (userId && method.userId === userId) ||
+    (phone && method.userPhone === phone);
+  if (!canDelete) return false;
+  run("DELETE FROM saved_payment_methods WHERE id = ?", methodId);
+  return true;
+}
+
+export function driverEarnings({ driverId = "", phone = "" } = {}) {
+  const driver = driverId ? getDriver(driverId) : phone ? getDriverByPhone(phone) : null;
+  if (!driver) {
+    return {
+      driver: null,
+      summary: { totalEarnings: 0, todayEarnings: 0, completedRides: 0, currency: "ILS" },
+      transactions: []
+    };
+  }
+
+  const payments = listPayments({ driverId: driver.id }).filter((payment) => payment.status === "paid");
+  const transactions = listWalletTransactions({ driverId: driver.id });
+  const completedRides = many("SELECT * FROM rides WHERE driverId = ? AND status = 'completed'", driver.id).map(rideRow);
+  const totalEarnings = payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const today = new Date().toISOString().slice(0, 10);
+  const todayEarnings = payments
+    .filter((payment) => String(payment.createdAt || "").startsWith(today))
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+
+  return {
+    driver,
+    summary: {
+      totalEarnings,
+      totalEarningsIls: totalEarnings,
+      todayEarnings,
+      todayEarningsIls: todayEarnings,
+      completedRides: completedRides.length,
+      currency: "ILS"
+    },
+    payments,
+    transactions
+  };
+}
+
+export function adminPaymentsOverview() {
+  const payments = listPayments();
+  const walletTransactions = listWalletTransactions();
+  const paidPayments = payments.filter((payment) => payment.status === "paid");
+  const sumByMethod = (method) =>
+    paidPayments
+      .filter((payment) => payment.method === method)
+      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  return {
+    payments,
+    walletTransactions,
+    summary: {
+      cashTotal: sumByMethod("cash"),
+      visaTotal: sumByMethod("visa"),
+      walletTotal: sumByMethod("wallet"),
+      totalPaid: paidPayments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0),
+      paymentCount: payments.length,
+      pendingCount: payments.filter((payment) => payment.status === "pending").length,
+      currency: "ILS"
+    }
+  };
+}
+
 export function adminOverview() {
   const activeRides = one("SELECT COUNT(*) AS count FROM rides WHERE status NOT IN ('completed', 'cancelled', 'canceled')").count;
-  const todayRevenueIls = one("SELECT COALESCE(SUM(price), 0) AS total FROM rides").total;
+  const todayRevenueIls = one("SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'paid'").total;
   const todayRides = one("SELECT COUNT(*) AS count FROM rides").count;
   const pendingCaptainApplications = one("SELECT COUNT(*) AS count FROM captain_applications WHERE status = 'pending'").count;
   const openSupportTickets = one("SELECT COUNT(*) AS count FROM support_tickets WHERE status = 'open'").count;

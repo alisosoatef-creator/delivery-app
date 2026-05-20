@@ -107,6 +107,46 @@ export function createSchema(db) {
       closedAt TEXT
     );
 
+    CREATE TABLE IF NOT EXISTS payments (
+      id TEXT PRIMARY KEY,
+      rideId TEXT NOT NULL,
+      customerId TEXT,
+      customerPhone TEXT,
+      driverId TEXT,
+      amount REAL NOT NULL DEFAULT 0,
+      method TEXT NOT NULL DEFAULT 'cash',
+      status TEXT NOT NULL DEFAULT 'pending',
+      provider TEXT NOT NULL DEFAULT 'cash/manual',
+      createdAt TEXT NOT NULL,
+      updatedAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS wallet_transactions (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      userPhone TEXT,
+      role TEXT NOT NULL DEFAULT 'customer',
+      type TEXT NOT NULL,
+      amount REAL NOT NULL DEFAULT 0,
+      referenceType TEXT,
+      referenceId TEXT,
+      note TEXT,
+      createdAt TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS saved_payment_methods (
+      id TEXT PRIMARY KEY,
+      userId TEXT,
+      userPhone TEXT,
+      type TEXT NOT NULL DEFAULT 'visa',
+      cardholderName TEXT,
+      last4 TEXT NOT NULL,
+      brand TEXT NOT NULL DEFAULT 'VISA',
+      expiryMonth TEXT,
+      expiryYear TEXT,
+      createdAt TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS pricing_rules (
       id TEXT PRIMARY KEY,
       cityId TEXT NOT NULL UNIQUE,

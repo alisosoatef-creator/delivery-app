@@ -65,13 +65,44 @@ CREATE TABLE wallets (
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE payments (
+  id TEXT PRIMARY KEY,
+  rideId TEXT NOT NULL REFERENCES rides(id),
+  customerId TEXT,
+  customerPhone TEXT,
+  driverId TEXT,
+  amount REAL NOT NULL DEFAULT 0,
+  method TEXT NOT NULL CHECK (method IN ('cash', 'visa', 'wallet')),
+  status TEXT NOT NULL CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
+  provider TEXT NOT NULL DEFAULT 'cash/manual',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+
 CREATE TABLE wallet_transactions (
   id TEXT PRIMARY KEY,
-  wallet_id TEXT NOT NULL REFERENCES wallets(id),
-  ride_id TEXT REFERENCES rides(id),
-  amount_ils INTEGER NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('top_up', 'ride_payment', 'driver_earning', 'refund')),
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+  userId TEXT,
+  userPhone TEXT,
+  role TEXT NOT NULL CHECK (role IN ('customer', 'driver')) DEFAULT 'customer',
+  type TEXT NOT NULL CHECK (type IN ('credit', 'debit', 'hold', 'release', 'refund', 'payout')),
+  amount REAL NOT NULL DEFAULT 0,
+  referenceType TEXT,
+  referenceId TEXT,
+  note TEXT,
+  createdAt TEXT NOT NULL
+);
+
+CREATE TABLE saved_payment_methods (
+  id TEXT PRIMARY KEY,
+  userId TEXT,
+  userPhone TEXT,
+  type TEXT NOT NULL CHECK (type IN ('visa')) DEFAULT 'visa',
+  cardholderName TEXT,
+  last4 TEXT NOT NULL,
+  brand TEXT NOT NULL DEFAULT 'VISA',
+  expiryMonth TEXT,
+  expiryYear TEXT,
+  createdAt TEXT NOT NULL
 );
 
 CREATE TABLE ratings (

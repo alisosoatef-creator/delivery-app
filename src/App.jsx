@@ -19,6 +19,7 @@ import {
   subscribeToAdminEvents,
   subscribeToDriverEvents,
   subscribeToDriverLocationEvents,
+  subscribeToPaymentEvents,
   subscribeToSupportEvents,
   subscribeToRideEvents
 } from "./services/socketClient.js";
@@ -171,6 +172,14 @@ function App() {
       queryClient.invalidateQueries({ queryKey: ["admin", "supportTickets"] });
       queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
     });
+    const unsubscribePaymentEvents = subscribeToPaymentEvents(() => {
+      queryClient.invalidateQueries({ queryKey: ["customer", "wallet"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", "payments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "payments"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "earnings"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "walletTransactions"] });
+    });
 
     return () => {
       unsubscribeRideEvents();
@@ -178,6 +187,7 @@ function App() {
       unsubscribeDriverLocationEvents();
       unsubscribeAdminEvents();
       unsubscribeSupportEvents();
+      unsubscribePaymentEvents();
     };
   }, [
     activeRole,

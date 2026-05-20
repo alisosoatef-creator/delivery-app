@@ -386,13 +386,78 @@ try {
   assert(inProgress.ride.status === "in_progress", "driver should update ride to in_progress");
 
   const rideCompletedEvent = waitForSocketEvent(socket, "ride:completed");
+  const cashPaymentCreatedEvent = waitForSocketEvent(socket, "payment:created");
   const status = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
     body: JSON.stringify({ driverId: approve.captain.id, status: "completed" })
   });
   const completedPayload = await rideCompletedEvent;
+  const cashPaymentPayload = await cashPaymentCreatedEvent;
   assert(status.ride.status === "completed", "ride status should update");
   assert(completedPayload.ride?.id === rideId, "ride:completed should emit the completed ride");
+  assert(cashPaymentPayload.payment?.rideId === rideId, "completed cash ride should emit payment:created");
+  assert(cashPaymentPayload.payment?.method === "cash", "completed cash ride should create a cash payment");
+
+  const customerWallet = await request(`/api/customer/wallet?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`);
+  assert(typeof customerWallet.wallet?.balance === "number", "customer wallet should return a numeric balance");
+
+  const savedMethod = await request("/api/customer/payment-methods", {
+    method: "POST",
+    body: JSON.stringify({
+      userPhone: phone,
+      userId: login.user.id,
+      type: "visa",
+      cardholderName: "Smoke Customer",
+      cardNumber: "4242 4242 4242 4242",
+      cvv: "123",
+      expiryMonth: "12",
+      expiryYear: "2029"
+    })
+  });
+  assert(savedMethod.method?.last4 === "4242", "saved VISA placeholder should keep last4 only");
+  assert(!savedMethod.method?.cardNumber && !savedMethod.method?.cvv, "saved VISA placeholder must not expose card number or CVV");
+
+  const savedMethods = await request(`/api/customer/payment-methods?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`);
+  assert(
+    savedMethods.methods.some((method) => method.id === savedMethod.method.id && method.last4 === "4242"),
+    "customer payment methods should include the saved VISA placeholder"
+  );
+
+  const adminPayments = await request("/api/admin/payments");
+  assert(
+    adminPayments.payments.some((payment) => payment.rideId === rideId && payment.method === "cash" && payment.status === "paid"),
+    "admin payments should include completed cash ride payment"
+  );
+
+  const driverEarnings = await request(`/api/driver/earnings?driverId=${encodeURIComponent(approve.captain.id)}`);
+  assert(driverEarnings.summary?.totalEarnings >= status.ride.fareIls, "driver earnings should include completed ride amount");
+  assert(driverEarnings.summary?.completedRides >= 1, "driver earnings should include completed rides count");
+
+  const driverWalletTransactions = await request(`/api/driver/wallet-transactions?driverId=${encodeURIComponent(approve.captain.id)}`);
+  assert(
+    driverWalletTransactions.transactions.some((transaction) => transaction.referenceId === rideId && transaction.type === "credit"),
+    "driver wallet transactions should include completed ride credit"
+  );
+
+  const visaRide = await request("/api/rides", {
+    method: "POST",
+    body: JSON.stringify({ ...ridePayload, pickup: "Visa A", destination: "Visa B", paymentMethod: "visa" })
+  });
+  const visaPaymentEvent = waitForSocketEvent(socket, "payment:created");
+  const paidVisaRide = await request(`/api/rides/${visaRide.ride.id}/pay`, {
+    method: "POST",
+    body: JSON.stringify({ method: "visa-placeholder", paymentMethodId: savedMethod.method.id })
+  });
+  const visaPaymentPayload = await visaPaymentEvent;
+  assert(paidVisaRide.payment?.method === "visa", "ride pay should normalize VISA placeholder to visa method");
+  assert(paidVisaRide.payment?.provider === "visa-placeholder", "ride pay should use visa-placeholder provider");
+  assert(visaPaymentPayload.payment?.rideId === visaRide.ride.id, "ride pay should emit payment:created");
+
+  const customerPayments = await request(`/api/customer/payments?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`);
+  assert(
+    customerPayments.payments.some((payment) => payment.id === paidVisaRide.payment.id),
+    "customer payments should include paid VISA placeholder ride"
+  );
 
   const supportCreatedEvent = waitForSocketEvent(socket, "support:ticket-created");
   const ticket = await request("/api/support/tickets", {

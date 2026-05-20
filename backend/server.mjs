@@ -5,11 +5,17 @@ import {
   adminOverview,
   acceptRide,
   createDriverFromApplication,
+  createRidePayment,
   createOrUpdateCustomerUser,
   createOtpCode,
   databaseInfo,
+  adminPaymentsOverview,
+  deleteSavedPaymentMethod,
+  driverEarnings,
+  ensurePaymentForRide,
   findOtpCode,
   findOtpCodeByPhone,
+  getCustomerWallet,
   getRide,
   findUserByPhone,
   findUserByIdentifier,
@@ -29,16 +35,21 @@ import {
   listDriverRequests,
   listDrivers,
   listMySupportTickets,
+  listPayments,
   listPricingRules,
   listRides,
+  listSavedPaymentMethods,
   listSupportTickets,
+  listWalletTransactions,
   markOtpUsed,
   publicUser,
+  createSavedPaymentMethod,
   updateCaptainApplicationStatus,
   updateCustomerStatus,
   updateDriverLocation,
   updateDriverRideStatus,
   updateDriverStatus,
+  updatePaymentStatus,
   updatePricingRule,
   updateRideStatus,
   updateSystemSettings,
@@ -46,7 +57,7 @@ import {
   verifyUserByPhone
 } from "./db/database.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
-import { emitDriverEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
+import { emitDriverEvent, emitPaymentEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
 
 const port = Number(process.env.PORT || 3001);
 const host = process.env.HOST || "0.0.0.0";
@@ -62,7 +73,7 @@ function sendJson(response, status, payload) {
     "Content-Length": Buffer.byteLength(body),
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    "Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS"
+    "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"
   });
   response.end(body);
 }
@@ -110,6 +121,14 @@ function rideRealtimeEventName(ride) {
   if (ride?.status === "cancelled" || ride?.status === "canceled") return "ride:cancelled";
   if (ride?.status === "completed") return "ride:completed";
   return "ride:status-updated";
+}
+
+function emitPaymentSideEffects(paymentResult) {
+  const payment = paymentResult?.payment;
+  const walletTransaction = paymentResult?.walletTransaction;
+  if (!payment) return;
+  emitPaymentEvent("payment:created", { payment, walletTransaction });
+  if (walletTransaction) emitPaymentEvent("wallet:updated", { payment, walletTransaction });
 }
 
 function requireAdminDev(request) {
@@ -376,6 +395,57 @@ async function handleApi(request, response) {
     return;
   }
 
+  if (request.method === "GET" && url.pathname === "/api/customer/wallet") {
+    const wallet = getCustomerWallet({
+      userId: url.searchParams.get("userId") || url.searchParams.get("customerId") || "",
+      phone: url.searchParams.get("phone") || url.searchParams.get("customerPhone") || ""
+    });
+    sendJson(response, 200, { wallet });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/customer/payments") {
+    const customerId = url.searchParams.get("userId") || url.searchParams.get("customerId") || "";
+    const customerPhone = url.searchParams.get("phone") || url.searchParams.get("customerPhone") || "";
+    sendJson(response, 200, { payments: customerId || customerPhone ? listPayments({ customerId, customerPhone }) : [] });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/customer/payment-methods") {
+    sendJson(response, 200, {
+      methods: listSavedPaymentMethods({
+        userId: url.searchParams.get("userId") || url.searchParams.get("customerId") || "",
+        phone: url.searchParams.get("phone") || url.searchParams.get("customerPhone") || ""
+      })
+    });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/customer/payment-methods") {
+    const body = await readJson(request);
+    const method = createSavedPaymentMethod(body);
+    if (!method) {
+      sendJson(response, 400, { error: "invalid_payment_method" });
+      return;
+    }
+    sendJson(response, 201, { method });
+    return;
+  }
+
+  const paymentMethodDeleteMatch = url.pathname.match(/^\/api\/customer\/payment-methods\/([^/]+)$/);
+  if (request.method === "DELETE" && paymentMethodDeleteMatch) {
+    const deleted = deleteSavedPaymentMethod(paymentMethodDeleteMatch[1], {
+      userId: url.searchParams.get("userId") || url.searchParams.get("customerId") || "",
+      phone: url.searchParams.get("phone") || url.searchParams.get("customerPhone") || ""
+    });
+    if (!deleted) {
+      sendJson(response, 404, { error: "payment_method_not_found" });
+      return;
+    }
+    sendJson(response, 200, { ok: true });
+    return;
+  }
+
   const customerRideDetailsMatch = url.pathname.match(/^\/api\/customer\/rides\/([^/]+)$/);
   if (request.method === "GET" && customerRideDetailsMatch) {
     const ride = getRide(customerRideDetailsMatch[1]);
@@ -417,7 +487,23 @@ async function handleApi(request, response) {
     }
     broadcast("ride.status.changed", { ride });
     emitRideEvent(rideRealtimeEventName(ride), { ride });
+    if (ride.status === "completed") {
+      emitPaymentSideEffects(ensurePaymentForRide(ride, { forcePaid: true }));
+    }
     sendJson(response, 200, { ride });
+    return;
+  }
+
+  const ridePayMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/pay$/);
+  if (request.method === "POST" && ridePayMatch) {
+    const body = await readJson(request);
+    const paymentResult = createRidePayment(ridePayMatch[1], body);
+    if (!paymentResult.payment) {
+      sendJson(response, 404, { error: "ride_not_found" });
+      return;
+    }
+    emitPaymentSideEffects(paymentResult);
+    sendJson(response, 200, { payment: paymentResult.payment, walletTransaction: paymentResult.walletTransaction });
     return;
   }
 
@@ -456,12 +542,54 @@ async function handleApi(request, response) {
     }
     broadcast("ride.status.changed", { ride });
     emitRideEvent(rideRealtimeEventName(ride), { ride });
+    if (ride.status === "completed") {
+      emitPaymentSideEffects(ensurePaymentForRide(ride, { forcePaid: true }));
+    }
     sendJson(response, 200, { ride });
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/api/admin/rides") {
     sendJson(response, 200, { rides: listRides() });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/payments") {
+    sendJson(response, 200, adminPaymentsOverview());
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/admin/wallet-transactions") {
+    sendJson(response, 200, { transactions: listWalletTransactions() });
+    return;
+  }
+
+  const adminPaymentStatusMatch = url.pathname.match(/^\/api\/admin\/payments\/([^/]+)\/status$/);
+  if (request.method === "PATCH" && adminPaymentStatusMatch) {
+    const body = await readJson(request);
+    const paymentResult = updatePaymentStatus(adminPaymentStatusMatch[1], body.status || "paid");
+    if (!paymentResult.payment) {
+      sendJson(response, 404, { error: "payment_not_found" });
+      return;
+    }
+    emitPaymentEvent("payment:updated", paymentResult);
+    if (paymentResult.walletTransaction) emitPaymentEvent("wallet:updated", paymentResult);
+    sendJson(response, 200, { payment: paymentResult.payment, walletTransaction: paymentResult.walletTransaction });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/driver/earnings") {
+    sendJson(response, 200, driverEarnings({
+      driverId: url.searchParams.get("driverId") || "",
+      phone: url.searchParams.get("phone") || ""
+    }));
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/driver/wallet-transactions") {
+    const driverId = url.searchParams.get("driverId") || "";
+    const phone = url.searchParams.get("phone") || "";
+    sendJson(response, 200, { transactions: listWalletTransactions({ driverId, userPhone: phone, role: "driver" }) });
     return;
   }
 

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Avatar, Metric, PanelTitle, StatusBadge } from "../../components/ui/index.js";
 import { useDriverData } from "../../hooks/useDriverData.js";
+import { usePayments } from "../../hooks/usePayments.js";
 import { useSupportTickets } from "../../hooks/useSupportTickets.js";
 import { sendDriverLocationUnavailable, sendDriverLocationUpdate } from "../../services/socketClient.js";
 import { statusText } from "../../utils/i18n.js";
@@ -98,6 +99,12 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     phone: driver.phone,
     role: "driver"
   });
+  const paymentsData = usePayments({
+    enabled: Boolean(driverId) && isDriverActive,
+    driverId,
+    phone: driver.phone,
+    role: "driver"
+  });
 
   const availableRides = driverData.availableRides.map((ride) => normalizeDriverRide(ride, state, isArabic));
   const driverRides = driverData.myRides.map((ride) => normalizeDriverRide(ride, state, isArabic));
@@ -122,7 +129,12 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   const completedTrips = driverRides.filter((ride) => ride.status === RIDE_STATUSES.completed);
   const historyRides = driverRides.length ? driverRides : currentRide ? [currentRide] : [];
   const supportRideOptions = currentRide ? [currentRide, ...historyRides.filter((ride) => ride.id !== currentRide.id)] : historyRides;
-  const todayEarnings = completedTrips.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
+  const earningsSummary = paymentsData.driverEarnings.summary || {};
+  const driverWalletTransactions = paymentsData.driverWalletTransactions.length
+    ? paymentsData.driverWalletTransactions
+    : paymentsData.driverEarnings.transactions || [];
+  const todayEarnings = earningsSummary.todayEarnings ?? completedTrips.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
+  const totalEarnings = earningsSummary.totalEarnings ?? todayEarnings;
 
   useEffect(() => {
     return () => {
@@ -281,9 +293,6 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           toast: isArabic ? "تم قبول الرحلة ونقلها إلى رحلتي الحالية." : "Ride accepted and moved to your current ride."
         }
       });
-      if (status === RIDE_STATUSES.completed || status === RIDE_STATUSES.cancelled) {
-        stopLiveTracking(status === RIDE_STATUSES.completed ? "ride-completed" : "ride-cancelled");
-      }
     } catch {
       showToast("تعذر قبول الرحلة. ربما قُبلت من كابتن آخر.", "Unable to accept this ride. It may have been taken.");
     }
@@ -301,6 +310,13 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           toast: statusText[state.language][payload.ride.status] || payload.ride.status
         }
       });
+      if (status === RIDE_STATUSES.completed || status === RIDE_STATUSES.cancelled) {
+        stopLiveTracking(status === RIDE_STATUSES.completed ? "ride-completed" : "ride-cancelled");
+      }
+      if (status === RIDE_STATUSES.completed) {
+        paymentsData.refetchDriverEarnings();
+        paymentsData.refetchDriverWalletTransactions();
+      }
     } catch {
       showToast("تعذر تحديث حالة الرحلة حسب التسلسل الحالي.", "Unable to update the ride status in the current sequence.");
     }
@@ -346,6 +362,36 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         <Metric label={isArabic ? "رحلاتي" : "My rides"} value={driverRides.length} />
         <Metric label={t.rating} value={driver.rating} />
         <Metric label={isArabic ? "مكتملة" : "Completed"} value={completedTrips.length} />
+      </section>
+
+      <section className="driver-earnings-card">
+        <PanelTitle
+          title={isArabic ? "Ø£Ø±Ø¨Ø§Ø­ ÙˆÙ…Ø­ÙØ¸Ø© Ø§Ù„ÙƒØ§Ø¨ØªÙ†" : "Captain earnings and wallet"}
+          meta={paymentsData.isLoading ? (isArabic ? "ØªØ­Ù…ÙŠÙ„" : "Loading") : `${driverWalletTransactions.length}`}
+        />
+        {paymentsData.backendError && (
+          <p className="driver-panel-error">{isArabic ? "ØªØ¹Ø°Ø± ØªØ­Ù…ÙŠÙ„ Ø§Ù„Ø£Ø±Ø¨Ø§Ø­ Ù…Ù† Ù†Ø¸Ø§Ù… Ø§Ù„Ø¯ÙØ¹." : "Unable to load earnings from the payment system."}</p>
+        )}
+        <div className="driver-earnings-grid">
+          <span><small>{isArabic ? "Ø£Ø±Ø¨Ø§Ø­ Ø§Ù„ÙŠÙˆÙ…" : "Today earnings"}</small><strong>{todayEarnings} â‚ª</strong></span>
+          <span><small>{isArabic ? "Ø§Ù„Ø¥Ø¬Ù…Ø§Ù„ÙŠ" : "Total"}</small><strong>{totalEarnings} â‚ª</strong></span>
+          <span><small>{isArabic ? "Ø±Ø­Ù„Ø§Øª Ù…ÙƒØªÙ…Ù„Ø©" : "Completed rides"}</small><strong>{earningsSummary.completedRides ?? completedTrips.length}</strong></span>
+        </div>
+        <div className="driver-wallet-list">
+          {driverWalletTransactions.length ? (
+            driverWalletTransactions.slice(0, 4).map((transaction) => (
+              <div className="driver-wallet-row" key={transaction.id}>
+                <span>
+                  <strong>{transaction.referenceId || transaction.referenceType}</strong>
+                  <small>{transaction.note || transaction.type}</small>
+                </span>
+                <b>{transaction.amountIls ?? transaction.amount} â‚ª</b>
+              </div>
+            ))
+          ) : (
+            <div className="detail-empty compact">{isArabic ? "Ø³ØªØ¸Ù‡Ø± Ø¹Ù…Ù„ÙŠØ§Øª Ø§Ù„Ù…Ø­ÙØ¸Ø© Ø¨Ø¹Ø¯ Ø¥ÙƒÙ…Ø§Ù„ Ø±Ø­Ù„Ø©." : "Wallet transactions appear after completing rides."}</div>
+          )}
+        </div>
       </section>
 
       <section className="driver-map-card">

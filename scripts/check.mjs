@@ -24,7 +24,9 @@ const requiredFiles = [
   "scripts/backend-smoke.mjs",
   "vite.config.js",
   "src/services/socketClient.js",
-  "src/hooks/useSupportTickets.js"
+  "src/hooks/useSupportTickets.js",
+  "src/services/paymentsApi.js",
+  "src/hooks/usePayments.js"
 ];
 
 for (const file of requiredFiles) {
@@ -114,6 +116,7 @@ const sourceOrder = [
   "src/services/ridesApi.js",
   "src/services/driverApi.js",
   "src/services/supportApi.js",
+  "src/services/paymentsApi.js",
   "src/services/pricingApi.js",
   "src/services/bootstrapApi.js",
   "src/hooks/useAuthApi.js",
@@ -122,6 +125,7 @@ const sourceOrder = [
   "src/hooks/useRidesApi.js",
   "src/hooks/useDriverData.js",
   "src/hooks/useSupportTickets.js",
+  "src/hooks/usePayments.js",
   "src/hooks/useBootstrap.js"
 ];
 
@@ -377,6 +381,13 @@ for (const serviceLayerToken of [
   "updateAdminDriverStatus",
   "updateAdminSettings",
   "fetchSupportTickets",
+  "fetchCustomerWallet",
+  "fetchCustomerPayments",
+  "fetchPaymentMethods",
+  "addPaymentMethod",
+  "payRide",
+  "fetchAdminPayments",
+  "fetchDriverEarnings",
   "fetchPricingRules",
   "fetchBootstrap",
   "requestRideQuote",
@@ -414,6 +425,9 @@ for (const realtimeFrontendToken of [
   "driver:location-unavailable",
   "support:ticket-created",
   "support:ticket-updated",
+  "payment:created",
+  "payment:updated",
+  "wallet:updated",
   "queryClient.invalidateQueries",
   "realtimeConnected",
   "realtimeStatus",
@@ -976,6 +990,13 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/driver/my-rides"',
   'url.pathname === "/api/customer/rides"',
   'url.pathname === "/api/admin/rides"',
+  'url.pathname === "/api/customer/wallet"',
+  'url.pathname === "/api/customer/payments"',
+  'url.pathname === "/api/customer/payment-methods"',
+  'url.pathname === "/api/admin/payments"',
+  'url.pathname === "/api/admin/wallet-transactions"',
+  'url.pathname === "/api/driver/earnings"',
+  'url.pathname === "/api/driver/wallet-transactions"',
   'url.pathname === "/api/support/tickets"',
   'url.pathname === "/api/support/my-tickets"',
   'url.pathname === "/api/admin/support/tickets"',
@@ -991,11 +1012,14 @@ for (const backendEndpointToken of [
   'customerRideDetailsMatch',
   'rideAcceptMatch',
   'driverRideStatusMatch',
+  'ridePayMatch',
+  'paymentMethodDeleteMatch',
+  'adminPaymentStatusMatch',
   'supportTicketStatusMatch',
   'pricingPatchMatch',
   'approvedCaptains',
   'demoOtpCode: "1234"',
-  'Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS"'
+  'Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"'
 ]) {
   if (!backendSource.includes(backendEndpointToken)) {
     throw new Error(`Backend API surface is missing: ${backendEndpointToken}`);
@@ -1025,6 +1049,10 @@ for (const backendRealtimeToken of [
   "driver:location-unavailable",
   "support:ticket-created",
   "support:ticket-updated",
+  "payment:created",
+  "payment:updated",
+  "wallet:updated",
+  "emitPaymentEvent",
   "admin:captain-application-created",
   "admin:captain-application-reviewed"
 ]) {
@@ -1082,6 +1110,9 @@ for (const sqliteTableToken of [
   "routeDistanceKm REAL",
   "durationMinutes INTEGER",
   "CREATE TABLE IF NOT EXISTS support_tickets",
+  "CREATE TABLE IF NOT EXISTS payments",
+  "CREATE TABLE IF NOT EXISTS wallet_transactions",
+  "CREATE TABLE IF NOT EXISTS saved_payment_methods",
   "CREATE TABLE IF NOT EXISTS pricing_rules",
   "CREATE TABLE IF NOT EXISTS system_settings"
 ]) {
@@ -1127,6 +1158,11 @@ for (const persistenceSmokeToken of [
   "driver:location-updated should include driver longitude",
   "ride:status-updated should emit driver_arriving",
   "ride:completed should emit the completed ride",
+  "completed cash ride should emit payment:created",
+  "saved VISA placeholder must not expose card number or CVV",
+  "admin payments should include completed cash ride payment",
+  "driver wallet transactions should include completed ride credit",
+  "ride pay should normalize VISA placeholder to visa method",
   "customer support ticket should persist customer role",
   "customer support ticket should persist linked ride id",
   "support:ticket-created should emit new support ticket",

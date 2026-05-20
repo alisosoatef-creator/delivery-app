@@ -11,13 +11,15 @@ const RIDE_EVENTS = [
 const DRIVER_EVENTS = ["driver:online-status-updated"];
 const DRIVER_LOCATION_EVENTS = ["driver:location-updated", "driver:location-unavailable"];
 const SUPPORT_EVENTS = ["support:ticket-created", "support:ticket-updated"];
+const PAYMENT_EVENTS = ["payment:created", "payment:updated", "wallet:updated"];
 const ADMIN_EVENTS = [
   "admin:captain-application-created",
   "admin:captain-application-reviewed",
   ...RIDE_EVENTS,
   ...DRIVER_EVENTS,
   ...DRIVER_LOCATION_EVENTS,
-  ...SUPPORT_EVENTS
+  ...SUPPORT_EVENTS,
+  ...PAYMENT_EVENTS
 ];
 
 let socket = null;
@@ -93,6 +95,10 @@ export function subscribeToDriverLocationEvents(handler) {
 
 export function subscribeToSupportEvents(handler) {
   return subscribe(SUPPORT_EVENTS, handler);
+}
+
+export function subscribeToPaymentEvents(handler) {
+  return subscribe(PAYMENT_EVENTS, handler);
 }
 
 export function subscribeToAdminEvents(handler) {

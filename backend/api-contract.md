@@ -33,6 +33,9 @@ Events emitted by ride/admin actions:
 - `driver:location-unavailable`
 - `support:ticket-created`
 - `support:ticket-updated`
+- `payment:created`
+- `payment:updated`
+- `wallet:updated`
 - `admin:captain-application-created`
 - `admin:captain-application-reviewed`
 
@@ -93,6 +96,7 @@ Admin writes are persisted in SQLite for development. API authorization is still
 - `GET /api/rides`
 - `POST /api/rides/quote`
 - `POST /api/rides`
+- `POST /api/rides/:id/pay`
 - `GET /api/customer/rides`
 - `GET /api/customer/rides/:id`
 - `PATCH /api/rides/:id/status`
@@ -112,6 +116,31 @@ New customer rides start with `status = "searching"` and do not include captain 
 - `PATCH /api/driver/rides/:id/status`
 
 Driver development login is limited to active approved captains in the local database. The driver ride status endpoint enforces the current development lifecycle: `accepted -> driver_arriving -> arrived -> in_progress -> completed`.
+
+## Payments and Wallet
+
+- `GET /api/customer/wallet?phone=...&userId=...`
+  - Returns a development wallet balance and local ledger entries.
+- `GET /api/customer/payments?phone=...&userId=...`
+  - Returns payment records for the current customer.
+- `GET /api/customer/payment-methods?phone=...&userId=...`
+  - Returns saved demo payment methods. Only `last4` is stored for VISA.
+- `POST /api/customer/payment-methods`
+  - Saves a VISA placeholder using `cardholderName`, `last4`, `brand`, and expiry fields. Full card number and CVV must not be stored.
+- `DELETE /api/customer/payment-methods/:id`
+  - Deletes a saved local placeholder method.
+- `GET /api/admin/payments`
+  - Returns SQLite payment records, wallet transactions, and summary totals.
+- `GET /api/admin/wallet-transactions`
+  - Returns all local wallet ledger transactions.
+- `PATCH /api/admin/payments/:id/status`
+  - Development-only manual payment status update.
+- `GET /api/driver/earnings?driverId=...`
+  - Returns captain earnings summary from completed paid rides.
+- `GET /api/driver/wallet-transactions?driverId=...`
+  - Returns captain wallet ledger entries.
+
+Cash rides are marked `paid` when completed in this development build. VISA is a placeholder with provider `visa-placeholder`; no real payment gateway is called and no sensitive card data is persisted.
 
 ## Support
 
