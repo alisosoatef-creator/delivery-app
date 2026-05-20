@@ -65,6 +65,7 @@ export function AdminRides({ state, isArabic, adminRides }) {
           <h2>{isArabic ? "إدارة الرحلات" : "Ride management"}</h2>
           <p>{isArabic ? "رحلات حالية وسابقة من قاعدة البيانات مع فلترة وبحث." : "Database rides with filtering, search, and details."}</p>
         </div>
+        <p className="admin-live-location-note">{isArabic ? "ØªØªØ¨Ø¹ Ù…ÙˆÙ‚Ø¹ Ø§Ù„ÙƒØ§Ø¨ØªÙ† Ù…Ø¨Ø§Ø´Ø± Ø¹Ø¨Ø± Socket.IO Ø­Ø§Ù„ÙŠÙ‹Ø§ØŒ ÙˆØ³Ø¬Ù„ Ø§Ù„Ù…ÙˆØ§Ù‚Ø¹ TODO Ù„Ù…Ø±Ø­Ù„Ø© Ù„Ø§Ø­Ù‚Ø©." : "Captain live location is currently Socket.IO-only; location history is a later TODO."}</p>
         <span>{filteredRides.length} / {rides.length}</span>
       </div>
 

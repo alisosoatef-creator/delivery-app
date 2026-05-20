@@ -337,6 +337,21 @@ try {
   assert(acceptedRide.ride.driver?.id === approve.captain.id, "accepted ride should include driver details");
   assert(acceptedPayload.ride?.id === rideId, "ride:accepted should emit the accepted ride");
 
+  socket.emit("join:ride", { rideId });
+  const driverLocationEvent = waitForSocketEvent(socket, "driver:location-updated");
+  socket.emit("driver:location-updated", {
+    rideId,
+    driverId: approve.captain.id,
+    lat: 32.2222,
+    lng: 35.2555,
+    timestamp: "2026-05-20T12:00:00.000Z"
+  });
+  const driverLocationPayload = await driverLocationEvent;
+  assert(driverLocationPayload.rideId === rideId, "driver:location-updated should include ride id");
+  assert(driverLocationPayload.driverId === approve.captain.id, "driver:location-updated should include driver id");
+  assert(driverLocationPayload.location?.lat === 32.2222, "driver:location-updated should include driver latitude");
+  assert(driverLocationPayload.location?.lng === 35.2555, "driver:location-updated should include driver longitude");
+
   const availableAfterAccept = await request("/api/driver/available-rides?cityId=nablus");
   assert(
     !availableAfterAccept.rides.some((availableRide) => availableRide.id === rideId),

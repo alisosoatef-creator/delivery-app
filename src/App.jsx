@@ -13,7 +13,14 @@ import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, ro
 import { api } from "./services/api.js";
 import { localQuote } from "./services/rides.js";
 import { createRide, fetchCustomerRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
-import { connectSocket, disconnectSocket, subscribeToAdminEvents, subscribeToDriverEvents, subscribeToRideEvents } from "./services/socketClient.js";
+import {
+  connectSocket,
+  disconnectSocket,
+  subscribeToAdminEvents,
+  subscribeToDriverEvents,
+  subscribeToDriverLocationEvents,
+  subscribeToRideEvents
+} from "./services/socketClient.js";
 import { initialState, reducer } from "./store/appState.js";
 import { text } from "./utils/i18n.js";
 import { estimatePickupDestinationDistance } from "./utils/mapUtils.js";
@@ -139,6 +146,21 @@ function App() {
       queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] });
       queryClient.invalidateQueries({ queryKey: ["driver", "availableRides"] });
     });
+    const unsubscribeDriverLocationEvents = subscribeToDriverLocationEvents((payload, eventName) => {
+      if (eventName === "driver:location-unavailable") {
+        dispatch({ type: "driverLocationUnavailable", payload });
+        return;
+      }
+      const rideId = payload?.rideId || "";
+      const driverLocationId = payload?.driverId || "";
+      const canUseLocation =
+        isAdmin ||
+        (state.ride?.id && rideId === state.ride.id) ||
+        (isDriver && driverLocationId === driverId);
+      if (!canUseLocation) return;
+      dispatch({ type: "driverLocation", payload });
+      queryClient.invalidateQueries({ queryKey: ["admin", "rides"] });
+    });
     const unsubscribeAdminEvents = subscribeToAdminEvents(() => {
       queryClient.invalidateQueries({ queryKey: ["admin"] });
       queryClient.invalidateQueries({ queryKey: ["captainApplications"] });
@@ -147,6 +169,7 @@ function App() {
     return () => {
       unsubscribeRideEvents();
       unsubscribeDriverEvents();
+      unsubscribeDriverLocationEvents();
       unsubscribeAdminEvents();
     };
   }, [

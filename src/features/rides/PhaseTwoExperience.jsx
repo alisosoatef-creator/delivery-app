@@ -5,6 +5,17 @@ import { statusText } from "../../utils/i18n.js";
 import { MapBoard } from "./MapBoard.jsx";
 import { RideTimeline } from "./RideTimeline.jsx";
 
+function formatLiveLocationTime(value, isArabic) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return new Intl.DateTimeFormat(isArabic ? "ar" : "en", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit"
+  }).format(date);
+}
+
 export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDriver, cancelRide, refreshCurrentRide }) {
   const ride = state.ride;
   const rideStatus = ride?.status || "searching";
@@ -18,6 +29,13 @@ export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDrive
   const customerLocation = customerLocationFromState(state);
   const driverLocation = driverLocationFromDriver(driver);
   const liveDriverDistanceKm = hasAcceptedDriver && driverLocation ? haversineKm(customerLocation, driverLocation) : null;
+  const liveTrackingActive = hasAcceptedDriver && state.liveTrackingStatus === "active" && Boolean(driverLocation);
+  const liveTrackingUnavailable = hasAcceptedDriver && (state.liveTrackingStatus === "denied" || state.liveTrackingStatus === "socket-unavailable");
+  const liveTrackingLabel = liveTrackingActive
+    ? (isArabic ? "Ø§Ù„ÙƒØ§Ø¨ØªÙ† Ù…ØªØµÙ„ Ù…Ø¨Ø§Ø´Ø±" : "Captain live")
+    : liveTrackingUnavailable
+      ? (isArabic ? "Ø§Ù„ØªØªØ¨Ø¹ Ø§Ù„Ù…Ø¨Ø§Ø´Ø± ØºÙŠØ± Ù…ØªØ§Ø­" : "Live tracking unavailable")
+      : (isArabic ? "Ø¨Ø§Ù†ØªØ¸Ø§Ø± ØªÙØ¹ÙŠÙ„ ØªØªØ¨Ø¹ Ø§Ù„ÙƒØ§Ø¨ØªÙ†" : "Waiting for captain tracking");
   const driverDistance = liveDriverDistanceKm ?? driver?.distanceKm ?? ride?.driverDistanceKm ?? "";
   const driverDistanceLabel = formatDistanceKm(driverDistance);
   const eta = hasAcceptedDriver ? ride?.etaMinutes || driver?.etaMinutes || state.quote.etaMinutes : state.quote.etaMinutes;
@@ -122,6 +140,20 @@ export function PhaseTwoExperience({ state, dispatch, t, isArabic, selectedDrive
       {hasAcceptedDriver && (
         <section className="phase-two-card tracking-card">
           <PanelTitle title={isArabic ? "تتبع الكابتن" : "Captain tracking"} meta={<StatusBadge status={rideStatus} label={statusLabel} />} />
+          <div className={`live-driver-tracking-card ${liveTrackingActive ? "active" : "fallback"}`}>
+            <span>
+              <small>{isArabic ? "Ø­Ø§Ù„Ø© Ø§Ù„ØªØªØ¨Ø¹" : "Tracking status"}</small>
+              <strong>{liveTrackingLabel}</strong>
+            </span>
+            <span>
+              <small>{isArabic ? "Ø¢Ø®Ø± ØªØ­Ø¯ÙŠØ«" : "Last update"}</small>
+              <strong>{formatLiveLocationTime(state.lastDriverLocationAt || driver?.lastLocationAt, isArabic)}</strong>
+            </span>
+            <span>
+              <small>{isArabic ? "Ø§Ù„Ù…Ø³Ø§ÙØ© Ø¨ÙŠÙ†Ùƒ ÙˆØ¨ÙŠÙ† Ø§Ù„ÙƒØ§Ø¨ØªÙ†" : "Captain distance"}</small>
+              <strong>{liveDriverDistanceKm !== null ? `${formatDistanceKm(liveDriverDistanceKm)} km` : "-"}</strong>
+            </span>
+          </div>
           <div className="tracking-map-shell">
             <MapBoard state={state} dispatch={dispatch} selectedDriver={driver} t={t} isArabic={isArabic} />
           </div>

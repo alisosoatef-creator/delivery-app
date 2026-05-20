@@ -395,6 +395,9 @@ for (const realtimeFrontendToken of [
   "subscribeToRideEvents",
   "subscribeToAdminEvents",
   "subscribeToDriverEvents",
+  "subscribeToDriverLocationEvents",
+  "sendDriverLocationUpdate",
+  "sendDriverLocationUnavailable",
   "join:customer",
   "join:driver",
   "join:admin",
@@ -405,9 +408,14 @@ for (const realtimeFrontendToken of [
   "ride:cancelled",
   "ride:completed",
   "driver:online-status-updated",
+  "driver:location-updated",
+  "driver:location-unavailable",
   "queryClient.invalidateQueries",
   "realtimeConnected",
-  "realtimeStatus"
+  "realtimeStatus",
+  "driverLocation",
+  "liveTrackingStatus",
+  "lastDriverLocationAt"
 ]) {
   if (!appSource.includes(realtimeFrontendToken)) {
     throw new Error(`Phase 14 frontend realtime integration is missing: ${realtimeFrontendToken}`);
@@ -417,7 +425,10 @@ for (const realtimeFrontendToken of [
 for (const realtimeStyleToken of [
   ".realtime-status-pill",
   ".realtime-status-pill.live",
-  ".realtime-status-pill.fallback"
+  ".realtime-status-pill.fallback",
+  ".live-driver-tracking-card",
+  ".driver-tracking-panel",
+  ".admin-live-location-note"
 ]) {
   if (!stylesSource.includes(realtimeStyleToken)) {
     throw new Error(`Phase 14 realtime status styles are missing: ${realtimeStyleToken}`);
@@ -976,6 +987,8 @@ for (const backendRealtimeToken of [
   "join:ride",
   "emitRideEvent",
   "emitDriverEvent",
+  "emitDriverLocationUpdated",
+  "emitDriverLocationUnavailable",
   "realtimeInfo",
   "ride:created",
   "ride:accepted",
@@ -983,6 +996,8 @@ for (const backendRealtimeToken of [
   "ride:cancelled",
   "ride:completed",
   "driver:online-status-updated",
+  "driver:location-updated",
+  "driver:location-unavailable",
   "admin:captain-application-created",
   "admin:captain-application-reviewed"
 ]) {
@@ -1079,6 +1094,10 @@ for (const persistenceSmokeToken of [
   "ride:created should emit the created ride",
   "ride:cancelled should emit the cancelled ride",
   "ride:accepted should emit the accepted ride",
+  "driver:location-updated should include ride id",
+  "driver:location-updated should include driver id",
+  "driver:location-updated should include driver latitude",
+  "driver:location-updated should include driver longitude",
   "ride:status-updated should emit driver_arriving",
   "ride:completed should emit the completed ride",
   "support ticket should persist after server restart",

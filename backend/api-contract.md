@@ -29,10 +29,14 @@ Events emitted by ride/admin actions:
 - `ride:cancelled`
 - `ride:completed`
 - `driver:online-status-updated`
+- `driver:location-updated`
+- `driver:location-unavailable`
 - `admin:captain-application-created`
 - `admin:captain-application-reviewed`
 
-TODO: protect rooms with real authenticated tokens before production and replace broad admin/dev subscriptions with stricter authorization.
+Driver live location is relayed through Socket.IO only and is not persisted in SQLite yet.
+
+TODO: protect rooms with real authenticated tokens before production, replace broad admin/dev subscriptions with stricter authorization, and add location history retention only if operationally needed.
 
 ## Auth
 

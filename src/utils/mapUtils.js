@@ -28,8 +28,9 @@ export function destinationLocationFromState(state) {
 }
 
 export function driverLocationFromDriver(driver) {
-  const lat = toCoordinate(driver?.lat);
-  const lng = toCoordinate(driver?.lng);
+  const source = driver?.driverLocation || driver?.location || driver;
+  const lat = toCoordinate(source?.lat);
+  const lng = toCoordinate(source?.lng);
   if (lat === null || lng === null) return null;
   return { lat, lng };
 }

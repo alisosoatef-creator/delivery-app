@@ -9,7 +9,14 @@ const RIDE_EVENTS = [
 ];
 
 const DRIVER_EVENTS = ["driver:online-status-updated"];
-const ADMIN_EVENTS = ["admin:captain-application-created", "admin:captain-application-reviewed", ...RIDE_EVENTS, ...DRIVER_EVENTS];
+const DRIVER_LOCATION_EVENTS = ["driver:location-updated", "driver:location-unavailable"];
+const ADMIN_EVENTS = [
+  "admin:captain-application-created",
+  "admin:captain-application-reviewed",
+  ...RIDE_EVENTS,
+  ...DRIVER_EVENTS,
+  ...DRIVER_LOCATION_EVENTS
+];
 
 let socket = null;
 
@@ -78,8 +85,24 @@ export function subscribeToDriverEvents(handler) {
   return subscribe(DRIVER_EVENTS, handler);
 }
 
+export function subscribeToDriverLocationEvents(handler) {
+  return subscribe(DRIVER_LOCATION_EVENTS, handler);
+}
+
 export function subscribeToAdminEvents(handler) {
   return subscribe(ADMIN_EVENTS, handler);
+}
+
+export function sendDriverLocationUpdate({ rideId, driverId, lat, lng, timestamp = new Date().toISOString() } = {}) {
+  if (!socket?.connected || !rideId || !driverId) return false;
+  socket.emit("driver:location-updated", { rideId, driverId, lat, lng, timestamp });
+  return true;
+}
+
+export function sendDriverLocationUnavailable({ rideId = "", driverId = "", reason = "gps-unavailable", timestamp = new Date().toISOString() } = {}) {
+  if (!socket?.connected) return false;
+  socket.emit("driver:location-unavailable", { rideId, driverId, reason, timestamp });
+  return true;
 }
 
 export function getSocketConnectionState() {

@@ -93,6 +93,10 @@ export const initialState = {
   backendLive: false,
   realtimeConnected: false,
   realtimeStatus: "offline",
+  driverLocation: null,
+  liveTrackingStatus: "idle",
+  lastDriverLocationAt: "",
+  liveTrackingError: "",
   liveTicks: 0,
   toast: ""
 };
@@ -120,14 +124,43 @@ export function reducer(state, action) {
         admin: action.payload.admin || state.admin
       };
     case "driverLocation":
+      {
+        const location = action.payload.location || { lat: action.payload.lat, lng: action.payload.lng };
+        const driverId = action.payload.driverId;
+        const timestamp = action.payload.timestamp || action.payload.emittedAt || new Date().toISOString();
+        const updateRideDriver = (ride) => {
+          if (!ride || (action.payload.rideId && ride.id !== action.payload.rideId) || (driverId && ride.driverId && ride.driverId !== driverId)) {
+            return ride;
+          }
+          return {
+            ...ride,
+            driverLocation: { driverId, rideId: action.payload.rideId, ...location, timestamp },
+            driverLastLocationAt: timestamp,
+            driver: ride.driver ? { ...ride.driver, lat: location.lat, lng: location.lng, lastLocationAt: timestamp } : ride.driver
+          };
+        };
+        return {
+          ...state,
+          liveTicks: state.liveTicks + 1,
+          driverLocation: { driverId, rideId: action.payload.rideId, ...location, timestamp },
+          liveTrackingStatus: "active",
+          lastDriverLocationAt: timestamp,
+          liveTrackingError: "",
+          ride: updateRideDriver(state.ride),
+          customerRides: (state.customerRides || []).map(updateRideDriver),
+          drivers: state.drivers.map((driver) =>
+            driver.id === driverId
+              ? { ...driver, lat: location.lat, lng: location.lng, lastLocationAt: timestamp }
+              : driver
+          )
+        };
+      }
+    case "driverLocationUnavailable":
       return {
         ...state,
-        liveTicks: state.liveTicks + 1,
-        drivers: state.drivers.map((driver) =>
-          driver.id === action.payload.driverId
-            ? { ...driver, lat: action.payload.lat, lng: action.payload.lng }
-            : driver
-        )
+        liveTrackingStatus: "denied",
+        liveTrackingError: action.payload.reason || "gps-unavailable",
+        lastDriverLocationAt: action.payload.timestamp || action.payload.emittedAt || state.lastDriverLocationAt
       };
     case "rideStatus":
       return {

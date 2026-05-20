@@ -6,6 +6,11 @@ function safeRoomValue(value) {
   return String(value || "").trim();
 }
 
+function safeCoordinate(value) {
+  const coordinate = Number(value);
+  return Number.isFinite(coordinate) ? coordinate : null;
+}
+
 function rideRooms(ride = {}) {
   const rooms = ["admin"];
   const customerId = safeRoomValue(ride.customerId);
@@ -51,6 +56,36 @@ export function setupRealtime(server) {
       const id = safeRoomValue(rideId);
       if (id) socket.join(`ride:${id}`);
     });
+
+    socket.on("driver:location-updated", (payload = {}) => {
+      const rideId = safeRoomValue(payload.rideId);
+      const driverId = safeRoomValue(payload.driverId);
+      const lat = safeCoordinate(payload.lat ?? payload.location?.lat);
+      const lng = safeCoordinate(payload.lng ?? payload.location?.lng);
+      const timestamp = safeRoomValue(payload.timestamp) || new Date().toISOString();
+
+      if (!rideId || !driverId || lat === null || lng === null) {
+        emitDriverLocationUnavailable({
+          rideId,
+          driverId,
+          reason: "invalid-location-payload",
+          timestamp
+        });
+        return;
+      }
+
+      // TODO production tracking: persist location history with retention rules if dispatch replay is needed.
+      emitDriverLocationUpdated({ rideId, driverId, lat, lng, timestamp });
+    });
+
+    socket.on("driver:location-unavailable", (payload = {}) => {
+      emitDriverLocationUnavailable({
+        rideId: safeRoomValue(payload.rideId),
+        driverId: safeRoomValue(payload.driverId),
+        reason: safeRoomValue(payload.reason) || "gps-unavailable",
+        timestamp: safeRoomValue(payload.timestamp) || new Date().toISOString()
+      });
+    });
   });
 
   return io;
@@ -80,6 +115,37 @@ export function emitDriverEvent(eventName, payload = {}) {
   let target = io.to("admin").to("available-drivers");
   if (driverId) target = target.to(`driver:${driverId}`);
   target.emit(eventName, frame);
+}
+
+export function emitDriverLocationUpdated({ rideId, driverId, lat, lng, timestamp } = {}) {
+  if (!io || !rideId || !driverId) return;
+  const payload = {
+    event: "driver:location-updated",
+    rideId,
+    driverId,
+    location: { lat, lng },
+    lat,
+    lng,
+    timestamp: timestamp || new Date().toISOString(),
+    emittedAt: new Date().toISOString()
+  };
+  io.to(`ride:${rideId}`).to(`driver:${driverId}`).to("admin").emit("driver:location-updated", payload);
+}
+
+export function emitDriverLocationUnavailable({ rideId, driverId, reason = "gps-unavailable", timestamp } = {}) {
+  if (!io) return;
+  const payload = {
+    event: "driver:location-unavailable",
+    rideId,
+    driverId,
+    reason,
+    timestamp: timestamp || new Date().toISOString(),
+    emittedAt: new Date().toISOString()
+  };
+  let target = io.to("admin");
+  if (rideId) target = target.to(`ride:${rideId}`);
+  if (driverId) target = target.to(`driver:${driverId}`);
+  target.emit("driver:location-unavailable", payload);
 }
 
 export function realtimeInfo() {
