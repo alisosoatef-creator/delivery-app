@@ -1,3 +1,5 @@
+import { StatCard } from "../../components/ui/index.js";
+
 const STAT_ITEMS = [
   ["customers", "عدد الزبائن", "Customers"],
   ["captains", "عدد الكباتن", "Captains"],
@@ -12,10 +14,12 @@ export function AdminStats({ dashboardStats, isArabic }) {
   return (
     <div className="admin-stat-grid">
       {STAT_ITEMS.map(([key, labelAr, labelEn]) => (
-        <section className="admin-stat-card" key={key}>
-          <span>{isArabic ? labelAr : labelEn}</span>
-          <strong>{key === "estimatedRevenue" ? `${dashboardStats[key]} ₪` : dashboardStats[key]}</strong>
-        </section>
+        <StatCard
+          className="admin-stat-card"
+          key={key}
+          label={isArabic ? labelAr : labelEn}
+          value={key === "estimatedRevenue" ? `${dashboardStats[key]} ₪` : dashboardStats[key]}
+        />
       ))}
     </div>
   );

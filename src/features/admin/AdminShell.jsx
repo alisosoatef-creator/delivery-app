@@ -1,5 +1,5 @@
 import { lazy, Suspense, useMemo, useState } from "react";
-import { Toast } from "../../components/ui/index.js";
+import { ErrorState, LoadingSkeleton, Toast } from "../../components/ui/index.js";
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
 import { APP_ROUTE_PATHS } from "../../routes/index.js";
@@ -36,6 +36,7 @@ function AdminSectionFallback({ isArabic }) {
     <div className="admin-section-loading lazy-screen-fallback" role="status">
       <span />
       <strong>{isArabic ? "جاري تحميل قسم الإدارة..." : "Loading admin section..."}</strong>
+      <LoadingSkeleton lines={3} />
     </div>
   );
 }
@@ -444,9 +445,11 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
           <p className="admin-loading">{isArabic ? "جاري تحميل بيانات الإدارة من الـ Backend..." : "Loading admin data from the Backend..."}</p>
         )}
         {backendError && (
-          <p className="admin-error">
-            {isArabic ? "تعذر الاتصال بالـ Backend، يتم استخدام البيانات المحلية مؤقتًا." : "Backend is unavailable, using local data for now."}
-          </p>
+          <ErrorState
+            className="admin-error compact-error-state"
+            title={isArabic ? "تعذر الاتصال بالـ Backend" : "Backend unavailable"}
+            description={isArabic ? "يتم استخدام البيانات المحلية مؤقتًا إلى أن يعود الاتصال." : "Local data is being used temporarily until the connection returns."}
+          />
         )}
         <Suspense fallback={<AdminSectionFallback isArabic={isArabic} />}>
           {activeSection === "dashboard" && <AdminDashboard {...sharedAdminProps} />}

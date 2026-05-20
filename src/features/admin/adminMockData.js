@@ -48,7 +48,6 @@ export const mockPaymentRecords = [
 
 export const adminPermissionRoles = [
   { role: "Owner", scope: "Full product, billing, approvals, permissions", status: "Placeholder" },
-  { role: "Admin", scope: "Operations dashboard, captain approvals, pricing", status: "Placeholder" },
-  { role: "Support", scope: "Tickets, customer contact, issue notes", status: "Placeholder" },
-  { role: "Operations", scope: "Rides, captains, demand and city operations", status: "Placeholder" }
+  { role: "Admin", scope: "Control dashboard, captain approvals, pricing", status: "Placeholder" },
+  { role: "Support", scope: "Tickets, customer contact, issue notes", status: "Placeholder" }
 ];
