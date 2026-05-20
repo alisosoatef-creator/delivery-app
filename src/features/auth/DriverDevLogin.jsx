@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { appConfig } from "../../config/appConfig.js";
 import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi.js";
 import { setSessionToken } from "../../services/sessionToken.js";
 import { ROLES } from "../../utils/roles.js";
@@ -31,7 +32,7 @@ export function DriverDevLogin({ dispatch, isArabic }) {
     };
   }, [isArabic]);
 
-  if (!import.meta.env.DEV) {
+  if (!import.meta.env.DEV || !appConfig.devDriverEnabled) {
     return null;
   }
 

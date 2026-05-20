@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { appConfig } from "../../config/appConfig.js";
 import { setSessionToken } from "../../services/sessionToken.js";
 import { ROLES } from "../../utils/roles.js";
 import { AuthField } from "./AuthField.jsx";
@@ -7,7 +8,7 @@ export function AdminDevLogin({ dispatch, isArabic }) {
   const [form, setForm] = useState({ username: "", password: "" });
   const [error, setError] = useState("");
 
-  if (!import.meta.env.DEV) {
+  if (!import.meta.env.DEV || !appConfig.devAdminEnabled) {
     return null;
   }
 

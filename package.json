@@ -11,7 +11,8 @@
     "check": "node scripts/check.mjs",
     "api:check": "node scripts/backend-smoke.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "npm run build && npm run check && npm run api:check"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.100.10",

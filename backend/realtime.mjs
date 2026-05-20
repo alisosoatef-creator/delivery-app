@@ -1,8 +1,9 @@
 import { Server } from "socket.io";
+import { backendConfig } from "./config.mjs";
 
 let io = null;
 
-const DEV_ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:4173", "http://localhost:4173"];
+const DEV_ORIGINS = backendConfig.allowedOrigins;
 
 function safeRoomValue(value) {
   return String(value || "").trim();
@@ -25,7 +26,7 @@ function socketSession(socket) {
 function canJoin(socket, allowedRoles = []) {
   // TODO production-socket-auth: verify signed sessions and per-ride membership before joining rooms.
   const session = socketSession(socket);
-  if (process.env.NODE_ENV !== "production") return true;
+  if (!backendConfig.isProduction) return true;
   return Boolean(session.token) && allowedRoles.includes(session.role);
 }
 
@@ -45,7 +46,7 @@ function rideRooms(ride = {}) {
 export function setupRealtime(server) {
   io = new Server(server, {
     cors: {
-      origin: process.env.NODE_ENV === "production" ? DEV_ORIGINS : "*",
+      origin: backendConfig.isProduction ? DEV_ORIGINS : "*",
       methods: ["GET", "POST", "PATCH", "OPTIONS"]
     }
   });

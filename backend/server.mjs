@@ -57,6 +57,7 @@ import {
   verifyUserByPhone
 } from "./db/database.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
+import { backendConfig } from "./config.mjs";
 import { emitDriverEvent, emitPaymentEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
 import { checkRateLimit, requireAdminDev, requireAuthDev, requireCustomerDev, requireDriverDev, securityHeaders } from "./security.mjs";
 import {
@@ -73,9 +74,9 @@ import {
   requiredFields
 } from "./validation.mjs";
 
-const port = Number(process.env.PORT || 3001);
-const host = process.env.HOST || "0.0.0.0";
-const authConfig = { demoOtpCode: "1234" };
+const port = backendConfig.port;
+const host = backendConfig.host;
+const authConfig = { demoOtpCode: backendConfig.demoOtpCode };
 const sseClients = new Set();
 
 // approvedCaptains now live in the persistent drivers table after application approval.

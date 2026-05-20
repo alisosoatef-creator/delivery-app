@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { hashPassword } from "../auth/passwords.mjs";
+import { backendConfig } from "../config.mjs";
 import { RIDE_STATUSES, isTerminalRideStatus, isValidRideStatus, normalizeRideStatus } from "../rideStatus.mjs";
 import { createSchema } from "./schema.mjs";
 import { seedDatabase } from "./seed.mjs";
@@ -12,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Default local database file: backend/dev.sqlite
 const defaultDbPath = path.resolve(__dirname, "../dev.sqlite");
 
-export const dbPath = process.env.WASEL_DB_PATH || defaultDbPath;
+export const dbPath = backendConfig.sqliteDbPath || defaultDbPath;
 fs.mkdirSync(path.dirname(dbPath), { recursive: true });
 
 export const db = new DatabaseSync(dbPath);

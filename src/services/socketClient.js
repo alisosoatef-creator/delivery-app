@@ -1,4 +1,5 @@
 import { io } from "socket.io-client";
+import { appConfig } from "../config/appConfig.js";
 import { getSessionRole, getSessionToken } from "./sessionToken.js";
 
 const RIDE_EVENTS = [
@@ -27,7 +28,7 @@ let socket = null;
 
 export function connectSocket({ customerId = "", customerPhone = "", driverId = "", rideId = "", isAdmin = false, onConnectionChange } = {}) {
   if (!socket) {
-    socket = io("/", {
+    socket = io(appConfig.socketUrl || "/", {
       path: "/socket.io",
       autoConnect: false,
       auth: {

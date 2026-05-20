@@ -1,6 +1,7 @@
+import { appConfig } from "../config/appConfig.js";
 import { getSessionRole, getSessionToken } from "./sessionToken.js";
 
-export const API_BASE = "/api";
+export const API_BASE = appConfig.apiBaseUrl;
 
 export class ApiError extends Error {
   constructor(message, status = 0, payload = null) {

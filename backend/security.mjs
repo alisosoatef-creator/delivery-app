@@ -1,18 +1,14 @@
 import { ADMIN_ROLES } from "./validation.mjs";
+import { backendConfig } from "./config.mjs";
 
-const DEV_ORIGINS = new Set([
-  "http://127.0.0.1:5173",
-  "http://localhost:5173",
-  "http://127.0.0.1:4173",
-  "http://localhost:4173"
-]);
+const DEV_ORIGINS = new Set(backendConfig.allowedOrigins);
 
 const rateBuckets = new Map();
 
 export function securityHeaders(request = null, extra = {}) {
   const origin = request?.headers?.origin || "";
   // TODO production-cors: replace the fallback with the exact deployed frontend origin.
-  const allowOrigin = DEV_ORIGINS.has(origin) ? origin : process.env.NODE_ENV === "production" ? "null" : "*";
+  const allowOrigin = DEV_ORIGINS.has(origin) ? origin : backendConfig.isProduction ? "null" : "*";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Dev-Role",
@@ -42,25 +38,25 @@ export function devSessionFromRequest(request) {
 export function requireAuthDev(request) {
   // TODO production-auth: replace dev token prefixes with signed sessions/JWT and server-side revocation.
   const session = devSessionFromRequest(request);
-  return process.env.NODE_ENV !== "production" || Boolean(session.token);
+  return !backendConfig.isProduction || Boolean(session.token);
 }
 
 export function requireAdminDev(request, allowedRoles = ADMIN_ROLES) {
   // Soft mode: development keeps old local workflows and api:check stable; production requires admin-like token context.
   const session = devSessionFromRequest(request);
-  if (process.env.NODE_ENV !== "production" && (!session.token || ADMIN_ROLES.has(session.role))) return true;
+  if (!backendConfig.isProduction && (!session.token || ADMIN_ROLES.has(session.role))) return true;
   return Boolean(session.token) && allowedRoles.has(session.role);
 }
 
 export function requireDriverDev(request) {
   const session = devSessionFromRequest(request);
-  if (process.env.NODE_ENV !== "production" && (!session.token || session.role === "driver")) return true;
+  if (!backendConfig.isProduction && (!session.token || session.role === "driver")) return true;
   return Boolean(session.token) && session.role === "driver";
 }
 
 export function requireCustomerDev(request) {
   const session = devSessionFromRequest(request);
-  if (process.env.NODE_ENV !== "production" && (!session.token || ["customer", "admin", "owner", "support"].includes(session.role))) return true;
+  if (!backendConfig.isProduction && (!session.token || ["customer", "admin", "owner", "support"].includes(session.role))) return true;
   return Boolean(session.token) && ["customer", "admin", "owner", "support"].includes(session.role);
 }
 

@@ -2,15 +2,20 @@ import fs from "node:fs";
 import { execFileSync } from "node:child_process";
 
 const requiredFiles = [
+  ".env.example",
+  "backend/.env.example",
   "index.html",
+  "README.md",
   "src/main.jsx",
   "src/App.jsx",
   "src/styles.css",
+  "src/config/appConfig.js",
   "src/utils/rideStatus.js",
   "src/utils/roles.js",
   "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AdminDevLogin.jsx",
   "src/features/auth/DriverDevLogin.jsx",
+  "backend/config.mjs",
   "backend/server.mjs",
   "backend/realtime.mjs",
   "backend/security.mjs",
@@ -45,7 +50,10 @@ const requiredFiles = [
   "src/features/admin/AdminDetailDrawer.jsx",
   "src/features/admin/adminFormatters.js",
   "docs/qa-checklist.md",
-  "docs/security-notes.md"
+  "docs/security-notes.md",
+  "docs/local-development.md",
+  "docs/production-readiness.md",
+  "docs/deployment-plan.md"
 ];
 
 for (const file of requiredFiles) {
@@ -55,7 +63,7 @@ for (const file of requiredFiles) {
 }
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-for (const script of ["dev", "api", "db:init", "db:seed", "build", "check", "api:check"]) {
+for (const script of ["dev", "api", "db:init", "db:seed", "build", "check", "api:check", "verify"]) {
   if (!packageJson.scripts?.[script]) {
     throw new Error(`Missing npm script: ${script}`);
   }
@@ -69,6 +77,7 @@ const sourceOrder = [
   "src/routes/routeConfig.js",
   "src/routes/index.js",
   "src/utils/roles.js",
+  "src/config/appConfig.js",
   "src/components/ui/AccessDenied.jsx",
   "src/features/auth/AuthScreen.jsx",
   "src/features/auth/AdminDevLogin.jsx",
@@ -170,6 +179,7 @@ const appSource = sourceOrder
 const mainSource = fs.readFileSync("src/main.jsx", "utf8");
 const stylesSource = fs.readFileSync("src/styles.css", "utf8");
 const backendSource = fs.readFileSync("backend/server.mjs", "utf8");
+const backendConfigSource = fs.readFileSync("backend/config.mjs", "utf8");
 const backendRealtimeSource = fs.readFileSync("backend/realtime.mjs", "utf8");
 const backendSecuritySource = fs.readFileSync("backend/security.mjs", "utf8");
 const backendValidationSource = fs.readFileSync("backend/validation.mjs", "utf8");
@@ -180,6 +190,10 @@ const backendSchemaSource = fs.readFileSync("backend/db/schema.mjs", "utf8");
 const backendSeedSource = fs.readFileSync("backend/db/seed.mjs", "utf8");
 const backendSmokeSource = fs.readFileSync("scripts/backend-smoke.mjs", "utf8");
 const viteSource = fs.readFileSync("vite.config.js", "utf8");
+const frontendConfigSource = fs.readFileSync("src/config/appConfig.js", "utf8");
+const envExampleSource = fs.readFileSync(".env.example", "utf8");
+const backendEnvExampleSource = fs.readFileSync("backend/.env.example", "utf8");
+const readmeSource = fs.readFileSync("README.md", "utf8");
 const gitignoreSource = fs.existsSync(".gitignore") ? fs.readFileSync(".gitignore", "utf8") : "";
 const routeGuardSource = fs.existsSync("src/routes/guards.jsx")
   ? fs.readFileSync("src/routes/guards.jsx", "utf8")
@@ -212,6 +226,9 @@ const adminUiSource = adminUiFiles
   .join("\n");
 const qaChecklistSource = fs.existsSync("docs/qa-checklist.md") ? fs.readFileSync("docs/qa-checklist.md", "utf8") : "";
 const securityNotesSource = fs.existsSync("docs/security-notes.md") ? fs.readFileSync("docs/security-notes.md", "utf8") : "";
+const localDevelopmentSource = fs.readFileSync("docs/local-development.md", "utf8");
+const productionReadinessSource = fs.readFileSync("docs/production-readiness.md", "utf8");
+const deploymentPlanSource = fs.readFileSync("docs/deployment-plan.md", "utf8");
 
 for (const routeFile of [
   "src/routes/guards.jsx",
@@ -469,6 +486,120 @@ for (const qaChecklistToken of [
   }
 }
 
+for (const envToken of [
+  "NODE_ENV",
+  "PORT",
+  "VITE_API_BASE_URL",
+  "VITE_SOCKET_URL",
+  "SQLITE_DB_PATH",
+  "DATABASE_URL",
+  "APP_NAME",
+  "DEV_ADMIN_ENABLED",
+  "DEV_DRIVER_ENABLED",
+  "OTP_MODE",
+  "PAYMENT_MODE",
+  "ROUTING_PROVIDER"
+]) {
+  const combinedEnvExamples = `${envExampleSource}\n${backendEnvExampleSource}`;
+  if (!combinedEnvExamples.includes(envToken)) {
+    throw new Error(`Environment example is missing: ${envToken}`);
+  }
+}
+
+for (const configToken of [
+  "backendConfig",
+  "sqliteDbPath",
+  "allowedOrigins",
+  "demoOtpCode",
+  "appConfig",
+  "apiBaseUrl",
+  "socketUrl",
+  "devAdminEnabled",
+  "devDriverEnabled"
+]) {
+  if (!backendConfigSource.includes(configToken) && !frontendConfigSource.includes(configToken) && !appSource.includes(configToken)) {
+    throw new Error(`Production-readiness config layer is missing: ${configToken}`);
+  }
+}
+
+for (const localDocToken of [
+  "Local Development",
+  "npm.cmd install",
+  "npm.cmd run api",
+  "npm.cmd run dev",
+  "npm.cmd run build",
+  "npm.cmd run check",
+  "npm.cmd run api:check",
+  "Customer window",
+  "Driver window",
+  "Admin window",
+  "backend/dev.sqlite",
+  "OTP is a fixed development code"
+]) {
+  if (!localDevelopmentSource.includes(localDocToken) && !readmeSource.includes(localDocToken)) {
+    throw new Error(`Local development docs are missing: ${localDocToken}`);
+  }
+}
+
+for (const productionChecklistToken of [
+  "Move from SQLite to PostgreSQL",
+  "Replace dev tokens",
+  "Disable `AdminDevLogin` and `DriverDevLogin`",
+  "Enable HTTPS",
+  "production CORS",
+  "SMS OTP provider",
+  "real payment gateway",
+  "production routing",
+  "Socket.IO authentication",
+  "privacy policy",
+  "terms of service"
+]) {
+  if (!productionReadinessSource.includes(productionChecklistToken)) {
+    throw new Error(`Production readiness checklist is missing: ${productionChecklistToken}`);
+  }
+}
+
+for (const deploymentPlanToken of [
+  "Vercel",
+  "Netlify",
+  "Render",
+  "Railway",
+  "VPS",
+  "Supabase PostgreSQL",
+  "Neon PostgreSQL",
+  "self-hosted OSRM",
+  "GraphHopper",
+  "Mapbox",
+  "No deployment is performed"
+]) {
+  if (!deploymentPlanSource.includes(deploymentPlanToken)) {
+    throw new Error(`Deployment plan is missing: ${deploymentPlanToken}`);
+  }
+}
+
+for (const gitignoreToken of [
+  ".env",
+  ".env.*",
+  "!.env.example",
+  "!backend/.env.example",
+  "node_modules/",
+  "dist/",
+  "*.log",
+  "backend/*.sqlite",
+  "backend/*.sqlite-shm",
+  "backend/*.sqlite-wal"
+]) {
+  if (!gitignoreSource.includes(gitignoreToken)) {
+    throw new Error(`Git hygiene ignore rule is missing: ${gitignoreToken}`);
+  }
+}
+
+for (const forbiddenSecretToken of ["sk-", "ghp_", "AKIA", "BEGIN PRIVATE KEY", "payment_secret", "sms_secret"]) {
+  if (envExampleSource.includes(forbiddenSecretToken) || backendEnvExampleSource.includes(forbiddenSecretToken)) {
+    throw new Error(`Environment examples must not include obvious secret material: ${forbiddenSecretToken}`);
+  }
+}
+
 for (const securityNotesToken of [
   "JWT or secure server-side sessions",
   "HTTPS",
@@ -603,7 +734,7 @@ for (const queryProviderToken of [
 }
 
 for (const serviceLayerToken of [
-  'API_BASE = "/api"',
+  "API_BASE = appConfig.apiBaseUrl",
   "apiGet",
   "apiPost",
   "apiPatch",
@@ -1205,6 +1336,7 @@ for (const premiumMotionToken of [
 }
 
 execFileSync(process.execPath, ["--check", "backend/server.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/config.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/realtime.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/security.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/validation.mjs"], { stdio: "inherit" });
@@ -1214,6 +1346,7 @@ execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdi
 execFileSync(process.execPath, ["--check", "backend/db/database.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/schema.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/db/seed.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "src/config/appConfig.js"], { stdio: "inherit" });
 
 for (const backendEndpointToken of [
   'url.pathname === "/api/auth/register"',
@@ -1260,10 +1393,10 @@ for (const backendEndpointToken of [
   'supportTicketStatusMatch',
   'pricingPatchMatch',
   'approvedCaptains',
-  'demoOtpCode: "1234"',
+  'demoOtpCode',
   'Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS"'
 ]) {
-  if (!backendSource.includes(backendEndpointToken) && !backendSecuritySource.includes(backendEndpointToken)) {
+  if (!backendSource.includes(backendEndpointToken) && !backendSecuritySource.includes(backendEndpointToken) && !backendConfigSource.includes(backendEndpointToken)) {
     throw new Error(`Backend API surface is missing: ${backendEndpointToken}`);
   }
 }
@@ -1336,7 +1469,7 @@ for (const sqliteToken of [
   "insertSupportTicket",
   "updatePricingRule"
 ]) {
-  if (!backendDatabaseSource.includes(sqliteToken) && !backendSource.includes(sqliteToken)) {
+  if (!backendDatabaseSource.includes(sqliteToken) && !backendSource.includes(sqliteToken) && !backendConfigSource.includes(sqliteToken)) {
     throw new Error(`SQLite backend integration is missing: ${sqliteToken}`);
   }
 }
