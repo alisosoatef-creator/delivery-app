@@ -1,26 +1,36 @@
 import { StatCard } from "../../components/ui/index.js";
+import { formatMoney, textFor } from "./adminFormatters.js";
 
 const STAT_ITEMS = [
-  ["customers", "عدد الزبائن", "Customers"],
-  ["captains", "عدد الكباتن", "Captains"],
-  ["pendingCaptainApplications", "طلبات كباتن قيد المراجعة", "Pending applications"],
-  ["todayRides", "الرحلات اليوم", "Rides today"],
-  ["activeRides", "الرحلات النشطة", "Active rides"],
-  ["estimatedRevenue", "الإيرادات التقديرية", "Estimated revenue"],
-  ["openSupportTickets", "شكاوى الدعم المفتوحة", "Open support tickets"]
+  ["todayRides", "رحلات اليوم", "Rides today"],
+  ["completedRides", "رحلات مكتملة", "Completed rides"],
+  ["cancelledRides", "رحلات ملغاة", "Cancelled rides"],
+  ["estimatedRevenue", "إيرادات تقديرية", "Estimated revenue"],
+  ["activeRides", "رحلات نشطة", "Active rides"],
+  ["activeCaptains", "كباتن نشطين", "Active captains"],
+  ["newCustomers", "زبائن جدد", "New customers"],
+  ["openSupportTickets", "تذاكر دعم مفتوحة", "Open support tickets"],
+  ["acceptanceRate", "معدل قبول الرحلات", "Ride acceptance rate"]
 ];
 
 export function AdminStats({ dashboardStats, isArabic }) {
   return (
-    <div className="admin-stat-grid">
-      {STAT_ITEMS.map(([key, labelAr, labelEn]) => (
-        <StatCard
-          className="admin-stat-card"
-          key={key}
-          label={isArabic ? labelAr : labelEn}
-          value={key === "estimatedRevenue" ? `${dashboardStats[key]} ₪` : dashboardStats[key]}
-        />
-      ))}
+    <div className="admin-stat-grid advanced-stat-grid">
+      {STAT_ITEMS.map(([key, labelAr, labelEn]) => {
+        const value = key === "estimatedRevenue"
+          ? formatMoney(dashboardStats[key])
+          : key === "acceptanceRate"
+            ? `${dashboardStats[key] ?? 0}%`
+            : dashboardStats[key] ?? 0;
+        return (
+          <StatCard
+            className="admin-stat-card"
+            key={key}
+            label={textFor(isArabic, labelAr, labelEn)}
+            value={value}
+          />
+        );
+      })}
     </div>
   );
 }

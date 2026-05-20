@@ -1,65 +1,107 @@
+import { Badge, EmptyState, SectionHeader } from "../../components/ui/index.js";
 import { AdminStats } from "./AdminStats.jsx";
+import { formatMoney, normalizeRide, statusLabel, textFor } from "./adminFormatters.js";
 
-export function AdminDashboard({ state, dashboardStats, pendingCaptainApplications, supportTickets, pricingRules, isArabic, cityName }) {
-  const recentApplications = pendingCaptainApplications.slice(-3).reverse();
-  const openTickets = supportTickets.filter((ticket) => ticket.status === "open").slice(0, 3);
+function buildAdvancedStats(baseStats, rides = [], customers = [], drivers = []) {
+  const normalizedRides = rides.map(normalizeRide);
+  const completedRides = normalizedRides.filter((ride) => ride.status === "completed").length;
+  const cancelledRides = normalizedRides.filter((ride) => ride.status === "cancelled").length;
+  const acceptedRides = normalizedRides.filter((ride) => ["accepted", "driver_arriving", "arrived", "in_progress", "completed"].includes(ride.status)).length;
+  const activeCaptains = drivers.filter((driver) => (driver.status || "active") === "active").length;
+  const acceptanceRate = normalizedRides.length ? Math.round((acceptedRides / normalizedRides.length) * 100) : 0;
+  return {
+    ...baseStats,
+    completedRides,
+    cancelledRides,
+    activeCaptains,
+    newCustomers: customers.length,
+    acceptanceRate
+  };
+}
+
+export function AdminDashboard({ state, dashboardStats, pendingCaptainApplications, supportTickets, pricingRules, isArabic, cityName, adminRides, adminCustomers, adminDrivers }) {
+  const advancedStats = buildAdvancedStats(dashboardStats, adminRides || [], adminCustomers || [], adminDrivers || []);
+  const recentApplications = pendingCaptainApplications.slice(-4).reverse();
+  const openTickets = supportTickets.filter((ticket) => ticket.status === "open").slice(0, 4);
+  const activeRides = (adminRides || []).map(normalizeRide).filter((ride) => ["searching", "accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status)).slice(0, 4);
 
   return (
-    <div className="admin-section-stack">
-      <AdminStats dashboardStats={dashboardStats} isArabic={isArabic} />
+    <div className="admin-section-stack admin-dashboard-advanced">
+      <SectionHeader
+        title={textFor(isArabic, "لوحة التحكم", "Dashboard")}
+        description={textFor(isArabic, "نظرة تشغيلية على الرحلات، الطلبات، الدعم، الإيرادات، والكباتن.", "Operational view across rides, applications, support, revenue, and captains.")}
+        meta={textFor(isArabic, "تحديث محلي مباشر", "Local live overview")}
+      />
+      <AdminStats dashboardStats={advancedStats} isArabic={isArabic} />
 
       <div className="admin-grid-two">
-        <section className="admin-panel">
-          <div className="admin-panel-title">
-            <h2>{isArabic ? "طلبات الكباتن الأخيرة" : "Recent captain applications"}</h2>
-            <span>{dashboardStats.pendingCaptainApplications}</span>
-          </div>
+        <section className="admin-panel nested-admin-panel">
+          <SectionHeader title={textFor(isArabic, "الرحلات النشطة", "Active rides")} meta={activeRides.length} />
           <div className="admin-list">
-            {recentApplications.length ? recentApplications.map((application) => (
-              <article className="admin-mini-card" key={application.id}>
-                <strong>{application.fullName}</strong>
-                <span>{application.phone}</span>
-                <b className={`admin-badge ${application.status}`}>{application.status}</b>
+            {activeRides.length ? activeRides.map((ride) => (
+              <article className="admin-mini-card elevated-mini-card" key={ride.id}>
+                <strong>{ride.customer}</strong>
+                <span>{ride.pickup} → {ride.dropoff}</span>
+                <div className="admin-mini-card-footer">
+                  <Badge tone="warning">{statusLabel(ride.status, isArabic)}</Badge>
+                  <small>{formatMoney(ride.fareIls)}</small>
+                </div>
               </article>
             )) : (
-              <p className="admin-empty">{isArabic ? "لا توجد طلبات جديدة حاليًا." : "No new applications right now."}</p>
+              <EmptyState title={textFor(isArabic, "لا توجد رحلات نشطة", "No active rides")} description={textFor(isArabic, "الرحلات الجديدة ستظهر هنا.", "New active rides will appear here.")} />
             )}
           </div>
         </section>
 
-        <section className="admin-panel">
-          <div className="admin-panel-title">
-            <h2>{isArabic ? "المدن والأسعار" : "Cities and pricing"}</h2>
-            <span>{pricingRules.length}</span>
-          </div>
+        <section className="admin-panel nested-admin-panel">
+          <SectionHeader title={textFor(isArabic, "طلبات الكباتن الأخيرة", "Recent captain applications")} meta={dashboardStats.pendingCaptainApplications} />
           <div className="admin-list">
-            {pricingRules.slice(0, 4).map((rule) => (
-              <article className="admin-mini-card" key={rule.id}>
-                <strong>{cityName(state, rule.cityId, isArabic)}</strong>
-                <span>{isArabic ? "سعر البداية" : "Base fare"}: {rule.baseFareIls} ₪</span>
-                <span>{isArabic ? "للكيلومتر" : "Per km"}: {rule.perKmIls} ₪</span>
+            {recentApplications.length ? recentApplications.map((application) => (
+              <article className="admin-mini-card elevated-mini-card" key={application.id}>
+                <strong>{application.fullName}</strong>
+                <span>{application.phone}</span>
+                <div className="admin-mini-card-footer">
+                  <Badge tone={application.status === "approved" ? "success" : application.status === "rejected" ? "danger" : "warning"}>{statusLabel(application.status, isArabic)}</Badge>
+                  <small>{application.cityLabel || application.city}</small>
+                </div>
               </article>
-            ))}
+            )) : (
+              <EmptyState title={textFor(isArabic, "لا توجد طلبات جديدة", "No new applications")} description={textFor(isArabic, "طلبات الانضمام ستظهر هنا.", "Captain applications will appear here.")} />
+            )}
           </div>
         </section>
       </div>
 
-      <section className="admin-panel">
-        <div className="admin-panel-title">
-          <h2>{isArabic ? "الدعم المفتوح" : "Open support"}</h2>
-          <span>{openTickets.length}</span>
-        </div>
-        <div className="admin-data-table compact">
-          {openTickets.map((ticket) => (
-            <div className="admin-table-row" key={ticket.id}>
-              <strong>{ticket.userName}</strong>
-              <span>{ticket.type}</span>
-              <span>{ticket.message}</span>
-              <b className={`admin-badge ${ticket.status}`}>{ticket.status}</b>
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="admin-grid-two">
+        <section className="admin-panel nested-admin-panel">
+          <SectionHeader title={textFor(isArabic, "المدن والأسعار", "Cities and pricing")} meta={pricingRules.length} />
+          <div className="admin-list">
+            {pricingRules.slice(0, 5).map((rule) => (
+              <article className="admin-mini-card pricing-mini-card" key={rule.id || rule.cityId}>
+                <strong>{cityName(state, rule.cityId, isArabic) || rule.cityName}</strong>
+                <span>{textFor(isArabic, "سعر البداية", "Base fare")}: {formatMoney(rule.baseFareIls ?? rule.baseFare)}</span>
+                <span>{textFor(isArabic, "للكيلومتر", "Per km")}: {formatMoney(rule.perKmIls ?? rule.pricePerKm)}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="admin-panel nested-admin-panel">
+          <SectionHeader title={textFor(isArabic, "الدعم المفتوح", "Open support")} meta={openTickets.length} />
+          <div className="admin-data-table compact support-dashboard-table">
+            {openTickets.length ? openTickets.map((ticket) => (
+              <div className="admin-table-row" key={ticket.id}>
+                <strong>{ticket.userName || ticket.name}</strong>
+                <span>{ticket.type}</span>
+                <span>{ticket.message}</span>
+                <Badge tone="success">{statusLabel(ticket.status, isArabic)}</Badge>
+              </div>
+            )) : (
+              <EmptyState title={textFor(isArabic, "لا توجد تذاكر مفتوحة", "No open tickets")} description={textFor(isArabic, "فريق الدعم مرتاح حاليًا.", "Support desk is clear right now.")} />
+            )}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

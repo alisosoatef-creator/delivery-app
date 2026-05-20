@@ -1,6 +1,7 @@
-export function DataTable({ columns = [], rows = [], empty, renderRow, className = "" }) {
+export function DataTable({ columns = [], rows = [], empty, renderRow, className = "", gridTemplateColumns }) {
+  const style = gridTemplateColumns ? { "--admin-table-columns": gridTemplateColumns } : undefined;
   return (
-    <div className={`ds-data-table ${className}`.trim()}>
+    <div className={`ds-data-table admin-data-table ${className}`.trim()} style={style}>
       {columns.length > 0 && (
         <div className="ds-table-head">
           {columns.map((column) => (

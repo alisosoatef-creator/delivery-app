@@ -1,13 +1,18 @@
 import { useMemo, useState } from "react";
+import { Badge, Button, DataTable, EmptyState, Input, SectionHeader, Select } from "../../components/ui/index.js";
+import { AdminDetailDrawer, DetailGrid, DrawerCloseButton, DrawerPlaceholder } from "./AdminDetailDrawer.jsx";
+import { ADMIN_SUPPORT_ROLES, exportRowsToCsv, formatDate, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
 
-function formatDate(value) {
-  if (!value) return "-";
-  return new Date(value).toLocaleString();
-}
-
-function ticketName(ticket) {
-  return ticket.userName || ticket.name || "-";
-}
+const TICKET_EXPORT_COLUMNS = [
+  { key: "name", label: "Name", value: (ticket) => ticket.name },
+  { key: "phone", label: "Phone", value: (ticket) => ticket.phone },
+  { key: "role", label: "Role", value: (ticket) => ticket.role },
+  { key: "type", label: "Type", value: (ticket) => ticket.type },
+  { key: "status", label: "Status", value: (ticket) => ticket.status },
+  { key: "rideId", label: "Ride ID", value: (ticket) => ticket.rideId },
+  { key: "createdAt", label: "Created", value: (ticket) => ticket.createdAt },
+  { key: "message", label: "Message", value: (ticket) => ticket.message }
+];
 
 export function AdminSupport({ supportTickets, closeSupportTicket, adminMutating, isArabic }) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -15,115 +20,124 @@ export function AdminSupport({ supportTickets, closeSupportTicket, adminMutating
   const [roleFilter, setRoleFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedTicket, setSelectedTicket] = useState(null);
-  const ticketTypes = useMemo(() => {
-    const types = new Set(supportTickets.map((ticket) => ticket.type).filter(Boolean));
-    return ["all", ...types];
-  }, [supportTickets]);
+  const tickets = useMemo(() => (supportTickets || []).map(normalizeTicket), [supportTickets]);
+  const ticketTypes = useMemo(() => ["all", ...new Set(tickets.map((ticket) => ticket.type).filter(Boolean))], [tickets]);
+
   const filteredTickets = useMemo(() => {
     const needle = searchTerm.trim().toLowerCase();
-    return supportTickets.filter((ticket) => {
+    return tickets.filter((ticket) => {
       const matchesStatus = statusFilter === "all" || ticket.status === statusFilter;
       const matchesRole = roleFilter === "all" || ticket.role === roleFilter;
       const matchesType = typeFilter === "all" || ticket.type === typeFilter;
-      const searchable = `${ticketName(ticket)} ${ticket.phone || ""} ${ticket.message || ""} ${ticket.rideId || ""}`.toLowerCase();
+      const searchable = `${ticket.name} ${ticket.phone} ${ticket.message} ${ticket.rideId}`.toLowerCase();
       return matchesStatus && matchesRole && matchesType && (!needle || searchable.includes(needle));
     });
-  }, [roleFilter, searchTerm, statusFilter, supportTickets, typeFilter]);
+  }, [roleFilter, searchTerm, statusFilter, tickets, typeFilter]);
 
   return (
-    <section className="admin-panel">
-      <div className="admin-panel-title">
-        <div>
-          <h2>{isArabic ? "الدعم والشكاوى" : "Support tickets"}</h2>
-          <p>{isArabic ? "تذاكر الزبائن والكباتن من قاعدة البيانات مع بحث وفلاتر وإغلاق وإعادة فتح." : "Customer and captain tickets from the database with search, filters, close and reopen."}</p>
-        </div>
-        <span>{filteredTickets.length} / {supportTickets.length}</span>
+    <section className="admin-panel admin-advanced-section">
+      <SectionHeader
+        title={textFor(isArabic, "الدعم والشكاوى", "Support tickets")}
+        description={textFor(isArabic, "إدارة تذاكر الزبائن والكباتن مع فلاتر، تفاصيل، وإغلاق أو إعادة فتح.", "Manage customer and captain tickets with filters, detail drawers, close and reopen actions.")}
+        meta={`${filteredTickets.length} / ${tickets.length}`}
+        actions={<Button variant="secondary" onClick={() => exportRowsToCsv("support-tickets.csv", filteredTickets, TICKET_EXPORT_COLUMNS)} disabled={!filteredTickets.length}>Export CSV</Button>}
+      />
+
+      <div className="admin-filter-bar support-ticket-filters advanced-filter-bar">
+        <Input label={textFor(isArabic, "بحث", "Search")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={textFor(isArabic, "الاسم، الهاتف، الرسالة أو رقم الرحلة", "Name, phone, message, or ride ID")} />
+        <Select label={textFor(isArabic, "الحالة", "Status")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+          <option value="all">{statusLabel("all", isArabic)}</option>
+          <option value="open">{statusLabel("open", isArabic)}</option>
+          <option value="closed">{statusLabel("closed", isArabic)}</option>
+        </Select>
+        <Select label={textFor(isArabic, "الدور", "Role")} value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
+          {ADMIN_SUPPORT_ROLES.map((role) => <option key={role} value={role}>{statusLabel(role, isArabic)}</option>)}
+        </Select>
+        <Select label={textFor(isArabic, "النوع", "Type")} value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+          {ticketTypes.map((type) => <option key={type} value={type}>{type === "all" ? statusLabel("all", isArabic) : type}</option>)}
+        </Select>
       </div>
 
-      <div className="admin-filter-bar support-ticket-filters">
-        <label className="field">
-          <span>{isArabic ? "بحث" : "Search"}</span>
-          <input value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={isArabic ? "الاسم أو الهاتف أو الرسالة" : "Name, phone, or message"} />
-        </label>
-        <label className="field">
-          <span>{isArabic ? "الحالة" : "Status"}</span>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="all">{isArabic ? "الكل" : "All"}</option>
-            <option value="open">open</option>
-            <option value="closed">closed</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>{isArabic ? "الدور" : "Role"}</span>
-          <select value={roleFilter} onChange={(event) => setRoleFilter(event.target.value)}>
-            <option value="all">{isArabic ? "الكل" : "All"}</option>
-            <option value="customer">customer</option>
-            <option value="driver">driver</option>
-          </select>
-        </label>
-        <label className="field">
-          <span>{isArabic ? "النوع" : "Type"}</span>
-          <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
-            {ticketTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-          </select>
-        </label>
-      </div>
-
-      <div className="admin-data-table support-table">
-        <div className="admin-table-row admin-table-head">
-          <span>{isArabic ? "المستخدم" : "User"}</span>
-          <span>{isArabic ? "الهاتف" : "Phone"}</span>
-          <span>{isArabic ? "الدور" : "Role"}</span>
-          <span>{isArabic ? "النوع" : "Type"}</span>
-          <span>{isArabic ? "الرسالة" : "Message"}</span>
-          <span>rideId</span>
-          <span>{isArabic ? "الحالة" : "Status"}</span>
-          <span>{isArabic ? "التاريخ" : "Date"}</span>
-          <span>{isArabic ? "إجراء" : "Action"}</span>
-          <span>{isArabic ? "تفاصيل" : "Details"}</span>
-        </div>
-        {filteredTickets.length ? filteredTickets.map((ticket) => {
+      <DataTable
+        className="support-table advanced-admin-table"
+        gridTemplateColumns="minmax(150px, 1.3fr) minmax(120px, 1fr) minmax(90px, .7fr) minmax(130px, 1fr) minmax(240px, 1.8fr) minmax(105px, .8fr) minmax(105px, .8fr) minmax(130px, 1fr) minmax(160px, 1.1fr)"
+        columns={[
+          { key: "user", label: textFor(isArabic, "المستخدم", "User") },
+          { key: "phone", label: textFor(isArabic, "الهاتف", "Phone") },
+          { key: "role", label: textFor(isArabic, "الدور", "Role") },
+          { key: "type", label: textFor(isArabic, "النوع", "Type") },
+          { key: "message", label: textFor(isArabic, "الرسالة", "Message") },
+          { key: "ride", label: "rideId" },
+          { key: "status", label: textFor(isArabic, "الحالة", "Status") },
+          { key: "date", label: textFor(isArabic, "التاريخ", "Date") },
+          { key: "actions", label: textFor(isArabic, "إجراءات", "Actions") }
+        ]}
+        rows={filteredTickets}
+        empty={<EmptyState title={textFor(isArabic, "لا توجد تذاكر مطابقة", "No matching tickets")} description={textFor(isArabic, "تذاكر الدعم الجديدة ستظهر هنا.", "New support tickets will appear here.")} />}
+        renderRow={(ticket) => {
           const nextStatus = ticket.status === "closed" ? "open" : "closed";
           return (
             <div className="admin-table-row" key={ticket.id}>
-              <strong>{ticketName(ticket)}</strong>
-              <span>{ticket.phone || "-"}</span>
-              <b className={`admin-badge ${ticket.role || "customer"}`}>{ticket.role || "customer"}</b>
+              <strong>{ticket.name}</strong>
+              <span>{ticket.phone}</span>
+              <Badge tone={ticket.role === "driver" ? "info" : "neutral"}>{statusLabel(ticket.role, isArabic)}</Badge>
               <span>{ticket.type}</span>
-              <span>{ticket.message}</span>
+              <span className="admin-truncate">{ticket.message}</span>
               <span>{ticket.rideId || "-"}</span>
-              <b className={`admin-badge ${ticket.status}`}>{ticket.status}</b>
-              <span>{formatDate(ticket.createdAt)}</span>
-              <button className="secondary" type="button" onClick={() => closeSupportTicket(ticket.id, nextStatus)} disabled={adminMutating}>
-                {nextStatus === "closed" ? (isArabic ? "إغلاق" : "Close") : (isArabic ? "إعادة فتح" : "Reopen")}
-              </button>
-              <button className="secondary" type="button" onClick={() => setSelectedTicket(ticket)}>
-                {isArabic ? "عرض" : "View"}
-              </button>
+              <Badge tone={ticket.status === "open" ? "success" : "neutral"}>{statusLabel(ticket.status, isArabic)}</Badge>
+              <span>{formatDate(ticket.createdAt, isArabic)}</span>
+              <div className="admin-action-row compact-actions">
+                <Button variant="secondary" size="sm" onClick={() => setSelectedTicket(ticket)}>{textFor(isArabic, "عرض", "View")}</Button>
+                <Button variant={nextStatus === "closed" ? "danger" : "secondary"} size="sm" onClick={() => closeSupportTicket(ticket.id, nextStatus)} disabled={adminMutating}>
+                  {nextStatus === "closed" ? textFor(isArabic, "إغلاق", "Close") : textFor(isArabic, "إعادة فتح", "Reopen")}
+                </Button>
+              </div>
             </div>
           );
-        }) : (
-          <p className="admin-empty">{isArabic ? "لا توجد تذاكر دعم مطابقة." : "No matching support tickets."}</p>
-        )}
-      </div>
+        }}
+      />
 
-      {selectedTicket && (
-        <div className="admin-detail-drawer">
-          <div className="admin-panel-title">
-            <h3>{ticketName(selectedTicket)}</h3>
-            <button className="icon-button" type="button" onClick={() => setSelectedTicket(null)}>x</button>
-          </div>
-          <dl className="admin-detail-list">
-            <div><dt>{isArabic ? "الهاتف" : "Phone"}</dt><dd>{selectedTicket.phone || "-"}</dd></div>
-            <div><dt>{isArabic ? "الدور" : "Role"}</dt><dd>{selectedTicket.role || "customer"}</dd></div>
-            <div><dt>{isArabic ? "النوع" : "Type"}</dt><dd>{selectedTicket.type}</dd></div>
-            <div><dt>rideId</dt><dd>{selectedTicket.rideId || "-"}</dd></div>
-            <div><dt>{isArabic ? "الحالة" : "Status"}</dt><dd>{selectedTicket.status}</dd></div>
-            <div><dt>{isArabic ? "التاريخ" : "Date"}</dt><dd>{formatDate(selectedTicket.createdAt)}</dd></div>
-            <div><dt>{isArabic ? "الرسالة" : "Message"}</dt><dd>{selectedTicket.message}</dd></div>
-          </dl>
-        </div>
-      )}
+      <AdminDetailDrawer
+        open={Boolean(selectedTicket)}
+        title={selectedTicket?.name || ""}
+        subtitle={textFor(isArabic, "تفاصيل تذكرة الدعم", "Support ticket details")}
+        status={selectedTicket?.status}
+        isArabic={isArabic}
+        onClose={() => setSelectedTicket(null)}
+        actions={selectedTicket && (
+          <>
+            <Button
+              variant={selectedTicket.status === "closed" ? "secondary" : "danger"}
+              onClick={() => closeSupportTicket(selectedTicket.id, selectedTicket.status === "closed" ? "open" : "closed")}
+              disabled={adminMutating}
+            >
+              {selectedTicket.status === "closed" ? textFor(isArabic, "إعادة فتح التذكرة", "Reopen ticket") : textFor(isArabic, "إغلاق التذكرة", "Close ticket")}
+            </Button>
+            <DrawerCloseButton isArabic={isArabic} onClick={() => setSelectedTicket(null)} />
+          </>
+        )}
+      >
+        {selectedTicket && (
+          <>
+            <DetailGrid
+              items={[
+                { label: textFor(isArabic, "مقدم التذكرة", "Submitted by"), value: selectedTicket.name },
+                { label: textFor(isArabic, "الدور", "Role"), value: statusLabel(selectedTicket.role, isArabic) },
+                { label: textFor(isArabic, "الهاتف", "Phone"), value: selectedTicket.phone },
+                { label: textFor(isArabic, "النوع", "Type"), value: selectedTicket.type },
+                { label: textFor(isArabic, "الحالة", "Status"), value: statusLabel(selectedTicket.status, isArabic) },
+                { label: textFor(isArabic, "تاريخ الإنشاء", "Created at"), value: formatDate(selectedTicket.createdAt, isArabic) },
+                { label: textFor(isArabic, "آخر تحديث", "Updated at"), value: formatDate(selectedTicket.updatedAt, isArabic) },
+                { label: "rideId", value: selectedTicket.rideId || "-" }
+              ]}
+            />
+            <DrawerPlaceholder title={textFor(isArabic, "الرسالة", "Message")}>{selectedTicket.message}</DrawerPlaceholder>
+            <DrawerPlaceholder title={textFor(isArabic, "ردود الإدارة", "Admin replies")}>
+              {textFor(isArabic, "Placeholder لمساحة ردود ومحادثة دعم لاحقًا.", "Placeholder for future threaded support replies.")}
+            </DrawerPlaceholder>
+          </>
+        )}
+      </AdminDetailDrawer>
     </section>
   );
 }

@@ -1,4 +1,5 @@
 import { Badge, Card, SectionHeader } from "../../components/ui/index.js";
+import { ADMIN_TEAM_ROLES, textFor } from "./adminFormatters.js";
 
 const roles = [
   {
@@ -23,22 +24,25 @@ const roles = [
 
 export function AdminPermissions({ isArabic }) {
   return (
-    <section className="admin-panel admin-permissions-premium">
+    <section className="admin-panel admin-permissions-premium admin-advanced-section">
       <SectionHeader
-        title={isArabic ? "الصلاحيات" : "Permissions"}
-        description={
-          isArabic
-            ? "الصلاحيات المعروضة الآن محصورة في Owner وAdmin وSupport فقط، وسترتبط لاحقًا بمستخدمين إداريين حقيقيين في Backend."
-            : "Visible admin permissions are now limited to Owner, Admin, and Support only. They will later connect to real Backend admin users."
-        }
-        meta={isArabic ? "Placeholder منظم" : "Structured placeholder"}
+        title={textFor(isArabic, "الصلاحيات", "Permissions")}
+        description={textFor(
+          isArabic,
+          "الصلاحيات المعروضة الآن محصورة في Owner وAdmin وSupport فقط، وسترتبط لاحقًا بمستخدمين إداريين حقيقيين في Backend.",
+          "Visible admin permissions are limited to Owner, Admin, and Support only. They will later connect to real Backend admin users."
+        )}
+        meta={textFor(isArabic, "Placeholder منظم", "Structured placeholder")}
       />
+      <div className="admin-role-lockup">
+        {ADMIN_TEAM_ROLES.map((role) => <Badge tone="neutral" key={role}>{role}</Badge>)}
+      </div>
       <div className="admin-permission-grid">
         {roles.map((item) => (
           <Card className="admin-permission-card permission-premium-card" key={item.role} as="article">
             <div>
               <strong>{item.role}</strong>
-              <Badge tone={item.tone}>{isArabic ? "قيد الربط" : "Placeholder"}</Badge>
+              <Badge tone={item.tone}>{textFor(isArabic, "قيد الربط", "Placeholder")}</Badge>
             </div>
             <p>{isArabic ? item.scopeAr : item.scope}</p>
           </Card>
