@@ -249,7 +249,11 @@ export function AuthScreen({ state, dispatch, t, isArabic }) {
     try {
       const result = await loginCustomer({ identifier: cleanValue(loginForm.identifier), password: loginForm.password });
       const user = result.user;
-      setSessionToken(result.token, user.role || ROLES.customer);
+      setSessionToken(result.token, user.role || ROLES.customer, {
+        userId: user.id,
+        customerId: user.id,
+        phone: user.phone
+      });
       dispatch({
         type: "patch",
         patch: {

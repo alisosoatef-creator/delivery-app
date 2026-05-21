@@ -50,7 +50,11 @@ export function DriverDevLogin({ dispatch, isArabic }) {
         driverId: driver.id,
         name: payload.user?.name || driver.fullName
       };
-      setSessionToken(payload.token, ROLES.driver);
+      setSessionToken(payload.token, ROLES.driver, {
+        userId: user.id,
+        driverId: driver.id,
+        phone: driver.phone
+      });
       dispatch({
         type: "patch",
         patch: {

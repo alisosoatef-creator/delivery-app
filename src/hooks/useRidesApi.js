@@ -62,9 +62,12 @@ export function useRidesApi({ enabled = true, customerId = "", customerPhone = "
     }
   });
 
-  const backendError =
+  const queryError =
     ridesQuery.error ||
     customerRidesQuery.error ||
+    null;
+
+  const mutationError =
     quoteMutation.error ||
     createRideMutation.error ||
     statusMutation.error ||
@@ -76,7 +79,9 @@ export function useRidesApi({ enabled = true, customerId = "", customerPhone = "
     rides: ridesQuery.data || [],
     customerRides: customerRidesQuery.data || [],
     customerRidesLoaded: customerRidesQuery.isSuccess,
-    backendError,
+    backendError: queryError,
+    queryError,
+    mutationError,
     requestQuote: quoteMutation.mutateAsync,
     createRide: createRideMutation.mutateAsync,
     updateRideStatus: statusMutation.mutateAsync,

@@ -3,6 +3,7 @@ import { ErrorState, LoadingSkeleton, Toast } from "../../components/ui/index.js
 import { useAdminData } from "../../hooks/useAdminData.js";
 import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
 import { APP_ROUTE_PATHS } from "../../routes/index.js";
+import { isAuthApiError, isNetworkApiError } from "../../services/apiClient.js";
 import { AdminHeader } from "./AdminHeader.jsx";
 import { AdminSidebar } from "./AdminSidebar.jsx";
 import { mockCustomers, mockPaymentRecords, mockRideRecords } from "./adminMockData.js";
@@ -68,6 +69,31 @@ function captainFromApplication(application, isArabic) {
   };
 }
 
+function adminBackendErrorCopy(error, isArabic) {
+  if (isAuthApiError(error)) {
+    return {
+      title: isArabic ? "صلاحية جلسة الأدمن غير صالحة" : "Admin session permission is invalid",
+      description: isArabic
+        ? "سجل دخول الأدمن من مدخل التطوير مرة أخرى حتى تُرسل صلاحيات admin أو owner مع الطلبات."
+        : "Sign in through the admin development entry again so admin or owner permissions are sent with requests."
+    };
+  }
+  if (isNetworkApiError(error)) {
+    return {
+      title: isArabic ? "تعذر الاتصال بالـ Backend" : "Backend unavailable",
+      description: isArabic
+        ? "يتم استخدام البيانات المحلية مؤقتًا لأن الطلب لم يصل إلى السيرفر. تأكد من تشغيل npm.cmd run api."
+        : "Local data is being used because the request could not reach the server. Make sure npm.cmd run api is running."
+    };
+  }
+  return {
+    title: isArabic ? "تعذر تحميل بيانات الإدارة" : "Unable to load admin data",
+    description: isArabic
+      ? (error?.payload?.messageAr || "السيرفر متصل لكنه رفض الطلب أو أعاد خطأ تحقق. راجع Console للتفاصيل.")
+      : (error?.payload?.message || error?.message || "The server is reachable but rejected the request or returned a validation error.")
+  };
+}
+
 function mergeById(localItems, remoteItems) {
   const merged = new Map();
   localItems.forEach((item) => {
@@ -86,6 +112,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
   const captainApplicationsQuery = useCaptainApplications({ enabled: adminEnabled });
   const adminData = useAdminData({ enabled: adminEnabled });
   const backendError = captainApplicationsQuery.backendError || adminData.backendError;
+  const backendErrorCopy = backendError ? adminBackendErrorCopy(backendError, isArabic) : null;
   const canUseRemoteData = adminEnabled && !backendError;
   const pendingCaptainApplications = useMemo(
     () => mergeById(state.pendingCaptainApplications || [], captainApplicationsQuery.applications || []),
@@ -477,8 +504,8 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
         {backendError && (
           <ErrorState
             className="admin-error compact-error-state"
-            title={isArabic ? "تعذر الاتصال بالـ Backend" : "Backend unavailable"}
-            description={isArabic ? "يتم استخدام البيانات المحلية مؤقتًا إلى أن يعود الاتصال." : "Local data is being used temporarily until the connection returns."}
+            title={backendErrorCopy.title}
+            description={backendErrorCopy.description}
           />
         )}
         <Suspense fallback={<AdminSectionFallback isArabic={isArabic} />}>

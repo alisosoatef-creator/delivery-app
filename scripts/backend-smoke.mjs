@@ -232,7 +232,7 @@ try {
     body: JSON.stringify({
       fullName: "Smoke Captain",
       phone: captainPhone,
-      city: "nablus",
+      city: "Nablus",
       age: 31,
       vehicleType: "car",
       vehiclePlate: "SMK-1"
@@ -360,12 +360,24 @@ try {
   });
   assert(driverDevLogin.token?.startsWith("dev-driver-session-token"), "driver dev login should return a development driver token");
   assert(driverDevLogin.driver?.id === approve.captain.id, "driver dev login should return the selected approved captain");
+  assert(driverDevLogin.driver?.cityId === "nablus", "driver dev login should normalize captain city to a city id");
+  const activeDriverHeaders = {
+    Authorization: `Bearer ${driverDevLogin.token}`,
+    "X-Dev-Role": "driver",
+    "X-Dev-Driver-Id": approve.captain.id,
+    "X-Dev-Phone": captainPhone
+  };
+  const availableByDriverHeaders = await request("/api/driver/available-rides", { headers: activeDriverHeaders });
+  assert(
+    availableByDriverHeaders.rides.some((availableRide) => availableRide.id === rideId),
+    "driver available rides should use driver headers and normalized city when query city is omitted"
+  );
 
   const rideAcceptedEvent = waitForSocketEvent(socket, "ride:accepted");
   const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
     method: "PATCH",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id })
+    headers: activeDriverHeaders,
+    body: JSON.stringify({})
   });
   const acceptedPayload = await rideAcceptedEvent;
   assert(acceptedRide.ride.status === "accepted", "ride accept endpoint should set accepted status");
@@ -399,7 +411,7 @@ try {
     "accepted ride should leave available driver requests"
   );
 
-  const myRidesAfterAccept = await request(`/api/driver/my-rides?driverId=${encodeURIComponent(approve.captain.id)}`);
+  const myRidesAfterAccept = await request("/api/driver/my-rides", { headers: activeDriverHeaders });
   assert(
     myRidesAfterAccept.rides.some((driverRide) => driverRide.id === rideId && driverRide.status === "accepted"),
     "accepted ride should appear in driver my-rides"
@@ -408,8 +420,8 @@ try {
   const rideStatusUpdatedEvent = waitForSocketEvent(socket, "ride:status-updated");
   const driverArriving = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id, status: "driver_arriving" })
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ status: "driver_arriving" })
   });
   const statusUpdatedPayload = await rideStatusUpdatedEvent;
   assert(driverArriving.ride.status === "driver_arriving", "driver should update ride to driver_arriving");
@@ -417,15 +429,15 @@ try {
 
   const driverArrived = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id, status: "arrived" })
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ status: "arrived" })
   });
   assert(driverArrived.ride.status === "arrived", "driver should update ride to arrived");
 
   const inProgress = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id, status: "in_progress" })
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ status: "in_progress" })
   });
   assert(inProgress.ride.status === "in_progress", "driver should update ride to in_progress");
 
@@ -433,8 +445,8 @@ try {
   const cashPaymentCreatedEvent = waitForSocketEvent(socket, "payment:created");
   const status = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id, status: "completed" })
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ status: "completed" })
   });
   const completedPayload = await rideCompletedEvent;
   const cashPaymentPayload = await cashPaymentCreatedEvent;
@@ -659,6 +671,24 @@ try {
   assert(
     driversAfterCleanup.drivers.some((driver) => driver.applicationId === applicationId),
     "cleanup should not delete users or approved drivers"
+  );
+
+  const cleanupAllDemo = await request("/api/admin/maintenance/cleanup", {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ type: "allDemoData", confirm: "RESET_DEMO_DATA" })
+  });
+  assert(cleanupAllDemo.success === true, "all demo data cleanup should work with strong confirmation");
+
+  const driversAfterDemoReset = await request("/api/admin/drivers", { headers: adminHeaders });
+  assert(
+    driversAfterDemoReset.drivers.some((driver) => driver.applicationId === applicationId),
+    "all demo data cleanup should not delete approved drivers"
+  );
+  const customersAfterDemoReset = await request("/api/admin/customers", { headers: adminHeaders });
+  assert(
+    customersAfterDemoReset.customers.some((customer) => customer.phone === phone),
+    "all demo data cleanup should not delete customers"
   );
 
   console.log("backend-smoke-ok");

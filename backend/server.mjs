@@ -161,11 +161,29 @@ function isCustomerPath(pathname) {
 }
 
 function rejectUnauthorized(response, request, scope) {
-  sendJson(response, 401, { error: "unauthorized", scope, mode: process.env.NODE_ENV === "production" ? "enforced" : "soft-dev" }, request);
+  sendJson(response, 401, {
+    error: "unauthorized",
+    scope,
+    mode: process.env.NODE_ENV === "production" ? "enforced" : "soft-dev",
+    message: `${scope} session permission is invalid.`,
+    messageAr: "صلاحية الجلسة غير صالحة أو لا تناسب هذا الطلب."
+  }, request);
 }
 
 function rejectRateLimited(response, request) {
   sendJson(response, 429, { error: "rate_limited" }, request);
+}
+
+function requestHeader(request, name) {
+  return String(request?.headers?.[name.toLowerCase()] || "").trim();
+}
+
+function requestDriverId(request, body = {}) {
+  return String(body.driverId || requestHeader(request, "x-dev-driver-id") || "").trim();
+}
+
+function requestDriverPhone(request, body = {}) {
+  return String(body.phone || requestHeader(request, "x-dev-phone") || "").trim();
 }
 
 function rideStatusMessage(status) {
@@ -496,15 +514,18 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/driver/available-rides") {
-    sendJson(response, 200, { rides: listAvailableRides({ cityId: url.searchParams.get("cityId") || "" }) });
+    const headerDriver = getDriver(requestHeader(request, "x-dev-driver-id"));
+    sendJson(response, 200, {
+      rides: listAvailableRides({ cityId: url.searchParams.get("cityId") || headerDriver?.cityId || "" })
+    });
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/api/driver/my-rides") {
     sendJson(response, 200, {
       rides: listDriverRides({
-        driverId: url.searchParams.get("driverId") || "",
-        phone: url.searchParams.get("phone") || ""
+        driverId: url.searchParams.get("driverId") || requestHeader(request, "x-dev-driver-id") || "",
+        phone: url.searchParams.get("phone") || requestHeader(request, "x-dev-phone") || ""
       })
     });
     return;
@@ -654,7 +675,8 @@ async function handleApi(request, response) {
   const rideAcceptMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/accept$/);
   if (request.method === "PATCH" && rideAcceptMatch) {
     const body = await readJson(request);
-    if (!body.driverId) {
+    const driverId = requestDriverId(request, body);
+    if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",
         message: "driverId is required to accept a ride.",
@@ -663,7 +685,7 @@ async function handleApi(request, response) {
       return;
     }
     const currentRide = getRide(rideAcceptMatch[1]);
-    const driver = getDriver(body.driverId);
+    const driver = getDriver(driverId);
     if (!currentRide) {
       sendJson(response, 404, {
         error: "ride_not_found",
@@ -707,7 +729,7 @@ async function handleApi(request, response) {
       });
       return;
     }
-    const ride = acceptRide(rideAcceptMatch[1], body.driverId);
+    const ride = acceptRide(rideAcceptMatch[1], driverId);
     if (!ride) {
       sendJson(response, 409, {
         error: "ride_accept_failed",
@@ -725,7 +747,8 @@ async function handleApi(request, response) {
   const driverRideStatusMatch = url.pathname.match(/^\/api\/driver\/rides\/([^/]+)\/status$/);
   if (request.method === "PATCH" && driverRideStatusMatch) {
     const body = await readJson(request);
-    if (!body.driverId) {
+    const driverId = requestDriverId(request, body);
+    if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",
         message: "driverId is required to update a ride.",
@@ -742,7 +765,7 @@ async function handleApi(request, response) {
       return;
     }
     const currentRide = getRide(driverRideStatusMatch[1]);
-    const driver = getDriver(body.driverId);
+    const driver = getDriver(driverId);
     if (!currentRide) {
       sendJson(response, 404, {
         error: "ride_not_found",
@@ -786,7 +809,7 @@ async function handleApi(request, response) {
       return;
     }
     const ride = updateDriverRideStatus(driverRideStatusMatch[1], {
-      driverId: body.driverId,
+      driverId,
       status: body.status
     });
     if (!ride) {
@@ -982,7 +1005,8 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/drivers/status") {
     const body = await readJson(request);
-    if (!body.driverId) {
+    const driverId = requestDriverId(request, body);
+    if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",
         message: "driverId is required to update captain online status.",
@@ -990,7 +1014,7 @@ async function handleApi(request, response) {
       });
       return;
     }
-    const driver = updateDriverStatus(body.driverId, { online: Boolean(body.online) });
+    const driver = updateDriverStatus(driverId, { online: Boolean(body.online) });
     if (!driver) {
       sendJson(response, 404, {
         error: "driver_not_found",

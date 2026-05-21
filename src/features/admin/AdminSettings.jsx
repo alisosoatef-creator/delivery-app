@@ -8,7 +8,7 @@ const CLEANUP_ACTIONS = [
   { type: "cancelledRides", tone: "warning", ar: "حذف الرحلات الملغية", en: "Delete cancelled rides" },
   { type: "closedSupportTickets", tone: "info", ar: "حذف تذاكر الدعم المغلقة", en: "Delete closed support tickets" },
   { type: "demoPayments", tone: "warning", ar: "حذف المدفوعات التجريبية فقط", en: "Delete demo payments only" },
-  { type: "allDemoData", tone: "danger", ar: "حذف كل بيانات الاختبار", en: "Reset all demo data" }
+  { type: "allDemoData", tone: "danger", ar: "إعادة ضبط بيانات التجربة", en: "Reset demo data" }
 ];
 
 function normalizeSettings(settings) {
@@ -44,6 +44,18 @@ function tabLabel(tab, isArabic) {
     team: textFor(isArabic, "الفريق", "Team"),
     records: textFor(isArabic, "إدارة السجلات", "Records")
   }[tab];
+}
+
+function cleanupBadgeLabel(action, isArabic) {
+  const labels = {
+    completedRides: ["رحلات مكتملة", "Completed rides"],
+    cancelledRides: ["رحلات ملغية", "Cancelled rides"],
+    closedSupportTickets: ["تذاكر مغلقة", "Closed tickets"],
+    demoPayments: ["مدفوعات تجريبية", "Demo payments"],
+    allDemoData: ["إعادة ضبط التجربة", "Demo data reset"]
+  };
+  const label = labels[action.type] || [action.type, action.type];
+  return isArabic ? label[0] : label[1];
 }
 
 export function AdminSettings({ state, adminSettings, updateSystemSettings, updatePricingRule, cleanupRecords, cleanupResult, cleanupError, adminMutating, isArabic, placeholder, pricingRules = [], cityName }) {
@@ -270,15 +282,15 @@ export function AdminSettings({ state, adminSettings, updateSystemSettings, upda
           <div className="records-cleanup-grid">
             {CLEANUP_ACTIONS.map((action) => (
               <article className={`records-cleanup-card ${action.type}`} key={action.type}>
-                <Badge tone={action.tone}>{action.type}</Badge>
+                <Badge tone={action.tone}>{cleanupBadgeLabel(action, isArabic)}</Badge>
                 <h3>{isArabic ? action.ar : action.en}</h3>
                 <p>
                   {action.type === "allDemoData"
-                    ? textFor(isArabic, "يتطلب تأكيد RESET_DEMO_DATA ولا يحذف المستخدمين أو الكباتن أو الإعدادات.", "Requires RESET_DEMO_DATA confirmation and does not delete users, drivers, or settings.")
+                    ? textFor(isArabic, "يعيد ضبط بيانات التجربة فقط: الرحلات، التذاكر، المدفوعات التجريبية، وعمليات المحافظ التجريبية. لا يحذف المستخدمين أو الكباتن أو الأسعار أو الإعدادات.", "Resets demo records only: rides, tickets, demo payments, and demo wallet transactions. Users, drivers, pricing, and settings are not deleted.")
                     : textFor(isArabic, "سيتم حذف هذا النوع المحدد فقط من السجلات.", "Only this specific record type will be removed.")}
                 </p>
                 <Button variant={action.type === "allDemoData" ? "danger" : "secondary"} size="sm" onClick={() => setCleanupCandidate(action)} disabled={adminMutating}>
-                  {textFor(isArabic, "تنظيف", "Clean")}
+                  {action.type === "allDemoData" ? textFor(isArabic, "إعادة ضبط بيانات التجربة", "Reset demo data") : textFor(isArabic, "تنظيف", "Clean")}
                 </Button>
               </article>
             ))}
@@ -297,7 +309,11 @@ export function AdminSettings({ state, adminSettings, updateSystemSettings, upda
               <div className="records-confirm-modal">
                 <Badge tone={cleanupCandidate.tone}>{textFor(isArabic, "تأكيد مطلوب", "Confirmation required")}</Badge>
                 <h3>{isArabic ? cleanupCandidate.ar : cleanupCandidate.en}</h3>
-                <p>{textFor(isArabic, "هذه العملية إدارية ومخصصة للتطوير. لن يتم حذف المستخدمين أو الكباتن أو الإعدادات.", "This is an admin development action. Users, drivers, and settings will not be deleted.")}</p>
+                <p>
+                  {cleanupCandidate.type === "allDemoData"
+                    ? textFor(isArabic, "سيتم حذف الرحلات، التذاكر، المدفوعات التجريبية، وعمليات المحافظ التجريبية فقط. لن يتم حذف المستخدمين أو الكباتن أو الأسعار أو الإعدادات.", "Only rides, tickets, demo payments, and demo wallet transactions will be deleted. Users, drivers, pricing, and settings will not be deleted.")
+                    : textFor(isArabic, "هذه العملية إدارية ومخصصة للتطوير. لن يتم حذف المستخدمين أو الكباتن أو الإعدادات.", "This is an admin development action. Users, drivers, and settings will not be deleted.")}
+                </p>
                 {cleanupCandidate.type === "allDemoData" && (
                   <Input
                     label="RESET_DEMO_DATA"

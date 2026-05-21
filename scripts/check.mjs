@@ -1378,6 +1378,35 @@ for (const driverFlowCleanupToken of [
   }
 }
 
+for (const fullScenarioDebugToken of [
+  "classifyApiError",
+  "network_error",
+  "auth_error",
+  "validation_error",
+  "server_error",
+  "not_found",
+  "getSessionContext",
+  "X-Dev-Driver-Id",
+  "X-Dev-Phone",
+  "requestDriverId",
+  "availableByDriverHeaders",
+  "driver available rides should use driver headers and normalized city when query city is omitted",
+  "driver dev login should normalize captain city to a city id",
+  "liveTrackingStatus: isGracefulStop ? \"idle\"",
+  "driver-stopped-tracking",
+  "driver-debug-panel",
+  "cleanupBadgeLabel",
+  "إعادة ضبط بيانات التجربة",
+  "all demo data cleanup should work with strong confirmation",
+  "all demo data cleanup should not delete approved drivers",
+  "all demo data cleanup should not delete customers"
+]) {
+  const combinedFullScenarioSource = `${appSource}\n${stylesSource}\n${backendSource}\n${backendDatabaseSource}\n${backendSmokeSource}`;
+  if (!combinedFullScenarioSource.includes(fullScenarioDebugToken)) {
+    throw new Error(`Full app scenario debug fix is missing: ${fullScenarioDebugToken}`);
+  }
+}
+
 for (const premiumStyleToken of [
   "/* phase-8-premium-polish */",
   "--premium-ink",

@@ -5,6 +5,7 @@ import { AccessDenied } from "./components/ui/AccessDenied.jsx";
 import { useBootstrap } from "./hooks/useBootstrap.js";
 import { AdminRoute, APP_ROUTE_PATHS, CustomerRoute, DriverRoute, GuestRoute, roleRouteFallback } from "./routes/index.js";
 import { api } from "./services/api.js";
+import { apiErrorMessage, isNetworkApiError } from "./services/apiClient.js";
 import { localQuote } from "./services/rides.js";
 import { createRide, fetchCustomerRide, patchRideStatus, requestRideQuote } from "./services/ridesApi.js";
 import { clearSessionToken } from "./services/sessionToken.js";
@@ -216,7 +217,13 @@ function App() {
     const mapDistanceKm = state.routeInfo?.routeDistanceKm || estimatePickupDestinationDistance(state);
     requestRideQuote({ cityId: state.cityId, distanceKm: mapDistanceKm || 5.8 })
       .then((quote) => dispatch({ type: "patch", patch: { quote, backendLive: true } }))
-      .catch(() => dispatch({ type: "patch", patch: { quote: localQuote(state), backendLive: false } }));
+      .catch((error) => dispatch({
+        type: "patch",
+        patch: {
+          quote: localQuote(state),
+          backendLive: isNetworkApiError(error) ? false : state.backendLive
+        }
+      }));
   }, [state.cityId, state.pickupLocation, state.destinationLocation, state.routeInfo?.routeDistanceKm]);
 
   useEffect(() => {
@@ -327,13 +334,22 @@ function App() {
         }
       });
     } catch (error) {
+      const networkError = isNetworkApiError(error);
       dispatch({
         type: "patch",
         patch: {
-          backendLive: false,
+          backendLive: networkError ? false : true,
           rideRequestStatus: "error",
-          rideRequestError: error?.message || "Backend unavailable",
-          toast: isArabic ? "تعذر إرسال طلب المشوار. تأكد أن السيرفر يعمل ثم حاول مرة أخرى." : "Could not create the ride. Make sure the Backend is running, then try again."
+          rideRequestError: apiErrorMessage(error, {
+            ar: "تعذر إرسال طلب المشوار.",
+            en: "Could not create the ride."
+          }),
+          toast: networkError
+            ? (isArabic ? "تعذر إرسال طلب المشوار. تأكد أن السيرفر يعمل ثم حاول مرة أخرى." : "Could not create the ride. Make sure the Backend is running, then try again.")
+            : apiErrorMessage(error, {
+              ar: "تعذر إرسال طلب المشوار بسبب رفض الطلب من السيرفر.",
+              en: "Could not create the ride because the server rejected the request."
+            })
         }
       });
     }
@@ -353,15 +369,28 @@ function App() {
           toast: status === RIDE_STATUSES.cancelled ? (isArabic ? "تم إلغاء الرحلة." : "Ride cancelled.") : ""
         }
       });
-    } catch {
-      const localRide = { ...state.ride, status };
+    } catch (error) {
+      if (isNetworkApiError(error)) {
+        const localRide = { ...state.ride, status };
+        dispatch({
+          type: "patch",
+          patch: {
+            ride: localRide,
+            customerRides: (state.customerRides || []).map((ride) => (ride.id === localRide.id ? localRide : ride)),
+            backendLive: false,
+            rideRequestStatus: status === RIDE_STATUSES.cancelled ? "cancelled" : state.rideRequestStatus
+          }
+        });
+        return;
+      }
       dispatch({
         type: "patch",
         patch: {
-          ride: localRide,
-          customerRides: (state.customerRides || []).map((ride) => (ride.id === localRide.id ? localRide : ride)),
-          backendLive: false,
-          rideRequestStatus: status === RIDE_STATUSES.cancelled ? "cancelled" : state.rideRequestStatus
+          backendLive: true,
+          toast: apiErrorMessage(error, {
+            ar: "صلاحية الجلسة غير صالحة أو حالة الرحلة لا تسمح بهذا التحديث.",
+            en: "Session permission is invalid or the ride status does not allow this update."
+          })
         }
       });
     }
@@ -386,12 +415,15 @@ function App() {
           toast: isArabic ? "تم تحديث حالة الرحلة." : "Ride status refreshed."
         }
       });
-    } catch {
+    } catch (error) {
       dispatch({
         type: "patch",
         patch: {
-          backendLive: false,
-          toast: isArabic ? "تعذر تحديث حالة الرحلة الآن." : "Unable to refresh the ride status now."
+          backendLive: isNetworkApiError(error) ? false : true,
+          toast: apiErrorMessage(error, {
+            ar: "تعذر تحديث حالة الرحلة الآن.",
+            en: "Unable to refresh the ride status now."
+          })
         }
       });
     }

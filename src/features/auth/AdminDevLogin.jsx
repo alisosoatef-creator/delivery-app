@@ -32,7 +32,10 @@ export function AdminDevLogin({ dispatch, isArabic }) {
       status: "active"
     };
 
-    setSessionToken("dev-admin-session-token", ROLES.admin);
+    setSessionToken("dev-admin-session-token", ROLES.admin, {
+      userId: adminUser.id,
+      phone: adminUser.phone
+    });
     dispatch({
       type: "patch",
       patch: {

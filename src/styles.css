@@ -4474,6 +4474,7 @@ small,
   grid-template-areas:
     "hero"
     "kpis"
+    "debug"
     "map"
     "requests"
     "current"
@@ -4525,6 +4526,33 @@ small,
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(142px, 1fr));
   gap: var(--space-3);
+}
+
+.driver-debug-panel {
+  grid-area: debug;
+  border: 1px dashed color-mix(in srgb, var(--color-info) 42%, transparent);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--color-info) 8%, var(--surface));
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.driver-debug-panel summary {
+  cursor: pointer;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.driver-debug-panel div {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.driver-debug-panel strong {
+  color: var(--text);
 }
 
 .driver-map-card {
@@ -5484,6 +5512,7 @@ small,
     grid-template-areas:
       "hero map"
       "kpis map"
+      "debug map"
       "requests current"
       "support current"
       "history history";

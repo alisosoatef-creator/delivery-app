@@ -156,12 +156,16 @@ export function reducer(state, action) {
         };
       }
     case "driverLocationUnavailable":
-      return {
-        ...state,
-        liveTrackingStatus: "denied",
-        liveTrackingError: action.payload.reason || "gps-unavailable",
-        lastDriverLocationAt: action.payload.timestamp || action.payload.emittedAt || state.lastDriverLocationAt
-      };
+      {
+        const reason = action.payload.reason || "gps-unavailable";
+        const isGracefulStop = ["driver-stopped-tracking", "ride-completed", "ride-cancelled", "tracking-stopped"].includes(reason);
+        return {
+          ...state,
+          liveTrackingStatus: isGracefulStop ? "idle" : "denied",
+          liveTrackingError: isGracefulStop ? "" : reason,
+          lastDriverLocationAt: action.payload.timestamp || action.payload.emittedAt || state.lastDriverLocationAt
+        };
+      }
     case "rideStatus":
       return {
         ...state,

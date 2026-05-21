@@ -96,13 +96,16 @@ export function usePayments({
     onSuccess: invalidatePaymentQueries
   });
 
-  const backendError =
+  const queryError =
     walletQuery.error ||
     customerPaymentsQuery.error ||
     paymentMethodsQuery.error ||
     adminPaymentsQuery.error ||
     driverEarningsQuery.error ||
     driverWalletTransactionsQuery.error ||
+    null;
+
+  const mutationError =
     addPaymentMethodMutation.error ||
     deletePaymentMethodMutation.error ||
     payRideMutation.error ||
@@ -118,7 +121,9 @@ export function usePayments({
     adminPaymentSummary: adminPaymentsQuery.data?.summary || null,
     driverEarnings: driverEarningsQuery.data || { summary: null, payments: [], transactions: [] },
     driverWalletTransactions: driverWalletTransactionsQuery.data || [],
-    backendError,
+    backendError: queryError,
+    queryError,
+    mutationError,
     addPaymentMethod: addPaymentMethodMutation.mutateAsync,
     deletePaymentMethod: deletePaymentMethodMutation.mutateAsync,
     payRide: payRideMutation.mutateAsync,

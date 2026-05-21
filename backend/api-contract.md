@@ -96,7 +96,9 @@ Approving a captain application changes its status to `approved` and creates a l
 
 Admin writes are persisted in SQLite for development. API authorization is still a development TODO.
 Maintenance cleanup accepts `{ "type": "completedRides" | "cancelledRides" | "closedSupportTickets" | "demoPayments" | "allDemoData" }`.
-`allDemoData` also requires `{ "confirm": "RESET_DEMO_DATA" }`. Cleanup never deletes users, drivers, pricing rules, or system settings.
+`allDemoData` is shown in the UI as "Reset demo data" / "إعادة ضبط بيانات التجربة" and requires `{ "confirm": "RESET_DEMO_DATA" }`.
+It removes only demo operational records: rides, support tickets, demo payments, demo wallet transactions, and saved demo payment methods.
+Cleanup never deletes users, approved drivers/captains, pricing rules, or system settings.
 
 ## Rides
 

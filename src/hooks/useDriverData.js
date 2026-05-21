@@ -11,7 +11,7 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
   const queryClient = useQueryClient();
   const availableRidesQuery = useQuery({
     queryKey: ["driver", "availableRides", cityId],
-    queryFn: () => fetchAvailableDriverRides({ cityId }),
+    queryFn: () => fetchAvailableDriverRides({ cityId, driverId, phone }),
     enabled,
     staleTime: 8_000
   });

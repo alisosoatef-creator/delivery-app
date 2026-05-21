@@ -23,6 +23,7 @@ db.exec("PRAGMA journal_mode = WAL;");
 createSchema(db);
 migrateDatabase(db);
 seedDatabase(db);
+normalizeExistingCityReferences();
 
 function tableColumns(database, tableName) {
   return database.prepare(`PRAGMA table_info(${tableName})`).all().map((column) => column.name);
@@ -148,6 +149,42 @@ function many(sql, ...params) {
 
 function run(sql, ...params) {
   return db.prepare(sql).run(...params);
+}
+
+function normalizeLookupValue(value) {
+  return String(value || "").trim().toLowerCase().replace(/\s+/g, "");
+}
+
+function normalizeCityId(value, fallback = "nablus") {
+  const raw = String(value || "").trim();
+  if (!raw) return fallback;
+  const comparable = normalizeLookupValue(raw);
+  const cities = many("SELECT id, arName, enName FROM cities");
+  const match = cities.find((city) =>
+    normalizeLookupValue(city.id) === comparable ||
+    normalizeLookupValue(city.arName) === comparable ||
+    normalizeLookupValue(city.enName) === comparable
+  );
+  return match?.id || raw;
+}
+
+function normalizeExistingCityReferences() {
+  const cityTables = [
+    ["users", "city"],
+    ["drivers", "city"],
+    ["captain_applications", "city"],
+    ["rides", "city"]
+  ];
+  for (const [tableName, columnName] of cityTables) {
+    const rows = many(`SELECT id, ${columnName} AS city FROM ${tableName}`);
+    const update = db.prepare(`UPDATE ${tableName} SET ${columnName} = ? WHERE id = ?`);
+    for (const row of rows) {
+      const normalizedCity = normalizeCityId(row.city, row.city || "nablus");
+      if (normalizedCity && normalizedCity !== row.city) {
+        update.run(normalizedCity, row.id);
+      }
+    }
+  }
 }
 
 function cityRow(row) {
@@ -381,7 +418,7 @@ export function listCities() {
 }
 
 export function getCity(cityId = "nablus") {
-  return cityRow(one("SELECT * FROM cities WHERE id = ?", cityId)) || listCities()[0];
+  return cityRow(one("SELECT * FROM cities WHERE id = ?", normalizeCityId(cityId))) || listCities()[0];
 }
 
 export function listPricingRules() {
@@ -389,15 +426,16 @@ export function listPricingRules() {
 }
 
 export function getPricingRule(cityId = "nablus") {
-  return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ? AND isActive = 1", cityId));
+  return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ? AND isActive = 1", normalizeCityId(cityId)));
 }
 
 export function getPricingRuleByCity(cityId = "nablus") {
-  return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ?", cityId));
+  return pricingRow(one("SELECT * FROM pricing_rules WHERE cityId = ?", normalizeCityId(cityId)));
 }
 
 export function updatePricingRule(cityId, patch) {
-  const current = getPricingRuleByCity(cityId);
+  const normalizedCityId = normalizeCityId(cityId);
+  const current = getPricingRuleByCity(normalizedCityId);
   if (!current) return null;
   const nextBaseFare = patch.baseFareIls ?? patch.baseFare ?? current.baseFare;
   const nextPricePerKm = patch.perKmIls ?? patch.pricePerKm ?? current.pricePerKm;
@@ -415,9 +453,9 @@ export function updatePricingRule(cityId, patch) {
     nextMinimumFare,
     nextIsActive,
     updatedAt,
-    cityId
+    normalizedCityId
   );
-  return getPricingRuleByCity(cityId);
+  return getPricingRuleByCity(normalizedCityId);
 }
 
 export function getSystemSettings() {
@@ -513,7 +551,7 @@ export function createOrUpdateCustomerUser(body) {
     `usr_${randomUUID()}`,
     body.fullName,
     body.phone,
-    body.cityId || body.city || "nablus",
+    normalizeCityId(body.cityId || body.city || "nablus"),
     body.age ?? null,
     body.birthDate || "",
     body.passwordHash,
@@ -562,7 +600,7 @@ export function insertCaptainApplication(body) {
     id,
     body.fullName,
     body.phone,
-    body.city,
+    normalizeCityId(body.city),
     Number(body.age),
     body.vehicleType,
     body.vehiclePlate || "",
@@ -618,7 +656,7 @@ export function createDriverFromApplication(application) {
       `usr_driver_${randomUUID()}`,
       application.fullName,
       application.phone,
-      application.city,
+      normalizeCityId(application.city),
       application.age ?? null,
       nowIso()
     );
@@ -636,7 +674,7 @@ export function createDriverFromApplication(application) {
     application.id,
     application.fullName,
     application.phone,
-    application.city,
+    normalizeCityId(application.city),
     application.vehicleType,
     application.vehiclePlate || "",
     null,
@@ -751,7 +789,7 @@ export function listRides() {
 }
 
 export function listAvailableRides({ cityId = "" } = {}) {
-  const normalizedCity = String(cityId || "").trim();
+  const normalizedCity = cityId ? normalizeCityId(cityId) : "";
   const query = normalizedCity
     ? "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL AND city = ? ORDER BY createdAt ASC"
     : "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL ORDER BY createdAt ASC";

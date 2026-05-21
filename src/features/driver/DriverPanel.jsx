@@ -3,6 +3,7 @@ import { Avatar, Metric, PanelTitle, StatusBadge } from "../../components/ui/ind
 import { useDriverData } from "../../hooks/useDriverData.js";
 import { usePayments } from "../../hooks/usePayments.js";
 import { useSupportTickets } from "../../hooks/useSupportTickets.js";
+import { isAuthApiError, isNetworkApiError } from "../../services/apiClient.js";
 import { sendDriverLocationUnavailable, sendDriverLocationUpdate } from "../../services/socketClient.js";
 import { statusText } from "../../utils/i18n.js";
 import { RIDE_STATUSES } from "../../utils/rideStatus.js";
@@ -81,13 +82,24 @@ function driverOperationError(error, isArabic, fallbackAr, fallbackEn) {
     driver_ride_mismatch: ["هذه الرحلة مرتبطة بكابتن آخر.", "This ride belongs to another captain."],
     ride_has_no_driver: ["لا يوجد كابتن مرتبط بهذه الرحلة لتحديث حالتها.", "This ride has no assigned captain for status updates."],
     invalid_driver_ride_transition: ["تسلسل حالة الرحلة غير صحيح. حدّث الرحلة ثم جرّب الخطوة المناسبة.", "Ride status sequence is invalid. Refresh and try the correct next step."],
-    invalid_ride_status: ["حالة الرحلة المطلوبة غير مدعومة.", "Requested ride status is not supported."]
+    invalid_ride_status: ["حالة الرحلة المطلوبة غير مدعومة.", "Requested ride status is not supported."],
+    unauthorized: ["صلاحية جلسة الكابتن غير صالحة. أعد الدخول من مدخل الكابتن التطويري.", "Captain session permission is invalid. Sign in again from driver dev login."]
   };
   const mapped = messages[code];
   if (mapped) return isArabic ? mapped[0] : mapped[1];
   return isArabic
     ? (error?.payload?.messageAr || fallbackAr)
     : (error?.payload?.message || error?.message || fallbackEn);
+}
+
+function driverQueryErrorIntro(error, isArabic) {
+  if (isAuthApiError(error)) {
+    return isArabic ? "صلاحية دخول الكابتن غير صالحة: " : "Captain session permission is invalid: ";
+  }
+  if (isNetworkApiError(error)) {
+    return isArabic ? "تعذر الاتصال بواجهات الكابتن: " : "Unable to reach driver APIs: ";
+  }
+  return isArabic ? "تعذر تحميل بيانات الكابتن: " : "Unable to load captain data: ";
 }
 
 function DriverSectionFallback({ isArabic }) {
@@ -169,6 +181,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     : paymentsData.driverEarnings.transactions || [];
   const todayEarnings = earningsSummary.todayEarnings ?? completedTrips.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
   const totalEarnings = earningsSummary.totalEarnings ?? todayEarnings;
+  const lastDriverApiError = driverData.queryError || driverData.mutationError || null;
 
   useEffect(() => {
     return () => {
@@ -248,6 +261,18 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   }
 
   function stopLiveTracking(reason = "driver-stopped-tracking") {
+    if (watchIdRef.current === null && liveTrackingStatus !== "active" && liveTrackingStatus !== "requesting") {
+      dispatch({
+        type: "patch",
+        patch: {
+          liveTrackingStatus: "idle",
+          liveTrackingError: "",
+          toast: isArabic ? "التتبع المباشر غير مفعل حاليًا." : "Live tracking is not active."
+        }
+      });
+      setTrackingMessage(isArabic ? "التتبع غير مفعل حاليًا." : "Tracking is not active right now.");
+      return;
+    }
     if (watchIdRef.current !== null && "geolocation" in navigator) {
       navigator.geolocation.clearWatch(watchIdRef.current);
       watchIdRef.current = null;
@@ -334,6 +359,8 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           toast: isArabic ? "تم قبول الرحلة ونقلها إلى رحلتي الحالية." : "Ride accepted and moved to your current ride."
         }
       });
+      driverData.refetchAvailableRides();
+      driverData.refetchMyRides();
     } catch (error) {
       dispatch({
         type: "toast",
@@ -361,6 +388,8 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         paymentsData.refetchDriverEarnings();
         paymentsData.refetchDriverWalletTransactions();
       }
+      driverData.refetchAvailableRides();
+      driverData.refetchMyRides();
     } catch (error) {
       dispatch({
         type: "toast",
@@ -392,7 +421,14 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           <button className={state.driverOnline ? "secondary danger-soft" : "primary"} onClick={handleToggleOnline} disabled={!driverId || !isDriverActive || driverData.isMutating}>
             {state.driverOnline ? t.goOffline : t.goOnline}
           </button>
-          <button className="secondary" onClick={() => driverData.refetchAvailableRides()} disabled={driverData.isAvailableLoading}>
+          <button
+            className="secondary"
+            onClick={() => {
+              driverData.refetchAvailableRides();
+              driverData.refetchMyRides();
+            }}
+            disabled={driverData.isAvailableLoading || driverData.isMyRidesLoading}
+          >
             {isArabic ? "تحديث الطلبات" : "Refresh requests"}
           </button>
           <span className={state.realtimeConnected ? "realtime-status-pill live" : "realtime-status-pill fallback"}>
@@ -410,6 +446,21 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         <Metric label={t.rating} value={driver.rating} />
         <Metric label={isArabic ? "مكتملة" : "Completed"} value={completedTrips.length} />
       </section>
+
+      {import.meta.env.DEV && (
+        <details className="driver-debug-panel">
+          <summary>{isArabic ? "تشخيص الاتصال" : "Connection diagnostics"}</summary>
+          <div>
+            <span>backend: <strong>{driverData.queryError ? "query-error" : "reachable-or-idle"}</strong></span>
+            <span>driverId: <strong>{driverId || "-"}</strong></span>
+            <span>role: <strong>{state.role || "-"}</strong></span>
+            <span>token: <strong>{state.token ? "exists" : "missing"}</strong></span>
+            <span>available: <strong>{availableRides.length}</strong></span>
+            <span>myRides: <strong>{driverRides.length}</strong></span>
+            <span>lastError: <strong>{lastDriverApiError?.code || lastDriverApiError?.kind || "-"}</strong></span>
+          </div>
+        </details>
+      )}
 
       <section className="driver-earnings-card">
         <PanelTitle
@@ -452,7 +503,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         <PanelTitle title={isArabic ? "الرحلات المتاحة" : "Available rides"} meta={driverData.isAvailableLoading ? (isArabic ? "تحميل" : "Loading") : `${availableRides.length}`} />
         {driverData.queryError && (
           <p className="driver-panel-error">
-            {isArabic ? "تعذر الاتصال بواجهات الكابتن: " : "Unable to reach driver APIs: "}
+            {driverQueryErrorIntro(driverData.queryError, isArabic)}
             {driverOperationError(driverData.queryError, isArabic, "تحقق من السيرفر أو صلاحية دخول الكابتن.", "Check the backend or driver session.")}
           </p>
         )}
@@ -543,13 +594,15 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
               ) : (
                 <span className="driver-completed-note">{isArabic ? "تم إنهاء الرحلة" : "Ride completed"}</span>
               )}
-              <button
-                className="secondary danger-soft"
-                onClick={() => handleUpdateRideStatus(RIDE_STATUSES.cancelled)}
-                disabled={currentRide.status !== RIDE_STATUSES.accepted || driverData.isMutating}
-              >
-                {isArabic ? "إلغاء" : "Cancel"}
-              </button>
+              {currentRide.status === RIDE_STATUSES.accepted && (
+                <button
+                  className="secondary danger-soft"
+                  onClick={() => handleUpdateRideStatus(RIDE_STATUSES.cancelled)}
+                  disabled={driverData.isMutating}
+                >
+                  {isArabic ? "إلغاء" : "Cancel"}
+                </button>
+              )}
             </div>
           </div>
         ) : (

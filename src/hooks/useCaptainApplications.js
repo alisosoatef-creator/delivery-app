@@ -39,8 +39,8 @@ export function useCaptainApplications({ enabled = true } = {}) {
     }
   });
 
-  const backendError =
-    applicationsQuery.error ||
+  const queryError = applicationsQuery.error || null;
+  const mutationError =
     createMutation.error ||
     approveMutation.error ||
     rejectMutation.error ||
@@ -50,7 +50,9 @@ export function useCaptainApplications({ enabled = true } = {}) {
     applications: applicationsQuery.data || [],
     isLoading: applicationsQuery.isLoading,
     isFetching: applicationsQuery.isFetching,
-    backendError,
+    backendError: queryError,
+    queryError,
+    mutationError,
     createApplication: createMutation.mutateAsync,
     approveApplication: approveMutation.mutateAsync,
     rejectApplication: rejectMutation.mutateAsync,

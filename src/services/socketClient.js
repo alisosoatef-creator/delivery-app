@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 import { appConfig } from "../config/appConfig.js";
-import { getSessionRole, getSessionToken } from "./sessionToken.js";
+import { getSessionContext, getSessionRole, getSessionToken } from "./sessionToken.js";
 
 const RIDE_EVENTS = [
   "ride:created",
@@ -27,13 +27,16 @@ const ADMIN_EVENTS = [
 let socket = null;
 
 export function connectSocket({ customerId = "", customerPhone = "", driverId = "", rideId = "", isAdmin = false, onConnectionChange } = {}) {
+  const sessionContext = getSessionContext();
   if (!socket) {
     socket = io(appConfig.socketUrl || "/", {
       path: "/socket.io",
       autoConnect: false,
       auth: {
         token: getSessionToken(),
-        role: getSessionRole()
+        role: getSessionRole(),
+        driverId: sessionContext.driverId || driverId,
+        phone: sessionContext.phone || customerPhone
       },
       reconnectionAttempts: 3,
       timeout: 3000,
@@ -44,7 +47,12 @@ export function connectSocket({ customerId = "", customerPhone = "", driverId = 
   socket.off("connect");
   socket.off("disconnect");
   socket.off("connect_error");
-  socket.auth = { token: getSessionToken(), role: getSessionRole() };
+  socket.auth = {
+    token: getSessionToken(),
+    role: getSessionRole(),
+    driverId: sessionContext.driverId || driverId,
+    phone: sessionContext.phone || customerPhone
+  };
 
   socket.on("connect", () => {
     onConnectionChange?.(true);

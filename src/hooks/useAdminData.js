@@ -107,7 +107,7 @@ export function useAdminData({ enabled = true } = {}) {
     }
   });
 
-  const backendError =
+  const queryError =
     dashboardQuery.error ||
     customersQuery.error ||
     driversQuery.error ||
@@ -115,6 +115,9 @@ export function useAdminData({ enabled = true } = {}) {
     supportQuery.error ||
     pricingQuery.error ||
     settingsQuery.error ||
+    null;
+
+  const mutationError =
     updateCustomerStatusMutation.error ||
     updateDriverStatusMutation.error ||
     closeSupportTicketMutation.error ||
@@ -140,7 +143,9 @@ export function useAdminData({ enabled = true } = {}) {
       supportQuery.isLoading ||
       pricingQuery.isLoading ||
       settingsQuery.isLoading,
-    backendError,
+    backendError: queryError,
+    queryError,
+    mutationError,
     updateCustomerStatusRemote: updateCustomerStatusMutation.mutateAsync,
     updateDriverStatusRemote: updateDriverStatusMutation.mutateAsync,
     closeSupportTicketRemote: closeSupportTicketMutation.mutateAsync,
