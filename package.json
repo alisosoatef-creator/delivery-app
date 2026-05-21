@@ -12,6 +12,9 @@
     "api:check": "node scripts/backend-smoke.mjs",
     "build": "vite build",
     "preview": "vite preview",
+    "mobile:install": "npm --prefix mobile install",
+    "mobile:start": "npm --prefix mobile run start",
+    "mobile:check": "npm --prefix mobile run check",
     "verify": "npm run build && npm run check && npm run api:check"
   },
   "dependencies": {

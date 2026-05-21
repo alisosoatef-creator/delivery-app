@@ -10,7 +10,7 @@ export default function Layout() {
         contentStyle: { backgroundColor: "#06070a" }
       }}
     >
-      <Stack.Screen name="index" options={{ title: "واصل" }} />
+      <Stack.Screen name="index" options={{ title: "وصل" }} />
     </Stack>
   );
 }

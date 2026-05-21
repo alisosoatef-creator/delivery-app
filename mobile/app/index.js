@@ -1,5 +1,5 @@
-import WaselMobileApp from "../components/wasel-mobile-app";
+import App from "../src/App";
 
 export default function HomeScreen() {
-  return <WaselMobileApp />;
+  return <App />;
 }
