@@ -16,7 +16,7 @@ export function LocationPicker({
   routeStatus,
   selectedMapPoint
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const routeLabel =
     routeStatus === "loading"
       ? isArabic ? "جاري حساب المسار..." : "Calculating route..."
@@ -69,8 +69,8 @@ export function LocationPicker({
       </div>
       <p>
         {selectedMapPoint
-          ? (isArabic ? "تم اختيار نقطة على الخريطة. يمكنك تثبيتها كنقطة انطلاق أو وجهة." : "A map point is selected. Set it as pickup or destination.")
-          : (isArabic ? "اضغط على الخريطة لتحديد نقطة الانطلاق، ثم اضغط مرة ثانية لتحديد الوجهة." : "Click the map to set pickup first, then click again to set destination.")}
+          ? (isArabic ? "تم اختيار نقطة من الخريطة." : "A map point is selected.")
+          : (isArabic ? "الضغط على الخريطة خيار متقدم فقط." : "Map click is an advanced option only.")}
       </p>
       </div>
     </div>

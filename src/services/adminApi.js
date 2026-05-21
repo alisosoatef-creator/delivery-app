@@ -1,4 +1,4 @@
-import { apiGet, apiPatch } from "./apiClient.js";
+import { apiGet, apiPatch, apiPost } from "./apiClient.js";
 
 export async function fetchAdminDashboard() {
   const payload = await apiGet("/admin/dashboard");
@@ -35,4 +35,8 @@ export async function fetchAdminSettings() {
 
 export function updateAdminSettings(patch) {
   return apiPatch("/admin/settings", patch);
+}
+
+export function cleanupAdminRecords(payload) {
+  return apiPost("/admin/maintenance/cleanup", payload);
 }

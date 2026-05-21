@@ -47,13 +47,18 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] })
   });
 
-  const backendError =
+  const queryError =
     availableRidesQuery.error ||
     driverRidesQuery.error ||
+    null;
+
+  const mutationError =
     acceptRideMutation.error ||
     updateRideStatusMutation.error ||
     updateOnlineStatusMutation.error ||
     null;
+
+  const backendError = queryError || mutationError;
 
   return {
     availableRides: availableRidesQuery.data || [],
@@ -62,6 +67,8 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
     isAvailableLoading: availableRidesQuery.isLoading,
     isMyRidesLoading: driverRidesQuery.isLoading,
     backendError,
+    queryError,
+    mutationError,
     refetchAvailableRides: availableRidesQuery.refetch,
     refetchMyRides: driverRidesQuery.refetch,
     acceptRide: acceptRideMutation.mutateAsync,

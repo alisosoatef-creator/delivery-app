@@ -7,20 +7,18 @@ import {
   estimatePickupDestinationDistance,
   formatDistanceKm,
   haversineKm,
-  mapLocationCopy,
   normalizeLocation
 } from "../../utils/mapUtils.js";
 import { fetchRoute } from "../../utils/routeUtils.js";
-import { driverDisplayName } from "../../utils/rideUtils.js";
 import { LocationPicker } from "./LocationPicker.jsx";
 import { RideMap } from "./RideMap.jsx";
 
 function mapPointLabel(kind, point, isArabic) {
-  const coordinates = `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
+  void point;
   if (kind === "pickup") {
-    return isArabic ? `نقطة محددة على الخريطة (${coordinates})` : `Map pickup point (${coordinates})`;
+    return isArabic ? "نقطة انطلاق محددة من الخريطة" : "Pickup selected on map";
   }
-  return isArabic ? `وجهة محددة على الخريطة (${coordinates})` : `Map destination point (${coordinates})`;
+  return isArabic ? "وجهة محددة من الخريطة" : "Destination selected on map";
 }
 
 export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArabic, showDrivers = true }) {
@@ -59,7 +57,6 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
   const routeSource = state.routeInfo?.routeSource || (pickupDestinationDistanceKm ? "haversine" : "none");
   const routeStatus = state.routeStatus || "idle";
   const locationStatus = state.locationStatus || "default";
-  const locationHint = mapLocationCopy(locationStatus, isArabic);
   void mapRef;
   void mapInstanceRef;
   void customerMarkerRef;
@@ -106,8 +103,8 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
   }, [dispatch, state.cityId]);
 
   function routePickupLabel(point) {
-    const coordinates = `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
-    return isArabic ? `نقطة الانطلاق (${coordinates})` : `Pickup point (${coordinates})`;
+    void point;
+    return isArabic ? "موقعي الحالي / نقطة الانطلاق" : "My current location / pickup";
   }
 
   function applyMapPoint(kind, point = selectedMapPoint || cityCenter) {
@@ -238,38 +235,19 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
           {isArabic ? "تحتاج خرائط OpenStreetMap إلى إنترنت لتحميل البلاطات. ستبقى نقاطك محفوظة حتى يعود الاتصال." : "OpenStreetMap tiles need internet. Your selected points remain available until the map loads again."}
         </p>
       )}
-      <div className="map-sheet real-map-sheet">
-        <span>{showDrivers ? (isArabic ? "تتبع الكابتن" : "Captain tracking") : (isArabic ? "معاينة المسار" : "Route preview")}</span>
-        <strong>{driver ? driverDisplayName(driver, isArabic) : cityName}</strong>
-        <div className="map-route-summary">
-          <small>{state.pickup}</small>
-          <small>{state.dropoff}</small>
-          {routeStatus === "loading" && (
-            <small>{isArabic ? "جاري حساب مسار الطرق..." : "Calculating road route..."}</small>
-          )}
-          {routeDistanceKm !== null && (
-            <small>
-              {routeSource === "osrm" ? (isArabic ? "المسافة عبر الطرق" : "Road distance") : (isArabic ? "المسافة التقديرية الخطية" : "Straight-line fallback distance")}: {formatDistanceKm(routeDistanceKm)} km
-            </small>
-          )}
-          {durationMinutes !== null && (
-            <small>{isArabic ? "الوقت المتوقع" : "ETA"}: {durationMinutes} min</small>
-          )}
-          {driverDistanceKm !== null && (
-            <small>
-              {state.role === "driver"
-                ? (isArabic ? "المسافة إلى الزبون" : "Distance to customer")
-                : (isArabic ? "المسافة بينك وبين الكابتن" : "Distance between you and captain")}: {formatDistanceKm(driverDistanceKm)} km
-            </small>
-          )}
-          {showDrivers && !driverLocation && (
-            <small className="route-warning">{isArabic ? "الكابتن لم يفعل التتبع المباشر بعد." : "Captain live tracking is not active yet."}</small>
-          )}
-          <small className={`location-hint ${locationStatus}`}>{locationHint}</small>
-          {routeStatus === "fallback" && (
-            <small className="route-warning">{isArabic ? "تعذر حساب مسار الطرق، تم استخدام تقدير خطي." : "Road routing failed, using straight-line fallback."}</small>
-          )}
-        </div>
+      <div className="map-sheet real-map-sheet compact-map-distance-badge">
+        {driverDistanceKm !== null ? (
+          <strong>
+            {state.role === "driver" ? (isArabic ? "إلى الزبون" : "To customer") : (isArabic ? "الكابتن" : "Captain")}: {formatDistanceKm(driverDistanceKm)} km
+          </strong>
+        ) : routeDistanceKm !== null ? (
+          <strong>{formatDistanceKm(routeDistanceKm)} km</strong>
+        ) : (
+          <strong>{routeStatus === "loading" ? (isArabic ? "حساب المسافة" : "Calculating") : cityName}</strong>
+        )}
+        {showDrivers && !driverLocation && (
+          <small>{isArabic ? "بانتظار تفعيل موقع الكابتن المباشر." : "Waiting for captain live location."}</small>
+        )}
       </div>
     </div>
   );

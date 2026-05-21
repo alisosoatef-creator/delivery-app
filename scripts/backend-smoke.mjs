@@ -632,6 +632,35 @@ try {
   const persistedSettings = await request("/api/admin/settings");
   assert(persistedSettings.settings.appName === "Wasel Smoke", "settings update should persist after server restart");
 
+  const cleanupCancelled = await request("/api/admin/maintenance/cleanup", {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ type: "cancelledRides" })
+  });
+  assert(cleanupCancelled.success === true, "cleanup cancelled rides should succeed");
+  assert(cleanupCancelled.deletedCounts?.rides >= 1, "cleanup cancelled rides should delete cancelled ride records");
+
+  const cleanupCompleted = await request("/api/admin/maintenance/cleanup", {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ type: "completedRides" })
+  });
+  assert(cleanupCompleted.success === true, "cleanup completed rides should succeed");
+  assert(cleanupCompleted.deletedCounts?.rides >= 1, "cleanup completed rides should delete completed ride records");
+
+  const cleanupConfirmRejected = await requestRaw("/api/admin/maintenance/cleanup", {
+    method: "POST",
+    headers: adminHeaders,
+    body: JSON.stringify({ type: "allDemoData" })
+  });
+  assert(cleanupConfirmRejected.response.status === 400, "all demo data cleanup should require strong confirmation");
+
+  const driversAfterCleanup = await request("/api/admin/drivers", { headers: adminHeaders });
+  assert(
+    driversAfterCleanup.drivers.some((driver) => driver.applicationId === applicationId),
+    "cleanup should not delete users or approved drivers"
+  );
+
   console.log("backend-smoke-ok");
 } finally {
   if (socket) socket.close();

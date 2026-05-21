@@ -2832,6 +2832,114 @@ small,
   filter: drop-shadow(0 0 8px rgba(201, 145, 47, .32));
 }
 
+.compact-map-distance-badge {
+  display: inline-grid;
+  gap: 2px;
+  width: auto;
+  min-width: 108px;
+  max-width: 230px;
+  border-radius: 999px;
+  padding: 9px 13px;
+}
+
+.compact-map-distance-badge strong,
+.compact-map-distance-badge small {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact-map-distance-badge small {
+  font-size: 11px;
+  color: rgba(247, 242, 232, .74);
+}
+
+.driver-completed-note {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid rgba(14, 159, 110, .22);
+  border-radius: 999px;
+  background: rgba(14, 159, 110, .1);
+  color: var(--green);
+  padding: 0 var(--space-3);
+  font-weight: 950;
+}
+
+.records-cleanup-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.records-cleanup-card {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  padding: var(--space-4);
+}
+
+.records-cleanup-card.allDemoData {
+  border-color: rgba(220, 63, 93, .28);
+  background: linear-gradient(145deg, rgba(220, 63, 93, .08), var(--surface-raised));
+}
+
+.records-cleanup-card h3,
+.records-cleanup-card p,
+.records-cleanup-message,
+.records-cleanup-error {
+  margin: 0;
+}
+
+.records-cleanup-card p,
+.records-cleanup-message,
+.records-cleanup-error {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.records-cleanup-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.records-cleanup-counts span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+  padding: 8px 11px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.records-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 17, 26, .42);
+  padding: var(--space-4);
+  backdrop-filter: blur(10px);
+}
+
+.records-confirm-modal {
+  display: grid;
+  gap: var(--space-3);
+  width: min(480px, 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+  box-shadow: var(--shadow-lift);
+  padding: var(--space-5);
+}
+
 @keyframes routePulse {
   0%,
   100% {
@@ -6506,7 +6614,8 @@ textarea:focus-visible,
   }
 
   .ride-step-hint,
-  .location-result-card {
+  .location-result-card,
+  .records-cleanup-grid {
     grid-template-columns: 1fr;
   }
 

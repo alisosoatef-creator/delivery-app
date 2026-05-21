@@ -2,7 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, DataTable, EmptyState, Input, SectionHeader, Select } from "../../components/ui/index.js";
 import { ADMIN_TEAM_ROLES, formatDate, statusLabel, textFor } from "./adminFormatters.js";
 
-const SETTINGS_TABS = ["general", "pricing", "payments", "support", "security", "team"];
+const SETTINGS_TABS = ["general", "pricing", "payments", "support", "security", "team", "records"];
+const CLEANUP_ACTIONS = [
+  { type: "completedRides", tone: "info", ar: "حذف الرحلات المكتملة", en: "Delete completed rides" },
+  { type: "cancelledRides", tone: "warning", ar: "حذف الرحلات الملغية", en: "Delete cancelled rides" },
+  { type: "closedSupportTickets", tone: "info", ar: "حذف تذاكر الدعم المغلقة", en: "Delete closed support tickets" },
+  { type: "demoPayments", tone: "warning", ar: "حذف المدفوعات التجريبية فقط", en: "Delete demo payments only" },
+  { type: "allDemoData", tone: "danger", ar: "حذف كل بيانات الاختبار", en: "Reset all demo data" }
+];
 
 function normalizeSettings(settings) {
   return {
@@ -34,14 +41,18 @@ function tabLabel(tab, isArabic) {
     payments: textFor(isArabic, "الدفع", "Payments"),
     support: textFor(isArabic, "الدعم", "Support"),
     security: textFor(isArabic, "الأمان", "Security"),
-    team: textFor(isArabic, "الفريق", "Team")
+    team: textFor(isArabic, "الفريق", "Team"),
+    records: textFor(isArabic, "إدارة السجلات", "Records")
   }[tab];
 }
 
-export function AdminSettings({ state, adminSettings, updateSystemSettings, updatePricingRule, adminMutating, isArabic, placeholder, pricingRules = [], cityName }) {
+export function AdminSettings({ state, adminSettings, updateSystemSettings, updatePricingRule, cleanupRecords, cleanupResult, cleanupError, adminMutating, isArabic, placeholder, pricingRules = [], cityName }) {
   const [activeTab, setActiveTab] = useState("general");
   const [draft, setDraft] = useState(() => normalizeSettings(adminSettings));
   const [pricingDrafts, setPricingDrafts] = useState(() => buildPricingDrafts(pricingRules));
+  const [cleanupCandidate, setCleanupCandidate] = useState(null);
+  const [cleanupConfirm, setCleanupConfirm] = useState("");
+  const [cleanupStatus, setCleanupStatus] = useState("");
   const pricingKey = useMemo(() => pricingRules.map((rule) => `${rule.cityId}:${rule.updatedAt}:${rule.isActive}`).join("|"), [pricingRules]);
 
   useEffect(() => {
@@ -71,6 +82,32 @@ export function AdminSettings({ state, adminSettings, updateSystemSettings, upda
     { id: "admin", name: "Admin Manager", role: "admin", status: "active", lastActivity: "Placeholder" },
     { id: "support", name: "Support Desk", role: "support", status: "active", lastActivity: "Placeholder" }
   ];
+
+  async function confirmCleanup() {
+    if (!cleanupCandidate) return;
+    const requiresStrongConfirm = cleanupCandidate.type === "allDemoData";
+    if (requiresStrongConfirm && cleanupConfirm !== "RESET_DEMO_DATA") {
+      setCleanupStatus(isArabic ? "اكتب RESET_DEMO_DATA لتأكيد حذف بيانات الاختبار." : "Type RESET_DEMO_DATA to confirm demo data reset.");
+      return;
+    }
+    try {
+      const result = await cleanupRecords?.({
+        type: cleanupCandidate.type,
+        confirm: requiresStrongConfirm ? cleanupConfirm : "CONFIRM"
+      });
+      const counts = result?.deletedCounts || {};
+      const total = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+      setCleanupStatus(isArabic ? `تم حذف ${total} عنصر من السجلات.` : `${total} records deleted.`);
+      setCleanupCandidate(null);
+      setCleanupConfirm("");
+    } catch (error) {
+      setCleanupStatus(
+        isArabic
+          ? (error?.payload?.messageAr || "تعذر تنظيف السجلات الآن.")
+          : (error?.payload?.message || error?.message || "Unable to clean records now.")
+      );
+    }
+  }
 
   return (
     <section className="admin-panel admin-advanced-section admin-settings-advanced">
@@ -220,6 +257,66 @@ export function AdminSettings({ state, adminSettings, updateSystemSettings, upda
               </div>
             )}
           />
+        </div>
+      )}
+
+      {activeTab === "records" && (
+        <div className="admin-settings-tab-panel admin-records-cleanup-panel">
+          <SectionHeader
+            title={textFor(isArabic, "إدارة السجلات", "Records cleanup")}
+            description={textFor(isArabic, "أدوات إدارية آمنة لتنظيف سجلات التطوير فقط. لا يتم حذف المستخدمين أو الكباتن أو الأسعار أو الإعدادات.", "Safe admin tools for development records only. Users, drivers, pricing, and settings are not deleted.")}
+            meta={textFor(isArabic, "Development only", "Development only")}
+          />
+          <div className="records-cleanup-grid">
+            {CLEANUP_ACTIONS.map((action) => (
+              <article className={`records-cleanup-card ${action.type}`} key={action.type}>
+                <Badge tone={action.tone}>{action.type}</Badge>
+                <h3>{isArabic ? action.ar : action.en}</h3>
+                <p>
+                  {action.type === "allDemoData"
+                    ? textFor(isArabic, "يتطلب تأكيد RESET_DEMO_DATA ولا يحذف المستخدمين أو الكباتن أو الإعدادات.", "Requires RESET_DEMO_DATA confirmation and does not delete users, drivers, or settings.")
+                    : textFor(isArabic, "سيتم حذف هذا النوع المحدد فقط من السجلات.", "Only this specific record type will be removed.")}
+                </p>
+                <Button variant={action.type === "allDemoData" ? "danger" : "secondary"} size="sm" onClick={() => setCleanupCandidate(action)} disabled={adminMutating}>
+                  {textFor(isArabic, "تنظيف", "Clean")}
+                </Button>
+              </article>
+            ))}
+          </div>
+          {cleanupStatus && <p className="records-cleanup-message">{cleanupStatus}</p>}
+          {cleanupError && <p className="records-cleanup-error">{textFor(isArabic, "تعذر تنفيذ آخر عملية تنظيف.", "Last cleanup failed.")}</p>}
+          {cleanupResult?.deletedCounts && (
+            <div className="records-cleanup-counts">
+              {Object.entries(cleanupResult.deletedCounts).map(([key, value]) => (
+                <span key={key}>{key}: <strong>{value}</strong></span>
+              ))}
+            </div>
+          )}
+          {cleanupCandidate && (
+            <div className="records-confirm-backdrop" role="dialog" aria-modal="true" aria-label={textFor(isArabic, "تأكيد تنظيف السجلات", "Confirm records cleanup")}>
+              <div className="records-confirm-modal">
+                <Badge tone={cleanupCandidate.tone}>{textFor(isArabic, "تأكيد مطلوب", "Confirmation required")}</Badge>
+                <h3>{isArabic ? cleanupCandidate.ar : cleanupCandidate.en}</h3>
+                <p>{textFor(isArabic, "هذه العملية إدارية ومخصصة للتطوير. لن يتم حذف المستخدمين أو الكباتن أو الإعدادات.", "This is an admin development action. Users, drivers, and settings will not be deleted.")}</p>
+                {cleanupCandidate.type === "allDemoData" && (
+                  <Input
+                    label="RESET_DEMO_DATA"
+                    value={cleanupConfirm}
+                    onChange={(event) => setCleanupConfirm(event.target.value)}
+                    placeholder="RESET_DEMO_DATA"
+                  />
+                )}
+                <div className="admin-action-row">
+                  <Button variant="secondary" onClick={() => { setCleanupCandidate(null); setCleanupConfirm(""); }}>
+                    {textFor(isArabic, "إلغاء", "Cancel")}
+                  </Button>
+                  <Button variant="danger" onClick={confirmCleanup} disabled={adminMutating}>
+                    {textFor(isArabic, "تأكيد التنظيف", "Confirm cleanup")}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </section>

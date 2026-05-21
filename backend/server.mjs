@@ -10,6 +10,7 @@ import {
   createOtpCode,
   databaseInfo,
   adminPaymentsOverview,
+  cleanupAdminRecords,
   deleteSavedPaymentMethod,
   driverEarnings,
   ensurePaymentForRide,
@@ -80,6 +81,7 @@ const port = backendConfig.port;
 const host = backendConfig.host;
 const authConfig = { demoOtpCode: backendConfig.demoOtpCode };
 const sseClients = new Set();
+const CLEANUP_TYPES = new Set(["completedRides", "cancelledRides", "closedSupportTickets", "demoPayments", "allDemoData"]);
 
 // approvedCaptains now live in the persistent drivers table after application approval.
 
@@ -939,6 +941,35 @@ async function handleApi(request, response) {
 
   if (request.method === "GET" && url.pathname === "/api/admin/settings") {
     sendJson(response, 200, { settings: getSystemSettings() });
+    return;
+  }
+
+  if (request.method === "POST" && url.pathname === "/api/admin/maintenance/cleanup") {
+    const body = await readJson(request);
+    const type = String(body.type || "").trim();
+    if (!CLEANUP_TYPES.has(type)) {
+      sendJson(response, 400, {
+        error: "invalid_cleanup_type",
+        message: "Unsupported cleanup type.",
+        messageAr: "نوع تنظيف السجلات غير مدعوم."
+      });
+      return;
+    }
+    if (type === "allDemoData" && body.confirm !== "RESET_DEMO_DATA") {
+      sendJson(response, 400, {
+        error: "cleanup_confirmation_required",
+        message: "RESET_DEMO_DATA confirmation is required.",
+        messageAr: "يجب كتابة RESET_DEMO_DATA لتأكيد حذف بيانات الاختبار."
+      });
+      return;
+    }
+    const deletedCounts = cleanupAdminRecords(type);
+    sendJson(response, 200, {
+      success: true,
+      deletedCounts,
+      message: "Cleanup completed without deleting users, drivers, pricing, or settings.",
+      messageAr: "تم تنظيف السجلات بدون حذف المستخدمين أو الكباتن أو الأسعار أو الإعدادات."
+    });
     return;
   }
 

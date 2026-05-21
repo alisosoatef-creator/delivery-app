@@ -90,10 +90,13 @@ Approving a captain application changes its status to `approved` and creates a l
 - `PATCH /api/admin/pricing/:cityId`
 - `GET /api/admin/settings`
 - `PATCH /api/admin/settings`
+- `POST /api/admin/maintenance/cleanup`
 - `GET /api/admin/dashboard`
 - `GET /api/admin/overview`
 
 Admin writes are persisted in SQLite for development. API authorization is still a development TODO.
+Maintenance cleanup accepts `{ "type": "completedRides" | "cancelledRides" | "closedSupportTickets" | "demoPayments" | "allDemoData" }`.
+`allDemoData` also requires `{ "confirm": "RESET_DEMO_DATA" }`. Cleanup never deletes users, drivers, pricing rules, or system settings.
 
 ## Rides
 

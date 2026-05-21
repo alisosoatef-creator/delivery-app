@@ -394,6 +394,33 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     }
   }
 
+  async function cleanupRecords(payload) {
+    try {
+      const result = await adminData.cleanupRecordsRemote(payload);
+      const counts = result?.deletedCounts || {};
+      const totalDeleted = Object.values(counts).reduce((sum, value) => sum + Number(value || 0), 0);
+      dispatch({
+        type: "patch",
+        patch: {
+          backendLive: true,
+          toast: isArabic ? `تم تنظيف السجلات. عدد العناصر المحذوفة: ${totalDeleted}.` : `Records cleaned. Deleted items: ${totalDeleted}.`
+        }
+      });
+      return result;
+    } catch (error) {
+      dispatch({
+        type: "patch",
+        patch: {
+          backendLive: false,
+          toast: isArabic
+            ? (error?.payload?.messageAr || "تعذر تنظيف السجلات عبر Backend.")
+            : (error?.payload?.message || error?.message || "Unable to clean records through Backend.")
+        }
+      });
+      throw error;
+    }
+  }
+
   function placeholder(messageAr, messageEn) {
     dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
   }
@@ -422,6 +449,9 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     closeSupportTicket,
     updatePricingRule,
     updateSystemSettings,
+    cleanupRecords,
+    cleanupResult: adminData.cleanupResult,
+    cleanupError: adminData.cleanupError,
     placeholder
   };
 

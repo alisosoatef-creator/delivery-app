@@ -139,12 +139,15 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
 
   const availableRides = driverData.availableRides.map((ride) => normalizeDriverRide(ride, state, isArabic));
   const driverRides = driverData.myRides.map((ride) => normalizeDriverRide(ride, state, isArabic));
-  const activeRemoteRide = driverRides.find((ride) => ACTIVE_DRIVER_RIDE_STATUSES.includes(ride.status));
   const activeLocalRide =
     state.ride?.driverId === driverId && ACTIVE_DRIVER_RIDE_STATUSES.includes(state.ride.status)
       ? normalizeDriverRide(state.ride, state, isArabic)
       : null;
-  const currentRide = activeRemoteRide || activeLocalRide || null;
+  const activeRemoteRide = driverRides.find((ride) => ACTIVE_DRIVER_RIDE_STATUSES.includes(ride.status));
+  const currentRide = activeLocalRide || activeRemoteRide || null;
+  const nextStatusAction = currentRide
+    ? DRIVER_STATUS_ACTIONS.find((action) => action.from === currentRide.status)
+    : null;
   const canTrackCurrentRide = Boolean(currentRide?.id && driverId && ACTIVE_DRIVER_RIDE_STATUSES.includes(currentRide.status));
   const liveTrackingStatus = state.liveTrackingStatus || "idle";
   const liveTrackingLabel =
@@ -447,8 +450,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
 
       <section className="driver-requests-card">
         <PanelTitle title={isArabic ? "الرحلات المتاحة" : "Available rides"} meta={driverData.isAvailableLoading ? (isArabic ? "تحميل" : "Loading") : `${availableRides.length}`} />
-        {driverData.backendError && (
-          <p className="driver-panel-error">{isArabic ? "تعذر الاتصال بواجهات الكابتن. البيانات لا تُحدّث الآن." : "Unable to reach driver APIs. Data is not updating now."}</p>
+        {driverData.queryError && (
+          <p className="driver-panel-error">
+            {isArabic ? "تعذر الاتصال بواجهات الكابتن: " : "Unable to reach driver APIs: "}
+            {driverOperationError(driverData.queryError, isArabic, "تحقق من السيرفر أو صلاحية دخول الكابتن.", "Check the backend or driver session.")}
+          </p>
         )}
         {availableRides.length ? (
           <div className="driver-request-list">
@@ -525,16 +531,18 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
               </div>
             </div>
             <div className="driver-action-row driver-status-actions">
-              {DRIVER_STATUS_ACTIONS.map((action) => (
+              {nextStatusAction ? (
                 <button
-                  className={currentRide.status === action.from ? "primary" : "secondary"}
-                  key={action.next}
-                  onClick={() => handleUpdateRideStatus(action.next)}
-                  disabled={currentRide.status !== action.from || driverData.isMutating}
+                  className="primary"
+                  key={nextStatusAction.next}
+                  onClick={() => handleUpdateRideStatus(nextStatusAction.next)}
+                  disabled={driverData.isMutating}
                 >
-                  {isArabic ? action.labelAr : action.labelEn}
+                  {isArabic ? nextStatusAction.labelAr : nextStatusAction.labelEn}
                 </button>
-              ))}
+              ) : (
+                <span className="driver-completed-note">{isArabic ? "تم إنهاء الرحلة" : "Ride completed"}</span>
+              )}
               <button
                 className="secondary danger-soft"
                 onClick={() => handleUpdateRideStatus(RIDE_STATUSES.cancelled)}

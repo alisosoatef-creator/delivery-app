@@ -93,10 +93,11 @@ export function RideMap({
   isArabic,
   showDrivers
 }) {
+  const shouldShowPickupDestinationLine = !showDrivers || !driverLocation;
   const pickupDestinationLine =
-    routeCoordinates?.length > 1
+    shouldShowPickupDestinationLine && routeCoordinates?.length > 1
       ? routeCoordinates
-      : pickupLocation && destinationLocation
+      : shouldShowPickupDestinationLine && pickupLocation && destinationLocation
         ? [pickupLocation, destinationLocation]
         : null;
   const driverLine = showDrivers && driverLocation && driverAnchorLocation ? [driverLocation, driverAnchorLocation] : null;

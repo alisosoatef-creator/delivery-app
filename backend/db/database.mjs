@@ -1291,6 +1291,62 @@ export function adminPaymentsOverview() {
   };
 }
 
+function cleanupDelete(sql, ...params) {
+  const result = run(sql, ...params);
+  return Number(result?.changes || 0);
+}
+
+export function cleanupAdminRecords(type = "") {
+  const deletedCounts = {
+    rides: 0,
+    supportTickets: 0,
+    payments: 0,
+    walletTransactions: 0,
+    savedPaymentMethods: 0
+  };
+
+  if (type === "completedRides") {
+    deletedCounts.payments += cleanupDelete("DELETE FROM payments WHERE rideId IN (SELECT id FROM rides WHERE status = 'completed')");
+    deletedCounts.walletTransactions += cleanupDelete("DELETE FROM wallet_transactions WHERE referenceId IN (SELECT id FROM rides WHERE status = 'completed')");
+    deletedCounts.supportTickets += cleanupDelete("DELETE FROM support_tickets WHERE rideId IN (SELECT id FROM rides WHERE status = 'completed')");
+    deletedCounts.rides += cleanupDelete("DELETE FROM rides WHERE status = 'completed'");
+    return deletedCounts;
+  }
+
+  if (type === "cancelledRides") {
+    deletedCounts.payments += cleanupDelete("DELETE FROM payments WHERE rideId IN (SELECT id FROM rides WHERE status IN ('cancelled', 'canceled'))");
+    deletedCounts.walletTransactions += cleanupDelete("DELETE FROM wallet_transactions WHERE referenceId IN (SELECT id FROM rides WHERE status IN ('cancelled', 'canceled'))");
+    deletedCounts.supportTickets += cleanupDelete("DELETE FROM support_tickets WHERE rideId IN (SELECT id FROM rides WHERE status IN ('cancelled', 'canceled'))");
+    deletedCounts.rides += cleanupDelete("DELETE FROM rides WHERE status IN ('cancelled', 'canceled')");
+    return deletedCounts;
+  }
+
+  if (type === "closedSupportTickets") {
+    deletedCounts.supportTickets += cleanupDelete("DELETE FROM support_tickets WHERE status = 'closed'");
+    return deletedCounts;
+  }
+
+  if (type === "demoPayments") {
+    deletedCounts.walletTransactions += cleanupDelete(
+      "DELETE FROM wallet_transactions WHERE referenceType = 'payment' AND referenceId IN (SELECT id FROM payments WHERE provider = 'visa-placeholder' OR method = 'visa')"
+    );
+    deletedCounts.payments += cleanupDelete("DELETE FROM payments WHERE provider = 'visa-placeholder' OR method = 'visa'");
+    deletedCounts.savedPaymentMethods += cleanupDelete("DELETE FROM saved_payment_methods WHERE type = 'visa'");
+    return deletedCounts;
+  }
+
+  if (type === "allDemoData") {
+    deletedCounts.walletTransactions += cleanupDelete("DELETE FROM wallet_transactions");
+    deletedCounts.payments += cleanupDelete("DELETE FROM payments");
+    deletedCounts.savedPaymentMethods += cleanupDelete("DELETE FROM saved_payment_methods");
+    deletedCounts.supportTickets += cleanupDelete("DELETE FROM support_tickets");
+    deletedCounts.rides += cleanupDelete("DELETE FROM rides");
+    return deletedCounts;
+  }
+
+  return null;
+}
+
 export function adminOverview() {
   const activeRides = one("SELECT COUNT(*) AS count FROM rides WHERE status NOT IN ('completed', 'cancelled', 'canceled')").count;
   const todayRevenueIls = one("SELECT COALESCE(SUM(amount), 0) AS total FROM payments WHERE status = 'paid'").total;

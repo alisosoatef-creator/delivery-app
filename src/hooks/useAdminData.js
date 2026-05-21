@@ -5,6 +5,7 @@ import {
   fetchAdminDrivers,
   fetchAdminRides,
   fetchAdminSettings,
+  cleanupAdminRecords,
   updateAdminCustomerStatus,
   updateAdminDriverStatus,
   updateAdminSettings
@@ -94,6 +95,18 @@ export function useAdminData({ enabled = true } = {}) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "settings"] })
   });
 
+  const cleanupRecordsMutation = useMutation({
+    mutationFn: cleanupAdminRecords,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "rides"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "supportTickets"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "payments"] });
+      queryClient.invalidateQueries({ queryKey: ["customer", "rides"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "myRides"] });
+    }
+  });
+
   const backendError =
     dashboardQuery.error ||
     customersQuery.error ||
@@ -107,6 +120,7 @@ export function useAdminData({ enabled = true } = {}) {
     closeSupportTicketMutation.error ||
     updatePricingRuleMutation.error ||
     updateSystemSettingsMutation.error ||
+    cleanupRecordsMutation.error ||
     null;
 
   return {
@@ -132,11 +146,15 @@ export function useAdminData({ enabled = true } = {}) {
     closeSupportTicketRemote: closeSupportTicketMutation.mutateAsync,
     updatePricingRuleRemote: updatePricingRuleMutation.mutateAsync,
     updateSystemSettingsRemote: updateSystemSettingsMutation.mutateAsync,
+    cleanupRecordsRemote: cleanupRecordsMutation.mutateAsync,
+    cleanupResult: cleanupRecordsMutation.data || null,
+    cleanupError: cleanupRecordsMutation.error || null,
     isMutating:
       updateCustomerStatusMutation.isPending ||
       updateDriverStatusMutation.isPending ||
       closeSupportTicketMutation.isPending ||
       updatePricingRuleMutation.isPending ||
-      updateSystemSettingsMutation.isPending
+      updateSystemSettingsMutation.isPending ||
+      cleanupRecordsMutation.isPending
   };
 }

@@ -1341,7 +1341,7 @@ for (const fixRideMapUxToken of [
   "driver_ride_mismatch",
   "driverAnchorLocation",
   "driver-to-pickup-line",
-  "الكابتن لم يفعل التتبع المباشر بعد",
+  "بانتظار تفعيل موقع الكابتن المباشر",
   "fix-ride-map-ux",
   "location-result-card",
   "place search endpoint should return local West Bank fallback places",
@@ -1351,6 +1351,30 @@ for (const fixRideMapUxToken of [
   const combinedFixSource = `${appSource}\n${stylesSource}\n${backendSource}\n${backendSmokeSource}`;
   if (!combinedFixSource.includes(fixRideMapUxToken)) {
     throw new Error(`Ride scenario/map UX fix is missing: ${fixRideMapUxToken}`);
+  }
+}
+
+for (const driverFlowCleanupToken of [
+  "queryError",
+  "mutationError",
+  "nextStatusAction",
+  "driver-completed-note",
+  "Only searching rides can be accepted",
+  "compact-map-distance-badge",
+  "بانتظار تفعيل موقع الكابتن المباشر",
+  "cleanupAdminRecords",
+  'url.pathname === "/api/admin/maintenance/cleanup"',
+  "RESET_DEMO_DATA",
+  "AdminSettings",
+  "إدارة السجلات",
+  "records-cleanup-card",
+  "cleanup cancelled rides should succeed",
+  "cleanup completed rides should succeed",
+  "cleanup should not delete users or approved drivers"
+]) {
+  const combinedDriverCleanupSource = `${appSource}\n${stylesSource}\n${backendSource}\n${backendDatabaseSource}\n${backendSmokeSource}`;
+  if (!combinedDriverCleanupSource.includes(driverFlowCleanupToken)) {
+    throw new Error(`Driver flow/map/admin cleanup fix is missing: ${driverFlowCleanupToken}`);
   }
 }
 
@@ -1438,6 +1462,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/admin/support/tickets"',
   'url.pathname === "/api/admin/pricing"',
   'url.pathname === "/api/admin/settings"',
+  'url.pathname === "/api/admin/maintenance/cleanup"',
   'url.pathname === "/api/bootstrap"',
   'url.pathname === "/api/places/search"',
   'url.pathname === "/api/events"',
