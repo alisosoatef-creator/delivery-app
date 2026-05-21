@@ -126,6 +126,11 @@ New customer rides start with `status = "searching"` and do not include captain 
 
 Driver development login is limited to active approved captains in the local database. The driver ride status endpoint enforces the current development lifecycle: `accepted -> driver_arriving -> arrived -> in_progress -> completed`.
 
+Driver endpoints require the development driver context headers after login:
+`Authorization: Bearer <dev-driver-session-token>`, `X-Dev-Role: driver`, `X-Dev-Driver-Id: <drivers.id>`, and `X-Dev-Phone`.
+Unauthorized driver requests return specific errors: `auth_required`, `driver_role_required`, `missing_driver_context`, `driver_not_found`, or `driver_not_active`.
+In development, `GET /api/driver/available-rides` returns all `searching` rides for an active approved captain so Arabic/English city mismatches do not hide new ride requests during testing.
+
 ## Payments and Wallet
 
 - `GET /api/customer/wallet?phone=...&userId=...`

@@ -270,6 +270,21 @@ try {
     "admin drivers should include the approved active captain"
   );
 
+  const driverDevLogin = await request("/api/driver/dev-login", {
+    method: "POST",
+    headers: driverHeaders,
+    body: JSON.stringify({ driverId: approve.captain.id })
+  });
+  assert(driverDevLogin.token?.startsWith("dev-driver-session-token"), "driver dev login should return a development driver token");
+  assert(driverDevLogin.driver?.id === approve.captain.id, "driver dev login should return the selected approved captain");
+  assert(driverDevLogin.driver?.cityId === "nablus", "driver dev login should normalize captain city to a city id");
+  const activeDriverHeaders = {
+    Authorization: `Bearer ${driverDevLogin.token}`,
+    "X-Dev-Role": "driver",
+    "X-Dev-Driver-Id": approve.captain.id,
+    "X-Dev-Phone": captainPhone
+  };
+
   const quote = await request("/api/rides/quote", {
     method: "POST",
     body: JSON.stringify({ cityId: "nablus", distanceKm: 5.8 })
@@ -313,7 +328,13 @@ try {
     "public rides endpoint should include the newly created ride"
   );
 
-  const availableBeforeCancel = await request("/api/driver/available-rides?cityId=nablus");
+  const missingDriverContext = await requestRaw("/api/driver/available-rides?cityId=nablus", { headers: driverHeaders });
+  assert(
+    missingDriverContext.response.status === 400 && missingDriverContext.payload?.error === "missing_driver_context",
+    "driver available rides should reject missing driver context clearly"
+  );
+
+  const availableBeforeCancel = await request("/api/driver/available-rides?cityId=nablus", { headers: activeDriverHeaders });
   assert(
     availableBeforeCancel.rides.some((availableRide) => availableRide.id === cancelledRideId && availableRide.status === "searching"),
     "driver available rides should include searching rides"
@@ -345,29 +366,16 @@ try {
   assert(rideId, "ride request should create ride");
   assert(ride.ride.status === "searching", "second ride should also start searching");
 
-  const availableBeforeAccept = await request("/api/driver/available-rides?cityId=nablus");
+  const availableBeforeAccept = await request("/api/driver/available-rides?cityId=nablus", { headers: activeDriverHeaders });
   assert(
     availableBeforeAccept.rides.some((availableRide) => availableRide.id === rideId),
     "driver available rides should include the ride before acceptance"
   );
-  const protectedAvailableRides = await request("/api/driver/available-rides?cityId=nablus", { headers: driverHeaders });
-  assert(Array.isArray(protectedAvailableRides.rides), "driver endpoints should work with dev driver token");
-
-  const driverDevLogin = await request("/api/driver/dev-login", {
-    method: "POST",
-    headers: driverHeaders,
-    body: JSON.stringify({ driverId: approve.captain.id })
-  });
-  assert(driverDevLogin.token?.startsWith("dev-driver-session-token"), "driver dev login should return a development driver token");
-  assert(driverDevLogin.driver?.id === approve.captain.id, "driver dev login should return the selected approved captain");
-  assert(driverDevLogin.driver?.cityId === "nablus", "driver dev login should normalize captain city to a city id");
-  const activeDriverHeaders = {
-    Authorization: `Bearer ${driverDevLogin.token}`,
-    "X-Dev-Role": "driver",
-    "X-Dev-Driver-Id": approve.captain.id,
-    "X-Dev-Phone": captainPhone
-  };
   const availableByDriverHeaders = await request("/api/driver/available-rides", { headers: activeDriverHeaders });
+  assert(
+    Array.isArray(availableByDriverHeaders.rides) && availableByDriverHeaders.rides.some((availableRide) => availableRide.id === rideId),
+    "driver endpoints should work with dev driver token and real driver context"
+  );
   assert(
     availableByDriverHeaders.rides.some((availableRide) => availableRide.id === rideId),
     "driver available rides should use driver headers and normalized city when query city is omitted"
@@ -405,7 +413,7 @@ try {
   assert(driverLocationPayload.location?.lat === 32.2222, "driver:location-updated should include driver latitude");
   assert(driverLocationPayload.location?.lng === 35.2555, "driver:location-updated should include driver longitude");
 
-  const availableAfterAccept = await request("/api/driver/available-rides?cityId=nablus");
+  const availableAfterAccept = await request("/api/driver/available-rides?cityId=nablus", { headers: activeDriverHeaders });
   assert(
     !availableAfterAccept.rides.some((availableRide) => availableRide.id === rideId),
     "accepted ride should leave available driver requests"
@@ -490,11 +498,11 @@ try {
     "admin payments should include completed cash ride payment"
   );
 
-  const driverEarnings = await request(`/api/driver/earnings?driverId=${encodeURIComponent(approve.captain.id)}`);
+  const driverEarnings = await request(`/api/driver/earnings?driverId=${encodeURIComponent(approve.captain.id)}`, { headers: activeDriverHeaders });
   assert(driverEarnings.summary?.totalEarnings >= status.ride.fareIls, "driver earnings should include completed ride amount");
   assert(driverEarnings.summary?.completedRides >= 1, "driver earnings should include completed rides count");
 
-  const driverWalletTransactions = await request(`/api/driver/wallet-transactions?driverId=${encodeURIComponent(approve.captain.id)}`);
+  const driverWalletTransactions = await request(`/api/driver/wallet-transactions?driverId=${encodeURIComponent(approve.captain.id)}`, { headers: activeDriverHeaders });
   assert(
     driverWalletTransactions.transactions.some((transaction) => transaction.referenceId === rideId && transaction.type === "credit"),
     "driver wallet transactions should include completed ride credit"

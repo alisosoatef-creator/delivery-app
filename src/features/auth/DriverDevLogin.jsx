@@ -47,7 +47,11 @@ export function DriverDevLogin({ dispatch, isArabic }) {
         ...payload.user,
         role: ROLES.driver,
         status: driver.status,
+        onlineStatus: driver.onlineStatus,
+        online: driver.online,
         driverId: driver.id,
+        phone: driver.phone,
+        fullName: driver.fullName,
         name: payload.user?.name || driver.fullName
       };
       setSessionToken(payload.token, ROLES.driver, {

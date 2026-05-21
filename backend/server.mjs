@@ -62,7 +62,7 @@ import { searchLocalPlaces } from "./places.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
 import { backendConfig } from "./config.mjs";
 import { emitDriverEvent, emitPaymentEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
-import { checkRateLimit, requireAdminDev, requireAuthDev, requireCustomerDev, requireDriverDev, securityHeaders } from "./security.mjs";
+import { checkRateLimit, devSessionFromRequest, requireAdminDev, requireAuthDev, requireCustomerDev, securityHeaders } from "./security.mjs";
 import {
   ACCOUNT_STATUSES,
   PAYMENT_METHODS,
@@ -170,6 +170,18 @@ function rejectUnauthorized(response, request, scope) {
   }, request);
 }
 
+function rejectDriverAccess(response, request, result) {
+  sendJson(response, result.status || 401, {
+    error: result.error,
+    scope: "driver",
+    mode: process.env.NODE_ENV === "production" ? "enforced" : "soft-dev",
+    message: result.message,
+    messageAr: result.messageAr,
+    driverId: result.driverId || "",
+    role: result.role || ""
+  }, request);
+}
+
 function rejectRateLimited(response, request) {
   sendJson(response, 429, { error: "rate_limited" }, request);
 }
@@ -184,6 +196,97 @@ function requestDriverId(request, body = {}) {
 
 function requestDriverPhone(request, body = {}) {
   return String(body.phone || requestHeader(request, "x-dev-phone") || "").trim();
+}
+
+function safeDriverContext(driver) {
+  if (!driver) return null;
+  return {
+    id: driver.id,
+    driverId: driver.id,
+    fullName: driver.fullName || "",
+    phone: driver.phone || "",
+    cityId: driver.cityId || driver.city || "",
+    status: driver.status || "",
+    onlineStatus: driver.onlineStatus || "",
+    online: Boolean(driver.online)
+  };
+}
+
+function validateDriverRequest(request) {
+  const session = devSessionFromRequest(request);
+  const driverId = requestHeader(request, "x-dev-driver-id");
+  const phone = requestHeader(request, "x-dev-phone");
+  if (!session.token) {
+    return {
+      ok: false,
+      status: 401,
+      error: "auth_required",
+      message: "Driver session token is required.",
+      messageAr: "Driver session token is required.",
+      role: session.role,
+      driverId
+    };
+  }
+  if (session.role !== "driver" || !session.token.startsWith("dev-driver-session-token")) {
+    return {
+      ok: false,
+      status: 403,
+      error: "driver_role_required",
+      message: "A development driver session is required for this endpoint.",
+      messageAr: "A development driver session is required for this endpoint.",
+      role: session.role,
+      driverId
+    };
+  }
+  if (!driverId && !phone) {
+    return {
+      ok: false,
+      status: 400,
+      error: "missing_driver_context",
+      message: "Driver id or phone header is required.",
+      messageAr: "Driver id or phone header is required.",
+      role: session.role,
+      driverId
+    };
+  }
+  const driver = driverId ? getDriver(driverId) : getDriverByPhone(phone);
+  if (!driver) {
+    return {
+      ok: false,
+      status: 404,
+      error: "driver_not_found",
+      message: "Approved captain was not found for the provided driver context.",
+      messageAr: "Approved captain was not found for the provided driver context.",
+      role: session.role,
+      driverId
+    };
+  }
+  if (driver.status !== "active") {
+    return {
+      ok: false,
+      status: 403,
+      error: "driver_not_active",
+      message: "Captain is not active.",
+      messageAr: "Captain is not active.",
+      role: session.role,
+      driverId: driver.id
+    };
+  }
+  return { ok: true, driver, session };
+}
+
+function debugDriverRequest(label, request, driver, extra = {}) {
+  if (backendConfig.isProduction) return;
+  const session = devSessionFromRequest(request);
+  console.debug(`[driver-api] ${label}`, {
+    hasToken: Boolean(session.token),
+    role: session.role || "",
+    driverId: requestHeader(request, "x-dev-driver-id") || "",
+    phone: requestHeader(request, "x-dev-phone") || "",
+    driverFound: Boolean(driver),
+    resolvedDriverId: driver?.id || "",
+    ...extra
+  });
 }
 
 function rideStatusMessage(status) {
@@ -213,9 +316,14 @@ async function handleApi(request, response) {
     return;
   }
 
-  if (isDriverPath(url.pathname) && !url.pathname.includes("/dev-login") && !url.pathname.includes("/dev-drivers") && !requireDriverDev(request)) {
-    rejectUnauthorized(response, request, "driver");
-    return;
+  if (isDriverPath(url.pathname) && !url.pathname.includes("/dev-login") && !url.pathname.includes("/dev-drivers")) {
+    const driverAccess = validateDriverRequest(request);
+    if (!driverAccess.ok) {
+      debugDriverRequest(`blocked ${url.pathname}`, request, null, { error: driverAccess.error });
+      rejectDriverAccess(response, request, driverAccess);
+      return;
+    }
+    request.driverContext = driverAccess.driver;
   }
 
   if (isCustomerPath(url.pathname) && !requireCustomerDev(request)) {
@@ -514,19 +622,29 @@ async function handleApi(request, response) {
   }
 
   if (request.method === "GET" && url.pathname === "/api/driver/available-rides") {
-    const headerDriver = getDriver(requestHeader(request, "x-dev-driver-id"));
+    const headerDriver = request.driverContext || getDriver(requestHeader(request, "x-dev-driver-id"));
+    const cityFilter = backendConfig.isProduction ? (url.searchParams.get("cityId") || headerDriver?.cityId || "") : "";
+    const rides = listAvailableRides({ cityId: cityFilter });
+    debugDriverRequest("available-rides", request, headerDriver, { cityFilter, returned: rides.length });
     sendJson(response, 200, {
-      rides: listAvailableRides({ cityId: url.searchParams.get("cityId") || headerDriver?.cityId || "" })
+      driver: safeDriverContext(headerDriver),
+      availableStatus: "ok",
+      rides
     });
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/api/driver/my-rides") {
+    const driver = request.driverContext || getDriver(url.searchParams.get("driverId") || requestHeader(request, "x-dev-driver-id") || "");
+    const rides = listDriverRides({
+      driverId: driver?.id || url.searchParams.get("driverId") || requestHeader(request, "x-dev-driver-id") || "",
+      phone: driver?.phone || url.searchParams.get("phone") || requestHeader(request, "x-dev-phone") || ""
+    });
+    debugDriverRequest("my-rides", request, driver, { returned: rides.length });
     sendJson(response, 200, {
-      rides: listDriverRides({
-        driverId: url.searchParams.get("driverId") || requestHeader(request, "x-dev-driver-id") || "",
-        phone: url.searchParams.get("phone") || requestHeader(request, "x-dev-phone") || ""
-      })
+      driver: safeDriverContext(driver),
+      myRidesStatus: "ok",
+      rides
     });
     return;
   }
@@ -675,7 +793,7 @@ async function handleApi(request, response) {
   const rideAcceptMatch = url.pathname.match(/^\/api\/rides\/([^/]+)\/accept$/);
   if (request.method === "PATCH" && rideAcceptMatch) {
     const body = await readJson(request);
-    const driverId = requestDriverId(request, body);
+    const driverId = request.driverContext?.id || requestDriverId(request, body);
     if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",
@@ -747,7 +865,7 @@ async function handleApi(request, response) {
   const driverRideStatusMatch = url.pathname.match(/^\/api\/driver\/rides\/([^/]+)\/status$/);
   if (request.method === "PATCH" && driverRideStatusMatch) {
     const body = await readJson(request);
-    const driverId = requestDriverId(request, body);
+    const driverId = request.driverContext?.id || requestDriverId(request, body);
     if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",
@@ -866,15 +984,15 @@ async function handleApi(request, response) {
 
   if (request.method === "GET" && url.pathname === "/api/driver/earnings") {
     sendJson(response, 200, driverEarnings({
-      driverId: url.searchParams.get("driverId") || "",
-      phone: url.searchParams.get("phone") || ""
+      driverId: request.driverContext?.id || url.searchParams.get("driverId") || "",
+      phone: request.driverContext?.phone || url.searchParams.get("phone") || ""
     }));
     return;
   }
 
   if (request.method === "GET" && url.pathname === "/api/driver/wallet-transactions") {
-    const driverId = url.searchParams.get("driverId") || "";
-    const phone = url.searchParams.get("phone") || "";
+    const driverId = request.driverContext?.id || url.searchParams.get("driverId") || "";
+    const phone = request.driverContext?.phone || url.searchParams.get("phone") || "";
     sendJson(response, 200, { transactions: listWalletTransactions({ driverId, userPhone: phone, role: "driver" }) });
     return;
   }
@@ -1005,7 +1123,7 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/drivers/status") {
     const body = await readJson(request);
-    const driverId = requestDriverId(request, body);
+    const driverId = request.driverContext?.id || requestDriverId(request, body);
     if (!driverId) {
       sendJson(response, 400, {
         error: "driver_id_required",

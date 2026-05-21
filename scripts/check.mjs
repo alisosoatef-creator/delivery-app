@@ -1407,6 +1407,30 @@ for (const fullScenarioDebugToken of [
   }
 }
 
+for (const driverUnauthorizedFixToken of [
+  "safeDriverContext",
+  "validateDriverRequest",
+  "rejectDriverAccess",
+  "auth_required",
+  "driver_role_required",
+  "missing_driver_context",
+  "driver_not_found",
+  "request.driverContext",
+  "debugDriverRequest",
+  "backendDriver",
+  "availableStatus",
+  "myRidesStatus",
+  "setSessionToken(state.token, \"driver\"",
+  "driver available rides should reject missing driver context clearly",
+  "driver endpoints should work with dev driver token and real driver context",
+  "Access-Control-Allow-Headers\": \"Content-Type, Authorization, X-Dev-Role, X-Dev-User-Id, X-Dev-Customer-Id, X-Dev-Driver-Id, X-Dev-Phone\""
+]) {
+  const combinedDriverUnauthorizedSource = `${appSource}\n${backendSource}\n${backendSecuritySource}\n${backendSmokeSource}`;
+  if (!combinedDriverUnauthorizedSource.includes(driverUnauthorizedFixToken)) {
+    throw new Error(`Driver unauthorized/available-rides fix is missing: ${driverUnauthorizedFixToken}`);
+  }
+}
+
 for (const premiumStyleToken of [
   "/* phase-8-premium-polish */",
   "--premium-ink",

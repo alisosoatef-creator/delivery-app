@@ -7,18 +7,18 @@ import {
   updateDriverRideStatus
 } from "../services/driverApi.js";
 
-export function useDriverData({ enabled = true, driverId = "", phone = "", cityId = "" } = {}) {
+export function useDriverData({ enabled = true, driverId = "", phone = "", cityId = "", token = "", role = "driver", userId = "" } = {}) {
   const queryClient = useQueryClient();
   const availableRidesQuery = useQuery({
-    queryKey: ["driver", "availableRides", cityId],
-    queryFn: () => fetchAvailableDriverRides({ cityId, driverId, phone }),
+    queryKey: ["driver", "availableRides", cityId, driverId],
+    queryFn: () => fetchAvailableDriverRides({ cityId, driverId, phone, token, role, userId }),
     enabled,
     staleTime: 8_000
   });
 
   const driverRidesQuery = useQuery({
     queryKey: ["driver", "myRides", driverId || phone],
-    queryFn: () => fetchDriverRides({ driverId, phone }),
+    queryFn: () => fetchDriverRides({ driverId, phone, token, role, userId }),
     enabled: enabled && Boolean(driverId || phone),
     staleTime: 8_000
   });
@@ -33,17 +33,17 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
   }
 
   const acceptRideMutation = useMutation({
-    mutationFn: acceptDriverRide,
+    mutationFn: (payload) => acceptDriverRide({ phone, token, role, userId, ...payload }),
     onSuccess: invalidateRideQueries
   });
 
   const updateRideStatusMutation = useMutation({
-    mutationFn: updateDriverRideStatus,
+    mutationFn: (payload) => updateDriverRideStatus({ phone, token, role, userId, ...payload }),
     onSuccess: invalidateRideQueries
   });
 
   const updateOnlineStatusMutation = useMutation({
-    mutationFn: updateDriverOnlineStatus,
+    mutationFn: (payload) => updateDriverOnlineStatus({ phone, token, role, userId, ...payload }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] })
   });
 
@@ -61,8 +61,11 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
   const backendError = queryError || mutationError;
 
   return {
-    availableRides: availableRidesQuery.data || [],
-    myRides: driverRidesQuery.data || [],
+    availableRides: availableRidesQuery.data?.rides || [],
+    myRides: driverRidesQuery.data?.rides || [],
+    backendDriver: availableRidesQuery.data?.driver || driverRidesQuery.data?.driver || null,
+    availableStatus: availableRidesQuery.error ? "error" : availableRidesQuery.data?.availableStatus || (availableRidesQuery.isSuccess ? "ok" : "idle"),
+    myRidesStatus: driverRidesQuery.error ? "error" : driverRidesQuery.data?.myRidesStatus || (driverRidesQuery.isSuccess ? "ok" : "idle"),
     isLoading: availableRidesQuery.isLoading || driverRidesQuery.isLoading,
     isAvailableLoading: availableRidesQuery.isLoading,
     isMyRidesLoading: driverRidesQuery.isLoading,

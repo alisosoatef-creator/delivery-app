@@ -4,6 +4,7 @@ import { useDriverData } from "../../hooks/useDriverData.js";
 import { usePayments } from "../../hooks/usePayments.js";
 import { useSupportTickets } from "../../hooks/useSupportTickets.js";
 import { isAuthApiError, isNetworkApiError } from "../../services/apiClient.js";
+import { setSessionToken } from "../../services/sessionToken.js";
 import { sendDriverLocationUnavailable, sendDriverLocationUpdate } from "../../services/socketClient.js";
 import { statusText } from "../../utils/i18n.js";
 import { RIDE_STATUSES } from "../../utils/rideStatus.js";
@@ -74,6 +75,9 @@ function driverOperationError(error, isArabic, fallbackAr, fallbackEn) {
   const code = error?.payload?.error;
   const messages = {
     driver_id_required: ["معرّف الكابتن غير متوفر. أعد تسجيل دخول الكابتن من مدخل التطوير.", "Captain id is missing. Sign in again from driver dev login."],
+    auth_required: ["رمز جلسة الكابتن غير موجود. أعد الدخول من مدخل الكابتن التطويري.", "Captain session token is missing. Sign in again from driver dev login."],
+    driver_role_required: ["الجلسة الحالية ليست جلسة كابتن. أعد الدخول من مدخل الكابتن.", "Current session is not a captain session. Sign in again from driver dev login."],
+    missing_driver_context: ["بيانات الكابتن غير مكتملة في الطلب. أعد الدخول من مدخل الكابتن.", "Driver context is missing from the request. Sign in again from driver dev login."],
     ride_not_found: ["لم يتم العثور على الرحلة. حدّث القائمة وحاول مرة أخرى.", "Ride was not found. Refresh and try again."],
     driver_not_found: ["لم يتم العثور على الكابتن الموافق عليه.", "Approved captain was not found."],
     driver_not_active: ["الكابتن غير نشط أو موقوف من الإدارة.", "Captain is not active or was suspended."],
@@ -129,13 +133,17 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     rating: sessionDriver.rating || selectedDriver?.rating || "4.8"
   };
   const driverId = driver.id || "";
+  const driverUserId = state.currentUser?.id || state.session?.id || "";
   const driverName = driver.fullName || (isArabic ? "كابتن واصل" : "Wasel captain");
   const isDriverActive = driver.status === "active" || driver.status === "approved";
   const driverData = useDriverData({
     enabled: Boolean(driverId) && isDriverActive,
     driverId,
     phone: driver.phone,
-    cityId: driver.cityId
+    cityId: driver.cityId,
+    token: state.token,
+    role: state.role,
+    userId: driverUserId
   });
   const supportData = useSupportTickets({
     enabled: Boolean(driver.phone) && isDriverActive,
@@ -190,6 +198,15 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (state.role !== "driver" || !state.token || !driverId) return;
+    setSessionToken(state.token, "driver", {
+      userId: driverUserId,
+      driverId,
+      phone: driver.phone
+    });
+  }, [state.role, state.token, driverUserId, driverId, driver.phone]);
 
   function showToast(messageAr, messageEn) {
     dispatch({ type: "toast", message: isArabic ? messageAr : messageEn });
@@ -453,8 +470,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           <div>
             <span>backend: <strong>{driverData.queryError ? "query-error" : "reachable-or-idle"}</strong></span>
             <span>driverId: <strong>{driverId || "-"}</strong></span>
+            <span>backendDriverId: <strong>{driverData.backendDriver?.id || "-"}</strong></span>
             <span>role: <strong>{state.role || "-"}</strong></span>
             <span>token: <strong>{state.token ? "exists" : "missing"}</strong></span>
+            <span>availableStatus: <strong>{driverData.availableStatus}</strong></span>
+            <span>myRidesStatus: <strong>{driverData.myRidesStatus}</strong></span>
             <span>available: <strong>{availableRides.length}</strong></span>
             <span>myRides: <strong>{driverRides.length}</strong></span>
             <span>lastError: <strong>{lastDriverApiError?.code || lastDriverApiError?.kind || "-"}</strong></span>

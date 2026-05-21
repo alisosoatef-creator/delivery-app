@@ -11,7 +11,7 @@ export function securityHeaders(request = null, extra = {}) {
   const allowOrigin = DEV_ORIGINS.has(origin) ? origin : backendConfig.isProduction ? "null" : "*";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
-    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Dev-Role",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Dev-Role, X-Dev-User-Id, X-Dev-Customer-Id, X-Dev-Driver-Id, X-Dev-Phone",
     "Access-Control-Allow-Methods": "GET, POST, PATCH, DELETE, OPTIONS",
     "Access-Control-Max-Age": "600",
     "X-Content-Type-Options": "nosniff",
