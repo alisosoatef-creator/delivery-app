@@ -14,6 +14,7 @@ const required = [
   "src/services/locationService.js",
   "src/services/placesApi.js",
   "src/services/ridesApi.js",
+  "src/services/socketClient.js",
   "src/services/supportApi.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
@@ -40,6 +41,7 @@ const required = [
   "src/components/ui/ScreenContainer.js",
   "src/components/ui/LoadingState.js",
   "src/components/ui/EmptyState.js",
+  "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
   "src/utils/westBankCities.js",
   "app.json",
@@ -61,6 +63,12 @@ const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 if (!packageJson.dependencies["expo-location"]) {
   throw new Error("expo-location dependency is required for mobile GPS");
 }
+if (!packageJson.dependencies["socket.io-client"]) {
+  throw new Error("socket.io-client dependency is required for mobile realtime");
+}
+if (!packageJson.dependencies["react-native-maps"]) {
+  throw new Error("react-native-maps dependency is required for mobile map");
+}
 
 const source = [
   "src/config/appConfig.js",
@@ -70,7 +78,9 @@ const source = [
   "src/services/locationService.js",
   "src/services/placesApi.js",
   "src/services/ridesApi.js",
+  "src/services/socketClient.js",
   "src/utils/locationUtils.js",
+  "src/components/map/MobileRideMap.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
   "src/screens/auth/LoginScreen.js",
@@ -91,6 +101,16 @@ for (const token of [
   "/auth/login",
   "requestForegroundPermissionsAsync",
   "watchPositionAsync",
+  "connectMobileSocket",
+  "subscribeToRideEvents",
+  "subscribeToDriverEvents",
+  "subscribeToLocationEvents",
+  "emitDriverLocation",
+  "driver:location-updated",
+  "driver:location-unavailable",
+  "react-native-maps",
+  "MobileRideMap",
+  "EXPO_PUBLIC_SOCKET_URL",
   "haversineKm",
   "/places/search",
   "إلى أين تريد الذهاب؟",
@@ -103,6 +123,9 @@ for (const token of [
   "X-Dev-Driver-Id",
   "X-Dev-Phone",
   "X-Dev-User-Id",
+  "fallback",
+  "تفعيل موقعي المباشر",
+  "بانتظار تفعيل موقع الكابتن المباشر",
   "Development Only",
   "CustomerHomeScreen",
   "DriverHomeScreen"

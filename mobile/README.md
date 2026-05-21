@@ -74,6 +74,10 @@ Use Expo Go first. No custom native build is needed for this foundation.
 - Destination search through the local Backend endpoint `/api/places/search`.
 - Customer mobile ride request flow: pickup, destination, quote, create ride, and ride status card.
 - Driver mobile ride flow: available rides, accept ride, current ride, status sequence, and GPS tracking foundation.
+- Mobile Socket.IO client for ride events and driver location events.
+- Mobile ride map using `react-native-maps` in Expo Go, with a safe fallback preview if the native map is unavailable.
+- Customer realtime ride status updates and live driver marker after acceptance.
+- Driver realtime available rides refresh, current ride updates, and live GPS broadcasting.
 
 ## Development Flows
 - Customer register uses `POST /api/auth/register`.
@@ -90,23 +94,32 @@ Use Expo Go first. No custom native build is needed for this foundation.
 - Driver current rides use `GET /api/driver/my-rides`.
 - Driver accept uses `PATCH /api/rides/:id/accept`.
 - Driver status updates use `PATCH /api/driver/rides/:id/status`.
+- Mobile realtime connects to the backend Socket.IO server using `EXPO_PUBLIC_SOCKET_URL`, or the API host without `/api`.
+- Customer ride status listens to `ride:accepted`, `ride:status-updated`, `ride:cancelled`, `ride:completed`, `driver:location-updated`, and `driver:location-unavailable`.
+- Driver screens listen to `ride:created`, `ride:accepted`, and `ride:status-updated`.
 
 ## GPS Notes
 - Expo Go will prompt for location permission.
 - GPS refusal should not break the app; customer pickup falls back to the selected city center.
-- Driver GPS tracking is a local foundation using `watchPositionAsync`; Socket.IO live broadcasting for mobile is planned for phase 27.
+- Driver GPS tracking uses `watchPositionAsync` and sends `driver:location-updated` through Socket.IO while tracking is active.
+- If Socket.IO is disconnected, REST refresh remains available and the UI shows a manual-update state.
+
+## Mobile Map Notes
+- `react-native-maps` is used for the mobile ride map.
+- The map shows pickup, destination, driver/current location markers, and a simple line.
+- Before acceptance the line represents pickup to destination.
+- After acceptance and driver GPS, the line represents driver to pickup.
+- If native maps are unavailable in a test environment, `MobileRideMap` falls back to a compact preview card.
 
 ## Phase 26 TODO
-- Native map/routing screen without Google Maps.
-- Socket.IO client integration for ride updates and live driver tracking.
 - Persistent token storage with SecureStore.
 - Production-grade mobile navigation and deep links.
 - Better offline/error states.
 
 ## Phase 27 TODO
-- Mobile realtime with Socket.IO.
-- Broadcast driver live location to the customer map.
-- Mobile map UI and route line.
+- Mobile map route-by-road instead of simple line.
+- Persist driver tracking preferences safely.
+- Add richer offline recovery for Socket.IO reconnects.
 - SecureStore session persistence.
 
 ## Check
