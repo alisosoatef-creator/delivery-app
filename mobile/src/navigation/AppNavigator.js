@@ -5,6 +5,7 @@ import { OtpScreen } from "../screens/auth/OtpScreen";
 import { RegisterScreen } from "../screens/auth/RegisterScreen";
 import { AccountScreen } from "../screens/customer/AccountScreen";
 import { CustomerHomeScreen } from "../screens/customer/CustomerHomeScreen";
+import { CustomerRideStatusScreen } from "../screens/customer/CustomerRideStatusScreen";
 import { MyRidesScreen } from "../screens/customer/MyRidesScreen";
 import { RequestRideScreen } from "../screens/customer/RequestRideScreen";
 import { SupportScreen } from "../screens/customer/SupportScreen";
@@ -23,6 +24,7 @@ I18nManager.allowRTL(true);
 const customerScreens = {
   home: CustomerHomeScreen,
   request: RequestRideScreen,
+  "ride-status": CustomerRideStatusScreen,
   rides: MyRidesScreen,
   wallet: WalletScreen,
   support: SupportScreen,

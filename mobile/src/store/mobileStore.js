@@ -10,6 +10,15 @@ const initialState = {
   pendingPhone: "",
   activeArea: "auth",
   activeScreen: "login",
+  selectedCity: "nablus",
+  currentLocation: null,
+  pickup: null,
+  destination: null,
+  currentRide: null,
+  driverLocation: null,
+  locationStatus: "idle",
+  rideRequestStatus: "idle",
+  rideRequestError: "",
   toast: ""
 };
 
@@ -17,8 +26,29 @@ function reducer(state, action) {
   switch (action.type) {
     case "navigate":
       return { ...state, activeArea: action.area || state.activeArea, activeScreen: action.screen || state.activeScreen, toast: "" };
+    case "patch":
+      return { ...state, ...action.patch };
     case "pendingPhone":
       return { ...state, pendingPhone: action.phone || "" };
+    case "setLocation":
+      return {
+        ...state,
+        currentLocation: action.location || state.currentLocation,
+        pickup: action.pickup || state.pickup,
+        selectedCity: action.cityId || state.selectedCity,
+        locationStatus: action.status || state.locationStatus,
+        toast: action.toast || state.toast
+      };
+    case "setDestination":
+      return { ...state, destination: action.destination || null, toast: action.toast || state.toast };
+    case "setCurrentRide":
+      return {
+        ...state,
+        currentRide: action.ride || null,
+        activeArea: action.area || state.activeArea,
+        activeScreen: action.screen || state.activeScreen,
+        toast: action.toast || state.toast
+      };
     case "login":
       return {
         ...state,
@@ -26,6 +56,7 @@ function reducer(state, action) {
         token: action.token || "",
         currentUser: action.user || null,
         session: action.session || action.user || null,
+        selectedCity: action.user?.city || state.selectedCity,
         activeArea: action.role === "driver" || action.user?.role === "driver" ? "driver" : "customer",
         activeScreen: "home",
         toast: action.toast || ""

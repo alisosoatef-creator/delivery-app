@@ -14,9 +14,16 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.wasel.delivery"
+      "bundleIdentifier": "com.wasel.delivery",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "يستخدم وصل موقعك لتحديد نقطة الانطلاق وتتبع الكابتن أثناء الرحلة."
+      }
     },
     "android": {
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#06070a"

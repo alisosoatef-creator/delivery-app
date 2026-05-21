@@ -14,6 +14,7 @@ export function CustomerHomeScreen() {
       </MobileCard>
       <View style={{ gap: 10 }}>
         <MobileButton title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+        {state.currentRide ? <MobileButton title="حالة الرحلة الحالية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} /> : null}
         <MobileButton title="رحلاتي" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} />
         <MobileButton title="المحفظة والدفع" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })} />
         <MobileButton title="الدعم" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })} />

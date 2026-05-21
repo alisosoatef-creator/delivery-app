@@ -70,24 +70,44 @@ Use Expo Go first. No custom native build is needed for this foundation.
 - Driver screens: Dev Driver Login, Home, Available Rides, Current Ride, Earnings, Support.
 - Mobile UI components: Button, Card, Input, Badge, ScreenContainer, LoadingState, EmptyState.
 - API client with basic error handling and dev driver headers.
+- GPS foundation with `expo-location`.
+- Destination search through the local Backend endpoint `/api/places/search`.
+- Customer mobile ride request flow: pickup, destination, quote, create ride, and ride status card.
+- Driver mobile ride flow: available rides, accept ride, current ride, status sequence, and GPS tracking foundation.
 
 ## Development Flows
 - Customer register uses `POST /api/auth/register`.
 - OTP uses `POST /api/auth/verify-otp` with dev code `1234`.
 - Login uses `POST /api/auth/login`.
-- Ride quote uses `POST /api/rides/quote`.
+- Customer GPS asks for foreground location permission. If denied, the app uses the selected city center as pickup.
+- Destination search uses `GET /api/places/search?city=&q=` and local/mock places from the Backend.
+- Ride quote uses Haversine distance locally, then `POST /api/rides/quote`.
+- Create ride uses `POST /api/rides` with pickup/destination labels and coordinates.
+- Ride status refresh uses `GET /api/customer/rides/:id`.
 - Customer rides use `GET /api/customer/rides`.
 - Driver dev login uses `POST /api/driver/dev-login`.
 - Available rides use `GET /api/driver/available-rides`.
 - Driver current rides use `GET /api/driver/my-rides`.
+- Driver accept uses `PATCH /api/rides/:id/accept`.
+- Driver status updates use `PATCH /api/driver/rides/:id/status`.
+
+## GPS Notes
+- Expo Go will prompt for location permission.
+- GPS refusal should not break the app; customer pickup falls back to the selected city center.
+- Driver GPS tracking is a local foundation using `watchPositionAsync`; Socket.IO live broadcasting for mobile is planned for phase 27.
 
 ## Phase 26 TODO
-- Native mobile GPS permissions and live location tracking.
 - Native map/routing screen without Google Maps.
-- Socket.IO client integration for ride updates.
+- Socket.IO client integration for ride updates and live driver tracking.
 - Persistent token storage with SecureStore.
 - Production-grade mobile navigation and deep links.
 - Better offline/error states.
+
+## Phase 27 TODO
+- Mobile realtime with Socket.IO.
+- Broadcast driver live location to the customer map.
+- Mobile map UI and route line.
+- SecureStore session persistence.
 
 ## Check
 From the root:

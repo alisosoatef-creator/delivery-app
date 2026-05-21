@@ -10,13 +10,14 @@ export function AvailableRidesScreen() {
   const [rides, setRides] = useState([]);
   const [status, setStatus] = useState("loading");
   const [error, setError] = useState("");
-  const session = { ...state.session, token: state.token, driverId: state.currentUser?.driverId, phone: state.currentUser?.phone };
+  const session = { ...state.session, token: state.token, driverId: state.currentUser?.driverId, phone: state.currentUser?.phone, userId: state.currentUser?.id };
 
   function load() {
     setStatus("loading");
+    setError("");
     fetchAvailableRides(session)
       .then(setRides)
-      .catch((requestError) => setError(requestError.message || "تعذر تحميل الرحلات."))
+      .catch((requestError) => setError(requestError.message || "تعذر تحميل الرحلات المتاحة."))
       .finally(() => setStatus("idle"));
   }
 
@@ -25,8 +26,8 @@ export function AvailableRidesScreen() {
   async function accept(rideId) {
     setError("");
     try {
-      await acceptRide(rideId, session);
-      dispatch({ type: "toast", message: "تم قبول الرحلة." });
+      const payload = await acceptRide(rideId, session);
+      dispatch({ type: "setCurrentRide", ride: payload.ride, area: "driver", screen: "current", toast: "تم قبول الرحلة." });
       load();
     } catch (requestError) {
       setError(requestError.message || "تعذر قبول الرحلة.");
@@ -34,14 +35,14 @@ export function AvailableRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="الرحلات المتاحة" subtitle="تعرض رحلات searching للكابتن النشط.">
+    <ScreenContainer title="الرحلات المتاحة" subtitle="تعرض رحلات searching للكابتن النشط من Backend.">
       {status === "loading" ? <LoadingState /> : null}
       {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
-      {status !== "loading" && !rides.length ? <EmptyState title="لا توجد رحلات متاحة" message="أنشئ رحلة من الويب أو شاشة الزبون ثم حدّث القائمة." /> : null}
+      {status !== "loading" && !rides.length ? <EmptyState title="لا توجد رحلات متاحة" message="اطلب رحلة من شاشة الزبون ثم حدّث القائمة." /> : null}
       {rides.map((ride) => (
         <MobileCard key={ride.id}>
           <Text selectable style={{ color: colors.text, fontWeight: "900" }}>{ride.pickup} ← {ride.destination}</Text>
-          <Text selectable style={{ color: colors.muted }}>{ride.city || ride.cityId} · {ride.price || ride.fareIls || 0} ₪</Text>
+          <Text selectable style={{ color: colors.muted }}>{ride.city || ride.cityId} · {ride.price || ride.fareIls || 0} ₪ · {ride.paymentMethod || "cash"}</Text>
           <MobileButton title="قبول الرحلة" onPress={() => accept(ride.id)} />
         </MobileCard>
       ))}

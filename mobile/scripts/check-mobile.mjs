@@ -11,6 +11,8 @@ const required = [
   "src/services/apiClient.js",
   "src/services/authApi.js",
   "src/services/driverApi.js",
+  "src/services/locationService.js",
+  "src/services/placesApi.js",
   "src/services/ridesApi.js",
   "src/services/supportApi.js",
   "src/store/mobileStore.js",
@@ -20,6 +22,7 @@ const required = [
   "src/screens/auth/OtpScreen.js",
   "src/screens/customer/CustomerHomeScreen.js",
   "src/screens/customer/RequestRideScreen.js",
+  "src/screens/customer/CustomerRideStatusScreen.js",
   "src/screens/customer/MyRidesScreen.js",
   "src/screens/customer/WalletScreen.js",
   "src/screens/customer/SupportScreen.js",
@@ -37,6 +40,8 @@ const required = [
   "src/components/ui/ScreenContainer.js",
   "src/components/ui/LoadingState.js",
   "src/components/ui/EmptyState.js",
+  "src/utils/locationUtils.js",
+  "src/utils/westBankCities.js",
   "app.json",
   "eas.json"
 ];
@@ -52,14 +57,27 @@ if (appJson.expo.slug !== "wasel-delivery") {
   throw new Error("Unexpected Expo slug");
 }
 
+const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+if (!packageJson.dependencies["expo-location"]) {
+  throw new Error("expo-location dependency is required for mobile GPS");
+}
+
 const source = [
   "src/config/appConfig.js",
   "src/services/apiClient.js",
   "src/services/authApi.js",
   "src/services/driverApi.js",
+  "src/services/locationService.js",
+  "src/services/placesApi.js",
+  "src/services/ridesApi.js",
+  "src/utils/locationUtils.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
   "src/screens/auth/LoginScreen.js",
+  "src/screens/customer/RequestRideScreen.js",
+  "src/screens/customer/CustomerRideStatusScreen.js",
+  "src/screens/driver/AvailableRidesScreen.js",
+  "src/screens/driver/CurrentRideScreen.js",
   "src/screens/driver/DevDriverLoginScreen.js",
   "src/navigation/AppNavigator.js"
 ].map((file) => fs.readFileSync(file, "utf8")).join("\n");
@@ -71,7 +89,20 @@ for (const token of [
   "/auth/register",
   "/auth/verify-otp",
   "/auth/login",
+  "requestForegroundPermissionsAsync",
+  "watchPositionAsync",
+  "haversineKm",
+  "/places/search",
+  "إلى أين تريد الذهاب؟",
+  "createRide",
+  "fetchCustomerRideDetails",
   "/driver/available-rides",
+  "/driver/my-rides",
+  "acceptRide",
+  "updateDriverRideStatus",
+  "X-Dev-Driver-Id",
+  "X-Dev-Phone",
+  "X-Dev-User-Id",
   "Development Only",
   "CustomerHomeScreen",
   "DriverHomeScreen"

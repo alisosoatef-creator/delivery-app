@@ -18,7 +18,7 @@ async function parseResponse(response) {
   return text ? { message: text } : null;
 }
 
-export async function apiRequest(path, { method = "GET", body, token = "", role = "", driverId = "", phone = "", headers = {} } = {}) {
+export async function apiRequest(path, { method = "GET", body, token = "", role = "", driverId = "", phone = "", userId = "", customerId = "", headers = {} } = {}) {
   const url = `${appConfig.apiBaseUrl}${normalizeApiPath(path)}`;
   const hasBody = typeof body !== "undefined";
   let response;
@@ -31,6 +31,8 @@ export async function apiRequest(path, { method = "GET", body, token = "", role 
         ...(hasBody ? { "Content-Type": "application/json" } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(role ? { "X-Dev-Role": role } : {}),
+        ...(userId ? { "X-Dev-User-Id": userId } : {}),
+        ...(customerId ? { "X-Dev-Customer-Id": customerId } : {}),
         ...(driverId ? { "X-Dev-Driver-Id": driverId } : {}),
         ...(phone ? { "X-Dev-Phone": phone } : {}),
         ...headers

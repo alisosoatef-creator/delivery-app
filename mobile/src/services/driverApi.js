@@ -5,7 +5,8 @@ function driverSession(session = {}) {
     token: session.token,
     role: "driver",
     driverId: session.driverId || session.driver?.id || "",
-    phone: session.phone || session.driver?.phone || ""
+    phone: session.phone || session.driver?.phone || "",
+    userId: session.userId || session.id || ""
   };
 }
 
