@@ -69,6 +69,27 @@ function supportTypeLabel(type, isArabic) {
   return match ? (isArabic ? match.ar : match.en) : type;
 }
 
+function driverOperationError(error, isArabic, fallbackAr, fallbackEn) {
+  const code = error?.payload?.error;
+  const messages = {
+    driver_id_required: ["معرّف الكابتن غير متوفر. أعد تسجيل دخول الكابتن من مدخل التطوير.", "Captain id is missing. Sign in again from driver dev login."],
+    ride_not_found: ["لم يتم العثور على الرحلة. حدّث القائمة وحاول مرة أخرى.", "Ride was not found. Refresh and try again."],
+    driver_not_found: ["لم يتم العثور على الكابتن الموافق عليه.", "Approved captain was not found."],
+    driver_not_active: ["الكابتن غير نشط أو موقوف من الإدارة.", "Captain is not active or was suspended."],
+    ride_already_accepted: ["تم قبول هذه الرحلة من كابتن آخر.", "This ride was already accepted by another captain."],
+    ride_not_searching: ["لا يمكن قبول رحلة لم تعد في حالة البحث.", "Only searching rides can be accepted."],
+    driver_ride_mismatch: ["هذه الرحلة مرتبطة بكابتن آخر.", "This ride belongs to another captain."],
+    ride_has_no_driver: ["لا يوجد كابتن مرتبط بهذه الرحلة لتحديث حالتها.", "This ride has no assigned captain for status updates."],
+    invalid_driver_ride_transition: ["تسلسل حالة الرحلة غير صحيح. حدّث الرحلة ثم جرّب الخطوة المناسبة.", "Ride status sequence is invalid. Refresh and try the correct next step."],
+    invalid_ride_status: ["حالة الرحلة المطلوبة غير مدعومة.", "Requested ride status is not supported."]
+  };
+  const mapped = messages[code];
+  if (mapped) return isArabic ? mapped[0] : mapped[1];
+  return isArabic
+    ? (error?.payload?.messageAr || fallbackAr)
+    : (error?.payload?.message || error?.message || fallbackEn);
+}
+
 function DriverSectionFallback({ isArabic }) {
   return (
     <div className="lazy-section-fallback" role="status">
@@ -286,13 +307,20 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     try {
       await driverData.updateOnlineStatus({ driverId, online });
       dispatch({ type: "patch", patch: { backendLive: true } });
-    } catch {
+    } catch (error) {
       dispatch({ type: "patch", patch: { driverOnline: !online, backendLive: false } });
-      showToast("تعذر تحديث حالة الكابتن.", "Unable to update captain availability.");
+      dispatch({
+        type: "toast",
+        message: driverOperationError(error, isArabic, "تعذر تحديث حالة الكابتن.", "Unable to update captain availability.")
+      });
     }
   }
 
   async function handleAcceptRide(ride) {
+    if (!driverId) {
+      showToast("معرّف الكابتن غير متوفر. أعد تسجيل الدخول من مدخل الكابتن.", "Captain id is missing. Sign in again from the driver entry.");
+      return;
+    }
     try {
       const payload = await driverData.acceptRide({ rideId: ride.id, driverId });
       dispatch({
@@ -303,8 +331,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
           toast: isArabic ? "تم قبول الرحلة ونقلها إلى رحلتي الحالية." : "Ride accepted and moved to your current ride."
         }
       });
-    } catch {
-      showToast("تعذر قبول الرحلة. ربما قُبلت من كابتن آخر.", "Unable to accept this ride. It may have been taken.");
+    } catch (error) {
+      dispatch({
+        type: "toast",
+        message: driverOperationError(error, isArabic, "تعذر قبول الرحلة.", "Unable to accept this ride.")
+      });
     }
   }
 
@@ -327,8 +358,11 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
         paymentsData.refetchDriverEarnings();
         paymentsData.refetchDriverWalletTransactions();
       }
-    } catch {
-      showToast("تعذر تحديث حالة الرحلة حسب التسلسل الحالي.", "Unable to update the ride status in the current sequence.");
+    } catch (error) {
+      dispatch({
+        type: "toast",
+        message: driverOperationError(error, isArabic, "تعذر تحديث حالة الرحلة حسب التسلسل الحالي.", "Unable to update the ride status in the current sequence.")
+      });
     }
   }
 

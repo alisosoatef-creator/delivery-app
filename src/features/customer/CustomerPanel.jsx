@@ -59,6 +59,9 @@ export function CustomerPanel(props) {
   const selectedHistoryRide =
     filteredRideHistory.find((ride) => ride.id === selectedHistoryId) || filteredRideHistory[0] || rideHistory[0];
   const customerHasAcceptedDriver = rideHasAcceptedDriver(state.ride);
+  const currentRideDriver = customerHasAcceptedDriver
+    ? state.ride?.driver || state.drivers.find((driver) => driver.id === state.ride?.driverId) || selectedDriver
+    : null;
 
   if (activeView === "trips") {
     return (
@@ -150,7 +153,7 @@ export function CustomerPanel(props) {
           <MapBoard
             state={state}
             dispatch={dispatch}
-            selectedDriver={customerHasAcceptedDriver ? selectedDriver : null}
+            selectedDriver={currentRideDriver}
             t={t}
             isArabic={isArabic}
             showDrivers={customerHasAcceptedDriver}

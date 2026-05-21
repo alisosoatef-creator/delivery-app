@@ -2113,6 +2113,91 @@ small,
   box-shadow: 0 18px 40px rgba(201, 145, 47, .28);
 }
 
+/* fix-ride-map-ux */
+.ride-step-hint {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.ride-step-hint span {
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  color: var(--muted-strong);
+  font-size: 12px;
+  font-weight: 850;
+  text-align: center;
+}
+
+.location-search-panel {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid rgba(53, 122, 189, .16);
+  border-radius: var(--radius);
+  background: rgba(53, 122, 189, .06);
+  padding: var(--space-3);
+}
+
+.location-search-field input {
+  min-height: 50px;
+  font-weight: 850;
+}
+
+.location-search-results {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.location-search-results > small {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.location-result-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--space-2);
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-strong);
+  padding: var(--space-2);
+}
+
+.location-result-card span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.location-result-card strong,
+.location-result-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.location-result-card button {
+  min-height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.location-result-card button.ghost {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+}
+
 .role-grid,
 .button-row,
 .metrics,
@@ -2688,6 +2773,63 @@ small,
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.real-map-board {
+  min-height: 520px;
+}
+
+.location-picker-panel {
+  inset-inline: auto var(--space-4);
+  top: var(--space-4);
+  width: min(328px, calc(100% - 32px));
+  max-height: 46%;
+  overflow: auto;
+  padding: var(--space-3);
+}
+
+.location-picker-panel .map-badge-row,
+.location-picker-panel .map-picker-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.location-picker-panel .map-picker-actions.compact {
+  display: none;
+}
+
+.map-tool-toggle {
+  min-height: 34px;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .1);
+  color: #fffaf0;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.map-tool-body {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.location-picker-panel.collapsed {
+  width: auto;
+}
+
+.location-picker-panel.collapsed .map-tool-body {
+  display: none;
+}
+
+.real-map-sheet {
+  inset-inline: var(--space-4) auto;
+  bottom: var(--space-4);
+  width: min(318px, calc(100% - 32px));
+  padding: var(--space-3);
+}
+
+.driver-to-pickup-line {
+  filter: drop-shadow(0 0 8px rgba(201, 145, 47, .32));
 }
 
 @keyframes routePulse {
@@ -6342,14 +6484,29 @@ textarea:focus-visible,
 
   .location-picker-panel {
     inset-inline: var(--space-3);
-    top: var(--space-3);
-    max-height: 48%;
+    top: auto;
+    bottom: var(--space-3);
+    width: auto;
+    max-height: 38%;
     overflow: auto;
+  }
+
+  .real-map-sheet {
+    inset-inline: var(--space-3);
+    top: var(--space-3);
+    bottom: auto;
+    width: auto;
+    padding: var(--space-2);
   }
 
   .map-badge-row,
   .map-picker-actions {
     display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .ride-step-hint,
+  .location-result-card {
     grid-template-columns: 1fr;
   }
 

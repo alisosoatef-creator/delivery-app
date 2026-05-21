@@ -7,6 +7,10 @@ Routes below are currently backed by the local SQLite development database. Ther
 - `GET /api/bootstrap`
   - Returns: `cities`, `drivers`, `pricingRules`, `settings`, `admin`
 
+- `GET /api/places/search?city=nablus&q=جامعة`
+  - Returns local/mock West Bank place suggestions: `label`, `city`, `lat`, `lng`, `category`.
+  - Development fallback only. Production should use a policy-compliant search/routing provider or a curated places database.
+
 - `GET /api/events`
   - Server-sent events stream used by the frontend.
 
@@ -105,7 +109,7 @@ Admin writes are persisted in SQLite for development. API authorization is still
 
 `POST /api/rides/:id/status` remains supported for the current frontend.
 New customer rides start with `status = "searching"` and do not include captain details before a driver accepts the ride.
-`PATCH /api/rides/:id/accept` is a development placeholder for the next driver phase and assigns a driver without logging anyone in.
+`PATCH /api/rides/:id/accept` assigns an active approved driver only when the ride is still `searching`. It returns specific error codes such as `ride_not_searching`, `ride_already_accepted`, `driver_not_active`, and `driver_ride_mismatch` so the frontend can show actionable captain errors.
 
 ## Driver
 

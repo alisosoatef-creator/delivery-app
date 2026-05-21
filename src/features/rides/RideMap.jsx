@@ -27,6 +27,40 @@ function MapCityController({ cityCenter }) {
   return null;
 }
 
+function MapViewportController({ cityCenter, customerLocation, pickupLocation, destinationLocation, driverLocation, driverAnchorLocation }) {
+  const map = useMap();
+
+  useEffect(() => {
+    const points = [customerLocation, pickupLocation, destinationLocation, driverLocation, driverAnchorLocation]
+      .filter(Boolean)
+      .map((point) => [point.lat, point.lng]);
+
+    if (points.length >= 2) {
+      map.fitBounds(points, { animate: true, padding: [34, 34], maxZoom: 16 });
+      return;
+    }
+
+    if (points.length === 1) {
+      map.setView(points[0], 15, { animate: true });
+    }
+  }, [
+    cityCenter.id,
+    customerLocation?.lat,
+    customerLocation?.lng,
+    destinationLocation?.lat,
+    destinationLocation?.lng,
+    driverAnchorLocation?.lat,
+    driverAnchorLocation?.lng,
+    driverLocation?.lat,
+    driverLocation?.lng,
+    map,
+    pickupLocation?.lat,
+    pickupLocation?.lng
+  ]);
+
+  return null;
+}
+
 function MapClickBridge({ onMapPointChange }) {
   useMapEvents({
     click(event) {
@@ -51,6 +85,7 @@ export function RideMap({
   pickupLocation,
   destinationLocation,
   driverLocation,
+  driverAnchorLocation,
   routeCoordinates,
   routeSource,
   onMapPointChange,
@@ -64,7 +99,7 @@ export function RideMap({
       : pickupLocation && destinationLocation
         ? [pickupLocation, destinationLocation]
         : null;
-  const driverLine = showDrivers && driverLocation && customerLocation ? [customerLocation, driverLocation] : null;
+  const driverLine = showDrivers && driverLocation && driverAnchorLocation ? [driverLocation, driverAnchorLocation] : null;
   const isRoadRoute = routeSource === "osrm" && routeCoordinates?.length > 1;
 
   return (
@@ -76,6 +111,14 @@ export function RideMap({
     >
       <TileLayer attribution={OSM_ATTRIBUTION} eventHandlers={{ tileerror: onTileError }} maxZoom={19} url={OSM_TILE_URL} />
       <MapCityController cityCenter={cityCenter} />
+      <MapViewportController
+        cityCenter={cityCenter}
+        customerLocation={customerLocation}
+        pickupLocation={pickupLocation}
+        destinationLocation={destinationLocation}
+        driverLocation={driverLocation}
+        driverAnchorLocation={driverAnchorLocation}
+      />
       <MapClickBridge onMapPointChange={onMapPointChange} />
 
       <MarkerIf point={customerLocation} className="customer-location-marker" label={isArabic ? "أنا" : "Me"} />
@@ -98,7 +141,7 @@ export function RideMap({
       {driverLine && (
         <Polyline
           positions={driverLine.map((point) => [point.lat, point.lng])}
-          pathOptions={{ color: "#c9912f", dashArray: "8 10", opacity: 0.9, weight: 4 }}
+          pathOptions={{ className: "driver-to-pickup-line", color: "#c9912f", dashArray: "8 10", opacity: 0.9, weight: 4 }}
         />
       )}
     </MapContainer>

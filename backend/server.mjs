@@ -16,6 +16,7 @@ import {
   findOtpCode,
   findOtpCodeByPhone,
   getCustomerWallet,
+  getDriver,
   getRide,
   findUserByPhone,
   findUserByIdentifier,
@@ -56,6 +57,7 @@ import {
   updateSupportTicketStatus,
   verifyUserByPhone
 } from "./db/database.mjs";
+import { searchLocalPlaces } from "./places.mjs";
 import { hashPassword, verifyPassword } from "./auth/passwords.mjs";
 import { backendConfig } from "./config.mjs";
 import { emitDriverEvent, emitPaymentEvent, emitRideEvent, emitSupportTicketEvent, realtimeInfo, setupRealtime } from "./realtime.mjs";
@@ -164,6 +166,20 @@ function rejectRateLimited(response, request) {
   sendJson(response, 429, { error: "rate_limited" }, request);
 }
 
+function rideStatusMessage(status) {
+  const labels = {
+    searching: "searching",
+    accepted: "accepted",
+    driver_arriving: "driver_arriving",
+    arrived: "arrived",
+    in_progress: "in_progress",
+    completed: "completed",
+    cancelled: "cancelled",
+    canceled: "cancelled"
+  };
+  return labels[status] || status || "unknown";
+}
+
 async function handleApi(request, response) {
   const url = new URL(request.url, `http://${request.headers.host}`);
 
@@ -210,6 +226,16 @@ async function handleApi(request, response) {
       pricingRules: listPricingRules(),
       settings: getSystemSettings(),
       admin: adminOverview()
+    });
+    return;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/places/search") {
+    sendJson(response, 200, {
+      places: searchLocalPlaces({
+        city: url.searchParams.get("city") || "",
+        q: url.searchParams.get("q") || ""
+      })
     });
     return;
   }
@@ -627,12 +653,65 @@ async function handleApi(request, response) {
   if (request.method === "PATCH" && rideAcceptMatch) {
     const body = await readJson(request);
     if (!body.driverId) {
-      sendJson(response, 400, { error: "driver_id_required" });
+      sendJson(response, 400, {
+        error: "driver_id_required",
+        message: "driverId is required to accept a ride.",
+        messageAr: "معرّف الكابتن مطلوب لقبول الرحلة."
+      });
+      return;
+    }
+    const currentRide = getRide(rideAcceptMatch[1]);
+    const driver = getDriver(body.driverId);
+    if (!currentRide) {
+      sendJson(response, 404, {
+        error: "ride_not_found",
+        message: "Ride was not found.",
+        messageAr: "لم يتم العثور على الرحلة."
+      });
+      return;
+    }
+    if (!driver) {
+      sendJson(response, 404, {
+        error: "driver_not_found",
+        message: "Captain was not found.",
+        messageAr: "لم يتم العثور على الكابتن."
+      });
+      return;
+    }
+    if (driver.status !== "active") {
+      sendJson(response, 403, {
+        error: "driver_not_active",
+        message: "Captain is not active.",
+        messageAr: "الكابتن غير نشط حاليًا."
+      });
+      return;
+    }
+    if (currentRide.driverId) {
+      sendJson(response, 409, {
+        error: "ride_already_accepted",
+        message: "Ride is already accepted by another captain.",
+        messageAr: "تم قبول هذه الرحلة مسبقًا من كابتن آخر.",
+        driverId: currentRide.driverId,
+        currentStatus: rideStatusMessage(currentRide.status)
+      });
+      return;
+    }
+    if (currentRide.status !== "searching") {
+      sendJson(response, 409, {
+        error: "ride_not_searching",
+        message: `Ride cannot be accepted because it is ${rideStatusMessage(currentRide.status)}.`,
+        messageAr: `لا يمكن قبول الرحلة لأنها بحالة ${rideStatusMessage(currentRide.status)}.`,
+        currentStatus: rideStatusMessage(currentRide.status)
+      });
       return;
     }
     const ride = acceptRide(rideAcceptMatch[1], body.driverId);
     if (!ride) {
-      sendJson(response, 404, { error: "ride_or_driver_not_found" });
+      sendJson(response, 409, {
+        error: "ride_accept_failed",
+        message: "Ride could not be accepted after validation.",
+        messageAr: "تعذر قبول الرحلة بعد التحقق."
+      });
       return;
     }
     broadcast("ride.status.changed", { ride });
@@ -645,11 +724,63 @@ async function handleApi(request, response) {
   if (request.method === "PATCH" && driverRideStatusMatch) {
     const body = await readJson(request);
     if (!body.driverId) {
-      sendJson(response, 400, { error: "driver_id_required" });
+      sendJson(response, 400, {
+        error: "driver_id_required",
+        message: "driverId is required to update a ride.",
+        messageAr: "معرّف الكابتن مطلوب لتحديث الرحلة."
+      });
       return;
     }
     if (!isAllowedStatus(body.status, RIDE_STATUSES)) {
-      sendJson(response, 400, { error: "invalid_ride_status" });
+      sendJson(response, 400, {
+        error: "invalid_ride_status",
+        message: "Requested ride status is not supported.",
+        messageAr: "حالة الرحلة المطلوبة غير مدعومة."
+      });
+      return;
+    }
+    const currentRide = getRide(driverRideStatusMatch[1]);
+    const driver = getDriver(body.driverId);
+    if (!currentRide) {
+      sendJson(response, 404, {
+        error: "ride_not_found",
+        message: "Ride was not found.",
+        messageAr: "لم يتم العثور على الرحلة."
+      });
+      return;
+    }
+    if (!driver) {
+      sendJson(response, 404, {
+        error: "driver_not_found",
+        message: "Captain was not found.",
+        messageAr: "لم يتم العثور على الكابتن."
+      });
+      return;
+    }
+    if (driver.status !== "active") {
+      sendJson(response, 403, {
+        error: "driver_not_active",
+        message: "Captain is not active.",
+        messageAr: "الكابتن غير نشط حاليًا."
+      });
+      return;
+    }
+    if (currentRide.driverId && currentRide.driverId !== driver.id) {
+      sendJson(response, 409, {
+        error: "driver_ride_mismatch",
+        message: "This ride belongs to a different captain.",
+        messageAr: "هذه الرحلة مرتبطة بكابتن آخر.",
+        driverId: currentRide.driverId
+      });
+      return;
+    }
+    if (!currentRide.driverId && currentRide.status !== "searching") {
+      sendJson(response, 409, {
+        error: "ride_has_no_driver",
+        message: "Ride has no assigned captain for this status update.",
+        messageAr: "لا يوجد كابتن مرتبط بهذه الرحلة لتحديث حالتها.",
+        currentStatus: rideStatusMessage(currentRide.status)
+      });
       return;
     }
     const ride = updateDriverRideStatus(driverRideStatusMatch[1], {
@@ -657,7 +788,13 @@ async function handleApi(request, response) {
       status: body.status
     });
     if (!ride) {
-      sendJson(response, 409, { error: "invalid_driver_ride_transition" });
+      sendJson(response, 409, {
+        error: "invalid_driver_ride_transition",
+        message: `Cannot move ride from ${rideStatusMessage(currentRide.status)} to ${rideStatusMessage(body.status)}.`,
+        messageAr: `لا يمكن نقل الرحلة من ${rideStatusMessage(currentRide.status)} إلى ${rideStatusMessage(body.status)}.`,
+        currentStatus: rideStatusMessage(currentRide.status),
+        requestedStatus: rideStatusMessage(body.status)
+      });
       return;
     }
     broadcast("ride.status.changed", { ride });
@@ -814,7 +951,23 @@ async function handleApi(request, response) {
 
   if (request.method === "POST" && url.pathname === "/api/drivers/status") {
     const body = await readJson(request);
-    const driver = updateDriverStatus(body.driverId, { online: Boolean(body.online) }) || listDrivers()[0];
+    if (!body.driverId) {
+      sendJson(response, 400, {
+        error: "driver_id_required",
+        message: "driverId is required to update captain online status.",
+        messageAr: "معرّف الكابتن مطلوب لتحديث حالة الاتصال."
+      });
+      return;
+    }
+    const driver = updateDriverStatus(body.driverId, { online: Boolean(body.online) });
+    if (!driver) {
+      sendJson(response, 404, {
+        error: "driver_not_found",
+        message: "Captain was not found.",
+        messageAr: "لم يتم العثور على الكابتن."
+      });
+      return;
+    }
     broadcast("driver.status.changed", { driver });
     emitDriverEvent("driver:online-status-updated", { driver });
     sendJson(response, 200, { driver });

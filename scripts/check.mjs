@@ -21,6 +21,7 @@ const requiredFiles = [
   "backend/security.mjs",
   "backend/validation.mjs",
   "backend/rideStatus.mjs",
+  "backend/places.mjs",
   "backend/data.mjs",
   "backend/auth/passwords.mjs",
   "backend/db/database.mjs",
@@ -145,6 +146,7 @@ const sourceOrder = [
   "src/utils/westBankCities.js",
   "src/utils/routeUtils.js",
   "src/utils/mapUtils.js",
+  "src/utils/localPlaces.js",
   "src/utils/paymentUtils.js",
   "src/utils/i18n.js",
   "src/store/appState.js",
@@ -158,6 +160,7 @@ const sourceOrder = [
   "src/services/adminApi.js",
   "src/services/ridesApi.js",
   "src/services/driverApi.js",
+  "src/services/placesApi.js",
   "src/services/supportApi.js",
   "src/services/paymentsApi.js",
   "src/services/pricingApi.js",
@@ -1326,6 +1329,31 @@ for (const mapBoardToken of [
   }
 }
 
+for (const fixRideMapUxToken of [
+  "destination-location-search",
+  "searchPlaces",
+  "searchFallbackPlaces",
+  "LOCAL_WEST_BANK_PLACES",
+  "إلى أين تريد الذهاب؟",
+  "/api/places/search",
+  "driverOperationError",
+  "ride_not_searching",
+  "driver_ride_mismatch",
+  "driverAnchorLocation",
+  "driver-to-pickup-line",
+  "الكابتن لم يفعل التتبع المباشر بعد",
+  "fix-ride-map-ux",
+  "location-result-card",
+  "place search endpoint should return local West Bank fallback places",
+  "customer ride contains driver after accept",
+  "driver dev login should return a development driver token"
+]) {
+  const combinedFixSource = `${appSource}\n${stylesSource}\n${backendSource}\n${backendSmokeSource}`;
+  if (!combinedFixSource.includes(fixRideMapUxToken)) {
+    throw new Error(`Ride scenario/map UX fix is missing: ${fixRideMapUxToken}`);
+  }
+}
+
 for (const premiumStyleToken of [
   "/* phase-8-premium-polish */",
   "--premium-ink",
@@ -1372,6 +1400,7 @@ execFileSync(process.execPath, ["--check", "backend/config.mjs"], { stdio: "inhe
 execFileSync(process.execPath, ["--check", "backend/realtime.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/security.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/validation.mjs"], { stdio: "inherit" });
+execFileSync(process.execPath, ["--check", "backend/places.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/data.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/rideStatus.mjs"], { stdio: "inherit" });
 execFileSync(process.execPath, ["--check", "backend/auth/passwords.mjs"], { stdio: "inherit" });
@@ -1410,6 +1439,7 @@ for (const backendEndpointToken of [
   'url.pathname === "/api/admin/pricing"',
   'url.pathname === "/api/admin/settings"',
   'url.pathname === "/api/bootstrap"',
+  'url.pathname === "/api/places/search"',
   'url.pathname === "/api/events"',
   'captainApplicationApproveMatch',
   'captainApplicationRejectMatch',

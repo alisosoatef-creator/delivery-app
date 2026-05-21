@@ -1,8 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Field, QuoteStrip } from "../../components/ui/index.js";
+import { searchPlaces } from "../../services/placesApi.js";
 import { formatCardExpiryInput, formatCardNumberInput, maskCardNumber } from "../../utils/paymentUtils.js";
 
 export function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onAction }) {
+  const [destinationQuery, setDestinationQuery] = useState("");
+  const [placeResults, setPlaceResults] = useState([]);
+  const [placeSearchStatus, setPlaceSearchStatus] = useState("idle");
   const [cardDraft, setCardDraft] = useState({
     cardHolderName: "",
     cardNumber: "",
@@ -10,6 +14,29 @@ export function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onA
     cardCvv: "",
     saveVisaCardDemo: false
   });
+
+  useEffect(() => {
+    let cancelled = false;
+    const timer = window.setTimeout(() => {
+      setPlaceSearchStatus("loading");
+      searchPlaces({ city: state.cityId, q: destinationQuery })
+        .then((places) => {
+          if (cancelled) return;
+          setPlaceResults(places);
+          setPlaceSearchStatus("ready");
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPlaceResults([]);
+          setPlaceSearchStatus("error");
+        });
+    }, destinationQuery.trim() ? 220 : 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [destinationQuery, state.cityId]);
 
   function updateCardDraft(field, value) {
     setCardDraft((draft) => ({
@@ -53,11 +80,51 @@ export function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onA
     });
   }
 
+  function handleSelectDestination(place) {
+    const point = { lat: Number(place.lat), lng: Number(place.lng) };
+    if (!Number.isFinite(point.lat) || !Number.isFinite(point.lng)) return;
+    setDestinationQuery(place.label);
+    dispatch({
+      type: "patch",
+      patch: {
+        dropoff: `${place.label} - ${place.city}`,
+        destinationLocation: point,
+        routeInfo: null,
+        routeStatus: state.pickupLocation ? "loading" : "idle",
+        routeError: "",
+        toast: isArabic ? "تم تحديد الوجهة على الخريطة." : "Destination selected on the map."
+      }
+    });
+  }
+
+  function handleUsePlaceAsPickup(place) {
+    const point = { lat: Number(place.lat), lng: Number(place.lng) };
+    if (!Number.isFinite(point.lat) || !Number.isFinite(point.lng)) return;
+    dispatch({
+      type: "patch",
+      patch: {
+        pickup: `${place.label} - ${place.city}`,
+        pickupLocation: point,
+        customerLocation: point,
+        routeInfo: null,
+        routeStatus: state.destinationLocation ? "loading" : "idle",
+        routeError: "",
+        locationStatus: "manual"
+      }
+    });
+  }
+
   return (
     <div className="route-search-card">
       <div className="route-search-head">
         <span>{isArabic ? "حجز مشوار" : "Book a ride"}</span>
         <strong>{isArabic ? "من / إلى" : "From / To"}</strong>
+      </div>
+      <div className="ride-step-hint">
+        <span>{isArabic ? "1. اختر المدينة" : "1. Choose city"}</span>
+        <span>{isArabic ? "2. استخدم موقعي الحالي" : "2. Use my location"}</span>
+        <span>{isArabic ? "3. ابحث عن وجهتك" : "3. Search destination"}</span>
+        <span>{isArabic ? "4. اطلب الرحلة" : "4. Request ride"}</span>
       </div>
       <div className="route-fields">
         <Field
@@ -70,6 +137,36 @@ export function RouteSearchCard({ state, dispatch, t, isArabic, actionLabel, onA
           value={state.dropoff}
           onChange={(dropoff) => dispatch({ type: "patch", patch: { dropoff } })}
         />
+      </div>
+      <div className="location-search-panel destination-location-search">
+        <label className="field location-search-field">
+          <span>{isArabic ? "إلى أين تريد الذهاب؟" : "Where do you want to go?"}</span>
+          <input
+            value={destinationQuery}
+            onChange={(event) => setDestinationQuery(event.target.value)}
+            placeholder={isArabic ? "ابحث عن جامعة، حي، دوار..." : "Search a university, district, landmark..."}
+            autoComplete="off"
+          />
+        </label>
+        <div className="location-search-results">
+          {placeSearchStatus === "loading" && <small>{isArabic ? "جاري البحث عن أماكن قريبة..." : "Searching nearby places..."}</small>}
+          {placeSearchStatus === "error" && <small>{isArabic ? "تعذر البحث الآن، استخدم النتائج المحلية أو الخريطة." : "Search failed; use local results or the map."}</small>}
+          {placeResults.map((place) => (
+            <div className="location-result-card" key={place.id}>
+              <span>
+                <strong>{place.label}</strong>
+                <small>{place.category} · {place.city}</small>
+              </span>
+              <button type="button" onClick={() => handleSelectDestination(place)}>{isArabic ? "اختيار الوجهة" : "Select"}</button>
+              <button type="button" className="ghost" onClick={() => handleUsePlaceAsPickup(place)}>
+                {isArabic ? "كنقطة انطلاق" : "As pickup"}
+              </button>
+            </div>
+          ))}
+          {!placeResults.length && placeSearchStatus === "ready" && (
+            <small>{isArabic ? "لا توجد نتائج قريبة. يمكنك كتابة الوجهة يدويًا أو اختيار نقطة متقدمة من الخريطة." : "No nearby results. You can type manually or use the map as an advanced option."}</small>
+          )}
+        </div>
       </div>
       <div className="route-options-row">
         <label className="field city-field">

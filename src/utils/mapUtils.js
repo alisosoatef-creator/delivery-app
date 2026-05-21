@@ -75,6 +75,9 @@ export function mapLocationCopy(locationStatus, isArabic) {
   if (locationStatus === "unsupported") {
     return isArabic ? "المتصفح لا يدعم تحديد الموقع، لذلك نستخدم نابلس افتراضيًا" : "This browser does not support location, so Nablus is used by default";
   }
+  if (locationStatus === "manual") {
+    return isArabic ? "تم اختيار نقطة الانطلاق يدويًا من نتائج البحث" : "Pickup was selected manually from search results";
+  }
   return isArabic ? "الخريطة تبدأ من نابلس ويمكنك السماح بالموقع لتحسين الدقة" : "The map starts in Nablus; allow location for better accuracy";
 }
 

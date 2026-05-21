@@ -72,7 +72,9 @@ export function rideHasAcceptedDriver(ride) {
 
 export function driverDisplayName(driver, isArabic) {
   if (!driver) return isArabic ? "سائق واصل" : "Wasel driver";
-  return isArabic ? driver.nameAr || driver.nameEn || "سائق واصل" : driver.nameEn || driver.nameAr || "Wasel driver";
+  return isArabic
+    ? driver.fullName || driver.nameAr || driver.nameEn || "سائق واصل"
+    : driver.fullName || driver.nameEn || driver.nameAr || "Wasel driver";
 }
 
 export function paymentMethodLabel(paymentMethod, isArabic) {

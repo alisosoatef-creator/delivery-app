@@ -37,14 +37,21 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
   const [mapSelectionMode, setMapSelectionMode] = useState("pickup");
   const [mapTileError, setMapTileError] = useState(false);
   const driver = showDrivers ? selectedDriver : null;
+  const ridePickupLocation = normalizeLocation({ lat: state.ride?.pickupLat, lng: state.ride?.pickupLng }, null);
+  const rideDestinationLocation = normalizeLocation({ lat: state.ride?.destinationLat, lng: state.ride?.destinationLng }, null);
   const cityCenter = useMemo(() => getWestBankCityCenter(state.cityId), [state.cityId]);
   const cityName = westBankCityName(state.cityId, isArabic);
   const customerLocation = customerLocationFromState(state);
-  const pickupLocation = normalizeLocation(state.pickupLocation, null);
-  const destinationLocation = destinationLocationFromState(state);
-  const driverLocation = driverLocationFromDriver(driver);
+  const pickupLocation = normalizeLocation(state.pickupLocation, ridePickupLocation);
+  const destinationLocation = destinationLocationFromState(state) || rideDestinationLocation;
+  const liveDriverLocation =
+    state.driverLocation?.rideId && state.ride?.id && state.driverLocation.rideId === state.ride.id
+      ? normalizeLocation(state.driverLocation, null)
+      : null;
+  const driverLocation = liveDriverLocation || driverLocationFromDriver(driver) || driverLocationFromDriver(state.ride?.driver);
   const shouldShowDriverMarker = Boolean(showDrivers && driverLocation);
-  const driverDistanceKm = shouldShowDriverMarker ? haversineKm(customerLocation, driverLocation) : null;
+  const driverAnchorLocation = pickupLocation || customerLocation;
+  const driverDistanceKm = shouldShowDriverMarker ? haversineKm(driverAnchorLocation, driverLocation) : null;
   const pickupDestinationDistanceKm = estimatePickupDestinationDistance(state);
   const routeDistanceKm = state.routeInfo?.routeDistanceKm || pickupDestinationDistanceKm;
   const durationMinutes = state.routeInfo?.durationMinutes || null;
@@ -98,6 +105,11 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
     dispatch({ type: "patch", patch: { routeInfo: null, routeStatus: "idle", routeError: "" } });
   }, [dispatch, state.cityId]);
 
+  function routePickupLabel(point) {
+    const coordinates = `${point.lat.toFixed(4)}, ${point.lng.toFixed(4)}`;
+    return isArabic ? `نقطة الانطلاق (${coordinates})` : `Pickup point (${coordinates})`;
+  }
+
   function applyMapPoint(kind, point = selectedMapPoint || cityCenter) {
     const normalizedPoint = normalizeLocation(point, cityCenter);
     if (kind === "pickup") {
@@ -138,7 +150,12 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
         type: "patch",
         patch: {
           customerLocation: cityCenter,
+          pickupLocation: cityCenter,
+          pickup: routePickupLabel(cityCenter),
           locationStatus: "unsupported",
+          routeInfo: null,
+          routeStatus: destinationLocation ? "loading" : "idle",
+          routeError: "",
           toast: isArabic ? "المتصفح لا يدعم GPS، سنستخدم مركز المدينة المختارة." : "GPS is not supported, using the selected city center."
         }
       });
@@ -154,7 +171,7 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
           patch: {
             customerLocation: gpsPoint,
             pickupLocation: gpsPoint,
-            pickup: mapPointLabel("pickup", gpsPoint, isArabic),
+            pickup: routePickupLabel(gpsPoint),
             routeInfo: null,
             routeStatus: destinationLocation ? "loading" : "idle",
             routeError: "",
@@ -170,7 +187,12 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
           type: "patch",
           patch: {
             customerLocation: cityCenter,
+            pickupLocation: cityCenter,
+            pickup: routePickupLabel(cityCenter),
             locationStatus: "denied",
+            routeInfo: null,
+            routeStatus: destinationLocation ? "loading" : "idle",
+            routeError: "",
             toast: isArabic ? "لا مشكلة، سنستخدم مركز المدينة المختارة كبديل." : "No problem, using the selected city center as fallback."
           }
         });
@@ -187,6 +209,7 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
         pickupLocation={pickupLocation}
         destinationLocation={destinationLocation}
         driverLocation={driverLocation}
+        driverAnchorLocation={driverAnchorLocation}
         routeCoordinates={routeCoordinates}
         routeSource={routeSource}
         onMapPointChange={handleMapPointChange}
@@ -233,7 +256,14 @@ export function MapBoard({ state, dispatch = () => {}, selectedDriver, t, isArab
             <small>{isArabic ? "الوقت المتوقع" : "ETA"}: {durationMinutes} min</small>
           )}
           {driverDistanceKm !== null && (
-            <small>{isArabic ? "المسافة بين الكابتن وموقعك" : "Captain to customer distance"}: {formatDistanceKm(driverDistanceKm)} km</small>
+            <small>
+              {state.role === "driver"
+                ? (isArabic ? "المسافة إلى الزبون" : "Distance to customer")
+                : (isArabic ? "المسافة بينك وبين الكابتن" : "Distance between you and captain")}: {formatDistanceKm(driverDistanceKm)} km
+            </small>
+          )}
+          {showDrivers && !driverLocation && (
+            <small className="route-warning">{isArabic ? "الكابتن لم يفعل التتبع المباشر بعد." : "Captain live tracking is not active yet."}</small>
           )}
           <small className={`location-hint ${locationStatus}`}>{locationHint}</small>
           {routeStatus === "fallback" && (

@@ -140,6 +140,12 @@ try {
   assert(Array.isArray(bootstrap.pricingRules), "bootstrap should include pricingRules");
   assert(bootstrap.settings?.appStatus, "bootstrap should include active settings");
 
+  const placeSearch = await request("/api/places/search?city=nablus&q=%D8%AC%D8%A7%D9%85%D8%B9%D8%A9");
+  assert(
+    placeSearch.places.some((place) => place.label.includes("جامعة") && Number.isFinite(Number(place.lat)) && Number.isFinite(Number(place.lng))),
+    "place search endpoint should return local West Bank fallback places"
+  );
+
   const phone = `+97059000${Date.now().toString().slice(-4)}`;
   const register = await request("/api/auth/register", {
     method: "POST",
@@ -347,9 +353,18 @@ try {
   const protectedAvailableRides = await request("/api/driver/available-rides?cityId=nablus", { headers: driverHeaders });
   assert(Array.isArray(protectedAvailableRides.rides), "driver endpoints should work with dev driver token");
 
+  const driverDevLogin = await request("/api/driver/dev-login", {
+    method: "POST",
+    headers: driverHeaders,
+    body: JSON.stringify({ driverId: approve.captain.id })
+  });
+  assert(driverDevLogin.token?.startsWith("dev-driver-session-token"), "driver dev login should return a development driver token");
+  assert(driverDevLogin.driver?.id === approve.captain.id, "driver dev login should return the selected approved captain");
+
   const rideAcceptedEvent = waitForSocketEvent(socket, "ride:accepted");
   const acceptedRide = await request(`/api/rides/${rideId}/accept`, {
     method: "PATCH",
+    headers: driverHeaders,
     body: JSON.stringify({ driverId: approve.captain.id })
   });
   const acceptedPayload = await rideAcceptedEvent;
@@ -357,6 +372,11 @@ try {
   assert(acceptedRide.ride.driverId === approve.captain.id, "ride accept endpoint should assign driver id");
   assert(acceptedRide.ride.driver?.id === approve.captain.id, "accepted ride should include driver details");
   assert(acceptedPayload.ride?.id === rideId, "ride:accepted should emit the accepted ride");
+
+  const customerRideAfterAccept = await request(`/api/customer/rides/${rideId}?phone=${encodeURIComponent(phone)}`, {
+    headers: customerHeaders
+  });
+  assert(customerRideAfterAccept.ride?.driver?.id === approve.captain.id, "customer ride contains driver after accept");
 
   socket.emit("join:ride", { rideId });
   const driverLocationEvent = waitForSocketEvent(socket, "driver:location-updated");
@@ -388,6 +408,7 @@ try {
   const rideStatusUpdatedEvent = waitForSocketEvent(socket, "ride:status-updated");
   const driverArriving = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
+    headers: driverHeaders,
     body: JSON.stringify({ driverId: approve.captain.id, status: "driver_arriving" })
   });
   const statusUpdatedPayload = await rideStatusUpdatedEvent;
@@ -396,12 +417,14 @@ try {
 
   const driverArrived = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
+    headers: driverHeaders,
     body: JSON.stringify({ driverId: approve.captain.id, status: "arrived" })
   });
   assert(driverArrived.ride.status === "arrived", "driver should update ride to arrived");
 
   const inProgress = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
+    headers: driverHeaders,
     body: JSON.stringify({ driverId: approve.captain.id, status: "in_progress" })
   });
   assert(inProgress.ride.status === "in_progress", "driver should update ride to in_progress");
@@ -410,6 +433,7 @@ try {
   const cashPaymentCreatedEvent = waitForSocketEvent(socket, "payment:created");
   const status = await request(`/api/driver/rides/${rideId}/status`, {
     method: "PATCH",
+    headers: driverHeaders,
     body: JSON.stringify({ driverId: approve.captain.id, status: "completed" })
   });
   const completedPayload = await rideCompletedEvent;

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatDistanceKm } from "../../utils/mapUtils.js";
 
 export function LocationPicker({
@@ -15,6 +16,7 @@ export function LocationPicker({
   routeStatus,
   selectedMapPoint
 }) {
+  const [collapsed, setCollapsed] = useState(false);
   const routeLabel =
     routeStatus === "loading"
       ? isArabic ? "جاري حساب المسار..." : "Calculating route..."
@@ -23,7 +25,11 @@ export function LocationPicker({
         : isArabic ? "تقدير خطي" : "Straight-line fallback";
 
   return (
-    <div className="location-picker-panel">
+    <div className={`location-picker-panel ${collapsed ? "collapsed" : ""}`}>
+      <button className="map-tool-toggle" type="button" onClick={() => setCollapsed((current) => !current)}>
+        {collapsed ? (isArabic ? "إظهار أدوات الخريطة" : "Show map tools") : (isArabic ? "تصغير أدوات الخريطة" : "Collapse map tools")}
+      </button>
+      <div className="map-tool-body">
       <div className="map-badge-row">
         <span>{isArabic ? "المدينة" : "City"}: <strong>{cityName}</strong></span>
         <span className={`gps-badge ${gpsStatus}`}>GPS: <strong>{gpsStatus}</strong></span>
@@ -66,6 +72,7 @@ export function LocationPicker({
           ? (isArabic ? "تم اختيار نقطة على الخريطة. يمكنك تثبيتها كنقطة انطلاق أو وجهة." : "A map point is selected. Set it as pickup or destination.")
           : (isArabic ? "اضغط على الخريطة لتحديد نقطة الانطلاق، ثم اضغط مرة ثانية لتحديد الوجهة." : "Click the map to set pickup first, then click again to set destination.")}
       </p>
+      </div>
     </div>
   );
 }
