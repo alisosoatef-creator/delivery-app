@@ -1,5 +1,6 @@
 import { io } from "socket.io-client";
 import { appConfig } from "../config/appConfig";
+import { devLogStartup } from "../utils/startupDiagnostics";
 
 const RIDE_EVENTS = [
   "ride:created",
@@ -23,6 +24,13 @@ function sessionAuth(session = {}) {
     driverId: session.driverId || "",
     userId: session.userId || session.customerId || ""
   };
+}
+
+function hasSocketContext(session = {}) {
+  if (!session?.token || !session?.role) return false;
+  if (session.role === "driver") return Boolean(session.driverId);
+  if (session.role === "customer") return Boolean(session.userId || session.customerId || session.phone);
+  return Boolean(session.isAdmin);
 }
 
 function joinRooms(client, session = {}) {
@@ -51,21 +59,33 @@ function notifyConnection(onConnectionChange, status) {
 }
 
 export function connectMobileSocket(session = {}, { onConnectionChange } = {}) {
+  if (!hasSocketContext(session)) {
+    devLogStartup("socket init skipped", { reason: "missing-session-context", role: session?.role || "" });
+    notifyConnection(onConnectionChange, "disconnected");
+    return null;
+  }
   lastSession = { ...lastSession, ...session };
   const auth = sessionAuth(session);
 
-  if (!socket) {
-    socket = io(appConfig.socketUrl, {
-      path: "/socket.io",
-      autoConnect: false,
-      auth,
-      reconnection: true,
-      reconnectionAttempts: 8,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 4000,
-      transports: ["websocket", "polling"]
-    });
+  try {
+    if (!socket) {
+      devLogStartup("socket init started", { role: session.role, socketUrl: appConfig.socketUrl });
+      socket = io(appConfig.socketUrl, {
+        path: "/socket.io",
+        autoConnect: false,
+        auth,
+        reconnection: true,
+        reconnectionAttempts: 8,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 4000,
+        transports: ["websocket", "polling"]
+      });
+    }
+  } catch (error) {
+    devLogStartup("socket init failed", { reason: error?.message });
+    notifyConnection(onConnectionChange, "error");
+    return null;
   }
 
   socket.auth = auth;
@@ -92,7 +112,13 @@ export function connectMobileSocket(session = {}, { onConnectionChange } = {}) {
     joinRooms(socket, lastSession);
   });
 
-  if (!socket.connected && !socket.active) socket.connect();
+  try {
+    if (!socket.connected && !socket.active) socket.connect();
+  } catch (error) {
+    devLogStartup("socket connect failed", { reason: error?.message });
+    notifyConnection(onConnectionChange, "error");
+    return socket;
+  }
   if (!socket.connected) notifyConnection(onConnectionChange, "connecting");
   if (socket.connected) joinRooms(socket, lastSession);
 

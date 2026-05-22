@@ -1,17 +1,19 @@
 import * as SecureStore from "expo-secure-store";
+import { devLogStartup } from "../utils/startupDiagnostics";
 
 const SESSION_KEY = "wasel_mobile_session_v1";
 let memorySession = null;
 
 async function secureStoreAvailable() {
   try {
-    return Boolean(await SecureStore.isAvailableAsync());
-  } catch {
+    return Boolean(SecureStore?.isAvailableAsync && await SecureStore.isAvailableAsync());
+  } catch (error) {
+    devLogStartup("secure store unavailable", { reason: error?.message });
     return false;
   }
 }
 
-function sanitizeSession(session = {}) {
+export function sanitizeSession(session = {}) {
   const role = session.role || session.user?.role || "customer";
   const currentUser = session.currentUser || session.user || null;
   const driverSession = session.driverSession || session.driver || session.session?.driver || null;
@@ -29,28 +31,55 @@ function sanitizeSession(session = {}) {
   };
 }
 
+export function isValidMobileSession(session = null) {
+  if (!session || typeof session !== "object") return false;
+  if (!session.token || !session.role) return false;
+  if (!["customer", "driver"].includes(session.role)) return false;
+  if (session.role === "driver") return Boolean(session.driverId && session.phone);
+  return Boolean(session.currentUser?.id || session.userId || session.phone);
+}
+
 export async function saveMobileSession(session = {}) {
   const clean = sanitizeSession(session);
+  if (!isValidMobileSession(clean)) {
+    devLogStartup("session save skipped", { role: clean.role, reason: "invalid-session" });
+    return null;
+  }
   const serialized = JSON.stringify(clean);
   memorySession = clean;
   if (await secureStoreAvailable()) {
     await SecureStore.setItemAsync(SESSION_KEY, serialized);
   }
+  devLogStartup("secure store save completed", { role: clean.role });
   return clean;
 }
 
 export async function loadMobileSession() {
+  devLogStartup("secure store load started");
   if (await secureStoreAvailable()) {
     const value = await SecureStore.getItemAsync(SESSION_KEY);
-    if (!value) return null;
+    if (!value) {
+      devLogStartup("secure store load completed", { restored: false });
+      return null;
+    }
     try {
-      return sanitizeSession(JSON.parse(value));
-    } catch {
+      const session = sanitizeSession(JSON.parse(value));
+      if (!isValidMobileSession(session)) {
+        await clearMobileSession();
+        devLogStartup("secure store load completed", { restored: false, reason: "invalid-session" });
+        return null;
+      }
+      devLogStartup("secure store load completed", { restored: true, role: session.role });
+      return session;
+    } catch (error) {
       await clearMobileSession();
+      devLogStartup("secure store load completed", { restored: false, reason: error?.message || "parse-error" });
       return null;
     }
   }
-  return memorySession;
+  const fallback = isValidMobileSession(memorySession) ? memorySession : null;
+  devLogStartup("secure store load completed", { restored: Boolean(fallback), source: "memory" });
+  return fallback;
 }
 
 export async function clearMobileSession() {
@@ -58,6 +87,7 @@ export async function clearMobileSession() {
   if (await secureStoreAvailable()) {
     await SecureStore.deleteItemAsync(SESSION_KEY);
   }
+  devLogStartup("secure store cleared");
 }
 
 export function saveDriverSession({ token = "", user = {}, driver = {} } = {}) {

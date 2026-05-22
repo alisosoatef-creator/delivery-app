@@ -1,27 +1,39 @@
 import { useMemo } from "react";
-import { StyleSheet, Text, View } from "react-native";
-import { haversineKm } from "../../utils/locationUtils";
+import { StyleSheet, Text, UIManager, View } from "react-native";
+import { normalizeCoordinate, safeDistanceKm } from "../../utils/locationUtils";
 import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { devLogStartup } from "../../utils/startupDiagnostics";
 
 let MapView = null;
 let Marker = null;
 let Polyline = null;
+let mapLoadAttempted = false;
 
-try {
-  const Maps = require("react-native-maps");
-  MapView = Maps.default || Maps;
-  Marker = Maps.Marker;
-  Polyline = Maps.Polyline;
-} catch {
-  MapView = null;
+function loadNativeMap() {
+  if (mapLoadAttempted) return Boolean(MapView && Marker && Polyline);
+  mapLoadAttempted = true;
+  try {
+    const hasNativeMap = Boolean(UIManager.getViewManagerConfig?.("AIRMap") || UIManager.getViewManagerConfig?.("AIRGoogleMap"));
+    if (!hasNativeMap) {
+      devLogStartup("map component skipped", { reason: "native-map-view-unavailable" });
+      return false;
+    }
+    const Maps = require("react-native-maps");
+    MapView = Maps.default || Maps;
+    Marker = Maps.Marker;
+    Polyline = Maps.Polyline;
+    devLogStartup("map component loaded");
+  } catch (error) {
+    MapView = null;
+    Marker = null;
+    Polyline = null;
+    devLogStartup("map component skipped", { reason: error?.message || "react-native-maps unavailable" });
+  }
+  return Boolean(MapView && Marker && Polyline);
 }
 
 function cleanPoint(point) {
-  if (!point) return null;
-  const lat = Number(point.lat ?? point.latitude);
-  const lng = Number(point.lng ?? point.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { ...point, lat, lng, latitude: lat, longitude: lng };
+  return normalizeCoordinate(point);
 }
 
 function regionFor(points) {
@@ -55,6 +67,18 @@ function mapPinColor(type) {
   return colors.gold;
 }
 
+function FallbackMap({ points, distanceKm, distanceLabel, height, title = "معاينة الخريطة" }) {
+  return (
+    <View style={[styles.fallback, { minHeight: height }]}>
+      <Text selectable style={styles.fallbackTitle}>{title}</Text>
+      <Text selectable style={styles.fallbackText}>نقطة الانطلاق: {points.pickup?.label || "-"}</Text>
+      <Text selectable style={styles.fallbackText}>الوجهة: {points.destination?.label || "-"}</Text>
+      {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
+      {distanceKm ? <Text selectable style={styles.fallbackBadge}>{distanceLabel}: {distanceKm} كم</Text> : null}
+    </View>
+  );
+}
+
 export function MobileRideMap({ pickup, destination, driverLocation, userLocation, rideStatus = "searching", height = 280 }) {
   const points = useMemo(
     () => ({
@@ -73,20 +97,16 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
     : points.pickup && points.destination
       ? [points.pickup, points.destination]
       : [];
-  const distanceKm = driverToPickup ? haversineKm(points.driver, points.pickup) : haversineKm(points.pickup, points.destination);
+  const distanceKm = driverToPickup ? safeDistanceKm(points.driver, points.pickup) : safeDistanceKm(points.pickup, points.destination);
   const distanceLabel = driverToPickup ? "المسافة إلى الزبون" : "مسافة الرحلة";
   const initialRegion = regionFor([points.pickup, points.destination, points.driver, points.user]);
 
-  if (!MapView || !Marker || !Polyline) {
-    return (
-      <View style={[styles.fallback, { minHeight: height }]}>
-        <Text selectable style={styles.fallbackTitle}>معاينة الخريطة غير متاحة في هذه البيئة</Text>
-        <Text selectable style={styles.fallbackText}>نقطة الانطلاق: {points.pickup?.label || "-"}</Text>
-        <Text selectable style={styles.fallbackText}>الوجهة: {points.destination?.label || "-"}</Text>
-        {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
-        {distanceKm ? <Text selectable style={styles.fallbackBadge}>{distanceLabel}: {distanceKm} كم</Text> : null}
-      </View>
-    );
+  if (!points.pickup && !points.destination && !points.driver && !points.user) {
+    return <FallbackMap points={points} distanceKm={0} distanceLabel={distanceLabel} height={height} title="الخريطة غير جاهزة بعد." />;
+  }
+
+  if (!loadNativeMap()) {
+    return <FallbackMap points={points} distanceKm={distanceKm} distanceLabel={distanceLabel} height={height} title="معاينة الخريطة غير متاحة في هذه البيئة" />;
   }
 
   return (

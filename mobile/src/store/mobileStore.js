@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
-import { loadMobileSession } from "../services/sessionStorage";
+import { clearMobileSession, isValidMobileSession, loadMobileSession } from "../services/sessionStorage";
+import { devLogStartup } from "../utils/startupDiagnostics";
 
 const MobileStoreContext = createContext(null);
 
@@ -37,7 +38,7 @@ function reducer(state, action) {
       return { ...state, ...action.patch };
     case "restoreSession": {
       const session = action.session;
-      if (!session?.token || !session?.role) {
+      if (!isValidMobileSession(session)) {
         return { ...state, restoreStatus: "ready", role: "guest", activeArea: "auth", activeScreen: "login" };
       }
       const isDriver = session.role === "driver";
@@ -109,13 +110,16 @@ export function MobileAppProvider({ children }) {
     loadMobileSession()
       .then((session) => {
         if (!mounted) return;
-        if (session?.token) {
+        if (isValidMobileSession(session)) {
+          devLogStartup("session restored", { role: session.role });
           dispatch({ type: "restoreSession", session });
         } else {
           dispatch({ type: "restoreComplete" });
         }
       })
-      .catch(() => {
+      .catch(async (error) => {
+        devLogStartup("session restore failed", { reason: error?.message });
+        await clearMobileSession().catch(() => {});
         if (mounted) dispatch({ type: "restoreComplete" });
       });
     return () => {

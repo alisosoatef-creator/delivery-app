@@ -132,6 +132,10 @@ Use Expo Go first. No custom native build is needed for this foundation.
 - If REST works but realtime does not, set `EXPO_PUBLIC_SOCKET_URL` to the same host without `/api`.
 - For Android emulator use `10.0.2.2` for both API and Socket URL.
 - Restart Expo after changing `.env`.
+- If Expo Go shows a generic "Something went wrong", run `npm.cmd run mobile:start` and read the terminal stack trace.
+- To clear stale Metro cache, run from `mobile`: `npm.cmd run start -- --clear`.
+- Runtime crashes are wrapped by `src/components/ErrorBoundary.js`; in DEV it shows `error.message` and a component stack inside the app.
+- Startup diagnostics log safe messages such as app start, API URL, SecureStore restore, socket init, and map load/fallback. Tokens and passwords are not printed.
 
 ## Test Session Restore
 1. Start the backend with `npm.cmd run api`.
@@ -140,6 +144,12 @@ Use Expo Go first. No custom native build is needed for this foundation.
 4. Close Expo Go fully and reopen the app.
 5. The app should show a restore loading state, then open the correct customer or driver home.
 6. Press logout and reopen; the app should return to Login.
+
+## Runtime Diagnostics
+- `ErrorBoundary` catches JavaScript runtime errors and offers retry or session cleanup.
+- `sessionStorage` clears corrupt or incomplete sessions instead of throwing during startup.
+- `socketClient` skips connection if token/role context is missing and reports `disconnected` or `error`.
+- `MobileRideMap` validates coordinates and falls back if `react-native-maps` native views are not available in Expo Go.
 
 ## Phase 26 TODO
 - Persistent token storage with SecureStore.

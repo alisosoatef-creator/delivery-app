@@ -5,7 +5,7 @@ import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
 import { createRide, quoteRide } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { haversineKm, pointFromCity, pointFromPlace } from "../../utils/locationUtils";
+import { pointFromCity, pointFromPlace, safeDistanceKm } from "../../utils/locationUtils";
 import { colors } from "../../utils/mobileTheme";
 import { cityOptions } from "../../utils/westBankCities";
 
@@ -21,7 +21,7 @@ export function RequestRideScreen() {
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
 
-  const distanceKm = useMemo(() => haversineKm(pickup, destination), [pickup, destination]);
+  const distanceKm = useMemo(() => safeDistanceKm(pickup, destination), [pickup, destination]);
   const session = { token: state.token, role: "customer", phone: state.currentUser?.phone, userId: state.currentUser?.id };
 
   async function useGpsLocation() {
@@ -77,7 +77,7 @@ export function RequestRideScreen() {
 
   async function calculateQuote(nextDestination = destination) {
     if (!pickup || !nextDestination) return null;
-    const nextDistanceKm = haversineKm(pickup, nextDestination);
+    const nextDistanceKm = safeDistanceKm(pickup, nextDestination);
     const payload = await quoteRide({ cityId, distanceKm: nextDistanceKm });
     setQuote({ ...payload, distanceKm: nextDistanceKm });
     return { ...payload, distanceKm: nextDistanceKm };

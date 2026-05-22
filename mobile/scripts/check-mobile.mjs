@@ -7,6 +7,7 @@ const required = [
   "data/fallback.js",
   "lib/api.js",
   "src/App.js",
+  "src/components/ErrorBoundary.js",
   "src/config/appConfig.js",
   "src/services/apiClient.js",
   "src/services/authApi.js",
@@ -45,6 +46,7 @@ const required = [
   "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
   "src/utils/errorUtils.js",
+  "src/utils/startupDiagnostics.js",
   "src/utils/westBankCities.js",
   "app.json",
   "eas.json"
@@ -59,6 +61,9 @@ for (const file of required) {
 const appJson = JSON.parse(fs.readFileSync("app.json", "utf8"));
 if (appJson.expo.slug !== "wasel-delivery") {
   throw new Error("Unexpected Expo slug");
+}
+if (appJson.expo.scheme !== "wasel") {
+  throw new Error("Expo scheme is required for stable linking");
 }
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
@@ -88,7 +93,10 @@ const source = [
   "src/store/mobileStore.js",
   "src/utils/locationUtils.js",
   "src/utils/errorUtils.js",
+  "src/utils/startupDiagnostics.js",
+  "src/components/ErrorBoundary.js",
   "src/components/map/MobileRideMap.js",
+  "src/App.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
   "src/screens/auth/LoginScreen.js",
@@ -120,12 +128,18 @@ for (const token of [
   "MobileRideMap",
   "EXPO_PUBLIC_SOCKET_URL",
   "expo-secure-store",
+  "ErrorBoundary",
+  "حدث خطأ في تطبيق الموبايل",
+  "تسجيل الخروج ومسح الجلسة",
   "saveMobileSession",
   "loadMobileSession",
   "clearMobileSession",
   "saveDriverSession",
+  "isValidMobileSession",
   "restoreSession",
   "restoreStatus",
+  "try",
+  "catch",
   "disconnectMobileSocket",
   "classifyApiError",
   "network_error",
@@ -135,6 +149,13 @@ for (const token of [
   "not_found",
   "reconnectionAttempts",
   "reconnect_attempt",
+  "socket init skipped",
+  "map component loaded",
+  "map component skipped",
+  "isValidCoordinate",
+  "normalizeCoordinate",
+  "safeDistanceKm",
+  "الخريطة غير جاهزة بعد",
   "haversineKm",
   "/places/search",
   "إلى أين تريد الذهاب؟",
@@ -162,6 +183,16 @@ for (const token of [
 const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");
 if (/\bpassword\b/i.test(sessionStorageSource)) {
   throw new Error("sessionStorage must not persist passwords");
+}
+
+const mobileSourceFiles = fs.readdirSync("src", { recursive: true })
+  .filter((file) => String(file).endsWith(".js"))
+  .map((file) => `src/${String(file).replace(/\\/g, "/")}`);
+const mobileSource = mobileSourceFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+for (const forbidden of ["react-dom", "leaflet", "react-leaflet", "document.", "window."]) {
+  if (mobileSource.includes(forbidden)) {
+    throw new Error(`Forbidden web-only mobile import or global: ${forbidden}`);
+  }
 }
 
 console.log("mobile-check-ok");

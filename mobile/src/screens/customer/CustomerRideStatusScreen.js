@@ -84,7 +84,7 @@ export function CustomerRideStatusScreen() {
       });
     });
 
-    if (client.connected) joinRideRoom(ride.id);
+    if (client?.connected) joinRideRoom(ride.id);
     return () => {
       unsubscribeRide();
       unsubscribeLocation();
