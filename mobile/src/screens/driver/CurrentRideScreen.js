@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatusTimeline } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
 import { fetchDriverRides, updateDriverRideStatus } from "../../services/driverApi";
 import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
@@ -76,14 +76,12 @@ export function CurrentRideScreen() {
         }
       }
     );
-
     const unsubscribe = subscribeToDriverEvents((payload, eventName) => {
       const nextRide = payload?.ride;
       if (eventName === "ride:created" || !nextRide || String(nextRide.driverId || "") === String(session.driverId) || String(nextRide.id || "") === String(currentRide?.id || "")) {
         load();
       }
     });
-
     return unsubscribe;
   }, [session.driverId, session.phone, session.token, currentRide?.id]);
 
@@ -123,22 +121,8 @@ export function CurrentRideScreen() {
         (location) => {
           setDriverLocation(location);
           setTrackingStatus("active");
-          dispatch({
-            type: "patch",
-            patch: {
-              driverLocation: location,
-              liveTrackingStatus: "active",
-              lastDriverLocationAt: location.timestamp || new Date().toISOString(),
-              toast: "تم تحديث موقع الكابتن مباشرًا."
-            }
-          });
-          const sent = emitDriverLocation({
-            rideId: currentRide.id,
-            driverId: session.driverId,
-            lat: location.lat,
-            lng: location.lng,
-            timestamp: location.timestamp
-          });
+          dispatch({ type: "patch", patch: { driverLocation: location, liveTrackingStatus: "active", lastDriverLocationAt: location.timestamp || new Date().toISOString(), toast: "تم تحديث موقع الكابتن مباشرًا." } });
+          const sent = emitDriverLocation({ rideId: currentRide.id, driverId: session.driverId, lat: location.lat, lng: location.lng, timestamp: location.timestamp });
           if (!sent) setSocketStatus("offline");
         },
         () => {
@@ -167,48 +151,55 @@ export function CurrentRideScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="رحلة الكابتن" title="رحلتي الحالية" subtitle="تابع الرحلة وحدث الحالة بالتسلسل الصحيح.">
+    <ScreenContainer showHeader={false} compact>
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-      {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الرحلات المتاحة." actionTitle="الرحلات المتاحة" onAction={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} /> : null}
+      {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الطلبات." actionTitle="عرض الطلبات" onAction={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} /> : null}
       {currentRide ? (
-        <MobileCard tone="soft">
-          <SectionHeader title={statusLabel(currentRide.status)} subtitle={`${currentRide.pickup} ← ${currentRide.destination}`} />
-          <MobileBadge label={currentRide.status === "completed" ? "تم إنهاء الرحلة" : "رحلة نشطة"} tone={currentRide.status === "completed" ? "success" : "warning"} />
-          <StatusTimeline status={currentRide.status} />
-          <MobileRideMap
-            pickup={pickupPoint}
-            destination={destinationPoint}
-            driverLocation={driverLocation}
-            userLocation={driverLocation}
-            rideStatus={currentRide.status}
-          />
-          <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
-          <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
-          <InfoRow label="السعر" value={money(currentRide.price || currentRide.fareIls)} />
-          <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
-          <InfoRow label="الدفع" value={currentRide.paymentMethod || "cash"} />
+        <>
+          <View style={styles.header}>
+            <View>
+              <Text selectable style={styles.title}>رحلتي الحالية</Text>
+              <Text selectable style={styles.subtitle}>{statusLabel(currentRide.status)}</Text>
+            </View>
+            <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+          </View>
+          <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={285} />
+          <MobileCard tone="soft">
+            <StatusTimeline status={currentRide.status} />
+            <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
+            <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
+            <InfoRow label="السعر" value={money(currentRide.price || currentRide.fareIls)} />
+            <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
+            <InfoRow label="الدفع" value={currentRide.paymentMethod || "cash"} />
+          </MobileCard>
           <MobileCard tone="flat">
-            <SectionHeader title="التتبع المباشر" subtitle={socketStatus === "connected" ? "Socket.IO متصل" : "التحديث اليدوي متاح كاحتياط"} />
-            <View style={styles.trackingPills}>
-              <MobileBadge label={socketStatus === "connected" ? "مباشر" : "غير متصل"} tone={socketStatus === "connected" ? "success" : "warning"} />
-              <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "requesting" ? "جاري الطلب" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+            <View style={styles.trackingHeader}>
+              <Text selectable style={styles.cardTitle}>التتبع</Text>
+              <View style={styles.trackingPills}>
+                <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+              </View>
             </View>
             <View style={styles.trackingActions}>
-              <MobileButton title="تفعيل موقعي المباشر" variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
-              <MobileButton title="إيقاف التتبع" variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
+              <MobileButton title="تفعيل موقعي" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
+              <MobileButton title="إيقاف" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
             </View>
           </MobileCard>
-          {action ? <MobileButton title={action[1]} onPress={() => update(action[0])} /> : <Text selectable style={styles.muted}>تم إنهاء الرحلة أو لا توجد خطوة تالية لهذه الحالة.</Text>}
-        </MobileCard>
+          {action ? <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} /> : <Text selectable style={styles.muted}>لا توجد خطوة تالية لهذه الحالة.</Text>}
+        </>
       ) : null}
-      <MobileButton title="تحديث رحلاتي" variant="secondary" onPress={load} />
+      <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" },
-  muted: { color: colors.muted, lineHeight: 22, textAlign: "right", fontWeight: "800" },
+  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  title: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
+  cardTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
+  muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
+  trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  trackingActions: { gap: spacing.sm }
+  trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" }
 });

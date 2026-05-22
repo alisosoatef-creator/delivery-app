@@ -21,6 +21,6 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(255, 255, 255, 0.065)"
   },
   label: { color: colors.muted, fontWeight: "800", textAlign: "right" },
-  accent: { color: colors.gold },
+  accent: { color: colors.primary },
   value: { color: colors.text, fontWeight: "900", textAlign: "left", flexShrink: 1 }
 });

@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text } from "react-native";
-import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
 import { fetchCustomerRides } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, money } from "../../utils/mobileTheme";
+import { colors, money, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 
 export function MyRidesScreen() {
@@ -35,26 +35,40 @@ export function MyRidesScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="سجل الرحلات" title="رحلاتي" subtitle="كل رحلاتك محفوظة من الـ Backend، والرحلات النشطة يمكن متابعتها مباشرة.">
+    <ScreenContainer title="رحلاتي" subtitle="قائمة مختصرة لكل المشاوير السابقة والنشطة." compact>
       {status === "loading" ? <LoadingState /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
-        <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة من شاشة طلب الرحلة لتظهر هنا." actionTitle="طلب رحلة" onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+        <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة لتظهر هنا." actionTitle="طلب رحلة" onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
       ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "gold" : "default"}>
-          <SectionHeader title={ride.destination || "رحلة"} subtitle={ride.pickup ? `${ride.pickup} ← ${ride.destination}` : "تفاصيل الرحلة"} />
-          <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
-          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
-          <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
-          {isActiveRide(ride) ? <MobileButton title="متابعة" onPress={() => continueRide(ride)} /> : null}
+        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "soft" : "flat"} style={styles.rideCard}>
+          <View style={styles.rideHeader}>
+            <View style={styles.rideTitleWrap}>
+              <Text selectable style={styles.rideTitle}>{ride.destination || "رحلة"}</Text>
+              <Text selectable numberOfLines={1} style={styles.ridePath}>{ride.pickup ? `${ride.pickup} ← ${ride.destination}` : "تفاصيل الرحلة"}</Text>
+            </View>
+            <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
+          </View>
+          <View style={styles.metaRow}>
+            <Text selectable style={styles.meta}>{money(ride.price || ride.fareIls)}</Text>
+            <Text selectable style={styles.meta}>{ride.paymentMethod || "cash"}</Text>
+            {isActiveRide(ride) ? <MobileButton title="متابعة" compact onPress={() => continueRide(ride)} /> : null}
+          </View>
         </MobileCard>
       ))}
-      <MobileButton title="تحديث الرحلات" variant="secondary" onPress={load} />
+      <MobileButton title="تحديث الرحلات" compact variant="secondary" onPress={load} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
+  rideCard: { gap: spacing.xs },
+  rideHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
+  rideTitleWrap: { flex: 1, alignItems: "flex-end", gap: 3 },
+  rideTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  ridePath: { color: colors.muted, fontSize: 12, textAlign: "right" },
+  metaRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm, justifyContent: "space-between" },
+  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" }
 });

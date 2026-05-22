@@ -15,12 +15,12 @@ export function MobileInput({
   const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
-      <Text selectable style={styles.label}>{label}</Text>
+      {label ? <Text selectable style={styles.label}>{label}</Text> : null}
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#667080"
+        placeholderTextColor={colors.mutedStrong}
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         multiline={multiline}
@@ -36,17 +36,17 @@ export function MobileInput({
 
 const styles = StyleSheet.create({
   field: { gap: spacing.xs },
-  label: { color: colors.textSoft, fontSize: 13, fontWeight: "800", textAlign: "right" },
+  label: { color: colors.textSoft, fontSize: 12, fontWeight: "700", textAlign: "right" },
   input: {
-    minHeight: 52,
-    borderRadius: radii.md,
+    minHeight: 48,
+    borderRadius: radii.sm,
     borderColor: "rgba(255, 255, 255, 0.12)",
     borderWidth: 1,
     color: colors.text,
     backgroundColor: "rgba(3, 7, 18, 0.54)",
     paddingHorizontal: spacing.md,
-    fontSize: 15,
-    fontWeight: "700"
+    fontSize: 14,
+    fontWeight: "600"
   },
   multiline: {
     minHeight: 112,

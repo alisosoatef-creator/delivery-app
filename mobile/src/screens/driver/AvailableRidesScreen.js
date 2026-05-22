@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text } from "react-native";
-import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
 import { acceptRide, fetchAvailableRides } from "../../services/driverApi";
 import { connectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money } from "../../utils/mobileTheme";
+import { colors, km, money, spacing } from "../../utils/mobileTheme";
 
 export function AvailableRidesScreen() {
   const { state, dispatch } = useMobileApp();
@@ -61,32 +61,41 @@ export function AvailableRidesScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="طلبات جديدة" title="الرحلات المتاحة" subtitle="تظهر رحلات searching هنا تلقائيًا عند وصول طلبات جديدة.">
-      <MobileCard tone="gold">
-        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "تحديث يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-        <Text selectable style={styles.muted}>إذا لم تظهر الرحلة فورًا استخدم زر تحديث الطلبات كخيار احتياطي.</Text>
-      </MobileCard>
+    <ScreenContainer title="طلبات الرحلات" subtitle={socketStatus === "connected" ? "الطلبات الجديدة تظهر مباشرة." : "يمكنك التحديث يدويًا عند الحاجة."} compact>
+      <View style={styles.statusLine}>
+        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+        <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
+      </View>
       {status === "loading" ? <LoadingState /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
-        <EmptyState title="لا توجد رحلات متاحة" message="عند طلب رحلة من الزبون ستظهر هنا تلقائيًا أو بعد التحديث." actionTitle="تحديث الطلبات" onAction={load} />
+        <EmptyState title="لا توجد طلبات الآن" message="عند طلب رحلة من زبون ستظهر هنا." actionTitle="تحديث" onAction={load} />
       ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone="soft">
-          <SectionHeader title={ride.destination || "وجهة جديدة"} subtitle={`${ride.pickup} ← ${ride.destination}`} />
-          <InfoRow label="المدينة" value={ride.city || ride.cityId || "-"} />
-          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
-          <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
-          <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
-          <MobileButton title="قبول الرحلة" onPress={() => accept(ride.id)} />
+        <MobileCard key={ride.id} tone="flat" style={styles.request}>
+          <View style={styles.route}>
+            <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
+            <Text selectable numberOfLines={1} style={styles.path}>{ride.pickup} ← {ride.destination}</Text>
+          </View>
+          <View style={styles.details}>
+            <Text selectable style={styles.detail}>{km(ride.routeDistanceKm || ride.distanceKm)}</Text>
+            <Text selectable style={styles.detail}>{money(ride.price || ride.fareIls)}</Text>
+            <Text selectable style={styles.detail}>{ride.paymentMethod || "cash"}</Text>
+          </View>
+          <MobileButton title="قبول" variant="accent" onPress={() => accept(ride.id)} />
         </MobileCard>
       ))}
-      <MobileButton title="تحديث الطلبات" variant="secondary" onPress={load} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  muted: { color: colors.muted, lineHeight: 22, textAlign: "right", fontWeight: "800" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  request: { gap: spacing.sm },
+  route: { alignItems: "flex-end", gap: 3 },
+  destination: { color: colors.text, fontSize: 17, fontWeight: "800", textAlign: "right" },
+  path: { color: colors.muted, fontSize: 12, textAlign: "right" },
+  details: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
+  detail: { color: colors.textSoft, fontSize: 12, fontWeight: "700", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.055)" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

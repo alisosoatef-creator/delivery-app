@@ -13,7 +13,10 @@ function loadNativeMap() {
   if (mapLoadAttempted) return Boolean(MapView && Marker && Polyline);
   mapLoadAttempted = true;
   try {
-    const hasNativeMap = Boolean(UIManager.getViewManagerConfig?.("AIRMap") || UIManager.getViewManagerConfig?.("AIRGoogleMap"));
+    const hasNativeMap = Boolean(
+      UIManager.getViewManagerConfig?.("AIRMap") ||
+        UIManager.getViewManagerConfig?.("AIRGoogleMap")
+    );
     if (!hasNativeMap) {
       devLogStartup("map component skipped", { reason: "native-map-view-unavailable" });
       return false;
@@ -41,10 +44,12 @@ function regionFor(points) {
   if (!valid.length) {
     return { latitude: 32.2211, longitude: 35.2544, latitudeDelta: 0.08, longitudeDelta: 0.08 };
   }
+
   const avgLat = valid.reduce((sum, point) => sum + point.lat, 0) / valid.length;
   const avgLng = valid.reduce((sum, point) => sum + point.lng, 0) / valid.length;
   const maxLatDelta = Math.max(...valid.map((point) => Math.abs(point.lat - avgLat)), 0.02) * 3;
   const maxLngDelta = Math.max(...valid.map((point) => Math.abs(point.lng - avgLng)), 0.02) * 3;
+
   return {
     latitude: avgLat,
     longitude: avgLng,
@@ -64,7 +69,7 @@ function mapPinColor(type) {
   if (type === "driver") return colors.green;
   if (type === "destination") return colors.red;
   if (type === "user") return colors.blue;
-  return colors.gold;
+  return colors.primary;
 }
 
 function FallbackMap({ points, distanceKm, distanceLabel, height, title = "معاينة الخريطة" }) {
@@ -72,11 +77,20 @@ function FallbackMap({ points, distanceKm, distanceLabel, height, title = "مع�
     <View style={[styles.fallback, { minHeight: height }]}>
       <View style={styles.fallbackGrid} />
       <View style={styles.routeLine} />
-      <Text selectable style={styles.fallbackTitle}>{title}</Text>
-      <Text selectable style={styles.fallbackText}>من: {points.pickup?.label || "-"}</Text>
-      <Text selectable style={styles.fallbackText}>إلى: {points.destination?.label || "-"}</Text>
-      {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
-      {distanceKm ? <Text selectable style={styles.badge}>{distanceLabel}: {distanceKm} كم</Text> : null}
+      <View style={styles.pinA} />
+      <View style={styles.pinB} />
+      {points.driver ? <View style={styles.driverPin} /> : null}
+      <View style={styles.fallbackCopy}>
+        <Text selectable style={styles.fallbackTitle}>{title}</Text>
+        <Text selectable style={styles.fallbackText}>من: {points.pickup?.label || "-"}</Text>
+        <Text selectable style={styles.fallbackText}>إلى: {points.destination?.label || "-"}</Text>
+        {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
+      </View>
+      {distanceKm ? (
+        <Text selectable style={styles.badge}>
+          {distanceLabel}: {distanceKm} كم
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -104,7 +118,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
   const initialRegion = regionFor([points.pickup, points.destination, points.driver, points.user]);
 
   if (!points.pickup && !points.destination && !points.driver && !points.user) {
-    return <FallbackMap points={points} distanceKm={0} distanceLabel={distanceLabel} height={height} title="الخريطة غير جاهزة بعد." />;
+    return <FallbackMap points={points} distanceKm={0} distanceLabel={distanceLabel} height={height} title="الخريطة غير جاهزة بعد" />;
   }
 
   if (!loadNativeMap()) {
@@ -117,7 +131,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
         {routePoints.length === 2 ? (
           <Polyline
             coordinates={routePoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
-            strokeColor={driverToPickup ? colors.green : colors.gold}
+            strokeColor={driverToPickup ? colors.green : colors.primary}
             strokeWidth={5}
           />
         ) : null}
@@ -126,7 +140,11 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
         {points.driver ? <Marker coordinate={{ latitude: points.driver.lat, longitude: points.driver.lng }} title={markerTitle("driver")} pinColor={mapPinColor("driver")} /> : null}
         {points.user ? <Marker coordinate={{ latitude: points.user.lat, longitude: points.user.lng }} title={markerTitle("user")} pinColor={mapPinColor("user")} /> : null}
       </MapView>
-      {distanceKm ? <Text selectable style={styles.badge}>{distanceLabel}: {distanceKm} كم</Text> : null}
+      {distanceKm ? (
+        <Text selectable style={styles.badge}>
+          {distanceLabel}: {distanceKm} كم
+        </Text>
+      ) : null}
       <View pointerEvents="none" style={styles.mapChrome} />
     </View>
   );
@@ -135,40 +153,41 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(231, 195, 111, 0.28)",
+    borderColor: "rgba(49, 228, 214, 0.22)",
     backgroundColor: colors.surfaceStrong,
-    boxShadow: shadows.blueGlow
+    boxShadow: shadows.glow
   },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.14)"
+    borderColor: "rgba(255, 255, 255, 0.1)"
   },
   badge: {
     position: "absolute",
     left: spacing.sm,
     bottom: spacing.sm,
-    color: "#171107",
-    backgroundColor: colors.gold,
+    color: colors.black,
+    backgroundColor: colors.primary,
     borderRadius: 999,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    fontWeight: "900"
+    fontWeight: "900",
+    fontSize: 12
   },
   fallback: {
     gap: spacing.sm,
     justifyContent: "flex-end",
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(231, 195, 111, 0.25)",
+    borderColor: "rgba(49, 228, 214, 0.2)",
     backgroundColor: colors.surfaceStrong,
     padding: spacing.md,
     overflow: "hidden",
-    boxShadow: shadows.blueGlow
+    boxShadow: shadows.glow
   },
   fallbackGrid: {
     position: "absolute",
@@ -176,18 +195,49 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: "rgba(127, 176, 255, 0.045)"
+    backgroundColor: "rgba(49, 228, 214, 0.045)"
   },
   routeLine: {
     position: "absolute",
     width: "76%",
     height: 5,
     borderRadius: 999,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.primary,
     top: "44%",
     left: "12%",
     transform: [{ rotate: "-16deg" }]
   },
-  fallbackTitle: { color: colors.text, fontWeight: "900", fontSize: 17, textAlign: "right" },
-  fallbackText: { color: colors.muted, textAlign: "right", fontWeight: "800" }
+  pinA: {
+    position: "absolute",
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: colors.primary,
+    top: "39%",
+    right: "18%"
+  },
+  pinB: {
+    position: "absolute",
+    width: 16,
+    height: 16,
+    borderRadius: 999,
+    backgroundColor: colors.red,
+    top: "49%",
+    left: "18%"
+  },
+  driverPin: {
+    position: "absolute",
+    width: 18,
+    height: 18,
+    borderRadius: 999,
+    backgroundColor: colors.green,
+    top: "28%",
+    right: "42%"
+  },
+  fallbackCopy: {
+    gap: spacing.xs,
+    maxWidth: "78%"
+  },
+  fallbackTitle: { color: colors.text, fontWeight: "900", fontSize: 16, textAlign: "right" },
+  fallbackText: { color: colors.muted, textAlign: "right", fontWeight: "700", fontSize: 12 }
 });

@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   copy: { flex: 1, gap: spacing.xxs, alignItems: "flex-end" },
-  eyebrow: { color: colors.gold, fontSize: typography.caption, fontWeight: "900", textAlign: "right" },
-  title: { color: colors.text, fontSize: typography.section, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" }
+  eyebrow: { color: colors.primary, fontSize: typography.caption, fontWeight: "700", textAlign: "right" },
+  title: { color: colors.text, fontSize: typography.section, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 12, lineHeight: 19, textAlign: "right" }
 });

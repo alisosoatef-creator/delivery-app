@@ -16,12 +16,12 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 0,
-    minWidth: 136,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(231, 195, 111, 0.12)",
+    minWidth: 112,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: "rgba(49, 228, 214, 0.09)",
     borderWidth: 1,
-    borderColor: "rgba(231, 195, 111, 0.3)",
+    borderColor: "rgba(49, 228, 214, 0.24)",
     gap: spacing.xs
   },
   blue: {
@@ -33,6 +33,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(67, 230, 162, 0.26)"
   },
   label: { color: colors.muted, fontSize: 12, fontWeight: "800", textAlign: "right" },
-  value: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
-  hint: { color: colors.muted, fontSize: 12, textAlign: "right" }
+  value: { color: colors.text, fontSize: 20, fontWeight: "800", textAlign: "right" },
+  hint: { color: colors.muted, fontSize: 11, textAlign: "right" }
 });

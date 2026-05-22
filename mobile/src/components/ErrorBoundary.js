@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
   message: { color: colors.muted, lineHeight: 22, textAlign: "right" },
   devBox: { gap: spacing.sm, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceSoft },
-  devTitle: { color: colors.gold, fontWeight: "900", textAlign: "right" },
+  devTitle: { color: colors.primary, fontWeight: "900", textAlign: "right" },
   devText: { color: colors.text, textAlign: "right" },
   stack: { color: colors.muted, fontSize: 12, lineHeight: 18 }
 });

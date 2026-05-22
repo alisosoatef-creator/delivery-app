@@ -24,12 +24,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.05)"
   },
   selected: {
-    backgroundColor: colors.gold,
-    borderColor: colors.gold
+    backgroundColor: colors.primary,
+    borderColor: colors.primary
   },
   pressed: {
     transform: [{ scale: 0.98 }]
   },
   label: { color: colors.text, fontWeight: "900", fontSize: 13 },
-  selectedLabel: { color: "#161006" }
+  selectedLabel: { color: colors.black }
 });

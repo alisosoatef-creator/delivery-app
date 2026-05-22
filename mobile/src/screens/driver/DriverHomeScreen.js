@@ -1,9 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
-import { InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatCard } from "../../components/ui";
+import { InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
 import { clearMobileSession } from "../../services/sessionStorage";
 import { disconnectMobileSocket } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, money, spacing } from "../../utils/mobileTheme";
 
 export function DriverHomeScreen() {
   const { state, dispatch } = useMobileApp();
@@ -16,36 +16,44 @@ export function DriverHomeScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="لوحة الكابتن" title="جاهز تستقبل الرحلات؟" subtitle="واجهة موبايل للكابتن مرتبطة بنفس الـ Backend ونفس جلسة التطوير.">
-      <MobileCard tone="gold">
+    <ScreenContainer showHeader={false}>
+      <View style={styles.header}>
         <MobileBadge label={driver.status || "active"} tone="success" />
+        <Text selectable style={styles.title}>أهلًا كابتن</Text>
         <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
         <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
-        <InfoRow label="الجلسة" value="محفوظة محليًا" />
-      </MobileCard>
-
-      <View style={styles.stats}>
-        <StatCard label="الحالة" value="نشط" hint="Development" />
-        <StatCard label="التحديث" value={state.socketStatus === "connected" ? "مباشر" : "يدوي"} hint="Socket.IO" tone="blue" />
       </View>
 
-      <MobileCard>
-        <SectionHeader title="إجراءات الكابتن" subtitle="انتقل سريعًا للطلبات، الرحلة الحالية، الأرباح أو الدعم." />
+      <View style={styles.stats}>
+        <StatCard label="التوفر" value="نشط" hint="جاهز" tone="green" />
+        <StatCard label="اليوم" value={money(0)} hint="أرباح" />
+      </View>
+
+      <MobileCard tone="soft">
+        <Text selectable style={styles.sectionTitle}>إجراءات سريعة</Text>
         <View style={styles.actions}>
-          <MobileButton title="الرحلات المتاحة" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
+          <MobileButton title="عرض الطلبات" variant="accent" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
           <MobileButton title="رحلتي الحالية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} />
-          <MobileButton title="الأرباح" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} />
-          <MobileButton title="الدعم" variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "support" })} />
-          <MobileButton title="تسجيل خروج الكابتن" variant="danger" onPress={logout} />
         </View>
+        <InfoRow label="التحديث المباشر" value={state.socketStatus === "connected" ? "متصل" : "يدوي"} />
       </MobileCard>
+
+      <View style={styles.secondaryActions}>
+        <MobileButton title="الأرباح" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} />
+        <MobileButton title="الدعم" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "support" })} />
+        <MobileButton title="خروج" compact variant="danger" onPress={logout} />
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  name: { color: colors.text, fontWeight: "900", fontSize: 25, textAlign: "right" },
-  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "800" },
+  header: { alignItems: "flex-end", gap: spacing.xs, paddingTop: spacing.sm },
+  title: { color: colors.primary, fontSize: 14, fontWeight: "700", textAlign: "right" },
+  name: { color: colors.text, fontWeight: "800", fontSize: 28, textAlign: "right" },
+  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "600" },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  actions: { gap: spacing.sm }
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  actions: { gap: spacing.sm },
+  secondaryActions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }
 });

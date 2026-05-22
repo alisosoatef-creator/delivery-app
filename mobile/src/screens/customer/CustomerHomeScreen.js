@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatCard } from "../../components/ui";
+import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
 import { useCustomerActiveRide } from "../../hooks/useCustomerActiveRide";
 import { useMobileApp } from "../../store/mobileStore";
 import { colors, money, spacing } from "../../utils/mobileTheme";
@@ -15,55 +15,63 @@ export function CustomerHomeScreen() {
   const { refreshActiveRide } = useCustomerActiveRide();
   const activeRide = isActiveRide(state.currentRide) ? state.currentRide : null;
   const driverName = acceptedDriverName(activeRide);
+  const firstName = state.currentUser?.fullName?.split(" ")?.[0] || "علي";
 
   return (
-    <ScreenContainer
-      eyebrow="تجربة الزبون"
-      title={`أهلًا ${state.currentUser?.fullName?.split(" ")?.[0] || "بك"}`}
-      subtitle="كل شيء جاهز لطلب رحلة واضحة، متابعة مباشرة، ودعم سريع عند الحاجة."
-    >
-      <MobileCard tone="gold" style={styles.hero}>
-        <MobileBadge label="جاهز للانطلاق" tone="success" />
-        <Text selectable style={styles.heroTitle}>اطلب مشوارك بثقة وتابع الكابتن لحظة بلحظة.</Text>
-        <View style={styles.stats}>
-          <StatCard label="الحالة" value={activeRide ? "نشطة" : "جاهز"} hint="آخر رحلة" />
-          <StatCard label="الدفع" value="كاش" hint="أساسي" tone="blue" />
-        </View>
-      </MobileCard>
+    <ScreenContainer showHeader={false}>
+      <View style={styles.top}>
+        <BrandMark compact />
+        <Text selectable style={styles.greeting}>أهلًا {firstName}</Text>
+        <Text selectable style={styles.title}>جاهز لمشوارك القادم؟</Text>
+        <Text selectable style={styles.subtitle}>حدد وجهتك، شاهد السعر، واطلب كابتن قريب خلال لحظات.</Text>
+        <MobileButton title="اطلب رحلة" variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+      </View>
 
       {activeRide ? (
-        <MobileCard tone="soft">
-          <SectionHeader eyebrow="رحلة نشطة" title="لديك رحلة نشطة" subtitle="يمكنك الرجوع إليها من أي مكان داخل التطبيق." />
-          <MobileBadge label={statusLabel(activeRide.status)} tone="warning" />
+        <MobileCard tone="soft" style={styles.activeRide}>
+          <View style={styles.rowBetween}>
+            <MobileBadge label={statusLabel(activeRide.status)} tone="warning" />
+            <Text selectable style={styles.cardTitle}>رحلة نشطة</Text>
+          </View>
           <InfoRow label="المسار" value={`${activeRide.pickup} ← ${activeRide.destination}`} accent />
           <InfoRow label="السعر" value={money(activeRide.price || activeRide.fareIls)} />
           {driverName ? <InfoRow label="الكابتن" value={driverName} /> : null}
-          <MobileButton title="متابعة الرحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
+          <MobileButton title="متابعة الرحلة" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
         </MobileCard>
       ) : null}
 
-      {state.activeRideStatus === "loading" ? <Text selectable style={styles.muted}>جاري فحص الرحلة النشطة...</Text> : null}
-      {state.activeRideError ? <Text selectable style={styles.error}>{state.activeRideError}</Text> : null}
+      <View style={styles.stats}>
+        <StatCard label="الرحلات" value="سجل" hint="تابع رحلاتك" tone="blue" />
+        <StatCard label="الدفع" value="كاش" hint="أساسي" />
+      </View>
 
-      <MobileCard>
-        <SectionHeader title="اختصارات سريعة" subtitle="الوصول لأهم إجراءات الزبون بدون ازدحام." />
+      <MobileCard tone="flat" style={styles.shortcuts}>
+        <Text selectable style={styles.sectionTitle}>اختصارات</Text>
         <View style={styles.actions}>
-          <MobileButton title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
-          <MobileButton title="تحديث الرحلة النشطة" variant="secondary" onPress={refreshActiveRide} />
-          <MobileButton title="رحلاتي" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} />
-          <MobileButton title="المحفظة والدفع" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })} />
-          <MobileButton title="الدعم" variant="ghost" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })} />
+          <MobileButton title="تحديث النشطة" variant="secondary" compact onPress={refreshActiveRide} />
+          <MobileButton title="رحلاتي" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} />
+          <MobileButton title="الدفع" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })} />
+          <MobileButton title="الدعم" variant="ghost" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })} />
         </View>
       </MobileCard>
+      {state.activeRideStatus === "loading" ? <Text selectable style={styles.muted}>جاري فحص الرحلة النشطة...</Text> : null}
+      {state.activeRideError ? <Text selectable style={styles.error}>{state.activeRideError}</Text> : null}
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.md },
-  heroTitle: { color: colors.text, fontSize: 24, lineHeight: 34, fontWeight: "900", textAlign: "right" },
+  top: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.sm },
+  greeting: { color: colors.primary, fontSize: 14, fontWeight: "700", textAlign: "right" },
+  title: { color: colors.text, fontSize: 30, lineHeight: 38, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "right" },
+  activeRide: { gap: spacing.xs },
+  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  actions: { gap: spacing.sm },
-  muted: { color: colors.muted, textAlign: "right", fontWeight: "800" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  shortcuts: { gap: spacing.sm },
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
+  muted: { color: colors.muted, textAlign: "right", fontWeight: "700" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

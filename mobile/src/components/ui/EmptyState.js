@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 6,
     borderRadius: 999,
-    backgroundColor: colors.gold
+    backgroundColor: colors.primary
   },
   title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 17 },
   message: { color: colors.muted, lineHeight: 22, textAlign: "right" }

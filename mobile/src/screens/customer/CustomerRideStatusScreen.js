@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatusTimeline } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
 import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money } from "../../utils/mobileTheme";
+import { colors, km, money, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
@@ -72,12 +72,7 @@ export function CustomerRideStatusScreen() {
   useEffect(() => {
     if (!ride?.id) return undefined;
     const client = connectMobileSocket(
-      {
-        ...session,
-        customerId: session.userId,
-        customerPhone: session.phone,
-        rideId: ride.id
-      },
+      { ...session, customerId: session.userId, customerPhone: session.phone, rideId: ride.id },
       {
         onConnectionChange: (connected, statusName) => {
           const nextStatus = statusName || (connected ? "connected" : "disconnected");
@@ -110,14 +105,7 @@ export function CustomerRideStatusScreen() {
       };
       if (!Number.isFinite(nextLocation.lat) || !Number.isFinite(nextLocation.lng)) return;
       setDriverLocation(nextLocation);
-      dispatch({
-        type: "patch",
-        patch: {
-          driverLocation: nextLocation,
-          liveTrackingStatus: "active",
-          lastDriverLocationAt: nextLocation.timestamp
-        }
-      });
+      dispatch({ type: "patch", patch: { driverLocation: nextLocation, liveTrackingStatus: "active", lastDriverLocationAt: nextLocation.timestamp } });
     });
 
     if (client?.connected) joinRideRoom(ride.id);
@@ -161,7 +149,7 @@ export function CustomerRideStatusScreen() {
 
   if (!ride) {
     return (
-      <ScreenContainer title="حالة الرحلة" subtitle="لا توجد رحلة نشطة الآن.">
+      <ScreenContainer showHeader={false}>
         <EmptyState
           title={status === "loading" ? "جاري البحث عن رحلة نشطة..." : "لا توجد رحلة نشطة الآن"}
           message={error || "يمكنك طلب رحلة جديدة والعودة لهذه الشاشة عند الحاجة."}
@@ -172,49 +160,73 @@ export function CustomerRideStatusScreen() {
     );
   }
 
-  return (
-    <ScreenContainer
-      eyebrow="تتبع الرحلة"
-      title="حالة الرحلة"
-      subtitle={ride.status === "searching" ? "جاري البحث عن كابتن قريب..." : "التحديثات تصل تلقائيًا عند توفر الاتصال المباشر."}
-    >
-      <MobileCard tone="soft">
-        <MobileBadge label={socketStatus === "connected" ? "تحديث مباشر" : "تحديث يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-        <MobileRideMap
-          pickup={pickupPoint}
-          destination={destinationPoint}
-          driverLocation={hasAcceptedDriver(ride) ? driverLocation : null}
-          userLocation={state.currentLocation}
-          rideStatus={ride.status}
-        />
-        {hasAcceptedDriver(ride) && !driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
-      </MobileCard>
+  const accepted = hasAcceptedDriver(ride);
+  const finished = isFinishedRide(ride);
 
-      <MobileCard tone={isFinishedRide(ride) ? "flat" : "gold"}>
-        <SectionHeader title={statusLabel(ride.status)} subtitle={`${ride.pickup} ← ${ride.destination}`} />
-        <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
+  return (
+    <ScreenContainer showHeader={false} compact>
+      <View style={styles.header}>
+        <View>
+          <Text selectable style={styles.title}>{finished ? "ملخص الرحلة" : "تتبع الرحلة"}</Text>
+          <Text selectable style={styles.subtitle}>{ride.status === "searching" ? "جاري البحث عن كابتن قريب" : statusLabel(ride.status)}</Text>
+        </View>
+        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+      </View>
+
+      <MobileRideMap
+        pickup={pickupPoint}
+        destination={destinationPoint}
+        driverLocation={accepted ? driverLocation : null}
+        userLocation={state.currentLocation}
+        rideStatus={ride.status}
+        height={300}
+      />
+
+      <MobileCard tone={finished ? "flat" : "soft"} style={styles.statusCard}>
+        <View style={styles.rowBetween}>
+          <Text selectable style={styles.statusTitle}>{statusLabel(ride.status)}</Text>
+          <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
+        </View>
         <StatusTimeline status={ride.status} />
-        <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
+        <InfoRow label="المسار" value={`${ride.pickup} ← ${ride.destination}`} accent />
         <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
         <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
-        {hasAcceptedDriver(ride) ? (
-          <MobileCard tone="soft">
-            <SectionHeader title={`الكابتن ${ride.driver.fullName}`} subtitle={`${ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · ${ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}`} />
-          </MobileCard>
-        ) : (
-          <Text selectable style={styles.muted}>بانتظار قبول أحد الكباتن. لن تظهر بيانات الكابتن قبل القبول.</Text>
-        )}
-        {isFinishedRide(ride) ? <Text selectable style={styles.muted}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث حالة الرحلة"} variant="secondary" onPress={refresh} disabled={status === "loading"} />
-        {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء الرحلة" variant="danger" onPress={cancel} disabled={status === "cancel"} /> : null}
-        {!isActiveRide(ride) ? <MobileButton title="العودة للرئيسية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "home" })} /> : null}
       </MobileCard>
+
+      {accepted ? (
+        <MobileCard tone="flat" style={styles.driverCard}>
+          <Text selectable style={styles.cardTitle}>الكابتن</Text>
+          <Text selectable style={styles.driverName}>{ride.driver.fullName}</Text>
+          <Text selectable style={styles.muted}>{ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}</Text>
+          {!driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
+        </MobileCard>
+      ) : (
+        <Text selectable style={styles.muted}>لن تظهر بيانات الكابتن قبل قبول الرحلة.</Text>
+      )}
+
+      {finished ? <Text selectable style={styles.muted}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
+      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
+      <View style={styles.actions}>
+        <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} />
+        {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
+        {!isActiveRide(ride) ? <MobileButton title="الرئيسية" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "home" })} /> : null}
+      </View>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  muted: { color: colors.muted, textAlign: "right", lineHeight: 22, fontWeight: "800" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  title: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 13, textAlign: "right", marginTop: 2 },
+  statusCard: { gap: spacing.xs },
+  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },
+  price: { color: colors.primary, fontSize: 22, fontWeight: "800" },
+  driverCard: { gap: spacing.xs },
+  cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
+  driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
+  muted: { color: colors.muted, textAlign: "right", lineHeight: 21, fontWeight: "600" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
+  actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }
 });

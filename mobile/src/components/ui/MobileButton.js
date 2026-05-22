@@ -15,13 +15,14 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
         variant === "danger" && styles.danger,
         variant === "ghost" && styles.ghost,
         variant === "success" && styles.success,
+        variant === "accent" && styles.accent,
         blocked && styles.disabled,
         pressed && !blocked && styles.pressed,
         style
       ]}
     >
       <View style={styles.content}>
-        {loading ? <ActivityIndicator color={variant === "primary" || variant === "success" ? colors.black : colors.gold} size="small" /> : null}
+        {loading ? <ActivityIndicator color={["primary", "success", "accent"].includes(variant) ? colors.black : colors.primary} size="small" /> : null}
         {icon && !loading ? <Text selectable={false} style={[styles.icon, variant !== "primary" && styles.secondaryLabel]}>{icon}</Text> : null}
         <Text style={[styles.label, variant !== "primary" && styles.secondaryLabel]}>{title}</Text>
       </View>
@@ -31,12 +32,12 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 50,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
     paddingHorizontal: spacing.md,
-    backgroundColor: colors.gold,
+    backgroundColor: colors.primary,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.16)",
     boxShadow: shadows.glow
@@ -64,10 +65,15 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.14)",
     boxShadow: "0 18px 42px rgba(67, 230, 162, 0.16)"
   },
+  accent: {
+    backgroundColor: colors.accent,
+    borderColor: "rgba(255, 255, 255, 0.14)",
+    boxShadow: shadows.accentGlow
+  },
   disabled: { opacity: 0.52 },
   pressed: { transform: [{ scale: 0.975 }], opacity: 0.88 },
   content: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs },
   icon: { color: colors.black, fontWeight: "900", fontSize: 14 },
-  label: { color: "#171107", fontWeight: "900", fontSize: 15, letterSpacing: 0, textAlign: "center" },
+  label: { color: "#031315", fontWeight: "800", fontSize: 14, letterSpacing: 0, textAlign: "center" },
   secondaryLabel: { color: colors.text }
 });

@@ -1,4 +1,4 @@
-import { I18nManager, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { I18nManager, Pressable, StyleSheet, Text, View } from "react-native";
 import { LoadingState } from "../components/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
@@ -19,7 +19,7 @@ import { DriverEarningsScreen } from "../screens/driver/DriverEarningsScreen";
 import { DriverHomeScreen } from "../screens/driver/DriverHomeScreen";
 import { DriverSupportScreen } from "../screens/driver/DriverSupportScreen";
 import { useMobileApp } from "../store/mobileStore";
-import { colors, radii, shadows, spacing } from "../utils/mobileTheme";
+import { colors, layout, radii, shadows, spacing } from "../utils/mobileTheme";
 
 I18nManager.allowRTL(true);
 
@@ -43,20 +43,20 @@ const driverScreens = {
 };
 
 const customerTabs = [
-  ["home", "الرئيسية", "بيت"],
-  ["request", "طلب", "رحلة"],
-  ["rides", "رحلاتي", "سجل"],
-  ["wallet", "محفظة", "دفع"],
-  ["support", "دعم", "مساعدة"],
-  ["account", "حسابي", "ملف"]
+  ["home", "بيت"],
+  ["request", "طلب"],
+  ["rides", "رحلات"],
+  ["wallet", "دفع"],
+  ["support", "دعم"],
+  ["account", "حساب"]
 ];
 
 const driverTabs = [
-  ["home", "الرئيسية", "كابتن"],
-  ["available", "المتاحة", "طلبات"],
-  ["current", "الحالية", "رحلة"],
-  ["earnings", "الأرباح", "مال"],
-  ["support", "الدعم", "مساعدة"]
+  ["home", "بيت"],
+  ["available", "طلبات"],
+  ["current", "رحلتي"],
+  ["earnings", "أرباح"],
+  ["support", "دعم"]
 ];
 
 function AuthNavigator() {
@@ -72,8 +72,8 @@ function AppTabs({ area }) {
 
   return (
     <View style={styles.tabsShell}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
-        {tabs.map(([screen, label, hint]) => {
+      <View style={styles.tabs}>
+        {tabs.map(([screen, label]) => {
           const active = state.activeScreen === screen;
           return (
             <Pressable
@@ -84,12 +84,11 @@ function AppTabs({ area }) {
               style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && styles.tabPressed]}
             >
               <View style={[styles.tabDot, active && styles.tabDotActive]} />
-              <Text selectable={false} style={[styles.tabHint, active && styles.tabHintActive]}>{hint}</Text>
-              <Text selectable={false} style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
+              <Text selectable={false} numberOfLines={1} style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
             </Pressable>
           );
         })}
-      </ScrollView>
+      </View>
     </View>
   );
 }
@@ -148,35 +147,33 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: spacing.md,
     right: spacing.md,
-    bottom: spacing.md,
+    bottom: spacing.sm,
+    minHeight: layout.bottomNavHeight,
     borderRadius: radii.xl,
-    backgroundColor: "rgba(8, 12, 20, 0.86)",
+    backgroundColor: "rgba(11, 16, 21, 0.92)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
     padding: spacing.xs,
     boxShadow: shadows.soft
   },
   tabs: {
     flexDirection: "row-reverse",
-    gap: spacing.xs,
-    minWidth: "100%"
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xxs
   },
   tab: {
-    minWidth: 72,
-    minHeight: 54,
-    borderRadius: radii.xl,
+    flex: 1,
+    minWidth: 0,
+    minHeight: 46,
+    borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    paddingHorizontal: spacing.xs
+    gap: 3,
+    paddingHorizontal: 2
   },
-  tabActive: {
-    backgroundColor: colors.gold
-  },
-  tabPressed: {
-    transform: [{ scale: 0.98 }],
-    opacity: 0.9
-  },
+  tabActive: { backgroundColor: "rgba(49, 228, 214, 0.12)" },
+  tabPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
   tabDot: {
     width: 4,
     height: 4,
@@ -185,36 +182,28 @@ const styles = StyleSheet.create({
   },
   tabDotActive: {
     width: 18,
-    backgroundColor: "#1b1205"
-  },
-  tabHint: {
-    color: colors.muted,
-    fontSize: 10,
-    fontWeight: "800"
-  },
-  tabHintActive: {
-    color: "#1b1205"
+    backgroundColor: colors.primary
   },
   tabLabel: {
-    color: colors.text,
-    fontSize: 11,
-    fontWeight: "900"
+    color: colors.muted,
+    fontSize: 10.5,
+    fontWeight: "700"
   },
   tabLabelActive: {
-    color: "#1b1205"
+    color: colors.text
   },
   toast: {
     color: colors.text,
-    backgroundColor: "rgba(231, 195, 111, 0.16)",
+    backgroundColor: "rgba(49, 228, 214, 0.15)",
     padding: spacing.sm,
     textAlign: "center",
-    fontWeight: "800"
+    fontWeight: "700"
   },
   banner: {
     color: colors.text,
-    backgroundColor: "rgba(255, 111, 124, 0.16)",
+    backgroundColor: "rgba(255, 111, 124, 0.15)",
     padding: spacing.sm,
     textAlign: "center",
-    fontWeight: "800"
+    fontWeight: "700"
   }
 });

@@ -4,7 +4,7 @@ import { colors, radii, spacing } from "../../utils/mobileTheme";
 export function LoadingState({ message = "جاري التحميل..." }) {
   return (
     <View style={styles.box}>
-      <ActivityIndicator color={colors.gold} />
+      <ActivityIndicator color={colors.primary} />
       <Text selectable style={styles.text}>{message}</Text>
       <View style={styles.skeleton} />
       <View style={[styles.skeleton, styles.skeletonShort]} />

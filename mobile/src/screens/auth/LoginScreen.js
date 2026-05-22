@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { loginCustomer } from "../../services/authApi";
 import { saveMobileSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
@@ -27,14 +27,7 @@ export function LoginScreen() {
         phone: payload.user?.phone,
         userId: payload.user?.id
       });
-      dispatch({
-        type: "login",
-        token: payload.token,
-        role: payload.user?.role || "customer",
-        user: payload.user,
-        session: { ...payload.user, token: payload.token },
-        toast: "تم تسجيل الدخول بنجاح."
-      });
+      dispatch({ type: "login", token: payload.token, role: payload.user?.role || "customer", user: payload.user, session: { ...payload.user, token: payload.token }, toast: "تم تسجيل الدخول بنجاح." });
     } catch (requestError) {
       setError(apiErrorMessage(requestError, "تعذر تسجيل الدخول."));
       dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
@@ -44,47 +37,31 @@ export function LoginScreen() {
   }
 
   return (
-    <ScreenContainer
-      eyebrow="وصل للمشاوير"
-      title="رحلتك تبدأ بهدوء"
-      subtitle="ادخل كزبون بعد تفعيل OTP، واطلب رحلتك مع تتبع مباشر للكابتن."
-    >
-      <MobileCard tone="gold" style={styles.hero}>
+    <ScreenContainer showHeader={false}>
+      <View style={styles.hero}>
         <BrandMark />
-        <MobileBadge label="Premium Ride Experience" tone="warning" />
-        <Text selectable style={styles.heroTitle}>تطبيق مشاوير داكن، سريع، ومصمم للتجربة الحقيقية.</Text>
-        <View style={styles.heroStats}>
-          <Text selectable style={styles.heroStat}>GPS مباشر</Text>
-          <Text selectable style={styles.heroStat}>تحديث لحظي</Text>
-          <Text selectable style={styles.heroStat}>دفع آمن تجريبي</Text>
-        </View>
-      </MobileCard>
-
-      <MobileCard>
-        <SectionHeader title="تسجيل الدخول" subtitle="استخدم الاسم أو رقم الهاتف وكلمة السر." />
+        <Text selectable style={styles.title}>مشوارك التالي يبدأ من هنا.</Text>
+        <Text selectable style={styles.subtitle}>دخول سريع، طلب واضح، وتتبع مباشر للكابتن.</Text>
+      </View>
+      <MobileCard tone="flat" style={styles.form}>
         <MobileInput label="الاسم أو رقم الهاتف" value={identifier} onChangeText={setIdentifier} placeholder="+970..." />
         <MobileInput label="كلمة السر" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري الدخول..." : "دخول الزبون"} onPress={submit} loading={status === "loading"} />
-        <MobileButton title="إنشاء حساب جديد" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "register" })} />
-        <MobileButton title="مدخل الكابتن للتطوير" variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} />
+        <View style={styles.links}>
+          <MobileButton title="حساب جديد" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "register" })} />
+          <MobileButton title="كابتن DEV" compact variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} />
+        </View>
       </MobileCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { overflow: "hidden" },
-  heroTitle: { color: colors.text, fontSize: 22, lineHeight: 32, fontWeight: "900", textAlign: "right" },
-  heroStats: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  heroStat: {
-    color: colors.text,
-    backgroundColor: "rgba(255, 255, 255, 0.075)",
-    borderRadius: 999,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    fontWeight: "900",
-    fontSize: 12
-  },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  hero: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.lg },
+  title: { color: colors.text, fontSize: 31, lineHeight: 39, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "right" },
+  form: { gap: spacing.md },
+  links: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

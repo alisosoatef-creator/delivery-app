@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { registerCustomer } from "../../services/authApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { colors, spacing } from "../../utils/mobileTheme";
@@ -42,20 +42,13 @@ export function RegisterScreen() {
   }
 
   return (
-    <ScreenContainer
-      eyebrow="حساب زبون"
-      title="انضم للتجربة"
-      subtitle="أنشئ حسابك ثم فعّله برمز OTP التجريبي. لن يتم تسجيل الدخول قبل التحقق."
-    >
-      <MobileCard tone="gold">
+    <ScreenContainer showHeader={false}>
+      <View style={styles.header}>
         <BrandMark compact />
-        <View style={styles.heroLine} />
-        <Text selectable style={styles.heroText}>بيانات واضحة، تحقق بسيط، ثم تجربة طلب رحلة كاملة.</Text>
-        <MobileBadge label="OTP Dev Mode: 1234" tone="warning" />
-      </MobileCard>
-
-      <MobileCard>
-        <SectionHeader title="بيانات الحساب" subtitle="اكتب معلوماتك الأساسية كما ستظهر للكابتن والدعم." />
+        <Text selectable style={styles.title}>حساب زبون جديد</Text>
+        <Text selectable style={styles.subtitle}>املأ البيانات الأساسية ثم فعّل الحساب برمز OTP التجريبي.</Text>
+      </View>
+      <MobileCard tone="flat" style={styles.form}>
         <MobileInput label="الاسم الكامل" value={form.fullName} onChangeText={(value) => update("fullName", value)} />
         <MobileInput label="رقم الهاتف" value={form.phone} onChangeText={(value) => update("phone", value)} keyboardType="phone-pad" />
         <MobileInput label="المدينة" value={form.city} onChangeText={(value) => update("city", value)} placeholder="nablus" />
@@ -66,17 +59,19 @@ export function RegisterScreen() {
         <MobileInput label="كلمة السر" value={form.password} onChangeText={(value) => update("password", value)} secureTextEntry />
         <MobileInput label="تأكيد كلمة السر" value={form.confirmPassword} onChangeText={(value) => update("confirmPassword", value)} secureTextEntry />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري إنشاء الحساب..." : "إنشاء الحساب"} onPress={submit} loading={status === "loading"} />
-        <MobileButton title="رجوع إلى الدخول" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "login" })} />
+        <MobileButton title={status === "loading" ? "جاري الإنشاء..." : "إنشاء الحساب"} onPress={submit} loading={status === "loading"} />
+        <MobileButton title="رجوع إلى الدخول" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "login" })} />
       </MobileCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  heroLine: { width: 70, height: 6, borderRadius: 999, backgroundColor: colors.gold, alignSelf: "flex-end" },
-  heroText: { color: colors.text, fontSize: 20, lineHeight: 30, fontWeight: "900", textAlign: "right" },
+  header: { gap: spacing.xs, alignItems: "flex-end", paddingTop: spacing.sm },
+  title: { color: colors.text, fontSize: 25, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
+  form: { gap: spacing.sm },
   row: { flexDirection: "row-reverse", gap: spacing.sm },
   flex: { flex: 1 },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

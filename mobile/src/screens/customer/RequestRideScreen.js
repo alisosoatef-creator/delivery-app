@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { ChoiceChip, InfoRow, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { ChoiceChip, InfoRow, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
 import { createRide, quoteRide } from "../../services/ridesApi";
@@ -142,54 +142,48 @@ export function RequestRideScreen() {
   }
 
   return (
-    <ScreenContainer
-      eyebrow="طلب مشوار"
-      title="حدد وجهتك"
-      subtitle="اختر المدينة، فعّل موقعك أو استخدم مركز المدينة، ثم ابحث عن وجهتك."
-    >
-      <MobileCard tone="gold">
-        <MobileBadge label={state.locationStatus === "gps" ? "GPS مفعل" : "موقع افتراضي جاهز"} tone={state.locationStatus === "gps" ? "success" : "warning"} />
-        <Text selectable style={styles.steps}>1. اختر المدينة  2. استخدم موقعي  3. ابحث عن الوجهة  4. اطلب الرحلة</Text>
-      </MobileCard>
+    <ScreenContainer showHeader={false} compact>
+      <View style={styles.header}>
+        <Text selectable style={styles.title}>طلب رحلة</Text>
+        <Text selectable style={styles.subtitle}>الخريطة أولًا، التفاصيل تحتها.</Text>
+      </View>
 
-      <MobileCard>
-        <SectionHeader title="المدينة ونقطة الانطلاق" subtitle="يمكنك تغيير المدينة أو استخدام موقعك الحالي." />
+      <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={255} />
+
+      <MobileCard tone="flat" style={styles.panel}>
+        <View style={styles.stepHeader}>
+          <Text selectable style={styles.stepTitle}>1. نقطة الانطلاق</Text>
+          <MobileButton title={status === "location" ? "..." : "موقعي"} compact variant="secondary" onPress={useGpsLocation} loading={status === "location"} />
+        </View>
         <View style={styles.chips}>
-          {cityOptions().map((city) => (
+          {cityOptions().slice(0, 6).map((city) => (
             <ChoiceChip key={city.value} label={city.label} selected={cityId === city.value} onPress={() => useCityFallback(city.value)} />
           ))}
         </View>
-        <InfoRow label="نقطة الانطلاق" value={pickup?.label || "-"} accent />
-        <MobileButton title={status === "location" ? "جاري تحديد الموقع..." : "استخدم موقعي الحالي"} onPress={useGpsLocation} disabled={status === "location"} />
-      </MobileCard>
+        <InfoRow label="من" value={pickup?.label || "-"} accent />
 
-      <MobileCard>
-        <SectionHeader title="الوجهة" subtitle="اكتب اسم المكان واختر من النتائج القريبة." />
-        <MobileInput label="إلى أين تريد الذهاب؟" value={destinationQuery} onChangeText={searchDestination} placeholder="مثال: جامعة النجاح، المنارة، رفيديا" />
+        <Text selectable style={styles.stepTitle}>2. الوجهة</Text>
+        <MobileInput label="" value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
         {suggestions.map((place) => (
           <Pressable key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
             <Text selectable style={styles.suggestionTitle}>{place.label}</Text>
             <Text selectable style={styles.suggestionMeta}>{place.category || "مكان"} · {place.city}</Text>
           </Pressable>
         ))}
-        {destination ? <InfoRow label="الوجهة المختارة" value={destination.label} accent /> : null}
       </MobileCard>
 
-      <MobileCard tone="soft">
-        <SectionHeader title="معاينة المسار" subtitle="الخريطة تعرض نقطة الانطلاق والوجهة عندما تصبح البيانات جاهزة." />
-        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={230} />
-      </MobileCard>
-
-      <MobileCard tone={quote ? "gold" : "soft"}>
-        <SectionHeader title="التسعير والدفع" subtitle="السعر يحسب من المسافة الحالية حسب المدينة." />
+      <MobileCard tone="soft" style={styles.summary}>
+        <Text selectable style={styles.stepTitle}>3. السعر</Text>
         {quote ? (
-          <>
+          <View style={styles.summaryRow}>
             <Text selectable style={styles.price}>{money(quote.fareIls)}</Text>
-            <InfoRow label="المسافة" value={km(quote.distanceKm)} />
-            <InfoRow label="الوقت المتوقع" value={`${quote.etaMinutes || "-"} دقيقة`} />
-          </>
+            <View style={styles.summaryMeta}>
+              <Text selectable style={styles.meta}>{km(quote.distanceKm)}</Text>
+              <Text selectable style={styles.meta}>{quote.etaMinutes || "-"} دقيقة</Text>
+            </View>
+          </View>
         ) : (
-          <Text selectable style={styles.muted}>اختر وجهة لحساب السعر تلقائيًا.</Text>
+          <Text selectable style={styles.muted}>اختر وجهة لحساب السعر.</Text>
         )}
         <View style={styles.chips}>
           {["cash", "visa", "wallet"].map((method) => (
@@ -202,27 +196,36 @@ export function RequestRideScreen() {
           ))}
         </View>
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "create" ? "جاري طلب الرحلة..." : "طلب الرحلة"} onPress={submitRide} disabled={status === "create"} />
+        <MobileButton title={status === "create" ? "جاري الطلب..." : "طلب الرحلة"} variant="accent" onPress={submitRide} loading={status === "create"} />
       </MobileCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  steps: { color: colors.text, fontWeight: "900", lineHeight: 24, textAlign: "right" },
+  header: { alignItems: "flex-end", gap: 2 },
+  title: { color: colors.text, fontSize: 25, fontWeight: "800", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 13, textAlign: "right" },
+  panel: { gap: spacing.sm },
+  stepHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  stepTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   suggestion: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    borderRadius: 16,
+    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: colors.border
   },
   pressed: { transform: [{ scale: 0.99 }] },
-  suggestionTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 3 },
-  price: { color: colors.text, fontSize: 36, fontWeight: "900", textAlign: "right" },
-  muted: { color: colors.muted, textAlign: "right", fontWeight: "800" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+  suggestionTitle: { color: colors.text, fontWeight: "800", textAlign: "right" },
+  suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 2, fontSize: 12 },
+  summary: { gap: spacing.sm },
+  summaryRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  price: { color: colors.primary, fontSize: 31, fontWeight: "800", textAlign: "right" },
+  summaryMeta: { alignItems: "flex-start", gap: 3 },
+  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" },
+  muted: { color: colors.muted, textAlign: "right" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });
