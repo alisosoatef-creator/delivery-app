@@ -11,12 +11,13 @@
   },
   "dependencies": {
     "expo": "~54.0.33",
-    "expo-location": "^56.0.12",
+    "expo-linking": "~8.0.12",
+    "expo-location": "~19.0.8",
     "expo-router": "~6.0.23",
     "expo-status-bar": "~3.0.9",
     "react": "19.1.0",
     "react-native": "0.81.5",
-    "react-native-maps": "^1.27.2",
+    "react-native-maps": "1.20.1",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "socket.io-client": "^4.8.3"
