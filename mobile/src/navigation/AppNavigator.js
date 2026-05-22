@@ -1,4 +1,4 @@
-import { I18nManager, Pressable, StyleSheet, Text, View } from "react-native";
+import { I18nManager, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LoadingState } from "../components/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
@@ -72,7 +72,7 @@ function AppTabs({ area }) {
 
   return (
     <View style={styles.tabsShell}>
-      <View style={styles.tabs}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabs}>
         {tabs.map(([screen, label, hint]) => {
           const active = state.activeScreen === screen;
           return (
@@ -83,12 +83,13 @@ function AppTabs({ area }) {
               onPress={() => dispatch({ type: "navigate", area, screen })}
               style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && styles.tabPressed]}
             >
+              <View style={[styles.tabDot, active && styles.tabDotActive]} />
               <Text selectable={false} style={[styles.tabHint, active && styles.tabHintActive]}>{hint}</Text>
               <Text selectable={false} style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -157,21 +158,34 @@ const styles = StyleSheet.create({
   },
   tabs: {
     flexDirection: "row-reverse",
-    gap: spacing.xs
+    gap: spacing.xs,
+    minWidth: "100%"
   },
   tab: {
-    flex: 1,
-    minHeight: 50,
-    borderRadius: radii.lg,
+    minWidth: 72,
+    minHeight: 54,
+    borderRadius: radii.xl,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2
+    gap: 2,
+    paddingHorizontal: spacing.xs
   },
   tabActive: {
     backgroundColor: colors.gold
   },
   tabPressed: {
-    transform: [{ scale: 0.98 }]
+    transform: [{ scale: 0.98 }],
+    opacity: 0.9
+  },
+  tabDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 255, 255, 0.16)"
+  },
+  tabDotActive: {
+    width: 18,
+    backgroundColor: "#1b1205"
   },
   tabHint: {
     color: colors.muted,

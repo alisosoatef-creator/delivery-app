@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatusTimeline } from "../../components/ui";
 import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
@@ -193,6 +193,7 @@ export function CustomerRideStatusScreen() {
       <MobileCard tone={isFinishedRide(ride) ? "flat" : "gold"}>
         <SectionHeader title={statusLabel(ride.status)} subtitle={`${ride.pickup} ← ${ride.destination}`} />
         <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
+        <StatusTimeline status={ride.status} />
         <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
         <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
         <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />

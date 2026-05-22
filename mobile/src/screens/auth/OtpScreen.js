@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { verifyOtp } from "../../services/authApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { colors } from "../../utils/mobileTheme";
@@ -32,6 +32,7 @@ export function OtpScreen() {
       subtitle={`أدخل الرمز التجريبي للرقم ${state.pendingPhone || "-"}.`}
     >
       <MobileCard tone="gold">
+        <BrandMark compact />
         <MobileBadge label="Development OTP" tone="warning" />
         <Text selectable style={styles.code}>1234</Text>
         <Text selectable style={styles.hint}>هذا الرمز للتطوير فقط، وسيتم استبداله لاحقًا بخدمة OTP حقيقية.</Text>
@@ -40,7 +41,7 @@ export function OtpScreen() {
         <SectionHeader title="تحقق الحساب" subtitle="بعد نجاح التحقق ستعود إلى شاشة الدخول." />
         <MobileInput label="رمز OTP" value={code} onChangeText={setCode} keyboardType="number-pad" />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري التحقق..." : "تأكيد الحساب"} onPress={submit} disabled={status === "loading"} />
+        <MobileButton title={status === "loading" ? "جاري التحقق..." : "تأكيد الحساب"} onPress={submit} loading={status === "loading"} />
       </MobileCard>
     </ScreenContainer>
   );

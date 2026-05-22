@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader, StatusTimeline } from "../../components/ui";
 import { fetchDriverRides, updateDriverRideStatus } from "../../services/driverApi";
 import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
@@ -174,6 +174,7 @@ export function CurrentRideScreen() {
         <MobileCard tone="soft">
           <SectionHeader title={statusLabel(currentRide.status)} subtitle={`${currentRide.pickup} ← ${currentRide.destination}`} />
           <MobileBadge label={currentRide.status === "completed" ? "تم إنهاء الرحلة" : "رحلة نشطة"} tone={currentRide.status === "completed" ? "success" : "warning"} />
+          <StatusTimeline status={currentRide.status} />
           <MobileRideMap
             pickup={pickupPoint}
             destination={destinationPoint}

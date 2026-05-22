@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { registerCustomer } from "../../services/authApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { colors, spacing } from "../../utils/mobileTheme";
@@ -48,6 +48,7 @@ export function RegisterScreen() {
       subtitle="أنشئ حسابك ثم فعّله برمز OTP التجريبي. لن يتم تسجيل الدخول قبل التحقق."
     >
       <MobileCard tone="gold">
+        <BrandMark compact />
         <View style={styles.heroLine} />
         <Text selectable style={styles.heroText}>بيانات واضحة، تحقق بسيط، ثم تجربة طلب رحلة كاملة.</Text>
         <MobileBadge label="OTP Dev Mode: 1234" tone="warning" />
@@ -65,7 +66,7 @@ export function RegisterScreen() {
         <MobileInput label="كلمة السر" value={form.password} onChangeText={(value) => update("password", value)} secureTextEntry />
         <MobileInput label="تأكيد كلمة السر" value={form.confirmPassword} onChangeText={(value) => update("confirmPassword", value)} secureTextEntry />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري إنشاء الحساب..." : "إنشاء الحساب"} onPress={submit} disabled={status === "loading"} />
+        <MobileButton title={status === "loading" ? "جاري إنشاء الحساب..." : "إنشاء الحساب"} onPress={submit} loading={status === "loading"} />
         <MobileButton title="رجوع إلى الدخول" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "login" })} />
       </MobileCard>
     </ScreenContainer>

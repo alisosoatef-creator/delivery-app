@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 import { colors, radii, spacing } from "../../utils/mobileTheme";
 
@@ -11,6 +12,7 @@ export function MobileInput({
   multiline = false,
   style
 }) {
+  const [focused, setFocused] = useState(false);
   return (
     <View style={styles.field}>
       <Text selectable style={styles.label}>{label}</Text>
@@ -22,9 +24,11 @@ export function MobileInput({
         secureTextEntry={secureTextEntry}
         keyboardType={keyboardType}
         multiline={multiline}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         textAlign="right"
         textAlignVertical={multiline ? "top" : "center"}
-        style={[styles.input, multiline && styles.multiline, style]}
+        style={[styles.input, focused && styles.focused, multiline && styles.multiline, style]}
       />
     </View>
   );
@@ -48,5 +52,9 @@ const styles = StyleSheet.create({
     minHeight: 112,
     paddingTop: spacing.sm,
     lineHeight: 22
+  },
+  focused: {
+    borderColor: colors.borderStrong,
+    backgroundColor: "rgba(6, 11, 24, 0.78)"
   }
 });

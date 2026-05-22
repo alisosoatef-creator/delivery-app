@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi";
 import { saveDriverSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
@@ -53,6 +53,7 @@ export function DevDriverLoginScreen() {
       subtitle="هذا المدخل للتطوير فقط. لا يدخل أي طلب انضمام قبل موافقة الإدارة."
     >
       <MobileCard tone="danger">
+        <BrandMark compact />
         <MobileBadge label="Development Only" tone="warning" />
         <Text selectable style={styles.warning}>هذا الطريق مخصص لاختبار لوحة الكابتن محليًا، وسيتم استبداله بتسجيل دخول كابتن حقيقي لاحقًا.</Text>
       </MobileCard>

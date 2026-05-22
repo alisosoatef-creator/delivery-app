@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { loginCustomer } from "../../services/authApi";
 import { saveMobileSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
@@ -50,6 +50,7 @@ export function LoginScreen() {
       subtitle="ادخل كزبون بعد تفعيل OTP، واطلب رحلتك مع تتبع مباشر للكابتن."
     >
       <MobileCard tone="gold" style={styles.hero}>
+        <BrandMark />
         <MobileBadge label="Premium Ride Experience" tone="warning" />
         <Text selectable style={styles.heroTitle}>تطبيق مشاوير داكن، سريع، ومصمم للتجربة الحقيقية.</Text>
         <View style={styles.heroStats}>
@@ -64,7 +65,7 @@ export function LoginScreen() {
         <MobileInput label="الاسم أو رقم الهاتف" value={identifier} onChangeText={setIdentifier} placeholder="+970..." />
         <MobileInput label="كلمة السر" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري الدخول..." : "دخول الزبون"} onPress={submit} disabled={status === "loading"} />
+        <MobileButton title={status === "loading" ? "جاري الدخول..." : "دخول الزبون"} onPress={submit} loading={status === "loading"} />
         <MobileButton title="إنشاء حساب جديد" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "register" })} />
         <MobileButton title="مدخل الكابتن للتطوير" variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} />
       </MobileCard>

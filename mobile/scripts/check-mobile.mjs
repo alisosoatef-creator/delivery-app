@@ -49,6 +49,9 @@ const required = [
   "src/components/ui/StatCard.js",
   "src/components/ui/InfoRow.js",
   "src/components/ui/ChoiceChip.js",
+  "src/components/ui/BrandMark.js",
+  "src/components/ui/ErrorState.js",
+  "src/components/ui/StatusTimeline.js",
   "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
   "src/utils/errorUtils.js",
@@ -112,6 +115,9 @@ const sourceFiles = [
   "src/components/ui/StatCard.js",
   "src/components/ui/InfoRow.js",
   "src/components/ui/ChoiceChip.js",
+  "src/components/ui/BrandMark.js",
+  "src/components/ui/ErrorState.js",
+  "src/components/ui/StatusTimeline.js",
   "src/App.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
@@ -216,7 +222,15 @@ for (const token of [
   "StatCard",
   "ChoiceChip",
   "Premium Ride Experience",
-  "VISA Placeholder"
+  "VISA Placeholder",
+  "BrandMark",
+  "StatusTimeline",
+  "ErrorState",
+  "مشاوير ذكية في الضفة الغربية",
+  "معاينة المسار",
+  "boxShadow",
+  "pressed",
+  "focused"
 ]) {
   if (!source.includes(token)) {
     throw new Error(`Missing mobile foundation token: ${token}`);
@@ -236,6 +250,16 @@ for (const forbidden of ["react-dom", "leaflet", "react-leaflet", "document.", "
   if (mobileSource.includes(forbidden)) {
     throw new Error(`Forbidden web-only mobile import or global: ${forbidden}`);
   }
+}
+
+for (const forbiddenText of ["دلفري", "مطاعم", "منتجات"]) {
+  if (mobileSource.includes(forbiddenText)) {
+    throw new Error(`Forbidden non-ride mobile copy: ${forbiddenText}`);
+  }
+}
+
+if (/[ØÙÂâ]/.test(mobileSource)) {
+  throw new Error("Broken mojibake text found in mobile source");
 }
 
 console.log("mobile-check-ok");

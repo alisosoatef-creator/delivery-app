@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { ChoiceChip, InfoRow, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
@@ -172,6 +173,11 @@ export function RequestRideScreen() {
           </Pressable>
         ))}
         {destination ? <InfoRow label="الوجهة المختارة" value={destination.label} accent /> : null}
+      </MobileCard>
+
+      <MobileCard tone="soft">
+        <SectionHeader title="معاينة المسار" subtitle="الخريطة تعرض نقطة الانطلاق والوجهة عندما تصبح البيانات جاهزة." />
+        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={230} />
       </MobileCard>
 
       <MobileCard tone={quote ? "gold" : "soft"}>

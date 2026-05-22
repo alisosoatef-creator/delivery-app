@@ -1,20 +1,20 @@
 export const colors = {
-  background: "#06070b",
-  backgroundAlt: "#0a0d14",
+  background: "#05070c",
+  backgroundAlt: "#090d16",
   surface: "rgba(17, 23, 34, 0.92)",
-  surfaceStrong: "#121928",
+  surfaceStrong: "#101827",
   surfaceSoft: "rgba(26, 35, 51, 0.82)",
-  surfaceGlass: "rgba(255, 255, 255, 0.075)",
-  border: "rgba(255, 255, 255, 0.105)",
-  borderStrong: "rgba(235, 203, 139, 0.38)",
-  text: "#fff8ea",
-  textSoft: "#dce4ef",
-  muted: "#97a3b7",
+  surfaceGlass: "rgba(255, 255, 255, 0.082)",
+  border: "rgba(255, 255, 255, 0.115)",
+  borderStrong: "rgba(245, 210, 128, 0.44)",
+  text: "#fff9ed",
+  textSoft: "#e6eef8",
+  muted: "#9ca9bd",
   mutedStrong: "#6f7b90",
-  gold: "#e7c36f",
+  gold: "#f0c76f",
   goldDeep: "#9f7131",
-  amber: "#ffb44c",
-  green: "#43e6a2",
+  amber: "#ffbc55",
+  green: "#48ebb0",
   greenDeep: "#168b62",
   red: "#ff6f7c",
   redDeep: "#6d2630",
@@ -25,9 +25,9 @@ export const colors = {
 };
 
 export const gradients = {
-  app: ["#06070b", "#0b1220", "#111827"],
-  gold: ["#ffe6a1", "#d79d3d"],
-  ocean: ["#3ed5ff", "#5e78ff"],
+  app: ["#05070c", "#0b1220", "#172036"],
+  gold: ["#fff0bd", "#f0c76f", "#a66f2f"],
+  ocean: ["#61e7ff", "#7fb0ff", "#6c63ff"],
   danger: ["#ff8a95", "#d84c5c"]
 };
 
@@ -50,7 +50,7 @@ export const spacing = {
 };
 
 export const typography = {
-  hero: 34,
+  hero: 36,
   title: 26,
   section: 19,
   body: 15,
@@ -58,9 +58,15 @@ export const typography = {
 };
 
 export const shadows = {
-  soft: "0 14px 32px rgba(0, 0, 0, 0.32)",
-  glow: "0 18px 46px rgba(231, 195, 111, 0.16)",
-  blueGlow: "0 18px 42px rgba(127, 176, 255, 0.14)"
+  soft: "0 18px 42px rgba(0, 0, 0, 0.38)",
+  lift: "0 22px 52px rgba(0, 0, 0, 0.46)",
+  glow: "0 22px 54px rgba(240, 199, 111, 0.18)",
+  blueGlow: "0 20px 48px rgba(127, 176, 255, 0.15)"
+};
+
+export const brand = {
+  appName: "وصل",
+  tagline: "مشاوير ذكية في الضفة الغربية"
 };
 
 export function money(value) {
