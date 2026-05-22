@@ -4,6 +4,7 @@ import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, Screen
 import { acceptRide, fetchAvailableRides } from "../../services/driverApi";
 import { connectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
 
 export function AvailableRidesScreen() {
@@ -20,9 +21,12 @@ export function AvailableRidesScreen() {
     fetchAvailableRides(session)
       .then((items) => {
         setRides(items);
-        dispatch({ type: "patch", patch: { availableRides: items } });
+        dispatch({ type: "patch", patch: { availableRides: items, connectionMessage: "" } });
       })
-      .catch((requestError) => setError(requestError.message || "تعذر تحميل الرحلات المتاحة."))
+      .catch((requestError) => {
+        setError(apiErrorMessage(requestError, "تعذر تحميل الرحلات المتاحة."));
+        dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
+      })
       .finally(() => setStatus("idle"));
   }
 
@@ -31,8 +35,8 @@ export function AvailableRidesScreen() {
   useEffect(() => {
     if (!session.driverId) return undefined;
     connectMobileSocket(session, {
-      onConnectionChange: (connected) => {
-        const nextStatus = connected ? "connected" : "offline";
+      onConnectionChange: (connected, statusName) => {
+        const nextStatus = statusName || (connected ? "connected" : "disconnected");
         setSocketStatus(nextStatus);
         dispatch({ type: "patch", patch: { socketStatus: nextStatus } });
       }
@@ -51,7 +55,8 @@ export function AvailableRidesScreen() {
       dispatch({ type: "setCurrentRide", ride: payload.ride, area: "driver", screen: "current", toast: "تم قبول الرحلة." });
       load();
     } catch (requestError) {
-      setError(requestError.message || "تعذر قبول الرحلة.");
+      setError(apiErrorMessage(requestError, "تعذر قبول الرحلة."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     }
   }
 

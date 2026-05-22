@@ -1,5 +1,5 @@
 import { I18nManager, StyleSheet, Text, View } from "react-native";
-import { MobileButton } from "../components/ui";
+import { LoadingState, MobileButton } from "../components/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
 import { RegisterScreen } from "../screens/auth/RegisterScreen";
@@ -93,9 +93,20 @@ function DriverNavigator() {
 export function AppNavigator() {
   const { state } = useMobileApp();
   const area = state.activeArea;
+  const showConnectionBanner = state.currentRide && state.socketStatus && !["connected", "connecting"].includes(state.socketStatus);
+  if (state.restoreStatus === "loading") {
+    return (
+      <View style={styles.restore}>
+        <LoadingState />
+        <Text selectable style={styles.restoreText}>جاري استعادة الجلسة...</Text>
+      </View>
+    );
+  }
   return (
     <View style={styles.root}>
       {state.toast ? <Text selectable style={styles.toast}>{state.toast}</Text> : null}
+      {state.connectionMessage ? <Text selectable style={styles.banner}>{state.connectionMessage}</Text> : null}
+      {showConnectionBanner ? <Text selectable style={styles.banner}>التحديث المباشر غير متاح الآن، يمكنك التحديث يدويًا.</Text> : null}
       {area === "driver" ? <DriverNavigator /> : state.role === "customer" || area === "customer" ? <CustomerNavigator /> : <AuthNavigator />}
     </View>
   );
@@ -103,6 +114,8 @@ export function AppNavigator() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
+  restore: { flex: 1, backgroundColor: colors.background, justifyContent: "center", padding: 24 },
+  restoreText: { color: colors.muted, textAlign: "center", marginTop: 12 },
   shell: { flex: 1 },
   tabs: {
     flexDirection: "row-reverse",
@@ -116,6 +129,12 @@ const styles = StyleSheet.create({
   toast: {
     color: colors.text,
     backgroundColor: "rgba(215, 181, 109, 0.18)",
+    padding: 10,
+    textAlign: "center"
+  },
+  banner: {
+    color: colors.text,
+    backgroundColor: "rgba(255, 107, 107, 0.16)",
     padding: 10,
     textAlign: "center"
   }

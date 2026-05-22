@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { Text } from "react-native";
 import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi";
+import { saveDriverSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
 
 export function DevDriverLoginScreen() {
@@ -18,7 +20,10 @@ export function DevDriverLoginScreen() {
         setDrivers(list);
         setDriverId(list[0]?.id || "");
       })
-      .catch(() => setDrivers([]));
+      .catch((requestError) => {
+        setDrivers([]);
+        dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
+      });
   }, []);
 
   async function submit() {
@@ -26,6 +31,7 @@ export function DevDriverLoginScreen() {
     try {
       const payload = await driverDevLogin({ driverId, phone });
       const driver = payload.driver;
+      await saveDriverSession({ token: payload.token, user: payload.user, driver });
       dispatch({
         type: "login",
         token: payload.token,
@@ -35,7 +41,8 @@ export function DevDriverLoginScreen() {
         toast: "تم دخول الكابتن للتطوير."
       });
     } catch (requestError) {
-      setError(requestError.message || "تعذر دخول الكابتن.");
+      setError(apiErrorMessage(requestError, "تعذر دخول الكابتن."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     }
   }
 

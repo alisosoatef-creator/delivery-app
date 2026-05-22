@@ -1,9 +1,11 @@
-import { createContext, useContext, useMemo, useReducer } from "react";
+import { createContext, useContext, useEffect, useMemo, useReducer } from "react";
+import { loadMobileSession } from "../services/sessionStorage";
 
 const MobileStoreContext = createContext(null);
 
 const initialState = {
   role: "guest",
+  restoreStatus: "loading",
   token: "",
   currentUser: null,
   session: null,
@@ -20,6 +22,7 @@ const initialState = {
   socketStatus: "offline",
   liveTrackingStatus: "idle",
   lastDriverLocationAt: "",
+  connectionMessage: "",
   locationStatus: "idle",
   rideRequestStatus: "idle",
   rideRequestError: "",
@@ -32,6 +35,28 @@ function reducer(state, action) {
       return { ...state, activeArea: action.area || state.activeArea, activeScreen: action.screen || state.activeScreen, toast: "" };
     case "patch":
       return { ...state, ...action.patch };
+    case "restoreSession": {
+      const session = action.session;
+      if (!session?.token || !session?.role) {
+        return { ...state, restoreStatus: "ready", role: "guest", activeArea: "auth", activeScreen: "login" };
+      }
+      const isDriver = session.role === "driver";
+      const driver = session.driverSession || session.session?.driver || null;
+      return {
+        ...state,
+        restoreStatus: "ready",
+        role: session.role,
+        token: session.token,
+        currentUser: session.currentUser,
+        session: isDriver ? { ...(session.session || session.currentUser || {}), token: session.token, driver, driverId: session.driverId, phone: session.phone } : { ...(session.session || session.currentUser || {}), token: session.token },
+        activeArea: isDriver ? "driver" : "customer",
+        activeScreen: "home",
+        connectionMessage: "",
+        toast: "تم استعادة الجلسة."
+      };
+    }
+    case "restoreComplete":
+      return { ...state, restoreStatus: "ready" };
     case "pendingPhone":
       return { ...state, pendingPhone: action.phone || "" };
     case "setLocation":
@@ -56,6 +81,7 @@ function reducer(state, action) {
     case "login":
       return {
         ...state,
+        restoreStatus: "ready",
         role: action.role || action.user?.role || "customer",
         token: action.token || "",
         currentUser: action.user || null,
@@ -63,10 +89,11 @@ function reducer(state, action) {
         selectedCity: action.user?.city || state.selectedCity,
         activeArea: action.role === "driver" || action.user?.role === "driver" ? "driver" : "customer",
         activeScreen: "home",
+        connectionMessage: "",
         toast: action.toast || ""
       };
     case "logout":
-      return { ...initialState, toast: action.toast || "" };
+      return { ...initialState, restoreStatus: "ready", toast: action.toast || "" };
     case "toast":
       return { ...state, toast: action.message || "" };
     default:
@@ -76,6 +103,26 @@ function reducer(state, action) {
 
 export function MobileAppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  useEffect(() => {
+    let mounted = true;
+    loadMobileSession()
+      .then((session) => {
+        if (!mounted) return;
+        if (session?.token) {
+          dispatch({ type: "restoreSession", session });
+        } else {
+          dispatch({ type: "restoreComplete" });
+        }
+      })
+      .catch(() => {
+        if (mounted) dispatch({ type: "restoreComplete" });
+      });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const value = useMemo(() => ({ state, dispatch }), [state]);
   return <MobileStoreContext.Provider value={value}>{children}</MobileStoreContext.Provider>;
 }

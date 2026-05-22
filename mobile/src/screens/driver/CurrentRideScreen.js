@@ -6,6 +6,7 @@ import { fetchDriverRides, updateDriverRideStatus } from "../../services/driverA
 import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
 
 const nextActions = {
@@ -51,8 +52,12 @@ export function CurrentRideScreen() {
         setRides(items);
         const active = items.find((ride) => ["accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status)) || items.find((ride) => ride.id === state.currentRide?.id);
         if (active) dispatch({ type: "setCurrentRide", ride: active, area: "driver", screen: "current" });
+        dispatch({ type: "patch", patch: { connectionMessage: "" } });
       })
-      .catch((requestError) => setError(requestError.message || "تعذر تحميل رحلات الكابتن."));
+      .catch((requestError) => {
+        setError(apiErrorMessage(requestError, "تعذر تحميل رحلات الكابتن."));
+        dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
+      });
   }
 
   useEffect(load, [state.token, state.currentUser?.driverId]);
@@ -62,8 +67,8 @@ export function CurrentRideScreen() {
     connectMobileSocket(
       { ...session, rideId: currentRide?.id },
       {
-        onConnectionChange: (connected) => {
-          const nextStatus = connected ? "connected" : "offline";
+        onConnectionChange: (connected, statusName) => {
+          const nextStatus = statusName || (connected ? "connected" : "disconnected");
           setSocketStatus(nextStatus);
           dispatch({ type: "patch", patch: { socketStatus: nextStatus } });
           if (connected && currentRide?.id) joinRideRoom(currentRide.id);
@@ -100,7 +105,8 @@ export function CurrentRideScreen() {
       if (status === "completed") stopTracking(false);
       load();
     } catch (requestError) {
-      setError(requestError.message || "تعذر تحديث حالة الرحلة.");
+      setError(apiErrorMessage(requestError, "تعذر تحديث حالة الرحلة."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     }
   }
 
@@ -109,7 +115,7 @@ export function CurrentRideScreen() {
     setError("");
     setTrackingStatus("requesting");
     dispatch({ type: "patch", patch: { liveTrackingStatus: "requesting" } });
-    connectMobileSocket({ ...session, rideId: currentRide.id }, { onConnectionChange: (connected) => setSocketStatus(connected ? "connected" : "offline") });
+    connectMobileSocket({ ...session, rideId: currentRide.id }, { onConnectionChange: (connected, statusName) => setSocketStatus(statusName || (connected ? "connected" : "disconnected")) });
 
     try {
       const subscription = await startDriverLocationWatch(

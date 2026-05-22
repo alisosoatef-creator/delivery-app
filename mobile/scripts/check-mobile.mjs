@@ -14,6 +14,7 @@ const required = [
   "src/services/locationService.js",
   "src/services/placesApi.js",
   "src/services/ridesApi.js",
+  "src/services/sessionStorage.js",
   "src/services/socketClient.js",
   "src/services/supportApi.js",
   "src/store/mobileStore.js",
@@ -43,6 +44,7 @@ const required = [
   "src/components/ui/EmptyState.js",
   "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
+  "src/utils/errorUtils.js",
   "src/utils/westBankCities.js",
   "app.json",
   "eas.json"
@@ -69,6 +71,9 @@ if (!packageJson.dependencies["socket.io-client"]) {
 if (!packageJson.dependencies["react-native-maps"]) {
   throw new Error("react-native-maps dependency is required for mobile map");
 }
+if (!packageJson.dependencies["expo-secure-store"]) {
+  throw new Error("expo-secure-store dependency is required for mobile session persistence");
+}
 
 const source = [
   "src/config/appConfig.js",
@@ -78,8 +83,11 @@ const source = [
   "src/services/locationService.js",
   "src/services/placesApi.js",
   "src/services/ridesApi.js",
+  "src/services/sessionStorage.js",
   "src/services/socketClient.js",
+  "src/store/mobileStore.js",
   "src/utils/locationUtils.js",
+  "src/utils/errorUtils.js",
   "src/components/map/MobileRideMap.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
@@ -111,6 +119,22 @@ for (const token of [
   "react-native-maps",
   "MobileRideMap",
   "EXPO_PUBLIC_SOCKET_URL",
+  "expo-secure-store",
+  "saveMobileSession",
+  "loadMobileSession",
+  "clearMobileSession",
+  "saveDriverSession",
+  "restoreSession",
+  "restoreStatus",
+  "disconnectMobileSocket",
+  "classifyApiError",
+  "network_error",
+  "auth_error",
+  "validation_error",
+  "server_error",
+  "not_found",
+  "reconnectionAttempts",
+  "reconnect_attempt",
   "haversineKm",
   "/places/search",
   "إلى أين تريد الذهاب؟",
@@ -133,6 +157,11 @@ for (const token of [
   if (!source.includes(token)) {
     throw new Error(`Missing mobile foundation token: ${token}`);
   }
+}
+
+const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");
+if (/\bpassword\b/i.test(sessionStorageSource)) {
+  throw new Error("sessionStorage must not persist passwords");
 }
 
 console.log("mobile-check-ok");

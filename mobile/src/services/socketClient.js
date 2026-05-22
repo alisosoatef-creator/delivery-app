@@ -13,6 +13,7 @@ const DRIVER_EVENTS = ["driver:online-status-updated", ...RIDE_EVENTS];
 const LOCATION_EVENTS = ["driver:location-updated", "driver:location-unavailable"];
 
 let socket = null;
+let lastSession = {};
 
 function sessionAuth(session = {}) {
   return {
@@ -45,7 +46,12 @@ function joinRooms(client, session = {}) {
   }
 }
 
+function notifyConnection(onConnectionChange, status) {
+  onConnectionChange?.(status === "connected", status);
+}
+
 export function connectMobileSocket(session = {}, { onConnectionChange } = {}) {
+  lastSession = { ...lastSession, ...session };
   const auth = sessionAuth(session);
 
   if (!socket) {
@@ -53,7 +59,10 @@ export function connectMobileSocket(session = {}, { onConnectionChange } = {}) {
       path: "/socket.io",
       autoConnect: false,
       auth,
-      reconnectionAttempts: 4,
+      reconnection: true,
+      reconnectionAttempts: 8,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
       timeout: 4000,
       transports: ["websocket", "polling"]
     });
@@ -63,16 +72,29 @@ export function connectMobileSocket(session = {}, { onConnectionChange } = {}) {
   socket.off("connect");
   socket.off("disconnect");
   socket.off("connect_error");
+  socket.off("reconnect_attempt");
+  socket.off("reconnect_error");
+  socket.off("reconnect");
 
   socket.on("connect", () => {
-    onConnectionChange?.(true);
-    joinRooms(socket, session);
+    notifyConnection(onConnectionChange, "connected");
+    joinRooms(socket, lastSession);
   });
-  socket.on("disconnect", () => onConnectionChange?.(false));
-  socket.on("connect_error", () => onConnectionChange?.(false));
+  socket.on("disconnect", () => notifyConnection(onConnectionChange, "disconnected"));
+  socket.on("connect_error", () => notifyConnection(onConnectionChange, "error"));
+  socket.on("reconnect_attempt", () => {
+    socket.auth = sessionAuth(lastSession);
+    notifyConnection(onConnectionChange, "connecting");
+  });
+  socket.on("reconnect_error", () => notifyConnection(onConnectionChange, "error"));
+  socket.on("reconnect", () => {
+    notifyConnection(onConnectionChange, "connected");
+    joinRooms(socket, lastSession);
+  });
 
   if (!socket.connected && !socket.active) socket.connect();
-  if (socket.connected) joinRooms(socket, session);
+  if (!socket.connected) notifyConnection(onConnectionChange, "connecting");
+  if (socket.connected) joinRooms(socket, lastSession);
 
   return socket;
 }
@@ -81,6 +103,7 @@ export function disconnectMobileSocket() {
   if (!socket) return;
   socket.disconnect();
   socket = null;
+  lastSession = {};
 }
 
 function subscribe(events, handler) {
@@ -112,6 +135,7 @@ export function subscribeToLocationEvents(handler) {
 
 export function joinRideRoom(rideId) {
   if (!socket?.connected || !rideId) return false;
+  lastSession = { ...lastSession, rideId };
   socket.emit("join:ride", { rideId });
   return true;
 }
@@ -131,5 +155,5 @@ export function emitDriverLocationUnavailable({ rideId = "", driverId = "", reas
 }
 
 export function getMobileSocketStatus() {
-  return socket?.connected ? "connected" : socket?.active ? "connecting" : "offline";
+  return socket?.connected ? "connected" : socket?.active ? "connecting" : "disconnected";
 }

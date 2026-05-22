@@ -5,6 +5,7 @@ import { MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../co
 import { cancelRide, fetchCustomerRideDetails } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
@@ -42,8 +43,8 @@ export function CustomerRideStatusScreen() {
         rideId: ride.id
       },
       {
-        onConnectionChange: (connected) => {
-          const nextStatus = connected ? "connected" : "offline";
+        onConnectionChange: (connected, statusName) => {
+          const nextStatus = statusName || (connected ? "connected" : "disconnected");
           setSocketStatus(nextStatus);
           dispatch({ type: "patch", patch: { socketStatus: nextStatus } });
           if (connected) joinRideRoom(ride.id);
@@ -98,8 +99,10 @@ export function CustomerRideStatusScreen() {
       const nextRide = await fetchCustomerRideDetails({ rideId: ride.id, phone: session.phone, userId: session.userId, token: session.token });
       setRide(nextRide);
       dispatch({ type: "setCurrentRide", ride: nextRide, area: "customer", screen: "ride-status" });
+      dispatch({ type: "patch", patch: { connectionMessage: "" } });
     } catch (requestError) {
-      setError(requestError.message || "تعذر تحديث حالة الرحلة.");
+      setError(apiErrorMessage(requestError, "تعذر تحديث حالة الرحلة."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     } finally {
       setStatus("idle");
     }
@@ -113,7 +116,8 @@ export function CustomerRideStatusScreen() {
       setRide(payload.ride);
       dispatch({ type: "setCurrentRide", ride: payload.ride, area: "customer", screen: "ride-status", toast: "تم إلغاء الرحلة." });
     } catch (requestError) {
-      setError(requestError.message || "تعذر إلغاء الرحلة.");
+      setError(apiErrorMessage(requestError, "تعذر إلغاء الرحلة."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     } finally {
       setStatus("idle");
     }

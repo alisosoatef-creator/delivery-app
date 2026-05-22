@@ -7,8 +7,26 @@ export class ApiError extends Error {
     this.status = status;
     this.payload = payload;
     this.code = payload?.error || payload?.code || "";
-    this.kind = !status ? "network_error" : status === 401 || status === 403 ? "auth_error" : status >= 500 ? "server_error" : "api_error";
+    this.kind = classifyApiError(status);
   }
+}
+
+export function classifyApiError(status) {
+  if (!status) return "network_error";
+  if (status === 401 || status === 403) return "auth_error";
+  if (status === 404) return "not_found";
+  if (status === 400 || status === 422) return "validation_error";
+  if (status >= 500) return "server_error";
+  return "api_error";
+}
+
+function fallbackMessage(status, payload = null) {
+  if (!status) return "لا يمكن الاتصال بالخادم حاليًا. تحقق من الشبكة و API URL.";
+  if (status === 401 || status === 403) return "انتهت الجلسة أو لا تملك صلاحية لهذا الطلب.";
+  if (status === 404) return "العنصر المطلوب غير موجود.";
+  if (status === 400 || status === 422) return payload?.messageAr || "تحقق من البيانات المدخلة.";
+  if (status >= 500) return "حدث خطأ في الخادم. حاول لاحقًا.";
+  return payload?.messageAr || payload?.message || payload?.error || `API ${status}`;
 }
 
 async function parseResponse(response) {
@@ -40,12 +58,15 @@ export async function apiRequest(path, { method = "GET", body, token = "", role 
       ...(hasBody ? { body: JSON.stringify(body) } : {})
     });
   } catch (error) {
-    throw new ApiError("تعذر الاتصال بالـ Backend المحلي. تحقق من API URL والشبكة.", 0, { cause: error?.message });
+    throw new ApiError(fallbackMessage(0), 0, { cause: error?.message });
   }
 
   const payload = await parseResponse(response).catch(() => null);
   if (!response.ok) {
-    throw new ApiError(payload?.messageAr || payload?.message || payload?.error || `API ${response.status}`, response.status, payload);
+    const message = response.status === 401 || response.status === 403
+      ? fallbackMessage(response.status, payload)
+      : payload?.messageAr || payload?.message || payload?.error || fallbackMessage(response.status, payload);
+    throw new ApiError(message, response.status, payload);
   }
   return payload;
 }

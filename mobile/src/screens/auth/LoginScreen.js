@@ -2,7 +2,9 @@ import { useState } from "react";
 import { Text } from "react-native";
 import { MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { loginCustomer } from "../../services/authApi";
+import { saveMobileSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
 
 export function LoginScreen() {
@@ -17,6 +19,14 @@ export function LoginScreen() {
     setStatus("loading");
     try {
       const payload = await loginCustomer({ identifier, password });
+      await saveMobileSession({
+        token: payload.token,
+        role: payload.user?.role || "customer",
+        currentUser: payload.user,
+        session: { ...payload.user, token: payload.token },
+        phone: payload.user?.phone,
+        userId: payload.user?.id
+      });
       dispatch({
         type: "login",
         token: payload.token,
@@ -26,7 +36,8 @@ export function LoginScreen() {
         toast: "تم تسجيل الدخول."
       });
     } catch (requestError) {
-      setError(requestError.message || "تعذر تسجيل الدخول.");
+      setError(apiErrorMessage(requestError, "تعذر تسجيل الدخول."));
+      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
     } finally {
       setStatus("idle");
     }
