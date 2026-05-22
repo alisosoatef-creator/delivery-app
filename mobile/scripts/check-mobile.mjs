@@ -45,11 +45,16 @@ const required = [
   "src/components/ui/ScreenContainer.js",
   "src/components/ui/LoadingState.js",
   "src/components/ui/EmptyState.js",
+  "src/components/ui/SectionHeader.js",
+  "src/components/ui/StatCard.js",
+  "src/components/ui/InfoRow.js",
+  "src/components/ui/ChoiceChip.js",
   "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
   "src/utils/errorUtils.js",
   "src/utils/startupDiagnostics.js",
   "src/utils/rideStatus.js",
+  "src/utils/mobileTheme.js",
   "src/utils/westBankCities.js",
   "app.json",
   "eas.json"
@@ -70,20 +75,13 @@ if (appJson.expo.scheme !== "wasel") {
 }
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-if (!packageJson.dependencies["expo-location"]) {
-  throw new Error("expo-location dependency is required for mobile GPS");
-}
-if (!packageJson.dependencies["socket.io-client"]) {
-  throw new Error("socket.io-client dependency is required for mobile realtime");
-}
-if (!packageJson.dependencies["react-native-maps"]) {
-  throw new Error("react-native-maps dependency is required for mobile map");
-}
-if (!packageJson.dependencies["expo-secure-store"]) {
-  throw new Error("expo-secure-store dependency is required for mobile session persistence");
+for (const dependency of ["expo-location", "socket.io-client", "react-native-maps", "expo-secure-store"]) {
+  if (!packageJson.dependencies[dependency]) {
+    throw new Error(`${dependency} dependency is required`);
+  }
 }
 
-const source = [
+const sourceFiles = [
   "src/config/appConfig.js",
   "src/services/apiClient.js",
   "src/services/authApi.js",
@@ -98,10 +96,22 @@ const source = [
   "src/utils/errorUtils.js",
   "src/utils/startupDiagnostics.js",
   "src/utils/rideStatus.js",
+  "src/utils/mobileTheme.js",
   "src/hooks/useCustomerActiveRide.js",
   "src/hooks/useCustomerRideRealtime.js",
   "src/components/ErrorBoundary.js",
   "src/components/map/MobileRideMap.js",
+  "src/components/ui/MobileButton.js",
+  "src/components/ui/MobileCard.js",
+  "src/components/ui/MobileInput.js",
+  "src/components/ui/MobileBadge.js",
+  "src/components/ui/ScreenContainer.js",
+  "src/components/ui/LoadingState.js",
+  "src/components/ui/EmptyState.js",
+  "src/components/ui/SectionHeader.js",
+  "src/components/ui/StatCard.js",
+  "src/components/ui/InfoRow.js",
+  "src/components/ui/ChoiceChip.js",
   "src/App.js",
   "src/screens/auth/RegisterScreen.js",
   "src/screens/auth/OtpScreen.js",
@@ -110,11 +120,19 @@ const source = [
   "src/screens/customer/CustomerRideStatusScreen.js",
   "src/screens/customer/CustomerHomeScreen.js",
   "src/screens/customer/MyRidesScreen.js",
+  "src/screens/customer/WalletScreen.js",
+  "src/screens/customer/SupportScreen.js",
+  "src/screens/customer/AccountScreen.js",
   "src/screens/driver/AvailableRidesScreen.js",
   "src/screens/driver/CurrentRideScreen.js",
   "src/screens/driver/DevDriverLoginScreen.js",
+  "src/screens/driver/DriverHomeScreen.js",
+  "src/screens/driver/DriverEarningsScreen.js",
+  "src/screens/driver/DriverSupportScreen.js",
   "src/navigation/AppNavigator.js"
-].map((file) => fs.readFileSync(file, "utf8")).join("\n");
+];
+
+const source = sourceFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
 
 for (const token of [
   "EXPO_PUBLIC_API_BASE_URL",
@@ -191,7 +209,14 @@ for (const token of [
   "بانتظار تفعيل موقع الكابتن المباشر",
   "Development Only",
   "CustomerHomeScreen",
-  "DriverHomeScreen"
+  "DriverHomeScreen",
+  "surfaceGlass",
+  "boxShadow",
+  "SectionHeader",
+  "StatCard",
+  "ChoiceChip",
+  "Premium Ride Experience",
+  "VISA Placeholder"
 ]) {
   if (!source.includes(token)) {
     throw new Error(`Missing mobile foundation token: ${token}`);

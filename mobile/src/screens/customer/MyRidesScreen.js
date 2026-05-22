@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
-import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
+import { StyleSheet, Text } from "react-native";
+import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { fetchCustomerRides } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors } from "../../utils/mobileTheme";
+import { colors, money } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 
 export function MyRidesScreen() {
@@ -35,15 +35,18 @@ export function MyRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="رحلاتي" subtitle="سجل رحلات الزبون من Backend. الرحلات النشطة يمكن متابعتها مباشرة.">
+    <ScreenContainer eyebrow="سجل الرحلات" title="رحلاتي" subtitle="كل رحلاتك محفوظة من الـ Backend، والرحلات النشطة يمكن متابعتها مباشرة.">
       {status === "loading" ? <LoadingState /> : null}
-      {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
-      {status !== "loading" && !rides.length ? <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة من شاشة طلب الرحلة." /> : null}
+      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
+      {status !== "loading" && !rides.length ? (
+        <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة من شاشة طلب الرحلة لتظهر هنا." actionTitle="طلب رحلة" onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+      ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id}>
+        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "gold" : "default"}>
+          <SectionHeader title={ride.destination || "رحلة"} subtitle={ride.pickup ? `${ride.pickup} ← ${ride.destination}` : "تفاصيل الرحلة"} />
           <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
-          <Text selectable style={{ color: colors.text, fontWeight: "800" }}>{ride.pickup} ← {ride.destination}</Text>
-          <Text selectable style={{ color: colors.muted }}>{ride.price || ride.fareIls || 0} ₪ · {ride.paymentMethod || "cash"}</Text>
+          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
+          <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
           {isActiveRide(ride) ? <MobileButton title="متابعة" onPress={() => continueRide(ride)} /> : null}
         </MobileCard>
       ))}
@@ -51,3 +54,7 @@ export function MyRidesScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

@@ -2,7 +2,7 @@ import { Component } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { clearMobileSession } from "../services/sessionStorage";
 import { disconnectMobileSocket } from "../services/socketClient";
-import { colors, radii, spacing } from "../utils/mobileTheme";
+import { colors, radii, shadows, spacing } from "../utils/mobileTheme";
 import { MobileButton } from "./ui";
 
 export class ErrorBoundary extends Component {
@@ -67,12 +67,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderColor: colors.border,
     borderWidth: 1,
-    borderRadius: radii.lg
+    borderRadius: radii.xl,
+    boxShadow: shadows.soft
   },
-  title: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "left" },
-  message: { color: colors.muted, lineHeight: 22, textAlign: "left" },
+  title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
+  message: { color: colors.muted, lineHeight: 22, textAlign: "right" },
   devBox: { gap: spacing.sm, padding: spacing.md, borderRadius: radii.md, backgroundColor: colors.surfaceSoft },
-  devTitle: { color: colors.gold, fontWeight: "900" },
-  devText: { color: colors.text },
+  devTitle: { color: colors.gold, fontWeight: "900", textAlign: "right" },
+  devText: { color: colors.text, textAlign: "right" },
   stack: { color: colors.muted, fontSize: 12, lineHeight: 18 }
 });

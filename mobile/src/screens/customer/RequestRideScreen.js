@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { ChoiceChip, InfoRow, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
 import { createRide, quoteRide } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { pointFromCity, pointFromPlace, safeDistanceKm } from "../../utils/locationUtils";
-import { colors } from "../../utils/mobileTheme";
+import { colors, km, money, spacing } from "../../utils/mobileTheme";
 import { cityOptions } from "../../utils/westBankCities";
 
 export function RequestRideScreen() {
@@ -141,46 +141,82 @@ export function RequestRideScreen() {
   }
 
   return (
-    <ScreenContainer title="طلب رحلة" subtitle="اختر المدينة، استخدم GPS أو مركز المدينة، ثم ابحث عن وجهتك.">
+    <ScreenContainer
+      eyebrow="طلب مشوار"
+      title="حدد وجهتك"
+      subtitle="اختر المدينة، فعّل موقعك أو استخدم مركز المدينة، ثم ابحث عن وجهتك."
+    >
+      <MobileCard tone="gold">
+        <MobileBadge label={state.locationStatus === "gps" ? "GPS مفعل" : "موقع افتراضي جاهز"} tone={state.locationStatus === "gps" ? "success" : "warning"} />
+        <Text selectable style={styles.steps}>1. اختر المدينة  2. استخدم موقعي  3. ابحث عن الوجهة  4. اطلب الرحلة</Text>
+      </MobileCard>
+
       <MobileCard>
-        <MobileBadge label={state.locationStatus === "gps" ? "GPS مفعل" : "GPS أو موقع افتراضي"} tone={state.locationStatus === "gps" ? "success" : "warning"} />
-        <Text selectable style={{ color: colors.muted }}>1. اختر المدينة  2. استخدم موقعي  3. ابحث عن الوجهة  4. اطلب الرحلة</Text>
-        <View style={{ flexDirection: "row-reverse", flexWrap: "wrap", gap: 8 }}>
+        <SectionHeader title="المدينة ونقطة الانطلاق" subtitle="يمكنك تغيير المدينة أو استخدام موقعك الحالي." />
+        <View style={styles.chips}>
           {cityOptions().map((city) => (
-            <Pressable key={city.value} onPress={() => useCityFallback(city.value)} style={{ padding: 8, borderRadius: 999, backgroundColor: cityId === city.value ? colors.gold : colors.surfaceSoft }}>
-              <Text selectable style={{ color: cityId === city.value ? "#14100a" : colors.text, fontWeight: "800" }}>{city.label}</Text>
-            </Pressable>
+            <ChoiceChip key={city.value} label={city.label} selected={cityId === city.value} onPress={() => useCityFallback(city.value)} />
           ))}
         </View>
-        <Text selectable style={{ color: colors.text, fontWeight: "800" }}>نقطة الانطلاق: {pickup?.label || "-"}</Text>
+        <InfoRow label="نقطة الانطلاق" value={pickup?.label || "-"} accent />
         <MobileButton title={status === "location" ? "جاري تحديد الموقع..." : "استخدم موقعي الحالي"} onPress={useGpsLocation} disabled={status === "location"} />
       </MobileCard>
 
       <MobileCard>
+        <SectionHeader title="الوجهة" subtitle="اكتب اسم المكان واختر من النتائج القريبة." />
         <MobileInput label="إلى أين تريد الذهاب؟" value={destinationQuery} onChangeText={searchDestination} placeholder="مثال: جامعة النجاح، المنارة، رفيديا" />
         {suggestions.map((place) => (
-          <Pressable key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-            <Text selectable style={{ color: colors.text, fontWeight: "800" }}>{place.label}</Text>
-            <Text selectable style={{ color: colors.muted }}>{place.category || "مكان"} · {place.city}</Text>
+          <Pressable key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
+            <Text selectable style={styles.suggestionTitle}>{place.label}</Text>
+            <Text selectable style={styles.suggestionMeta}>{place.category || "مكان"} · {place.city}</Text>
           </Pressable>
         ))}
-        {destination ? <Text selectable style={{ color: colors.text }}>الوجهة المختارة: {destination.label}</Text> : null}
+        {destination ? <InfoRow label="الوجهة المختارة" value={destination.label} accent /> : null}
+      </MobileCard>
+
+      <MobileCard tone={quote ? "gold" : "soft"}>
+        <SectionHeader title="التسعير والدفع" subtitle="السعر يحسب من المسافة الحالية حسب المدينة." />
         {quote ? (
-          <MobileCard tone="soft">
-            <Text selectable style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>{quote.fareIls} ₪</Text>
-            <Text selectable style={{ color: colors.muted }}>المسافة: {quote.distanceKm} كم · الوقت المتوقع: {quote.etaMinutes} دقيقة · الدفع: {paymentMethod}</Text>
-          </MobileCard>
-        ) : null}
-        <View style={{ flexDirection: "row-reverse", gap: 8, flexWrap: "wrap" }}>
+          <>
+            <Text selectable style={styles.price}>{money(quote.fareIls)}</Text>
+            <InfoRow label="المسافة" value={km(quote.distanceKm)} />
+            <InfoRow label="الوقت المتوقع" value={`${quote.etaMinutes || "-"} دقيقة`} />
+          </>
+        ) : (
+          <Text selectable style={styles.muted}>اختر وجهة لحساب السعر تلقائيًا.</Text>
+        )}
+        <View style={styles.chips}>
           {["cash", "visa", "wallet"].map((method) => (
-            <Pressable key={method} onPress={() => setPaymentMethod(method)} style={{ padding: 8, borderRadius: 999, backgroundColor: paymentMethod === method ? colors.gold : colors.surfaceSoft }}>
-              <Text selectable style={{ color: paymentMethod === method ? "#14100a" : colors.text, fontWeight: "800" }}>{method === "cash" ? "كاش" : method === "visa" ? "VISA تجريبي" : "محفظة"}</Text>
-            </Pressable>
+            <ChoiceChip
+              key={method}
+              label={method === "cash" ? "كاش" : method === "visa" ? "VISA تجريبي" : "محفظة"}
+              selected={paymentMethod === method}
+              onPress={() => setPaymentMethod(method)}
+            />
           ))}
         </View>
-        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "create" ? "جاري طلب الرحلة..." : "طلب الرحلة"} onPress={submitRide} disabled={status === "create"} />
       </MobileCard>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  steps: { color: colors.text, fontWeight: "900", lineHeight: 24, textAlign: "right" },
+  chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
+  suggestion: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  pressed: { transform: [{ scale: 0.99 }] },
+  suggestionTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
+  suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 3 },
+  price: { color: colors.text, fontSize: 36, fontWeight: "900", textAlign: "right" },
+  muted: { color: colors.muted, textAlign: "right", fontWeight: "800" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Text } from "react-native";
-import { MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { StyleSheet, Text } from "react-native";
+import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { verifyOtp } from "../../services/authApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { colors } from "../../utils/mobileTheme";
@@ -26,12 +26,28 @@ export function OtpScreen() {
   }
 
   return (
-    <ScreenContainer title="تأكيد OTP" subtitle={`أدخل الرمز التجريبي للرقم ${state.pendingPhone || "-"}.`}>
+    <ScreenContainer
+      eyebrow="تأكيد آمن"
+      title="رمز التفعيل"
+      subtitle={`أدخل الرمز التجريبي للرقم ${state.pendingPhone || "-"}.`}
+    >
+      <MobileCard tone="gold">
+        <MobileBadge label="Development OTP" tone="warning" />
+        <Text selectable style={styles.code}>1234</Text>
+        <Text selectable style={styles.hint}>هذا الرمز للتطوير فقط، وسيتم استبداله لاحقًا بخدمة OTP حقيقية.</Text>
+      </MobileCard>
       <MobileCard>
+        <SectionHeader title="تحقق الحساب" subtitle="بعد نجاح التحقق ستعود إلى شاشة الدخول." />
         <MobileInput label="رمز OTP" value={code} onChangeText={setCode} keyboardType="number-pad" />
-        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري التحقق..." : "تأكيد الحساب"} onPress={submit} disabled={status === "loading"} />
       </MobileCard>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  code: { color: colors.text, fontSize: 42, fontWeight: "900", textAlign: "center", letterSpacing: 0 },
+  hint: { color: colors.muted, textAlign: "center", lineHeight: 22 },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

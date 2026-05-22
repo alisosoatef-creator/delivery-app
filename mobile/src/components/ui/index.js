@@ -1,7 +1,11 @@
 export { EmptyState } from "./EmptyState";
+export { ChoiceChip } from "./ChoiceChip";
+export { InfoRow } from "./InfoRow";
 export { LoadingState } from "./LoadingState";
 export { MobileBadge } from "./MobileBadge";
 export { MobileButton } from "./MobileButton";
 export { MobileCard } from "./MobileCard";
 export { MobileInput } from "./MobileInput";
 export { ScreenContainer } from "./ScreenContainer";
+export { SectionHeader } from "./SectionHeader";
+export { StatCard } from "./StatCard";

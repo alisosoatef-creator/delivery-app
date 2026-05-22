@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
-import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
+import { StyleSheet, Text } from "react-native";
+import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { acceptRide, fetchAvailableRides } from "../../services/driverApi";
 import { connectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors } from "../../utils/mobileTheme";
+import { colors, km, money } from "../../utils/mobileTheme";
 
 export function AvailableRidesScreen() {
   const { state, dispatch } = useMobileApp();
@@ -61,18 +61,23 @@ export function AvailableRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="الرحلات المتاحة" subtitle="تصل الرحلات الجديدة تلقائيًا عند توفر الاتصال المباشر.">
-      <MobileCard>
+    <ScreenContainer eyebrow="طلبات جديدة" title="الرحلات المتاحة" subtitle="تظهر رحلات searching هنا تلقائيًا عند وصول طلبات جديدة.">
+      <MobileCard tone="gold">
         <MobileBadge label={socketStatus === "connected" ? "مباشر" : "تحديث يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-        <Text selectable style={{ color: colors.muted }}>إذا لم تظهر الرحلة فورًا استخدم زر تحديث الطلبات كخيار احتياطي.</Text>
+        <Text selectable style={styles.muted}>إذا لم تظهر الرحلة فورًا استخدم زر تحديث الطلبات كخيار احتياطي.</Text>
       </MobileCard>
       {status === "loading" ? <LoadingState /> : null}
-      {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
-      {status !== "loading" && !rides.length ? <EmptyState title="لا توجد رحلات متاحة" message="عند طلب رحلة من الزبون ستظهر هنا تلقائيًا أو بعد التحديث." /> : null}
+      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
+      {status !== "loading" && !rides.length ? (
+        <EmptyState title="لا توجد رحلات متاحة" message="عند طلب رحلة من الزبون ستظهر هنا تلقائيًا أو بعد التحديث." actionTitle="تحديث الطلبات" onAction={load} />
+      ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id}>
-          <Text selectable style={{ color: colors.text, fontWeight: "900" }}>{ride.pickup} ← {ride.destination}</Text>
-          <Text selectable style={{ color: colors.muted }}>{ride.city || ride.cityId} · {ride.price || ride.fareIls || 0} ₪ · {ride.paymentMethod || "cash"}</Text>
+        <MobileCard key={ride.id} tone="soft">
+          <SectionHeader title={ride.destination || "وجهة جديدة"} subtitle={`${ride.pickup} ← ${ride.destination}`} />
+          <InfoRow label="المدينة" value={ride.city || ride.cityId || "-"} />
+          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
+          <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
+          <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
           <MobileButton title="قبول الرحلة" onPress={() => accept(ride.id)} />
         </MobileCard>
       ))}
@@ -80,3 +85,8 @@ export function AvailableRidesScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  muted: { color: colors.muted, lineHeight: 22, textAlign: "right", fontWeight: "800" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

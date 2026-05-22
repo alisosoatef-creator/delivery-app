@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import { Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors } from "../../utils/mobileTheme";
+import { colors, km, money } from "../../utils/mobileTheme";
 import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
@@ -162,17 +162,24 @@ export function CustomerRideStatusScreen() {
   if (!ride) {
     return (
       <ScreenContainer title="حالة الرحلة" subtitle="لا توجد رحلة نشطة الآن.">
-        {status === "loading" ? <Text selectable style={{ color: colors.muted }}>جاري البحث عن رحلة نشطة...</Text> : null}
-        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
-        <MobileButton title="طلب رحلة جديدة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+        <EmptyState
+          title={status === "loading" ? "جاري البحث عن رحلة نشطة..." : "لا توجد رحلة نشطة الآن"}
+          message={error || "يمكنك طلب رحلة جديدة والعودة لهذه الشاشة عند الحاجة."}
+          actionTitle="طلب رحلة جديدة"
+          onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })}
+        />
       </ScreenContainer>
     );
   }
 
   return (
-    <ScreenContainer title="حالة الرحلة" subtitle={ride.status === "searching" ? "جاري البحث عن كابتن..." : "تصل تحديثات الرحلة تلقائيًا عند توفر الاتصال المباشر."}>
-      <MobileCard>
-        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "تحديث يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+    <ScreenContainer
+      eyebrow="تتبع الرحلة"
+      title="حالة الرحلة"
+      subtitle={ride.status === "searching" ? "جاري البحث عن كابتن قريب..." : "التحديثات تصل تلقائيًا عند توفر الاتصال المباشر."}
+    >
+      <MobileCard tone="soft">
+        <MobileBadge label={socketStatus === "connected" ? "تحديث مباشر" : "تحديث يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
         <MobileRideMap
           pickup={pickupPoint}
           destination={destinationPoint}
@@ -180,23 +187,24 @@ export function CustomerRideStatusScreen() {
           userLocation={state.currentLocation}
           rideStatus={ride.status}
         />
-        {hasAcceptedDriver(ride) && !driverLocation ? <Text selectable style={{ color: colors.muted }}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
+        {hasAcceptedDriver(ride) && !driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
       </MobileCard>
 
-      <MobileCard>
+      <MobileCard tone={isFinishedRide(ride) ? "flat" : "gold"}>
+        <SectionHeader title={statusLabel(ride.status)} subtitle={`${ride.pickup} ← ${ride.destination}`} />
         <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
-        <Text selectable style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>{ride.pickup} ← {ride.destination}</Text>
-        <Text selectable style={{ color: colors.muted }}>السعر: {ride.price || ride.fareIls || 0} ₪ · المسافة: {ride.routeDistanceKm || ride.distanceKm || "-"} كم · الدفع: {ride.paymentMethod || "cash"}</Text>
+        <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
+        <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
+        <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
         {hasAcceptedDriver(ride) ? (
           <MobileCard tone="soft">
-            <Text selectable style={{ color: colors.text, fontWeight: "900" }}>الكابتن: {ride.driver.fullName}</Text>
-            <Text selectable style={{ color: colors.muted }}>{ride.driver.vehicleType || ride.driver.vehicle} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}</Text>
+            <SectionHeader title={`الكابتن ${ride.driver.fullName}`} subtitle={`${ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · ${ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}`} />
           </MobileCard>
         ) : (
-          <Text selectable style={{ color: colors.muted }}>بانتظار قبول أحد الكباتن. لن تظهر بيانات الكابتن قبل القبول.</Text>
+          <Text selectable style={styles.muted}>بانتظار قبول أحد الكباتن. لن تظهر بيانات الكابتن قبل القبول.</Text>
         )}
-        {isFinishedRide(ride) ? <Text selectable style={{ color: colors.muted }}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
-        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
+        {isFinishedRide(ride) ? <Text selectable style={styles.muted}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث حالة الرحلة"} variant="secondary" onPress={refresh} disabled={status === "loading"} />
         {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء الرحلة" variant="danger" onPress={cancel} disabled={status === "cancel"} /> : null}
         {!isActiveRide(ride) ? <MobileButton title="العودة للرئيسية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "home" })} /> : null}
@@ -204,3 +212,8 @@ export function CustomerRideStatusScreen() {
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  muted: { color: colors.muted, textAlign: "right", lineHeight: 22, fontWeight: "800" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

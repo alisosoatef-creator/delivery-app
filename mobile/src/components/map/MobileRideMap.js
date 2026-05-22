@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, UIManager, View } from "react-native";
 import { normalizeCoordinate, safeDistanceKm } from "../../utils/locationUtils";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { devLogStartup } from "../../utils/startupDiagnostics";
 
 let MapView = null;
@@ -70,16 +70,18 @@ function mapPinColor(type) {
 function FallbackMap({ points, distanceKm, distanceLabel, height, title = "معاينة الخريطة" }) {
   return (
     <View style={[styles.fallback, { minHeight: height }]}>
+      <View style={styles.fallbackGrid} />
+      <View style={styles.routeLine} />
       <Text selectable style={styles.fallbackTitle}>{title}</Text>
-      <Text selectable style={styles.fallbackText}>نقطة الانطلاق: {points.pickup?.label || "-"}</Text>
-      <Text selectable style={styles.fallbackText}>الوجهة: {points.destination?.label || "-"}</Text>
+      <Text selectable style={styles.fallbackText}>من: {points.pickup?.label || "-"}</Text>
+      <Text selectable style={styles.fallbackText}>إلى: {points.destination?.label || "-"}</Text>
       {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
-      {distanceKm ? <Text selectable style={styles.fallbackBadge}>{distanceLabel}: {distanceKm} كم</Text> : null}
+      {distanceKm ? <Text selectable style={styles.badge}>{distanceLabel}: {distanceKm} كم</Text> : null}
     </View>
   );
 }
 
-export function MobileRideMap({ pickup, destination, driverLocation, userLocation, rideStatus = "searching", height = 280 }) {
+export function MobileRideMap({ pickup, destination, driverLocation, userLocation, rideStatus = "searching", height = 300 }) {
   const points = useMemo(
     () => ({
       pickup: cleanPoint(pickup),
@@ -116,7 +118,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
           <Polyline
             coordinates={routePoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
             strokeColor={driverToPickup ? colors.green : colors.gold}
-            strokeWidth={4}
+            strokeWidth={5}
           />
         ) : null}
         {points.pickup ? <Marker coordinate={{ latitude: points.pickup.lat, longitude: points.pickup.lng }} title={markerTitle("pickup")} pinColor={mapPinColor("pickup")} /> : null}
@@ -125,6 +127,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
         {points.user ? <Marker coordinate={{ latitude: points.user.lat, longitude: points.user.lng }} title={markerTitle("user")} pinColor={mapPinColor("user")} /> : null}
       </MapView>
       {distanceKm ? <Text selectable style={styles.badge}>{distanceLabel}: {distanceKm} كم</Text> : null}
+      <View pointerEvents="none" style={styles.mapChrome} />
     </View>
   );
 }
@@ -132,26 +135,23 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSoft
+    borderColor: "rgba(231, 195, 111, 0.28)",
+    backgroundColor: colors.surfaceStrong,
+    boxShadow: shadows.blueGlow
+  },
+  mapChrome: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: radii.xl,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.14)"
   },
   badge: {
     position: "absolute",
     left: spacing.sm,
     bottom: spacing.sm,
-    color: "#14100a",
-    backgroundColor: colors.gold,
-    borderRadius: 999,
-    overflow: "hidden",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    fontWeight: "900"
-  },
-  fallbackBadge: {
-    alignSelf: "flex-start",
-    color: "#14100a",
+    color: "#171107",
     backgroundColor: colors.gold,
     borderRadius: 999,
     overflow: "hidden",
@@ -161,13 +161,33 @@ const styles = StyleSheet.create({
   },
   fallback: {
     gap: spacing.sm,
-    justifyContent: "center",
-    borderRadius: radii.lg,
+    justifyContent: "flex-end",
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSoft,
-    padding: spacing.md
+    borderColor: "rgba(231, 195, 111, 0.25)",
+    backgroundColor: colors.surfaceStrong,
+    padding: spacing.md,
+    overflow: "hidden",
+    boxShadow: shadows.blueGlow
   },
-  fallbackTitle: { color: colors.text, fontWeight: "900", fontSize: 16 },
-  fallbackText: { color: colors.muted }
+  fallbackGrid: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    left: 0,
+    bottom: 0,
+    backgroundColor: "rgba(127, 176, 255, 0.045)"
+  },
+  routeLine: {
+    position: "absolute",
+    width: "76%",
+    height: 5,
+    borderRadius: 999,
+    backgroundColor: colors.gold,
+    top: "44%",
+    left: "12%",
+    transform: [{ rotate: "-16deg" }]
+  },
+  fallbackTitle: { color: colors.text, fontWeight: "900", fontSize: 17, textAlign: "right" },
+  fallbackText: { color: colors.muted, textAlign: "right", fontWeight: "800" }
 });

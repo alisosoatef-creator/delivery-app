@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Text } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { StyleSheet, Text } from "react-native";
+import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
 import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi";
 import { saveDriverSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
@@ -47,16 +47,28 @@ export function DevDriverLoginScreen() {
   }
 
   return (
-    <ScreenContainer title="مدخل الكابتن" subtitle="Development Only. لا يدخل أي طلب انضمام قبل موافقة الأدمن.">
-      <MobileCard>
+    <ScreenContainer
+      eyebrow="Development Only"
+      title="مدخل الكابتن"
+      subtitle="هذا المدخل للتطوير فقط. لا يدخل أي طلب انضمام قبل موافقة الإدارة."
+    >
+      <MobileCard tone="danger">
         <MobileBadge label="Development Only" tone="warning" />
-        <Text selectable style={{ color: colors.muted }}>اختر كابتنًا موافقًا عليه أو أدخل رقم هاتفه.</Text>
+        <Text selectable style={styles.warning}>هذا الطريق مخصص لاختبار لوحة الكابتن محليًا، وسيتم استبداله بتسجيل دخول كابتن حقيقي لاحقًا.</Text>
+      </MobileCard>
+      <MobileCard>
+        <SectionHeader title="اختر كابتن موافق عليه" subtitle="استخدم Driver ID الحقيقي أو رقم هاتف كابتن موجود في قاعدة البيانات." />
         <MobileInput label="Driver ID" value={driverId} onChangeText={setDriverId} placeholder={drivers[0]?.id || "driver_..."} />
         <MobileInput label="رقم الهاتف" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title="دخول لوحة الكابتن" onPress={submit} disabled={!driverId && !phone} />
         <MobileButton title="رجوع إلى دخول الزبون" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "login" })} />
       </MobileCard>
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  warning: { color: colors.text, lineHeight: 23, textAlign: "right", fontWeight: "800" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
+});

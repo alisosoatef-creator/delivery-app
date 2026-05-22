@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
+import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { fetchDriverRides, updateDriverRideStatus } from "../../services/driverApi";
 import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors } from "../../utils/mobileTheme";
+import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { statusLabel } from "../../utils/rideStatus";
 
 const nextActions = {
   accepted: ["driver_arriving", "أنا بالطريق"],
@@ -166,12 +167,13 @@ export function CurrentRideScreen() {
   }
 
   return (
-    <ScreenContainer title="رحلتي الحالية" subtitle="تابع الرحلة وحدّث الحالة بالتسلسل الصحيح.">
-      {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
-      {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الرحلات المتاحة." /> : null}
+    <ScreenContainer eyebrow="رحلة الكابتن" title="رحلتي الحالية" subtitle="تابع الرحلة وحدث الحالة بالتسلسل الصحيح.">
+      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
+      {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الرحلات المتاحة." actionTitle="الرحلات المتاحة" onAction={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} /> : null}
       {currentRide ? (
-        <MobileCard>
-          <MobileBadge label={currentRide.status} tone={currentRide.status === "completed" ? "success" : "warning"} />
+        <MobileCard tone="soft">
+          <SectionHeader title={statusLabel(currentRide.status)} subtitle={`${currentRide.pickup} ← ${currentRide.destination}`} />
+          <MobileBadge label={currentRide.status === "completed" ? "تم إنهاء الرحلة" : "رحلة نشطة"} tone={currentRide.status === "completed" ? "success" : "warning"} />
           <MobileRideMap
             pickup={pickupPoint}
             destination={destinationPoint}
@@ -179,22 +181,33 @@ export function CurrentRideScreen() {
             userLocation={driverLocation}
             rideStatus={currentRide.status}
           />
-          <Text selectable style={{ color: colors.text, fontWeight: "900", fontSize: 18 }}>{currentRide.pickup} ← {currentRide.destination}</Text>
-          <Text selectable style={{ color: colors.muted }}>الزبون: {currentRide.customerName || "-"} · {currentRide.customerPhone || "-"}</Text>
-          <Text selectable style={{ color: colors.muted }}>السعر: {currentRide.price || currentRide.fareIls || 0} ₪ · الدفع: {currentRide.paymentMethod || "cash"}</Text>
-          <MobileCard tone="soft">
-            <Text selectable style={{ color: colors.text, fontWeight: "800" }}>التحديث المباشر: {socketStatus === "connected" ? "متصل" : "غير متصل"}</Text>
-            <Text selectable style={{ color: colors.text, fontWeight: "800" }}>تتبع GPS: {trackingStatus === "active" ? "مفعل" : trackingStatus === "requesting" ? "جاري الطلب" : trackingStatus === "denied" ? "مرفوض" : "غير مفعل"}</Text>
-            {socketStatus !== "connected" ? <Text selectable style={{ color: colors.muted }}>سيبقى تحديث الرحلة عبر REST متاحًا، لكن الموقع المباشر يحتاج Socket.IO.</Text> : null}
-            <View style={{ flexDirection: "row-reverse", gap: 8, flexWrap: "wrap" }}>
+          <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
+          <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
+          <InfoRow label="السعر" value={money(currentRide.price || currentRide.fareIls)} />
+          <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
+          <InfoRow label="الدفع" value={currentRide.paymentMethod || "cash"} />
+          <MobileCard tone="flat">
+            <SectionHeader title="التتبع المباشر" subtitle={socketStatus === "connected" ? "Socket.IO متصل" : "التحديث اليدوي متاح كاحتياط"} />
+            <View style={styles.trackingPills}>
+              <MobileBadge label={socketStatus === "connected" ? "مباشر" : "غير متصل"} tone={socketStatus === "connected" ? "success" : "warning"} />
+              <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "requesting" ? "جاري الطلب" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+            </View>
+            <View style={styles.trackingActions}>
               <MobileButton title="تفعيل موقعي المباشر" variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
               <MobileButton title="إيقاف التتبع" variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
             </View>
           </MobileCard>
-          {action ? <MobileButton title={action[1]} onPress={() => update(action[0])} /> : <Text selectable style={{ color: colors.muted }}>تم إنهاء الرحلة أو لا توجد خطوة تالية لهذه الحالة.</Text>}
+          {action ? <MobileButton title={action[1]} onPress={() => update(action[0])} /> : <Text selectable style={styles.muted}>تم إنهاء الرحلة أو لا توجد خطوة تالية لهذه الحالة.</Text>}
         </MobileCard>
       ) : null}
       <MobileButton title="تحديث رحلاتي" variant="secondary" onPress={load} />
     </ScreenContainer>
   );
 }
+
+const styles = StyleSheet.create({
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" },
+  muted: { color: colors.muted, lineHeight: 22, textAlign: "right", fontWeight: "800" },
+  trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
+  trackingActions: { gap: spacing.sm }
+});
