@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { Text } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
-import { cancelRide, fetchCustomerRideDetails } from "../../services/ridesApi";
+import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors } from "../../utils/mobileTheme";
+import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
 
@@ -32,6 +33,41 @@ export function CustomerRideStatusScreen() {
   const session = { token: state.token, role: "customer", phone: state.currentUser?.phone, userId: state.currentUser?.id };
   const pickupPoint = useMemo(() => ridePoint(ride, "pickup"), [ride]);
   const destinationPoint = useMemo(() => ridePoint(ride, "destination"), [ride]);
+
+  useEffect(() => {
+    let mounted = true;
+    async function bootRide() {
+      setStatus("loading");
+      setError("");
+      try {
+        if (ride?.id) {
+          const nextRide = await fetchCustomerRideDetails({ rideId: ride.id, phone: session.phone, userId: session.userId, token: session.token });
+          if (mounted && nextRide) {
+            setRide(nextRide);
+            dispatch({ type: "setCurrentRide", ride: nextRide, area: "customer", screen: "ride-status" });
+          }
+        } else {
+          const activeRide = await fetchActiveCustomerRide(session);
+          if (mounted && activeRide) {
+            setRide(activeRide);
+            dispatch({ type: "setCurrentRide", ride: activeRide, area: "customer", screen: "ride-status" });
+          }
+        }
+        dispatch({ type: "patch", patch: { connectionMessage: "" } });
+      } catch (requestError) {
+        if (mounted) {
+          setError(apiErrorMessage(requestError, "تعذر جلب الرحلة النشطة."));
+          dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
+        }
+      } finally {
+        if (mounted) setStatus("idle");
+      }
+    }
+    bootRide();
+    return () => {
+      mounted = false;
+    };
+  }, [state.currentUser?.id, state.currentUser?.phone, state.token]);
 
   useEffect(() => {
     if (!ride?.id) return undefined;
@@ -125,8 +161,10 @@ export function CustomerRideStatusScreen() {
 
   if (!ride) {
     return (
-      <ScreenContainer title="حالة الرحلة" subtitle="لا توجد رحلة نشطة بعد.">
-        <MobileButton title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+      <ScreenContainer title="حالة الرحلة" subtitle="لا توجد رحلة نشطة الآن.">
+        {status === "loading" ? <Text selectable style={{ color: colors.muted }}>جاري البحث عن رحلة نشطة...</Text> : null}
+        {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
+        <MobileButton title="طلب رحلة جديدة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
       </ScreenContainer>
     );
   }
@@ -146,7 +184,7 @@ export function CustomerRideStatusScreen() {
       </MobileCard>
 
       <MobileCard>
-        <MobileBadge label={ride.status} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
+        <MobileBadge label={statusLabel(ride.status)} tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"} />
         <Text selectable style={{ color: colors.text, fontSize: 18, fontWeight: "900" }}>{ride.pickup} ← {ride.destination}</Text>
         <Text selectable style={{ color: colors.muted }}>السعر: {ride.price || ride.fareIls || 0} ₪ · المسافة: {ride.routeDistanceKm || ride.distanceKm || "-"} كم · الدفع: {ride.paymentMethod || "cash"}</Text>
         {hasAcceptedDriver(ride) ? (
@@ -157,9 +195,11 @@ export function CustomerRideStatusScreen() {
         ) : (
           <Text selectable style={{ color: colors.muted }}>بانتظار قبول أحد الكباتن. لن تظهر بيانات الكابتن قبل القبول.</Text>
         )}
+        {isFinishedRide(ride) ? <Text selectable style={{ color: colors.muted }}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
         {error ? <Text selectable style={{ color: colors.red }}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث حالة الرحلة"} variant="secondary" onPress={refresh} disabled={status === "loading"} />
         {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء الرحلة" variant="danger" onPress={cancel} disabled={status === "cancel"} /> : null}
+        {!isActiveRide(ride) ? <MobileButton title="العودة للرئيسية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "home" })} /> : null}
       </MobileCard>
     </ScreenContainer>
   );

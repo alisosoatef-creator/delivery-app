@@ -10,6 +10,8 @@ import { MyRidesScreen } from "../screens/customer/MyRidesScreen";
 import { RequestRideScreen } from "../screens/customer/RequestRideScreen";
 import { SupportScreen } from "../screens/customer/SupportScreen";
 import { WalletScreen } from "../screens/customer/WalletScreen";
+import { useCustomerActiveRide } from "../hooks/useCustomerActiveRide";
+import { useCustomerRideRealtime } from "../hooks/useCustomerRideRealtime";
 import { AvailableRidesScreen } from "../screens/driver/AvailableRidesScreen";
 import { CurrentRideScreen } from "../screens/driver/CurrentRideScreen";
 import { DevDriverLoginScreen } from "../screens/driver/DevDriverLoginScreen";
@@ -69,6 +71,8 @@ function AppTabs({ area }) {
 
 function CustomerNavigator() {
   const { state } = useMobileApp();
+  useCustomerActiveRide({ enabled: state.role === "customer" });
+  useCustomerRideRealtime();
   const Screen = customerScreens[state.activeScreen] || CustomerHomeScreen;
   return (
     <View style={styles.shell}>

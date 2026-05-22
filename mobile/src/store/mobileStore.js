@@ -18,6 +18,8 @@ const initialState = {
   pickup: null,
   destination: null,
   currentRide: null,
+  activeRideStatus: "idle",
+  activeRideError: "",
   availableRides: [],
   driverLocation: null,
   socketStatus: "offline",
@@ -79,6 +81,16 @@ function reducer(state, action) {
         activeScreen: action.screen || state.activeScreen,
         toast: action.toast || state.toast
       };
+    case "setActiveRide":
+      return {
+        ...state,
+        currentRide: action.ride || state.currentRide,
+        activeRideStatus: action.status || "idle",
+        activeRideError: "",
+        toast: action.toast || state.toast
+      };
+    case "activeRideStatus":
+      return { ...state, activeRideStatus: action.status || "idle", activeRideError: action.error || "" };
     case "login":
       return {
         ...state,
