@@ -34,7 +34,7 @@ export function SupportScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="أرسل تذكرة محفوظة في النظام وسيتم التعامل معها من لوحة الإدارة.">
+    <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="أرسل مشكلتك بوضوح وسنراجعها من لوحة الإدارة.">
       <MobileCard tone="gold">
         <SectionHeader title="كيف نساعدك؟" subtitle="اكتب المشكلة بوضوح، ويمكنك متابعة حالة التذكرة هنا." />
         <MobileInput label="رسالتك" value={message} onChangeText={setMessage} placeholder="اكتب تفاصيل المشكلة" multiline />
@@ -44,7 +44,7 @@ export function SupportScreen() {
       </MobileCard>
 
       <MobileCard>
-        <SectionHeader title="تذاكري السابقة" subtitle="حالة كل تذكرة تظهر مباشرة من الـ Backend." />
+        <SectionHeader title="تذاكري السابقة" subtitle="تابع حالة كل طلب دعم من هنا." />
         {!tickets.length ? <EmptyState title="لا توجد تذاكر بعد" message="عند إرسال أول تذكرة ستظهر هنا." /> : null}
         {tickets.map((ticket) => (
           <MobileCard key={ticket.id} tone="flat">

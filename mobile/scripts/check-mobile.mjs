@@ -59,6 +59,7 @@ const required = [
   "src/utils/rideStatus.js",
   "src/utils/mobileTheme.js",
   "src/utils/westBankCities.js",
+  "docs/mobile-qa-notes.md",
   "app.json",
   "eas.json"
 ];
@@ -170,7 +171,8 @@ for (const token of [
   "StatusTimeline",
   "ErrorState",
   "pressed",
-  "focused"
+  "focused",
+  "useSafeAreaInsets"
 ]) {
   if (!source.includes(token)) {
     throw new Error(`Missing mobile foundation token: ${token}`);
@@ -180,6 +182,7 @@ for (const token of [
 for (const token of [
   "bottomNavHeight",
   "screenBottomPadding",
+  "screenBottomPadding: 122",
   "layout.bottomNavHeight",
   "جاهز لمشوارك القادم؟",
   "اطلب رحلة",
@@ -203,6 +206,9 @@ const appNavigator = fs.readFileSync("src/navigation/AppNavigator.js", "utf8");
 if (!appNavigator.includes("layout.bottomNavHeight") || !appNavigator.includes("minHeight: layout.bottomNavHeight")) {
   throw new Error("Bottom navigation must be compact and token-driven");
 }
+if (!appNavigator.includes("useSafeAreaInsets") || !appNavigator.includes("insets.bottom")) {
+  throw new Error("Bottom navigation must account for mobile safe area");
+}
 if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
   throw new Error("Bottom navigation should not rely on horizontal scrolling");
 }
@@ -210,6 +216,16 @@ if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) 
 const screenContainer = fs.readFileSync("src/components/ui/ScreenContainer.js", "utf8");
 if (!screenContainer.includes("layout.screenBottomPadding")) {
   throw new Error("Screens need bottom padding so navigation does not cover content");
+}
+const mobileTheme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
+const bottomPaddingMatch = mobileTheme.match(/screenBottomPadding:\s*(\d+)/);
+if (!bottomPaddingMatch || Number(bottomPaddingMatch[1]) < 110) {
+  throw new Error("Mobile screens need generous bottom padding above compact navigation");
+}
+
+const loginScreen = fs.readFileSync("src/screens/auth/LoginScreen.js", "utf8");
+if (!loginScreen.includes("typeof __DEV__") || !loginScreen.includes("isDev ? <MobileButton title=\"كابتن DEV\"")) {
+  throw new Error("Driver dev login entry must be hidden outside DEV");
 }
 
 const requestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
@@ -225,6 +241,16 @@ if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) 
 const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
 if (driverCurrent.indexOf("MobileRideMap") > driverCurrent.indexOf("StatusTimeline")) {
   throw new Error("Driver current ride must show the route/map before state details");
+}
+for (const token of [
+  "accepted: [\"driver_arriving\", \"أنا بالطريق\"]",
+  "driver_arriving: [\"arrived\", \"وصلت\"]",
+  "arrived: [\"in_progress\", \"بدأت الرحلة\"]",
+  "in_progress: [\"completed\", \"إنهاء الرحلة\"]"
+]) {
+  if (!driverCurrent.includes(token)) {
+    throw new Error(`Driver status sequence is missing: ${token}`);
+  }
 }
 
 const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");

@@ -9,6 +9,7 @@ import { colors, spacing } from "../../utils/mobileTheme";
 
 export function LoginScreen() {
   const { dispatch } = useMobileApp();
+  const isDev = typeof __DEV__ !== "undefined" && __DEV__;
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("idle");
@@ -50,7 +51,7 @@ export function LoginScreen() {
         <MobileButton title={status === "loading" ? "جاري الدخول..." : "دخول الزبون"} onPress={submit} loading={status === "loading"} />
         <View style={styles.links}>
           <MobileButton title="حساب جديد" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "register" })} />
-          <MobileButton title="كابتن DEV" compact variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} />
+          {isDev ? <MobileButton title="كابتن DEV" compact variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} /> : null}
         </View>
       </MobileCard>
     </ScreenContainer>

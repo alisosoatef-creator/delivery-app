@@ -21,17 +21,17 @@ export function AccountScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="إعدادات حساب الزبون والجلسة المحفوظة على الجهاز.">
+    <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="بيانات حسابك وخيارات الخروج الآمن من التطبيق.">
       <MobileCard tone="gold">
         <MobileBadge label="Customer" tone="success" />
         <Text selectable style={styles.name}>{state.currentUser?.fullName || state.currentUser?.name || "زبون"}</Text>
         <Text selectable style={styles.phone}>{state.currentUser?.phone || "-"}</Text>
       </MobileCard>
       <MobileCard>
-        <SectionHeader title="تفاصيل الجلسة" subtitle="لا يتم حفظ كلمة السر على الجهاز." />
+        <SectionHeader title="تفاصيل الحساب" subtitle="لا يتم حفظ كلمة السر على الجهاز." />
         <InfoRow label="الدور" value={state.role} />
         <InfoRow label="المدينة" value={state.currentUser?.city || state.selectedCity || "-"} />
-        <InfoRow label="Token" value={state.token ? "موجود" : "غير موجود"} />
+        <InfoRow label="حالة الدخول" value={state.token ? "محفوظة" : "غير محفوظة"} />
       </MobileCard>
       <MobileButton title="تسجيل الخروج" variant="danger" onPress={logout} />
     </ScreenContainer>

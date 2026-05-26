@@ -1,4 +1,5 @@
 import { I18nManager, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LoadingState } from "../components/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
@@ -68,10 +69,11 @@ function AuthNavigator() {
 
 function AppTabs({ area }) {
   const { state, dispatch } = useMobileApp();
+  const insets = useSafeAreaInsets();
   const tabs = area === "driver" ? driverTabs : customerTabs;
 
   return (
-    <View style={styles.tabsShell}>
+    <View style={[styles.tabsShell, { bottom: Math.max(spacing.sm, insets.bottom + spacing.xs) }]}>
       <View style={styles.tabs}>
         {tabs.map(([screen, label]) => {
           const active = state.activeScreen === screen;
@@ -147,7 +149,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: spacing.md,
     right: spacing.md,
-    bottom: spacing.sm,
     minHeight: layout.bottomNavHeight,
     borderRadius: radii.xl,
     backgroundColor: "rgba(11, 16, 21, 0.92)",

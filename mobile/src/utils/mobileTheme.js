@@ -72,7 +72,7 @@ export const shadows = {
 export const layout = {
   screenPadding: spacing.md,
   bottomNavHeight: 62,
-  screenBottomPadding: 96
+  screenBottomPadding: 122
 };
 
 export const brand = {

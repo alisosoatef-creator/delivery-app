@@ -28,7 +28,7 @@ export function DriverSupportScreen() {
     <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل مشكلة مرتبطة بالرحلات أو GPS أو الحساب.">
       <MobileCard tone="gold">
         <MobileBadge label="Driver Support" tone="info" />
-        <SectionHeader title="احتجت مساعدة؟" subtitle="اكتب رسالتك وسيتم حفظها في Backend." />
+        <SectionHeader title="احتجت مساعدة؟" subtitle="اكتب رسالتك وسيتم إرسالها لفريق الإدارة." />
         <MobileInput label="رسالة الدعم" value={message} onChangeText={setMessage} placeholder="اكتب تفاصيل المشكلة" multiline />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         {success ? <Text selectable style={styles.success}>{success}</Text> : null}

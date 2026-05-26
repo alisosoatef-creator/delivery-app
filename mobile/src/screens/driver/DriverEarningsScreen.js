@@ -4,18 +4,18 @@ import { colors, money, spacing } from "../../utils/mobileTheme";
 
 export function DriverEarningsScreen() {
   return (
-    <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="واجهة أرباح مبدئية بتصميم Premium. الربط التفصيلي الكامل سيكتمل لاحقًا.">
+    <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="ملخص سريع لأرباحك وعملياتك داخل التطبيق.">
       <MobileCard tone="gold">
-        <MobileBadge label="Foundation" tone="warning" />
+        <MobileBadge label="تجريبي" tone="warning" />
         <Text selectable style={styles.total}>{money(0)}</Text>
-        <Text selectable style={styles.caption}>الأرقام هنا مبدئية للموبايل. بيانات الأرباح التفصيلية موجودة في Backend وستربط بالكامل لاحقًا.</Text>
+        <Text selectable style={styles.caption}>الأرقام الحالية مبدئية للتجربة، وسيتم توسيع تفاصيل الأرباح لاحقًا.</Text>
       </MobileCard>
       <View style={styles.stats}>
         <StatCard label="اليوم" value={money(0)} hint="تجريبي" />
         <StatCard label="رحلات مكتملة" value="0" hint="حتى الآن" tone="green" />
       </View>
       <MobileCard>
-        <SectionHeader title="سجل العمليات" subtitle="سيظهر سجل المحفظة والتحويلات هنا عند تفعيل الربط الكامل." />
+        <SectionHeader title="سجل العمليات" subtitle="ستظهر عمليات المحفظة والتحويلات هنا عند اكتمال الربط المالي." />
         <Text selectable style={styles.caption}>لا توجد عمليات أرباح بعد.</Text>
       </MobileCard>
     </ScreenContainer>
