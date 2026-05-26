@@ -16,9 +16,9 @@ function hasAcceptedDriver(ride) {
 }
 
 function paymentLabel(method) {
-  if (method === "visa") return "VISA تجريبي";
+  if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
   if (method === "wallet") return "المحفظة";
-  return "كاش";
+  return "نقدًا";
 }
 
 function ridePoint(ride, type) {
@@ -218,7 +218,7 @@ export function CustomerRideStatusScreen() {
         </MobileCard>
       ) : null}
 
-      <MobileCard tone={finished ? "flat" : "soft"} style={styles.statusCard}>
+      <MobileCard tone={finished ? "flat" : "soft"} style={styles.customerStatusSummary}>
         <View style={styles.rowBetween}>
           <Text selectable style={styles.statusTitle}>{summaryTitle}</Text>
           <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   scanDotMuted: { opacity: 0.38 },
   searchingTitle: { color: colors.text, fontSize: 17, fontWeight: "900", textAlign: "right" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
-  statusCard: { gap: spacing.xs },
+  customerStatusSummary: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },
   price: { color: colors.primary, fontSize: 22, fontWeight: "800" },

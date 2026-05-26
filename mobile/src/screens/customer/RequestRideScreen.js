@@ -10,6 +10,12 @@ import { pointFromCity, pointFromPlace, safeDistanceKm } from "../../utils/locat
 import { colors, km, money, spacing } from "../../utils/mobileTheme";
 import { cityOptions } from "../../utils/westBankCities";
 
+function paymentLabel(method) {
+  if (method === "visa") return "بطاقة تجريبية";
+  if (method === "wallet") return "محفظة";
+  return "نقدًا";
+}
+
 export function RequestRideScreen() {
   const { state, dispatch } = useMobileApp();
   const [cityId, setCityId] = useState(state.selectedCity || "nablus");
@@ -44,7 +50,7 @@ export function RequestRideScreen() {
       const fallback = pointFromCity(cityId);
       setPickup(fallback);
       dispatch({ type: "setLocation", pickup: fallback, cityId, status: "fallback", toast: "تم استخدام موقع افتراضي للمدينة." });
-      setError(requestError.message || "تعذر قراءة GPS. تم استخدام موقع افتراضي.");
+      setError(requestError.message || "تعذر قراءة موقعك. تم استخدام موقع افتراضي.");
     } finally {
       setStatus("idle");
     }
@@ -179,8 +185,10 @@ export function RequestRideScreen() {
         ))}
       </MobileCard>
 
-      <MobileCard tone="soft" style={styles.summary}>
-        <Text selectable style={styles.stepTitle}>3. السعر</Text>
+      <MobileCard tone="soft" style={styles.summarySticky}>
+        <Text selectable style={styles.stepTitle}>ملخص الطلب</Text>
+        <InfoRow label="نقطة الانطلاق" value={pickup?.label || "-"} accent />
+        <InfoRow label="الوجهة" value={destination?.label || "اختر وجهتك"} />
         {quote ? (
           <View style={styles.summaryRow}>
             <Text selectable style={styles.price}>{money(quote.fareIls)}</Text>
@@ -196,7 +204,7 @@ export function RequestRideScreen() {
           {["cash", "visa", "wallet"].map((method) => (
             <ChoiceChip
               key={method}
-              label={method === "cash" ? "كاش" : method === "visa" ? "VISA تجريبي" : "محفظة"}
+              label={paymentLabel(method)}
               selected={paymentMethod === method}
               onPress={() => setPaymentMethod(method)}
             />
@@ -251,7 +259,7 @@ const styles = StyleSheet.create({
   pressed: { transform: [{ scale: 0.99 }] },
   suggestionTitle: { color: colors.text, fontWeight: "800", textAlign: "right" },
   suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 2, fontSize: 12 },
-  summary: { gap: spacing.sm },
+  summarySticky: { gap: spacing.sm },
   summaryRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   price: { color: colors.primary, fontSize: 31, fontWeight: "800", textAlign: "right" },
   summaryMeta: { alignItems: "flex-start", gap: 3 },

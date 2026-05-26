@@ -359,6 +359,9 @@ if (!qaNotes.includes("32A Map & Tracking QA") || !qaNotes.includes("Socket disc
 if (!qaNotes.includes("33A Driver App Pro Mode QA") || !qaNotes.includes("تفعيل/إيقاف التتبع") || !qaNotes.includes("الأرباح") || !qaNotes.includes("الدعم")) {
   throw new Error("Mobile QA notes need the 33A driver pro mode checklist");
 }
+if (!qaNotes.includes("34A Customer App Pro Mode QA") || !qaNotes.includes("ملخص الطلب") || !qaNotes.includes("رحلاتي") || !qaNotes.includes("المحفظة")) {
+  throw new Error("Mobile QA notes need the 34A customer pro mode checklist");
+}
 
 const driverEarnings = fs.readFileSync("src/screens/driver/DriverEarningsScreen.js", "utf8");
 for (const token of ["أرباح اليوم", "إجمالي الأرباح", "رحلات مكتملة", "سجل العمليات", "لا توجد عمليات أرباح بعد"]) {
@@ -371,6 +374,60 @@ const driverSupport = fs.readFileSync("src/screens/driver/DriverSupportScreen.js
 for (const token of ["issueTypes", "ChoiceChip", "fetchMySupportTickets", "تذاكري السابقة", "تم إرسال طلب الدعم بنجاح", "لا توجد تذاكر دعم"]) {
   if (!driverSupport.includes(token)) {
     throw new Error(`33A Driver support UI is missing: ${token}`);
+  }
+}
+
+const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");
+for (const token of ["customerHero", "اطلب رحلة", "لديك رحلة نشطة", "متابعة الرحلة", "quickActionGrid", "المحفظة", "الحساب"]) {
+  if (!customerHome.includes(token)) {
+    throw new Error(`34A Customer Home pro mode is missing: ${token}`);
+  }
+}
+
+const customerRequestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
+for (const token of ["summarySticky", "ملخص الطلب", "نقطة الانطلاق", "paymentLabel", "بطاقة تجريبية", "تعذر قراءة موقعك"]) {
+  if (!customerRequestRide.includes(token)) {
+    throw new Error(`34A Request Ride pro mode is missing: ${token}`);
+  }
+}
+
+const customerRideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
+for (const token of ["customerStatusSummary", "hasAcceptedDriver", "ملخص الرحلة المنتهية", "ملخص الرحلة الملغية", "paymentLabel", "بطاقة تجريبية"]) {
+  if (!customerRideStatus.includes(token)) {
+    throw new Error(`34A Ride Status pro mode is missing: ${token}`);
+  }
+}
+
+const myRides = fs.readFileSync("src/screens/customer/MyRidesScreen.js", "utf8");
+for (const token of ["paymentLabel", "متابعة", "statusLabel", "completed", "cancelled"]) {
+  if (!myRides.includes(token)) {
+    throw new Error(`34A My Rides polish is missing: ${token}`);
+  }
+}
+
+const customerWallet = fs.readFileSync("src/screens/customer/WalletScreen.js", "utf8");
+for (const token of ["balanceOverview", "دفع إلكتروني تجريبي", "آخر العمليات", "لا توجد عمليات", "بطاقة"]) {
+  if (!customerWallet.includes(token)) {
+    throw new Error(`34A Wallet polish is missing: ${token}`);
+  }
+}
+
+const customerSupport = fs.readFileSync("src/screens/customer/SupportScreen.js", "utf8");
+for (const token of ["issueTypes", "ChoiceChip", "تذاكري السابقة", "تم إرسال تذكرة الدعم بنجاح", "لا توجد تذاكر بعد"]) {
+  if (!customerSupport.includes(token)) {
+    throw new Error(`34A Customer support polish is missing: ${token}`);
+  }
+}
+
+const customerAccount = fs.readFileSync("src/screens/customer/AccountScreen.js", "utf8");
+for (const token of ["profileCard", "زبون", "تسجيل الخروج", "نوع الحساب"]) {
+  if (!customerAccount.includes(token)) {
+    throw new Error(`34A Account polish is missing: ${token}`);
+  }
+}
+for (const forbiddenAccountText of ["Token", "Backend", "Foundation"]) {
+  if (customerAccount.includes(forbiddenAccountText)) {
+    throw new Error(`Technical customer account copy should not appear: ${forbiddenAccountText}`);
   }
 }
 

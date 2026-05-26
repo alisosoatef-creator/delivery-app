@@ -6,6 +6,12 @@ import { useMobileApp } from "../../store/mobileStore";
 import { colors, money, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 
+function paymentLabel(method) {
+  if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
+  if (method === "wallet") return "المحفظة";
+  return "نقدًا";
+}
+
 export function MyRidesScreen() {
   const { state, dispatch } = useMobileApp();
   const [rides, setRides] = useState([]);
@@ -52,7 +58,7 @@ export function MyRidesScreen() {
           </View>
           <View style={styles.metaRow}>
             <Text selectable style={styles.meta}>{money(ride.price || ride.fareIls)}</Text>
-            <Text selectable style={styles.meta}>{ride.paymentMethod || "cash"}</Text>
+            <Text selectable style={styles.meta}>{paymentLabel(ride.paymentMethod)}</Text>
             {isActiveRide(ride) ? <MobileButton title="متابعة" compact onPress={() => continueRide(ride)} /> : null}
           </View>
         </MobileCard>

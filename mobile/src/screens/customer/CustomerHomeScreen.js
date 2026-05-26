@@ -19,41 +19,45 @@ export function CustomerHomeScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <View style={styles.top}>
+      <View style={styles.customerHero}>
         <BrandMark compact />
-        <Text selectable style={styles.greeting}>أهلًا {firstName}</Text>
-        <Text selectable style={styles.title}>جاهز لمشوارك القادم؟</Text>
-        <Text selectable style={styles.subtitle}>حدد وجهتك، شاهد السعر، واطلب كابتن قريب خلال لحظات.</Text>
+        <View style={styles.heroCopy}>
+          <Text selectable style={styles.greeting}>أهلًا {firstName}</Text>
+          <Text selectable style={styles.title}>جاهز لمشوارك القادم؟</Text>
+          <Text selectable style={styles.subtitle}>اختر وجهتك وشاهد السعر ثم اطلب كابتن قريب خلال لحظات.</Text>
+        </View>
         <MobileButton title="اطلب رحلة" variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
       </View>
 
       {activeRide ? (
-        <MobileCard tone="soft" style={styles.activeRide}>
+        <MobileCard tone="soft" style={styles.activeRideCard}>
           <View style={styles.rowBetween}>
             <MobileBadge label={statusLabel(activeRide.status)} tone="warning" />
-            <Text selectable style={styles.cardTitle}>رحلة نشطة</Text>
+            <Text selectable style={styles.cardTitle}>لديك رحلة نشطة</Text>
           </View>
-          <InfoRow label="المسار" value={`${activeRide.pickup} ← ${activeRide.destination}`} accent />
+          <InfoRow label="المسار" value={`${activeRide.pickup || "-"} ← ${activeRide.destination || "-"}`} accent />
           <InfoRow label="السعر" value={money(activeRide.price || activeRide.fareIls)} />
           {driverName ? <InfoRow label="الكابتن" value={driverName} /> : null}
-          <MobileButton title="متابعة الرحلة" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
+          <MobileButton title="متابعة الرحلة" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
         </MobileCard>
       ) : null}
 
       <View style={styles.stats}>
-        <StatCard label="الرحلات" value="سجل" hint="تابع رحلاتك" tone="blue" />
-        <StatCard label="الدفع" value="كاش" hint="أساسي" />
+        <StatCard label="رحلاتي" value="سجل" hint="السابقة والنشطة" tone="blue" />
+        <StatCard label="الدفع" value="نقدًا" hint="الخيار الأساسي" />
       </View>
 
       <MobileCard tone="flat" style={styles.shortcuts}>
-        <Text selectable style={styles.sectionTitle}>اختصارات</Text>
-        <View style={styles.actions}>
-          <MobileButton title="تحديث النشطة" variant="secondary" compact onPress={refreshActiveRide} />
+        <Text selectable style={styles.sectionTitle}>اختصارات سريعة</Text>
+        <View style={styles.quickActionGrid}>
           <MobileButton title="رحلاتي" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} />
-          <MobileButton title="الدفع" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })} />
-          <MobileButton title="الدعم" variant="ghost" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })} />
+          <MobileButton title="المحفظة" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })} />
+          <MobileButton title="الدعم" variant="secondary" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })} />
+          <MobileButton title="الحساب" variant="ghost" compact onPress={() => dispatch({ type: "navigate", area: "customer", screen: "account" })} />
         </View>
+        <MobileButton title="تحديث الرحلة النشطة" variant="ghost" compact onPress={refreshActiveRide} />
       </MobileCard>
+
       {state.activeRideStatus === "loading" ? <Text selectable style={styles.muted}>جاري فحص الرحلة النشطة...</Text> : null}
       {state.activeRideError ? <Text selectable style={styles.error}>{state.activeRideError}</Text> : null}
     </ScreenContainer>
@@ -61,17 +65,18 @@ export function CustomerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  top: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.sm },
-  greeting: { color: colors.primary, fontSize: 14, fontWeight: "700", textAlign: "right" },
-  title: { color: colors.text, fontSize: 30, lineHeight: 38, fontWeight: "800", textAlign: "right" },
+  customerHero: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.sm },
+  heroCopy: { alignItems: "flex-end", gap: 3 },
+  greeting: { color: colors.primary, fontSize: 14, fontWeight: "800", textAlign: "right" },
+  title: { color: colors.text, fontSize: 28, lineHeight: 35, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "right" },
-  activeRide: { gap: spacing.xs },
-  rowBetween: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  activeRideCard: { gap: spacing.xs },
+  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
   shortcuts: { gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
-  actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
+  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
+  quickActionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   muted: { color: colors.muted, textAlign: "right", fontWeight: "700" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });
