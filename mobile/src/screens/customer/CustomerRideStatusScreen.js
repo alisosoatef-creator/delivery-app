@@ -29,6 +29,15 @@ function ridePoint(ride, type) {
   return { lat, lng, label: ride?.[prefix] || type };
 }
 
+function timeLabel(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
 export function CustomerRideStatusScreen() {
   const { state, dispatch } = useMobileApp();
   const [ride, setRide] = useState(state.currentRide);
@@ -172,6 +181,8 @@ export function CustomerRideStatusScreen() {
   const completed = ride.status === "completed";
   const cancelled = ride.status === "cancelled";
   const summaryTitle = completed ? "انتهت الرحلة" : cancelled ? "تم إلغاء الرحلة" : statusLabel(ride.status);
+  const liveUnavailable = accepted && socketStatus !== "connected";
+  const driverLocationTime = timeLabel(driverLocation?.timestamp || state.lastDriverLocationAt);
 
   return (
     <ScreenContainer showHeader={false} compact>
@@ -191,6 +202,9 @@ export function CustomerRideStatusScreen() {
         rideStatus={ride.status}
         height={300}
       />
+      {liveUnavailable ? (
+        <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، يمكنك التحديث يدويًا.</Text>
+      ) : null}
 
       {searching ? (
         <MobileCard tone="soft" style={styles.searchingCard}>
@@ -231,6 +245,7 @@ export function CustomerRideStatusScreen() {
             <MobileBadge label={`تقييم ${ride.driver.rating || "5.0"}`} tone="success" />
             <MobileBadge label={driverLocation ? "التتبع مباشر" : "بانتظار الموقع"} tone={driverLocation ? "success" : "warning"} />
           </View>
+          {driverLocationTime ? <Text selectable style={styles.muted}>آخر تحديث للموقع: {driverLocationTime}</Text> : null}
           {!driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
         </MobileCard>
       ) : !finished ? (
@@ -267,6 +282,7 @@ const styles = StyleSheet.create({
   scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(49, 228, 214, 0.44)" },
   scanDotMuted: { opacity: 0.38 },
   searchingTitle: { color: colors.text, fontSize: 17, fontWeight: "900", textAlign: "right" },
+  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   statusCard: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },

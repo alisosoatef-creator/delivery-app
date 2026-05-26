@@ -202,7 +202,16 @@ for (const token of [
   "بانتظار تفعيل موقع الكابتن المباشر.",
   "تقييم",
   "التتبع مباشر",
-  "تم إنهاء الرحلة"
+  "تم إنهاء الرحلة",
+  "markerSpec",
+  "CustomMarker",
+  "MapPoint",
+  "lineCap=\"round\"",
+  "locationHint",
+  "التحديث المباشر غير متاح مؤقتًا",
+  "trackingLabel",
+  "إيقاف التتبع",
+  "آخر تحديث للموقع"
 ]) {
   if (!source.includes(token)) {
     throw new Error(`Missing 29.6 real-product UI token: ${token}`);
@@ -244,6 +253,11 @@ const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScree
 if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) {
   throw new Error("Ride Status must be tracking-first with the map before details");
 }
+for (const token of ["mapNotice", "lastDriverLocationAt", "آخر تحديث للموقع", "التحديث المباشر غير متاح مؤقتًا"]) {
+  if (!rideStatus.includes(token)) {
+    throw new Error(`Customer map/tracking UX is missing: ${token}`);
+  }
+}
 for (const token of [
   "searchingCard",
   "جاري البحث عن كابتن قريب...",
@@ -279,6 +293,37 @@ for (const token of [
 if (!driverCurrent.includes("completedCard") || !driverCurrent.includes("!completed ?")) {
   throw new Error("Driver current ride needs a completed summary and no update action after completion");
 }
+for (const token of ["trackingLabel", "trackingTone", "تفعيل موقعي المباشر", "إيقاف التتبع", "آخر تحديث للموقع", "mapNotice"]) {
+  if (!driverCurrent.includes(token)) {
+    throw new Error(`Driver map/tracking UX is missing: ${token}`);
+  }
+}
+
+const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
+for (const token of [
+  "normalizeCoordinate",
+  "safeDistanceKm",
+  "markerSpec",
+  "CustomMarker",
+  "MapPoint",
+  "Polyline",
+  "routePoints.length === 2",
+  "lineCap=\"round\"",
+  "الانطلاق",
+  "الوجهة",
+  "الكابتن",
+  "locationHint",
+  "FallbackMap"
+]) {
+  if (!mobileRideMap.includes(token)) {
+    throw new Error(`Mobile map pro feature is missing: ${token}`);
+  }
+}
+for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "GoogleMaps"]) {
+  if (source.includes(forbiddenMapToken)) {
+    throw new Error(`Forbidden paid Google Maps API usage in mobile source: ${forbiddenMapToken}`);
+  }
+}
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
 for (const token of ["من {ride.pickup", "إلى {ride.destination", "acceptRide", "ride:created"]) {
@@ -290,6 +335,9 @@ for (const token of ["من {ride.pickup", "إلى {ride.destination", "acceptRid
 const qaNotes = fs.readFileSync("docs/mobile-qa-notes.md", "utf8");
 if (!qaNotes.includes("31A Ride Experience QA") || !qaNotes.includes("Completed") || !qaNotes.includes("Cancelled")) {
   throw new Error("Mobile QA notes need the 31A ride experience checklist");
+}
+if (!qaNotes.includes("32A Map & Tracking QA") || !qaNotes.includes("Socket disconnected") || !qaNotes.includes("Invalid coordinates")) {
+  throw new Error("Mobile QA notes need the 32A map and tracking checklist");
 }
 
 const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");

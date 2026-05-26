@@ -46,3 +46,16 @@ Use this checklist for the upgraded ride experience:
 5. Completed: finish the ride and confirm the customer sees a completed summary with destination, price, payment, captain, and actions for a new ride or ride history.
 6. Cancelled: cancel a searching or accepted ride and confirm it reads as a cancelled ride summary, not a technical error.
 7. Navigation persistence: leave Ride Status, return from Home via "متابعة الرحلة", and confirm My Rides only shows "متابعة" for active rides.
+
+## 32A Map & Tracking QA
+
+Use this checklist for map and live tracking:
+
+1. Before captain acceptance: confirm the customer map shows pickup, destination, and a clear route line without coordinates.
+2. After captain acceptance: confirm the customer map keeps pickup/destination and shows the driver marker once GPS tracking starts.
+3. Driver GPS on: enable live location from Driver Current Ride and verify the customer receives live driver location updates.
+4. Driver GPS denied: deny location permission and confirm the app shows a short, non-technical GPS message and keeps the ride usable.
+5. Socket disconnected: stop backend or disconnect temporarily and confirm the app says live updates are unavailable and keeps manual refresh available.
+6. Stop tracking: stop driver tracking and confirm the customer sees a waiting/last-known location state without a crash.
+7. Invalid coordinates: test with missing pickup/destination values and confirm the map fallback card appears instead of rendering broken markers.
+8. Map fallback: test Expo Go on a device where native maps are unavailable and confirm the fallback card shows route summary and distance.

@@ -7,6 +7,7 @@ import { devLogStartup } from "../../utils/startupDiagnostics";
 let MapView = null;
 let Marker = null;
 let Polyline = null;
+let Callout = null;
 let mapLoadAttempted = false;
 
 function loadNativeMap() {
@@ -25,11 +26,13 @@ function loadNativeMap() {
     MapView = Maps.default || Maps;
     Marker = Maps.Marker;
     Polyline = Maps.Polyline;
+    Callout = Maps.Callout;
     devLogStartup("map component loaded");
   } catch (error) {
     MapView = null;
     Marker = null;
     Polyline = null;
+    Callout = null;
     devLogStartup("map component skipped", { reason: error?.message || "react-native-maps unavailable" });
   }
   return Boolean(MapView && Marker && Polyline);
@@ -70,6 +73,42 @@ function mapPinColor(type) {
   if (type === "destination") return colors.red;
   if (type === "user") return colors.blue;
   return colors.primary;
+}
+
+function markerSpec(type) {
+  if (type === "driver") return { label: "ك", title: "الكابتن", color: colors.green, halo: "rgba(66, 231, 156, 0.18)" };
+  if (type === "destination") return { label: "و", title: "الوجهة", color: colors.red, halo: "rgba(255, 111, 124, 0.18)" };
+  if (type === "user") return { label: "م", title: "موقعي", color: colors.blue, halo: "rgba(117, 167, 255, 0.18)" };
+  return { label: "ا", title: "الانطلاق", color: colors.primary, halo: "rgba(49, 228, 214, 0.18)" };
+}
+
+function CustomMarker({ type }) {
+  const spec = markerSpec(type);
+  return (
+    <View style={[styles.markerHalo, { backgroundColor: spec.halo }]}>
+      <View style={[styles.markerPin, { backgroundColor: spec.color }]}>
+        <Text selectable={false} style={styles.markerText}>{spec.label}</Text>
+      </View>
+    </View>
+  );
+}
+
+function MapPoint({ type, point }) {
+  if (!point || !Marker) return null;
+  const spec = markerSpec(type);
+  const coordinate = { latitude: point.lat, longitude: point.lng };
+  return (
+    <Marker coordinate={coordinate} title={markerTitle(type)} pinColor={mapPinColor(type)} tracksViewChanges={false}>
+      <CustomMarker type={type} />
+      {Callout ? (
+        <Callout tooltip>
+          <View style={styles.callout}>
+            <Text selectable={false} style={styles.calloutText}>{spec.title}</Text>
+          </View>
+        </Callout>
+      ) : null}
+    </Marker>
+  );
 }
 
 function FallbackMap({ points, distanceKm, distanceLabel, height, title = "معاينة الخريطة" }) {
@@ -133,14 +172,21 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
           <Polyline
             coordinates={routePoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
             strokeColor={driverToPickup ? colors.green : colors.primary}
-            strokeWidth={5}
+            strokeWidth={4}
+            lineCap="round"
+            lineJoin="round"
           />
         ) : null}
-        {points.pickup ? <Marker coordinate={{ latitude: points.pickup.lat, longitude: points.pickup.lng }} title={markerTitle("pickup")} pinColor={mapPinColor("pickup")} /> : null}
-        {points.destination ? <Marker coordinate={{ latitude: points.destination.lat, longitude: points.destination.lng }} title={markerTitle("destination")} pinColor={mapPinColor("destination")} /> : null}
-        {points.driver ? <Marker coordinate={{ latitude: points.driver.lat, longitude: points.driver.lng }} title={markerTitle("driver")} pinColor={mapPinColor("driver")} /> : null}
-        {points.user ? <Marker coordinate={{ latitude: points.user.lat, longitude: points.user.lng }} title={markerTitle("user")} pinColor={mapPinColor("user")} /> : null}
+        <MapPoint type="pickup" point={points.pickup} />
+        <MapPoint type="destination" point={points.destination} />
+        <MapPoint type="driver" point={points.driver} />
+        <MapPoint type="user" point={points.user} />
       </MapView>
+      <View pointerEvents="none" style={styles.legend}>
+        {points.pickup ? <Text selectable={false} style={styles.legendText}>الانطلاق</Text> : null}
+        {points.destination ? <Text selectable={false} style={styles.legendText}>الوجهة</Text> : null}
+        {points.driver ? <Text selectable={false} style={styles.legendText}>الكابتن</Text> : null}
+      </View>
       {distanceKm ? (
         <Text selectable style={styles.badge}>
           {distanceLabel}: {distanceKm} كم
@@ -155,15 +201,15 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: "rgba(49, 228, 214, 0.22)",
+    borderColor: "rgba(49, 228, 214, 0.26)",
     backgroundColor: colors.surfaceStrong,
-    boxShadow: shadows.glow
+    boxShadow: shadows.lift
   },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)"
   },
@@ -179,6 +225,59 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     fontWeight: "900",
     fontSize: 12
+  },
+  legend: {
+    position: "absolute",
+    right: spacing.sm,
+    bottom: spacing.sm,
+    flexDirection: "row-reverse",
+    gap: spacing.xs,
+    maxWidth: "58%",
+    flexWrap: "wrap"
+  },
+  legendText: {
+    color: colors.text,
+    backgroundColor: "rgba(7, 10, 13, 0.68)",
+    borderRadius: radii.pill,
+    overflow: "hidden",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    fontSize: 10,
+    fontWeight: "800"
+  },
+  markerHalo: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  markerPin: {
+    width: 24,
+    height: 24,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "rgba(7, 10, 13, 0.9)"
+  },
+  markerText: {
+    color: colors.black,
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  callout: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radii.pill,
+    backgroundColor: colors.surfaceStrong,
+    borderWidth: 1,
+    borderColor: colors.borderStrong
+  },
+  calloutText: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: "800"
   },
   locationHint: {
     position: "absolute",
@@ -198,13 +297,13 @@ const styles = StyleSheet.create({
   fallback: {
     gap: spacing.sm,
     justifyContent: "flex-end",
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: "rgba(49, 228, 214, 0.2)",
     backgroundColor: colors.surfaceStrong,
     padding: spacing.md,
     overflow: "hidden",
-    boxShadow: shadows.glow
+    boxShadow: shadows.lift
   },
   fallbackGrid: {
     position: "absolute",

@@ -19,6 +19,30 @@ const nextActions = {
 
 const visibleStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
 
+function trackingLabel(status) {
+  if (status === "active") return "مباشر";
+  if (status === "denied") return "مرفوض";
+  if (status === "requesting") return "جاري التفعيل";
+  if (status === "unavailable") return "غير متاح";
+  return "غير مفعل";
+}
+
+function trackingTone(status) {
+  if (status === "active") return "success";
+  if (status === "denied" || status === "unavailable") return "danger";
+  if (status === "requesting") return "info";
+  return "warning";
+}
+
+function timeLabel(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
 function ridePoint(ride, type) {
   const prefix = type === "pickup" ? "pickup" : "destination";
   const lat = Number(ride?.[`${prefix}Lat`]);
@@ -44,6 +68,7 @@ export function CurrentRideScreen() {
   }, [rides, state.currentRide]);
   const action = currentRide ? nextActions[currentRide.status] : null;
   const completed = currentRide?.status === "completed";
+  const driverLocationTime = timeLabel(driverLocation?.timestamp || state.lastDriverLocationAt);
   const pickupPoint = useMemo(() => ridePoint(currentRide, "pickup"), [currentRide]);
   const destinationPoint = useMemo(() => ridePoint(currentRide, "destination"), [currentRide]);
 
@@ -165,6 +190,7 @@ export function CurrentRideScreen() {
             <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
           </View>
           <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={285} />
+          {socketStatus !== "connected" ? <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، ويمكنك المتابعة يدويًا.</Text> : null}
           <MobileCard tone="soft">
             <StatusTimeline status={currentRide.status} />
             <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
@@ -178,12 +204,13 @@ export function CurrentRideScreen() {
               <View style={styles.trackingHeader}>
                 <Text selectable style={styles.cardTitle}>التتبع</Text>
                 <View style={styles.trackingPills}>
-                  <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+                  <MobileBadge label={trackingLabel(trackingStatus)} tone={trackingTone(trackingStatus)} />
                 </View>
               </View>
+              {driverLocationTime ? <Text selectable style={styles.muted}>آخر تحديث للموقع: {driverLocationTime}</Text> : null}
               <View style={styles.trackingActions}>
-                <MobileButton title="تفعيل موقعي" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
-                <MobileButton title="إيقاف" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
+                <MobileButton title="تفعيل موقعي المباشر" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
+                <MobileButton title="إيقاف التتبع" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
               </View>
             </MobileCard>
           ) : (
@@ -207,6 +234,7 @@ const styles = StyleSheet.create({
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
   cardTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
+  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },

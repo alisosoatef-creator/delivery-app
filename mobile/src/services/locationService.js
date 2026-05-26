@@ -8,7 +8,7 @@ export async function requestCurrentLocation(cityId = "nablus") {
       ok: false,
       denied: true,
       fallback: pointFromCity(cityId),
-      message: "لم يتم السماح بالوصول للموقع. تم استخدام موقع افتراضي للمدينة."
+      message: "لم يتم السماح بالموقع. استخدمنا مركز المدينة مؤقتًا."
     };
   }
 
@@ -23,7 +23,8 @@ export async function requestCurrentLocation(cityId = "nablus") {
       lat: position.coords.latitude,
       lng: position.coords.longitude,
       accuracy: position.coords.accuracy,
-      source: "gps"
+      source: "gps",
+      timestamp: new Date().toISOString()
     }
   };
 }
