@@ -195,7 +195,14 @@ for (const token of [
   "عرض الطلبات",
   "دفع إلكتروني تجريبي",
   "معاينة الخريطة",
-  "المسافة إلى الزبون"
+  "المسافة إلى الزبون",
+  "جاري البحث عن كابتن قريب...",
+  "ملخص الرحلة المنتهية",
+  "ملخص الرحلة الملغية",
+  "بانتظار تفعيل موقع الكابتن المباشر.",
+  "تقييم",
+  "التتبع مباشر",
+  "تم إنهاء الرحلة"
 ]) {
   if (!source.includes(token)) {
     throw new Error(`Missing 29.6 real-product UI token: ${token}`);
@@ -237,6 +244,23 @@ const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScree
 if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) {
   throw new Error("Ride Status must be tracking-first with the map before details");
 }
+for (const token of [
+  "searchingCard",
+  "جاري البحث عن كابتن قريب...",
+  "hasAcceptedDriver",
+  "driverMeta",
+  "ملخص الرحلة المنتهية",
+  "ملخص الرحلة الملغية",
+  "طلب رحلة جديدة",
+  "عرض رحلاتي"
+]) {
+  if (!rideStatus.includes(token)) {
+    throw new Error(`Ride Status experience is missing: ${token}`);
+  }
+}
+if (rideStatus.indexOf("hasAcceptedDriver") > rideStatus.indexOf("driverCard")) {
+  throw new Error("Captain card must be gated by accepted ride state");
+}
 
 const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
 if (driverCurrent.indexOf("MobileRideMap") > driverCurrent.indexOf("StatusTimeline")) {
@@ -251,6 +275,21 @@ for (const token of [
   if (!driverCurrent.includes(token)) {
     throw new Error(`Driver status sequence is missing: ${token}`);
   }
+}
+if (!driverCurrent.includes("completedCard") || !driverCurrent.includes("!completed ?")) {
+  throw new Error("Driver current ride needs a completed summary and no update action after completion");
+}
+
+const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
+for (const token of ["من {ride.pickup", "إلى {ride.destination", "acceptRide", "ride:created"]) {
+  if (!availableRides.includes(token)) {
+    throw new Error(`Available rides should expose compact request details and realtime refetch: ${token}`);
+  }
+}
+
+const qaNotes = fs.readFileSync("docs/mobile-qa-notes.md", "utf8");
+if (!qaNotes.includes("31A Ride Experience QA") || !qaNotes.includes("Completed") || !qaNotes.includes("Cancelled")) {
+  throw new Error("Mobile QA notes need the 31A ride experience checklist");
 }
 
 const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");

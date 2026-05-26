@@ -43,6 +43,7 @@ export function CurrentRideScreen() {
     return rides.find((ride) => visibleStatuses.includes(ride.status)) || null;
   }, [rides, state.currentRide]);
   const action = currentRide ? nextActions[currentRide.status] : null;
+  const completed = currentRide?.status === "completed";
   const pickupPoint = useMemo(() => ridePoint(currentRide, "pickup"), [currentRide]);
   const destinationPoint = useMemo(() => ridePoint(currentRide, "destination"), [currentRide]);
 
@@ -172,19 +173,27 @@ export function CurrentRideScreen() {
             <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
             <InfoRow label="الدفع" value={currentRide.paymentMethod || "cash"} />
           </MobileCard>
-          <MobileCard tone="flat">
-            <View style={styles.trackingHeader}>
-              <Text selectable style={styles.cardTitle}>التتبع</Text>
-              <View style={styles.trackingPills}>
-                <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+          {!completed ? (
+            <MobileCard tone="flat">
+              <View style={styles.trackingHeader}>
+                <Text selectable style={styles.cardTitle}>التتبع</Text>
+                <View style={styles.trackingPills}>
+                  <MobileBadge label={trackingStatus === "active" ? "GPS مفعل" : trackingStatus === "denied" ? "GPS مرفوض" : "GPS غير مفعل"} tone={trackingStatus === "active" ? "success" : trackingStatus === "denied" ? "danger" : "warning"} />
+                </View>
               </View>
-            </View>
-            <View style={styles.trackingActions}>
-              <MobileButton title="تفعيل موقعي" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
-              <MobileButton title="إيقاف" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
-            </View>
-          </MobileCard>
-          {action ? <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} /> : <Text selectable style={styles.muted}>لا توجد خطوة تالية لهذه الحالة.</Text>}
+              <View style={styles.trackingActions}>
+                <MobileButton title="تفعيل موقعي" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
+                <MobileButton title="إيقاف" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
+              </View>
+            </MobileCard>
+          ) : (
+            <MobileCard tone="soft" style={styles.completedCard}>
+              <Text selectable style={styles.cardTitle}>تم إنهاء الرحلة</Text>
+              <Text selectable style={styles.muted}>تم حفظ الرحلة ضمن سجل الكابتن. يمكنك العودة للطلبات لاستقبال رحلة جديدة.</Text>
+              <MobileButton title="عرض الطلبات" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
+            </MobileCard>
+          )}
+          {action ? <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} /> : null}
         </>
       ) : null}
       <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
@@ -201,5 +210,6 @@ const styles = StyleSheet.create({
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" }
+  trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
+  completedCard: { gap: spacing.sm }
 });

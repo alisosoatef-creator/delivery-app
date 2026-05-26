@@ -75,7 +75,7 @@ export function AvailableRidesScreen() {
         <MobileCard key={ride.id} tone="flat" style={styles.request}>
           <View style={styles.route}>
             <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
-            <Text selectable numberOfLines={1} style={styles.path}>{ride.pickup} ← {ride.destination}</Text>
+            <Text selectable numberOfLines={1} style={styles.path}>من {ride.pickup || "-"} إلى {ride.destination || "-"}</Text>
           </View>
           <View style={styles.details}>
             <Text selectable style={styles.detail}>{km(ride.routeDistanceKm || ride.distanceKm)}</Text>

@@ -2,8 +2,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { colors, radii, spacing } from "../../utils/mobileTheme";
 
 const steps = [
-  ["searching", "بحث"],
-  ["accepted", "قبول"],
+  ["searching", "جاري البحث"],
+  ["accepted", "تم القبول"],
   ["driver_arriving", "بالطريق"],
   ["arrived", "وصل"],
   ["in_progress", "بدأت"],
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   },
   dotActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   dotCurrent: { width: 13, height: 13, boxShadow: "0 0 16px rgba(49, 228, 214, 0.48)" },
-  label: { color: colors.mutedStrong, fontSize: 9, fontWeight: "700", textAlign: "center" },
+  label: { color: colors.mutedStrong, fontSize: 8.5, fontWeight: "700", textAlign: "center" },
   labelActive: { color: colors.text },
   cancelled: {
     borderRadius: radii.md,

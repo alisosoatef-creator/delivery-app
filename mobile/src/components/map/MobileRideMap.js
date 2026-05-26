@@ -108,6 +108,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 
   const accepted = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"].includes(rideStatus);
   const driverToPickup = accepted && points.driver && points.pickup;
+  const waitingForDriverLocation = accepted && points.pickup && !points.driver;
   const routePoints = driverToPickup
     ? [points.driver, points.pickup]
     : points.pickup && points.destination
@@ -145,6 +146,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
           {distanceLabel}: {distanceKm} كم
         </Text>
       ) : null}
+      {waitingForDriverLocation ? <Text selectable style={styles.locationHint}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
       <View pointerEvents="none" style={styles.mapChrome} />
     </View>
   );
@@ -177,6 +179,21 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     fontWeight: "900",
     fontSize: 12
+  },
+  locationHint: {
+    position: "absolute",
+    right: spacing.sm,
+    top: spacing.sm,
+    maxWidth: "76%",
+    color: colors.text,
+    backgroundColor: "rgba(7, 10, 13, 0.72)",
+    borderRadius: radii.pill,
+    overflow: "hidden",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    fontWeight: "800",
+    fontSize: 11,
+    textAlign: "right"
   },
   fallback: {
     gap: spacing.sm,

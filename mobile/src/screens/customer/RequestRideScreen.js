@@ -150,6 +150,12 @@ export function RequestRideScreen() {
 
       <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={255} />
 
+      <View style={styles.quickSteps}>
+        <Text selectable style={[styles.quickStep, pickup && styles.quickStepDone]}>1. الانطلاق</Text>
+        <Text selectable style={[styles.quickStep, destination && styles.quickStepDone]}>2. الوجهة</Text>
+        <Text selectable style={[styles.quickStep, quote && styles.quickStepDone]}>3. السعر</Text>
+      </View>
+
       <MobileCard tone="flat" style={styles.panel}>
         <View style={styles.stepHeader}>
           <Text selectable style={styles.stepTitle}>1. نقطة الانطلاق</Text>
@@ -164,6 +170,7 @@ export function RequestRideScreen() {
 
         <Text selectable style={styles.stepTitle}>2. الوجهة</Text>
         <MobileInput label="" value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
+        {status === "quote" ? <Text selectable style={styles.muted}>جاري حساب السعر والمسافة...</Text> : null}
         {suggestions.map((place) => (
           <Pressable key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
             <Text selectable style={styles.suggestionTitle}>{place.label}</Text>
@@ -207,6 +214,29 @@ const styles = StyleSheet.create({
   title: { color: colors.text, fontSize: 25, fontWeight: "800", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right" },
   panel: { gap: spacing.sm },
+  quickSteps: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs,
+    flexWrap: "wrap"
+  },
+  quickStep: {
+    flex: 1,
+    minWidth: 92,
+    color: colors.muted,
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "800",
+    paddingVertical: spacing.xs,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.045)",
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  quickStepDone: {
+    color: colors.black,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary
+  },
   stepHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   stepTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },

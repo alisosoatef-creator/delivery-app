@@ -15,6 +15,12 @@ function hasAcceptedDriver(ride) {
   return ride?.driver && acceptedStatuses.includes(ride.status);
 }
 
+function paymentLabel(method) {
+  if (method === "visa") return "VISA تجريبي";
+  if (method === "wallet") return "المحفظة";
+  return "كاش";
+}
+
 function ridePoint(ride, type) {
   const prefix = type === "pickup" ? "pickup" : "destination";
   const lat = Number(ride?.[`${prefix}Lat`]);
@@ -162,6 +168,10 @@ export function CustomerRideStatusScreen() {
 
   const accepted = hasAcceptedDriver(ride);
   const finished = isFinishedRide(ride);
+  const searching = ride.status === "searching";
+  const completed = ride.status === "completed";
+  const cancelled = ride.status === "cancelled";
+  const summaryTitle = completed ? "انتهت الرحلة" : cancelled ? "تم إلغاء الرحلة" : statusLabel(ride.status);
 
   return (
     <ScreenContainer showHeader={false} compact>
@@ -182,34 +192,67 @@ export function CustomerRideStatusScreen() {
         height={300}
       />
 
+      {searching ? (
+        <MobileCard tone="soft" style={styles.searchingCard}>
+          <View style={styles.scanVisual}>
+            <View style={styles.scanDot} />
+            <View style={[styles.scanDot, styles.scanDotMuted]} />
+            <View style={styles.scanDot} />
+          </View>
+          <Text selectable style={styles.searchingTitle}>جاري البحث عن كابتن قريب...</Text>
+          <Text selectable style={styles.muted}>سنظهر بيانات الكابتن فور قبول الرحلة.</Text>
+        </MobileCard>
+      ) : null}
+
       <MobileCard tone={finished ? "flat" : "soft"} style={styles.statusCard}>
         <View style={styles.rowBetween}>
-          <Text selectable style={styles.statusTitle}>{statusLabel(ride.status)}</Text>
+          <Text selectable style={styles.statusTitle}>{summaryTitle}</Text>
           <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
         </View>
         <StatusTimeline status={ride.status} />
         <InfoRow label="المسار" value={`${ride.pickup} ← ${ride.destination}`} accent />
         <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
-        <InfoRow label="الدفع" value={ride.paymentMethod || "cash"} />
+        <InfoRow label="الدفع" value={paymentLabel(ride.paymentMethod)} />
       </MobileCard>
 
       {accepted ? (
         <MobileCard tone="flat" style={styles.driverCard}>
-          <Text selectable style={styles.cardTitle}>الكابتن</Text>
-          <Text selectable style={styles.driverName}>{ride.driver.fullName}</Text>
-          <Text selectable style={styles.muted}>{ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}</Text>
+          <View style={styles.driverHeader}>
+            <View style={styles.avatar}>
+              <Text selectable={false} style={styles.avatarText}>ك</Text>
+            </View>
+            <View style={styles.driverInfo}>
+              <Text selectable style={styles.cardTitle}>الكابتن</Text>
+              <Text selectable style={styles.driverName}>{ride.driver.fullName}</Text>
+              <Text selectable style={styles.muted}>{ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}</Text>
+            </View>
+          </View>
+          <View style={styles.driverMeta}>
+            <MobileBadge label={`تقييم ${ride.driver.rating || "5.0"}`} tone="success" />
+            <MobileBadge label={driverLocation ? "التتبع مباشر" : "بانتظار الموقع"} tone={driverLocation ? "success" : "warning"} />
+          </View>
           {!driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
         </MobileCard>
-      ) : (
+      ) : !finished ? (
         <Text selectable style={styles.muted}>لن تظهر بيانات الكابتن قبل قبول الرحلة.</Text>
-      )}
+      ) : null}
 
-      {finished ? <Text selectable style={styles.muted}>هذه الرحلة انتهت. يمكنك الرجوع للرئيسية أو طلب رحلة جديدة.</Text> : null}
+      {finished ? (
+        <MobileCard tone={completed ? "soft" : "flat"} style={styles.finishedCard}>
+          <Text selectable style={styles.statusTitle}>{completed ? "ملخص الرحلة المنتهية" : "ملخص الرحلة الملغية"}</Text>
+          <InfoRow label="الوجهة" value={ride.destination || "-"} accent />
+          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
+          <InfoRow label="الدفع" value={paymentLabel(ride.paymentMethod)} />
+          {accepted ? <InfoRow label="الكابتن" value={ride.driver.fullName || "-"} /> : null}
+          {cancelled ? <Text selectable style={styles.muted}>تم إلغاء الرحلة. يمكنك طلب رحلة جديدة في أي وقت.</Text> : null}
+        </MobileCard>
+      ) : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       <View style={styles.actions}>
-        <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} />
-        {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
-        {!isActiveRide(ride) ? <MobileButton title="الرئيسية" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "home" })} /> : null}
+        {!finished ? <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} /> : null}
+        {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء الرحلة" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
+        {finished ? <MobileButton title="طلب رحلة جديدة" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} /> : null}
+        {!isActiveRide(ride) ? <MobileButton title="عرض رحلاتي" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} /> : null}
       </View>
     </ScreenContainer>
   );
@@ -219,13 +262,24 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   title: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right", marginTop: 2 },
+  searchingCard: { alignItems: "flex-end", gap: spacing.xs },
+  scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
+  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(49, 228, 214, 0.44)" },
+  scanDotMuted: { opacity: 0.38 },
+  searchingTitle: { color: colors.text, fontSize: 17, fontWeight: "900", textAlign: "right" },
   statusCard: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },
   price: { color: colors.primary, fontSize: 22, fontWeight: "800" },
   driverCard: { gap: spacing.xs },
+  driverHeader: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
+  avatar: { width: 44, height: 44, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  avatarText: { color: colors.black, fontSize: 20, fontWeight: "900" },
+  driverInfo: { flex: 1, alignItems: "flex-end" },
+  driverMeta: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
   driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
+  finishedCard: { gap: spacing.xs },
   muted: { color: colors.muted, textAlign: "right", lineHeight: 21, fontWeight: "600" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }

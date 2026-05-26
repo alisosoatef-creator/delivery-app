@@ -34,3 +34,15 @@ This pass reviewed the Expo mobile experience after the real product redesign:
 - Real device screenshots should be captured before store preparation.
 - Native map rendering should be checked on both Android and iOS devices.
 - Production builds should replace DEV driver login with real driver authentication.
+
+## 31A Ride Experience QA
+
+Use this checklist for the upgraded ride experience:
+
+1. Request Ride: choose a city, set pickup with GPS or fallback, search for a destination, confirm compact results, and verify price/distance summary before ordering.
+2. Searching: create a ride and confirm the status screen shows "جاري البحث عن كابتن قريب..." with route, distance, price, payment, and a clear cancel action.
+3. Accepted: accept the ride as a driver and confirm the customer sees the captain card only after acceptance, including vehicle, plate, rating, and live tracking state.
+4. Driver status sequence: confirm the driver sees only one next action at a time: أنا بالطريق, وصلت, بدأت الرحلة, إنهاء الرحلة.
+5. Completed: finish the ride and confirm the customer sees a completed summary with destination, price, payment, captain, and actions for a new ride or ride history.
+6. Cancelled: cancel a searching or accepted ride and confirm it reads as a cancelled ride summary, not a technical error.
+7. Navigation persistence: leave Ride Status, return from Home via "متابعة الرحلة", and confirm My Rides only shows "متابعة" for active rides.
