@@ -59,3 +59,17 @@ Use this checklist for map and live tracking:
 6. Stop tracking: stop driver tracking and confirm the customer sees a waiting/last-known location state without a crash.
 7. Invalid coordinates: test with missing pickup/destination values and confirm the map fallback card appears instead of rendering broken markers.
 8. Map fallback: test Expo Go on a device where native maps are unavailable and confirm the fallback card shows route summary and distance.
+
+## 33A Driver App Pro Mode QA
+
+Use this checklist for the upgraded driver experience:
+
+1. دخول الكابتن: افتح مدخل الكابتن في وضع التطوير وتأكد أن الجلسة تعود إلى لوحة الكابتن بدون رسائل تقنية.
+2. لوحة الكابتن: تحقق من حالة التوفر، عدد الطلبات المتاحة، رحلة حالية إن وجدت، وأزرار عرض الطلبات ورحلتي الحالية والأرباح والدعم.
+3. التوفر: بدّل حالة متاح / غير متاح وتأكد أن الرسالة توضّح أثر الحالة بدون تغيير عميق في المنطق الحالي.
+4. الطلبات المتاحة: أنشئ رحلة من الزبون وتأكد أن الطلب يظهر ككرت مضغوط فيه من/إلى، المدينة، السعر، المسافة، الدفع، وزر قبول واضح.
+5. قبول رحلة: اضغط قبول الرحلة وتأكد أن الرحلة تنتقل إلى رحلتي الحالية.
+6. تحديث الحالات: جرّب التسلسل كاملًا: أنا بالطريق، وصلت، بدأت الرحلة، إنهاء الرحلة، وتأكد أن زرًا واحدًا فقط يظهر في كل حالة.
+7. تفعيل/إيقاف التتبع: فعّل موقعي المباشر ثم أوقف التتبع وتأكد أن الإيقاف لا يظهر كخطأ.
+8. الأرباح: افتح شاشة الأرباح وتأكد أن أرباح اليوم، إجمالي الأرباح، رحلات مكتملة، وسجل العمليات تظهر بصياغة واضحة.
+9. الدعم: أرسل تذكرة دعم للكابتن، وتأكد أن نوع المشكلة والرسالة والتذاكر السابقة تظهر بشكل مفهوم.

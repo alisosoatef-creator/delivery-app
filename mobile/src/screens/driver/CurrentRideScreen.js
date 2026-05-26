@@ -43,6 +43,12 @@ function timeLabel(value) {
   }
 }
 
+function paymentLabel(method) {
+  if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
+  if (method === "wallet") return "محفظة";
+  return "نقدًا";
+}
+
 function ridePoint(ride, type) {
   const prefix = type === "pickup" ? "pickup" : "destination";
   const lat = Number(ride?.[`${prefix}Lat`]);
@@ -191,13 +197,30 @@ export function CurrentRideScreen() {
           </View>
           <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={285} />
           {socketStatus !== "connected" ? <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، ويمكنك المتابعة يدويًا.</Text> : null}
+          <MobileCard tone="soft" style={styles.routeCard}>
+            <View style={styles.routeHeader}>
+              <MobileBadge label={statusLabel(currentRide.status)} tone={completed ? "success" : "info"} />
+              <Text selectable style={styles.cardTitle}>مسار الرحلة</Text>
+            </View>
+            <View style={styles.routePoints}>
+              <View style={styles.routePoint}>
+                <Text selectable style={styles.pointLabel}>نقطة الانطلاق</Text>
+                <Text selectable style={styles.pointValue} numberOfLines={1}>{currentRide.pickup || "-"}</Text>
+              </View>
+              <View style={styles.routePoint}>
+                <Text selectable style={styles.pointLabel}>الوجهة</Text>
+                <Text selectable style={styles.pointValue} numberOfLines={1}>{currentRide.destination || "-"}</Text>
+              </View>
+            </View>
+          </MobileCard>
+
           <MobileCard tone="soft">
             <StatusTimeline status={currentRide.status} />
             <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
             <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
             <InfoRow label="السعر" value={money(currentRide.price || currentRide.fareIls)} />
             <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
-            <InfoRow label="الدفع" value={currentRide.paymentMethod || "cash"} />
+            <InfoRow label="الدفع" value={paymentLabel(currentRide.paymentMethod)} />
           </MobileCard>
           {!completed ? (
             <MobileCard tone="flat">
@@ -220,7 +243,12 @@ export function CurrentRideScreen() {
               <MobileButton title="عرض الطلبات" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
             </MobileCard>
           )}
-          {action ? <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} /> : null}
+          {action ? (
+            <MobileCard tone="gold" style={styles.nextActionCard}>
+              <Text selectable style={styles.nextActionHint}>الخطوة التالية</Text>
+              <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} />
+            </MobileCard>
+          ) : null}
         </>
       ) : null}
       <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
@@ -236,8 +264,16 @@ const styles = StyleSheet.create({
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
+  routeCard: { gap: spacing.sm },
+  routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  routePoints: { gap: spacing.xs },
+  routePoint: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
+  pointLabel: { color: colors.primary, textAlign: "right", fontSize: 12, fontWeight: "900" },
+  pointValue: { color: colors.text, textAlign: "right", fontSize: 14, fontWeight: "800", marginTop: 2 },
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
+  nextActionCard: { gap: spacing.sm },
+  nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
   completedCard: { gap: spacing.sm }
 });

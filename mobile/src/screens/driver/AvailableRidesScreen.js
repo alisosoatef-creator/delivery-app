@@ -6,6 +6,13 @@ import { connectMobileSocket, subscribeToDriverEvents } from "../../services/soc
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
 import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { statusLabel } from "../../utils/rideStatus";
+
+function paymentLabel(method) {
+  if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
+  if (method === "wallet") return "المحفظة";
+  return "نقدًا";
+}
 
 export function AvailableRidesScreen() {
   const { state, dispatch } = useMobileApp();
@@ -66,23 +73,27 @@ export function AvailableRidesScreen() {
         <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
         <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
       </View>
-      {status === "loading" ? <LoadingState /> : null}
+      {status === "loading" ? <LoadingState message="جاري تحميل الطلبات المتاحة..." /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
         <EmptyState title="لا توجد طلبات الآن" message="عند طلب رحلة من زبون ستظهر هنا." actionTitle="تحديث" onAction={load} />
       ) : null}
       {rides.map((ride) => (
         <MobileCard key={ride.id} tone="flat" style={styles.request}>
-          <View style={styles.route}>
-            <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
-            <Text selectable numberOfLines={1} style={styles.path}>من {ride.pickup || "-"} إلى {ride.destination || "-"}</Text>
+          <View style={styles.requestHeader}>
+            <View style={styles.route}>
+              <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
+              <Text selectable numberOfLines={1} style={styles.path}>من {ride.pickup || "-"} إلى {ride.destination || "-"}</Text>
+            </View>
+            <MobileBadge label={statusLabel(ride.status || "searching")} tone="warning" />
           </View>
           <View style={styles.details}>
+            <Text selectable style={styles.detail}>{ride.city || ride.cityId || "المدينة"}</Text>
             <Text selectable style={styles.detail}>{km(ride.routeDistanceKm || ride.distanceKm)}</Text>
             <Text selectable style={styles.detail}>{money(ride.price || ride.fareIls)}</Text>
-            <Text selectable style={styles.detail}>{ride.paymentMethod || "cash"}</Text>
+            <Text selectable style={styles.detail}>{paymentLabel(ride.paymentMethod)}</Text>
           </View>
-          <MobileButton title="قبول" variant="accent" onPress={() => accept(ride.id)} />
+          <MobileButton title="قبول الرحلة" variant="accent" onPress={() => accept(ride.id)} />
         </MobileCard>
       ))}
     </ScreenContainer>
@@ -92,6 +103,7 @@ export function AvailableRidesScreen() {
 const styles = StyleSheet.create({
   statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   request: { gap: spacing.sm },
+  requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   route: { alignItems: "flex-end", gap: 3 },
   destination: { color: colors.text, fontSize: 17, fontWeight: "800", textAlign: "right" },
   path: { color: colors.muted, fontSize: 12, textAlign: "right" },
