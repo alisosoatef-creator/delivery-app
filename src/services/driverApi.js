@@ -69,7 +69,7 @@ export function updateDriverRideStatus({ rideId, driverId, status, phone = "", t
 }
 
 export function updateDriverOnlineStatus({ driverId, online, phone = "", token = "", role = "driver", userId = "" }) {
-  return apiPost("/drivers/status", { driverId, online }, {
+  return apiPost("/drivers/status", { driverId, online, onlineStatus: online ? "online" : "offline" }, {
     headers: driverContextHeaders({ driverId, phone, token, role, userId })
   });
 }

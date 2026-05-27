@@ -156,7 +156,18 @@ function App() {
     }
 
     const unsubscribeRideEvents = subscribeToRideEvents(applyRidePayload);
-    const unsubscribeDriverEvents = subscribeToDriverEvents(() => {
+    const unsubscribeDriverEvents = subscribeToDriverEvents((payload) => {
+      const driver = payload?.driver;
+      if (driver?.id && (!driverId || driver.id === driverId)) {
+        dispatch({
+          type: "patch",
+          patch: {
+            driverOnline: driver.onlineStatus === "online",
+            currentUser: isDriver ? { ...state.currentUser, onlineStatus: driver.onlineStatus, online: driver.online } : state.currentUser,
+            session: isDriver ? { ...state.session, driver: { ...(state.session?.driver || {}), ...driver } } : state.session
+          }
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] });
       queryClient.invalidateQueries({ queryKey: ["driver", "availableRides"] });
     });

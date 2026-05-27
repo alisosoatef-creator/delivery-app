@@ -44,7 +44,12 @@ export function useDriverData({ enabled = true, driverId = "", phone = "", cityI
 
   const updateOnlineStatusMutation = useMutation({
     mutationFn: (payload) => updateDriverOnlineStatus({ phone, token, role, userId, ...payload }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] })
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin", "drivers"] });
+      queryClient.invalidateQueries({ queryKey: ["admin", "dashboard"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "availableRides"] });
+      queryClient.invalidateQueries({ queryKey: ["driver", "myRides"] });
+    }
   });
 
   const queryError =

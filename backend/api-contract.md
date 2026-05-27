@@ -132,6 +132,7 @@ Smart dispatch acceptance errors are intentionally explicit: `ride_not_available
 - `POST /api/driver/dev-login`
 - `GET /api/driver/available-rides`
 - `GET /api/driver/my-rides`
+- `POST /api/drivers/status`
 - `PATCH /api/driver/rides/:id/status`
 
 Driver development login is limited to active approved captains in the local database. The driver ride status endpoint enforces the current development lifecycle: `accepted -> driver_arriving -> arrived -> in_progress -> completed`.
@@ -139,6 +140,8 @@ Driver development login is limited to active approved captains in the local dat
 Driver endpoints require the development driver context headers after login:
 `Authorization: Bearer <dev-driver-session-token>`, `X-Dev-Role: driver`, `X-Dev-Driver-Id: <drivers.id>`, and `X-Dev-Phone`.
 Unauthorized driver requests return specific errors: `auth_required`, `driver_role_required`, `missing_driver_context`, or `driver_not_found`.
+
+Driver availability uses one source of truth: `drivers.onlineStatus` with values `online` and `offline`. Driver clients should display these as available/unavailable, not as raw values. `POST /api/drivers/status` persists the value, returns the updated `driver`, and emits `driver:online-status-updated`. Inactive or suspended captains are forced offline and cannot switch online; the endpoint returns `driver_inactive` for that case.
 
 ### Smart Dispatch
 
@@ -201,4 +204,4 @@ Cash rides are marked `paid` when completed in this development build. VISA is a
 - `POST /api/drivers/status`
 - `GET /api/drivers/requests`
 
-These routes remain for the current driver-facing mock flow.
+`GET /api/drivers/requests` remains for the current driver-facing mock flow. `POST /api/drivers/status` is still supported for compatibility but now writes the same persistent `drivers.onlineStatus` field used by dispatch, mobile, web driver, and admin views.

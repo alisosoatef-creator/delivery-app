@@ -1,17 +1,114 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
-import { clearMobileSession } from "../../services/sessionStorage";
-import { disconnectMobileSocket } from "../../services/socketClient";
+import { updateDriverOnlineStatus } from "../../services/driverApi";
+import { clearMobileSession, saveMobileSession } from "../../services/sessionStorage";
+import { connectMobileSocket, disconnectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
+import { apiErrorMessage } from "../../utils/errorUtils";
 import { colors, money, spacing } from "../../utils/mobileTheme";
+
+function driverSessionFromState(state, driver = {}) {
+  return {
+    ...state.session,
+    token: state.token,
+    role: "driver",
+    driverId: state.currentUser?.driverId || state.session?.driverId || driver.id || "",
+    phone: state.currentUser?.phone || state.session?.phone || driver.phone || "",
+    userId: state.currentUser?.id || state.session?.id || ""
+  };
+}
 
 export function DriverHomeScreen() {
   const { state, dispatch } = useMobileApp();
   const driver = state.session?.driver || {};
-  const [available, setAvailable] = useState((driver.onlineStatus || state.currentUser?.onlineStatus || "online") !== "offline");
+  const session = driverSessionFromState(state, driver);
+  const [available, setAvailable] = useState((driver.onlineStatus || state.driverOnlineStatus || state.currentUser?.onlineStatus || "offline") === "online");
+  const [status, setStatus] = useState("idle");
+  const [error, setError] = useState("");
   const availableCount = state.availableRides?.length || 0;
   const currentRide = state.currentRide;
+
+  useEffect(() => {
+    const nextOnlineStatus = driver.onlineStatus || state.driverOnlineStatus || state.currentUser?.onlineStatus || "offline";
+    setAvailable(nextOnlineStatus === "online");
+  }, [driver.onlineStatus, state.currentUser?.onlineStatus, state.driverOnlineStatus]);
+
+  useEffect(() => {
+    if (!session.driverId || !state.token) return undefined;
+    connectMobileSocket(session);
+    const unsubscribe = subscribeToDriverEvents((payload, eventName) => {
+      if (eventName !== "driver:online-status-updated") return;
+      const updatedDriver = payload?.driver;
+      if (!updatedDriver?.id || String(updatedDriver.id) !== String(session.driverId)) return;
+      applyDriverSession(updatedDriver, false);
+    });
+    return unsubscribe;
+  }, [session.driverId, session.phone, state.token]);
+
+  async function applyDriverSession(updatedDriver, persist = true) {
+    const nextUser = {
+      ...(state.currentUser || {}),
+      driverId: updatedDriver.id,
+      phone: updatedDriver.phone,
+      fullName: updatedDriver.fullName || state.currentUser?.fullName,
+      onlineStatus: updatedDriver.onlineStatus,
+      online: updatedDriver.online
+    };
+    const nextSession = {
+      ...(state.session || {}),
+      token: state.token,
+      driver: { ...(state.session?.driver || {}), ...updatedDriver },
+      driverId: updatedDriver.id,
+      phone: updatedDriver.phone
+    };
+    setAvailable(updatedDriver.onlineStatus === "online");
+    dispatch({
+      type: "patch",
+      patch: {
+        currentUser: nextUser,
+        session: nextSession,
+        driverOnlineStatus: updatedDriver.onlineStatus,
+        connectionMessage: ""
+      }
+    });
+    if (persist) {
+      await saveMobileSession({
+        token: state.token,
+        role: "driver",
+        currentUser: nextUser,
+        session: nextSession,
+        driverSession: updatedDriver,
+        driverId: updatedDriver.id,
+        phone: updatedDriver.phone,
+        userId: nextUser.id
+      });
+    }
+  }
+
+  async function toggleAvailability() {
+    if (!session.driverId) {
+      setError("بيانات الكابتن غير مكتملة. سجّل الدخول مرة أخرى.");
+      return;
+    }
+    const previous = available;
+    const nextAvailable = !previous;
+    setAvailable(nextAvailable);
+    setStatus("saving");
+    setError("");
+    try {
+      const payload = await updateDriverOnlineStatus(nextAvailable, session);
+      await applyDriverSession(payload.driver);
+      dispatch({ type: "toast", message: nextAvailable ? "أصبحت متاحًا لاستقبال الطلبات." : "أصبحت غير متاح للطلبات الجديدة." });
+    } catch (requestError) {
+      setAvailable(previous);
+      const message = apiErrorMessage(requestError, "تعذر تحديث حالة توفر الكابتن.");
+      setError(message);
+      dispatch({ type: "patch", patch: { connectionMessage: message } });
+    } finally {
+      setStatus("idle");
+    }
+  }
 
   async function logout() {
     disconnectMobileSocket();
@@ -40,18 +137,20 @@ export function DriverHomeScreen() {
         <View style={styles.availabilityHeader}>
           <View style={styles.availabilityCopy}>
             <Text selectable style={styles.sectionTitle}>حالة التوفر</Text>
-            <Text selectable style={styles.helper}>{available ? "أنت متاح الآن، ويمكنك متابعة الطلبات الجديدة." : "أنت غير متاح. استقبال الطلبات قد يتوقف مؤقتًا."}</Text>
+            <Text selectable style={styles.helper}>{available ? "أنت متاح الآن، ويمكنك متابعة الطلبات الجديدة." : "أنت غير متاح. استقبال الطلبات الجديدة متوقف مؤقتًا."}</Text>
           </View>
           <Pressable
             accessibilityRole="switch"
-            accessibilityState={{ checked: available }}
+            accessibilityState={{ checked: available, disabled: status === "saving" }}
             accessibilityLabel="تبديل حالة توفر الكابتن"
-            onPress={() => setAvailable((value) => !value)}
-            style={[styles.toggle, available && styles.toggleOn]}
+            onPress={toggleAvailability}
+            disabled={status === "saving"}
+            style={[styles.toggle, available && styles.toggleOn, status === "saving" && styles.toggleSaving]}
           >
             <View style={[styles.toggleKnob, available && styles.toggleKnobOn]} />
           </Pressable>
         </View>
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       </MobileCard>
 
       {currentRide ? (
@@ -90,6 +189,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
   sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
   helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12 },
   availabilityCard: { gap: spacing.xs },
   availabilityHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
@@ -109,6 +209,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(66, 231, 156, 0.16)",
     borderColor: "rgba(66, 231, 156, 0.4)"
   },
+  toggleSaving: { opacity: 0.6 },
   toggleKnob: { width: 21, height: 21, borderRadius: 999, backgroundColor: colors.muted },
   toggleKnobOn: { backgroundColor: colors.green },
   currentRideCard: { gap: spacing.xs },

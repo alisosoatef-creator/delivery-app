@@ -21,7 +21,14 @@ export function AvailableRidesScreen() {
   const [socketStatus, setSocketStatus] = useState(state.socketStatus || "offline");
   const [error, setError] = useState("");
   const [dispatchMessage, setDispatchMessage] = useState("");
-  const session = { ...state.session, token: state.token, role: "driver", driverId: state.currentUser?.driverId, phone: state.currentUser?.phone, userId: state.currentUser?.id };
+  const session = {
+    ...state.session,
+    token: state.token,
+    role: "driver",
+    driverId: state.currentUser?.driverId || state.session?.driverId || state.session?.driver?.id,
+    phone: state.currentUser?.phone || state.session?.phone || state.session?.driver?.phone,
+    userId: state.currentUser?.id || state.session?.id
+  };
 
   function load() {
     setStatus("loading");

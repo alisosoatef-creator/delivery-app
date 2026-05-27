@@ -65,7 +65,14 @@ export function CurrentRideScreen() {
   const [socketStatus, setSocketStatus] = useState(state.socketStatus || "offline");
   const [trackingStatus, setTrackingStatus] = useState(state.liveTrackingStatus || "idle");
   const [driverLocation, setDriverLocation] = useState(state.driverLocation);
-  const session = { ...state.session, token: state.token, role: "driver", driverId: state.currentUser?.driverId, phone: state.currentUser?.phone, userId: state.currentUser?.id };
+  const session = {
+    ...state.session,
+    token: state.token,
+    role: "driver",
+    driverId: state.currentUser?.driverId || state.session?.driverId || state.session?.driver?.id,
+    phone: state.currentUser?.phone || state.session?.phone || state.session?.driver?.phone,
+    userId: state.currentUser?.id || state.session?.id
+  };
   const currentRide = useMemo(() => {
     const active = rides.find((ride) => ["accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status));
     if (active) return active;

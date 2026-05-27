@@ -150,6 +150,10 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     role: state.role,
     userId: driverUserId
   });
+  const backendDriver = driverData.backendDriver || {};
+  const currentDriverOnline = backendDriver.onlineStatus
+    ? backendDriver.onlineStatus === "online"
+    : Boolean(state.driverOnline);
   const supportData = useSupportTickets({
     enabled: Boolean(driver.phone) && isDriverActive,
     phone: driver.phone,
@@ -352,13 +356,24 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   }
 
   async function handleToggleOnline() {
-    const online = !state.driverOnline;
+    const online = !currentDriverOnline;
     dispatch({ type: "patch", patch: { driverOnline: online } });
     try {
-      await driverData.updateOnlineStatus({ driverId, online });
-      dispatch({ type: "patch", patch: { backendLive: true } });
+      const payload = await driverData.updateOnlineStatus({ driverId, online });
+      const updatedDriver = payload?.driver;
+      dispatch({
+        type: "patch",
+        patch: {
+          driverOnline: updatedDriver ? updatedDriver.onlineStatus === "online" : online,
+          session: updatedDriver ? { ...state.session, driver: { ...(state.session?.driver || {}), ...updatedDriver } } : state.session,
+          currentUser: updatedDriver ? { ...state.currentUser, onlineStatus: updatedDriver.onlineStatus, online: updatedDriver.online } : state.currentUser,
+          backendLive: true
+        }
+      });
+      driverData.refetchAvailableRides();
+      driverData.refetchMyRides();
     } catch (error) {
-      dispatch({ type: "patch", patch: { driverOnline: !online, backendLive: false } });
+      dispatch({ type: "patch", patch: { driverOnline: currentDriverOnline, backendLive: false } });
       dispatch({
         type: "toast",
         message: driverOperationError(error, isArabic, "تعذر تحديث حالة الكابتن.", "Unable to update captain availability.")
@@ -420,7 +435,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
     }
   }
 
-  const emptyAvailableMessage = state.driverOnline
+  const emptyAvailableMessage = currentDriverOnline
     ? (isArabic ? "لا توجد رحلات متاحة الآن. استخدم تحديث لجلب الطلبات الجديدة." : "No available rides now. Refresh to fetch new requests.")
     : (isArabic ? "افتح أونلاين حتى تتمكن من قبول الرحلات." : "Go online to accept available rides.");
   const dispatchAvailableMessage =
@@ -444,13 +459,13 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
             <p>{driver.vehicle || "-"} · {driver.plate || "-"}</p>
             <small>{driver.phone || "-"} · {cityNameById(state.cities, driver.cityId, isArabic)}</small>
           </div>
-          <span className={`driver-status-pill ${state.driverOnline ? "online" : "offline"}`}>
-            {state.driverOnline ? t.online : t.offline}
+          <span className={`driver-status-pill ${currentDriverOnline ? "online" : "offline"}`}>
+            {currentDriverOnline ? t.online : t.offline}
           </span>
         </div>
         <div className="driver-hero-actions">
-          <button className={state.driverOnline ? "secondary danger-soft" : "primary"} onClick={handleToggleOnline} disabled={!driverId || !isDriverActive || driverData.isMutating}>
-            {state.driverOnline ? t.goOffline : t.goOnline}
+          <button className={currentDriverOnline ? "secondary danger-soft" : "primary"} onClick={handleToggleOnline} disabled={!driverId || !isDriverActive || driverData.isMutating}>
+            {currentDriverOnline ? t.goOffline : t.goOnline}
           </button>
           <button
             className="secondary"
@@ -563,7 +578,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
                   <strong>{ride.fareIls} ₪</strong>
                 </div>
                 <div className="driver-action-row">
-                  <button className="primary" onClick={() => handleAcceptRide(ride)} disabled={!state.driverOnline || !isDriverActive || driverData.isMutating}>
+                  <button className="primary" onClick={() => handleAcceptRide(ride)} disabled={!currentDriverOnline || !isDriverActive || driverData.isMutating}>
                     {t.acceptRide}
                   </button>
                 </div>

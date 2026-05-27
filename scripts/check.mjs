@@ -1529,6 +1529,23 @@ for (const smartDispatchToken of [
   }
 }
 
+for (const driverOnlineSyncToken of [
+  "requestedOnline",
+  "driver.onlineStatus !== \"online\"",
+  "driverOnlinePatch",
+  "driver status endpoint should persist online status",
+  "inactive driver should not be allowed to become online",
+  "driver:online-status-updated",
+  "updateDriverOnlineStatus",
+  "currentDriverOnline",
+  "Driver Online Status Sync QA"
+]) {
+  const combinedDriverOnlineSyncSource = `${appSource}\n${backendSource}\n${backendDatabaseSource}\n${backendSmokeSource}\n${qaChecklistSource}`;
+  if (!combinedDriverOnlineSyncSource.includes(driverOnlineSyncToken)) {
+    throw new Error(`Driver online status sync is missing: ${driverOnlineSyncToken}`);
+  }
+}
+
 for (const premiumStyleToken of [
   "/* phase-8-premium-polish */",
   "--premium-ink",

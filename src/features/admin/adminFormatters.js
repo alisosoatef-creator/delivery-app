@@ -71,8 +71,8 @@ export function statusLabel(status, isArabic) {
     owner: "Owner",
     admin: "Admin",
     support: "Support",
-    online: "متصل",
-    offline: "غير متصل"
+    online: "متاح",
+    offline: "غير متاح"
   }[status] || status || "-";
 }
 
@@ -113,6 +113,10 @@ export function normalizeCustomer(customer = {}) {
 }
 
 export function normalizeDriver(driver = {}, cityLabel = "-") {
+  const status = driver.status || "active";
+  const onlineStatus = status === "active" && (driver.onlineStatus || driver.availability || (driver.online ? "online" : "offline")) === "online"
+    ? "online"
+    : "offline";
   return {
     ...driver,
     id: driver.id,
@@ -121,8 +125,8 @@ export function normalizeDriver(driver = {}, cityLabel = "-") {
     city: driver.cityLabel || cityLabel || driver.city || driver.cityId || "-",
     vehicle: driver.vehicle || driver.vehicleType || "-",
     plate: driver.plate || driver.vehiclePlate || "-",
-    status: driver.status || "active",
-    onlineStatus: driver.onlineStatus || driver.availability || (driver.online ? "online" : "offline"),
+    status,
+    onlineStatus,
     rating: driver.rating ?? "-",
     ridesCount: driver.ridesCount ?? driver.trips ?? 0,
     earnings: driver.earningsIls ?? driver.earnings ?? 0,

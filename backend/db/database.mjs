@@ -249,6 +249,7 @@ function captainApplicationRow(row) {
 
 function driverRow(row) {
   if (!row) return null;
+  const onlineStatus = row.status === "active" && row.onlineStatus === "online" ? "online" : "offline";
   return {
     id: row.id,
     applicationId: row.applicationId || undefined,
@@ -264,9 +265,9 @@ function driverRow(row) {
     plate: row.vehiclePlate || "Not provided",
     vehiclePlate: row.vehiclePlate || "",
     status: row.status,
-    onlineStatus: row.onlineStatus,
-    online: row.onlineStatus === "online",
-    availability: row.onlineStatus,
+    onlineStatus,
+    online: onlineStatus === "online",
+    availability: onlineStatus,
     rating: row.rating,
     distanceKm: row.distanceKm,
     etaMinutes: row.etaMinutes,
@@ -782,8 +783,11 @@ export function updateDriverStatus(driverId, patch = {}) {
   const current = getDriver(driverId);
   if (!current) return null;
   const status = patch.status || current.status || "active";
-  const onlineStatus =
-    typeof patch.online === "boolean" ? (patch.online ? "online" : "offline") : patch.onlineStatus || current.onlineStatus || "offline";
+  const requestedOnlineStatus =
+    typeof patch.online === "boolean"
+      ? (patch.online ? "online" : "offline")
+      : patch.onlineStatus || current.onlineStatus || "offline";
+  const onlineStatus = status === "active" && requestedOnlineStatus === "online" ? "online" : "offline";
   run("UPDATE drivers SET status = ?, onlineStatus = ? WHERE id = ?", status, onlineStatus, driverId);
   return getDriver(driverId);
 }
@@ -908,7 +912,7 @@ export function updateRideStatus(rideId, status) {
 export function acceptRide(rideId, driverId) {
   const current = getRide(rideId);
   const driver = getDriver(driverId);
-  if (!current || !driver || driver.status !== "active" || current.status !== RIDE_STATUSES.searching || current.driverId) return null;
+  if (!current || !driver || driver.status !== "active" || driver.onlineStatus !== "online" || current.status !== RIDE_STATUSES.searching || current.driverId) return null;
   const updatedAt = nowIso();
   run(
     `

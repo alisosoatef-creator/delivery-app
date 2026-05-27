@@ -31,6 +31,14 @@
 - Confirm Arabic/English city names such as `nablus` and `نابلس` do not hide matching requests.
 - If driver location is available, confirm nearby requests are listed before farther requests; if not, confirm same-city fallback still works.
 
+## Driver Online Status Sync QA
+- Sign in as an approved captain on web and mobile and confirm both read `drivers.onlineStatus` as the availability source.
+- Switch the captain online and confirm Admin Drivers shows the captain as available after realtime/refetch.
+- Switch the captain offline and confirm Available Rides returns no requests with `driver_offline`.
+- Suspend a captain and confirm the captain is forced offline and cannot switch online from the driver endpoint.
+- Confirm an active ride is not cancelled when the captain goes offline; only new requests are blocked.
+- Confirm `driver:online-status-updated` triggers admin/driver refetch or UI refresh.
+
 ## Admin Flow
 - Use `AdminDevLogin` only in development.
 - Confirm Admin Dashboard loads without showing customer or driver-only controls.

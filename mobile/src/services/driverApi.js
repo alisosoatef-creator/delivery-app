@@ -43,3 +43,12 @@ export function acceptRide(rideId, session = {}) {
 export function updateDriverRideStatus(rideId, status, session = {}) {
   return apiPatch(`/driver/rides/${rideId}/status`, { status }, driverSession(session));
 }
+
+export function updateDriverOnlineStatus(online, session = {}) {
+  const context = driverSession(session);
+  return apiPost("/drivers/status", {
+    driverId: context.driverId,
+    online,
+    onlineStatus: online ? "online" : "offline"
+  }, context);
+}

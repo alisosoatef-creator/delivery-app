@@ -10,7 +10,7 @@ const DRIVER_EXPORT_COLUMNS = [
   { key: "vehicle", label: "Vehicle", value: (driver) => driver.vehicle },
   { key: "plate", label: "Plate", value: (driver) => driver.plate },
   { key: "status", label: "Status", value: (driver) => driver.status },
-  { key: "online", label: "Online", value: (driver) => driver.onlineStatus },
+  { key: "online", label: "Availability", value: (driver) => driver.onlineStatus },
   { key: "rating", label: "Rating", value: (driver) => driver.rating }
 ];
 
@@ -55,14 +55,14 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
     <section className="admin-panel admin-advanced-section">
       <SectionHeader
         title={textFor(isArabic, "إدارة الكباتن", "Captain management")}
-        description={textFor(isArabic, "عرض الكباتن الموافق عليهم مع الحالة، الاتصال، الرحلات، والأرباح التقديرية.", "Approved captains with status, online state, ride history, and estimated earnings.")}
+        description={textFor(isArabic, "عرض الكباتن الموافق عليهم مع الحالة، التوفر، الرحلات، والأرباح التقديرية.", "Approved captains with status, availability, ride history, and estimated earnings.")}
         meta={`${filteredDrivers.length} / ${drivers.length}`}
         actions={<Button variant="secondary" onClick={() => exportRowsToCsv("admin-drivers.csv", filteredDrivers, DRIVER_EXPORT_COLUMNS)} disabled={!filteredDrivers.length}>Export CSV</Button>}
       />
 
       <div className="admin-analytics-strip admin-super-summary">
         <div><span>{textFor(isArabic, "كباتن نشطون", "Active captains")}</span><strong>{activeCount}</strong></div>
-        <div><span>{textFor(isArabic, "متصلون الآن", "Online now")}</span><strong>{onlineCount}</strong></div>
+        <div><span>{textFor(isArabic, "متاحون الآن", "Available now")}</span><strong>{onlineCount}</strong></div>
         <div><span>{textFor(isArabic, "موقوفون", "Suspended")}</span><strong>{suspendedCount}</strong></div>
       </div>
 
@@ -73,7 +73,7 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
           <option value="active">{statusLabel("active", isArabic)}</option>
           <option value="suspended">{statusLabel("suspended", isArabic)}</option>
         </Select>
-        <Select label={textFor(isArabic, "الاتصال", "Online")} value={onlineFilter} onChange={(event) => setOnlineFilter(event.target.value)}>
+        <Select label={textFor(isArabic, "التوفر", "Availability")} value={onlineFilter} onChange={(event) => setOnlineFilter(event.target.value)}>
           <option value="all">{statusLabel("all", isArabic)}</option>
           <option value="online">{statusLabel("online", isArabic)}</option>
           <option value="offline">{statusLabel("offline", isArabic)}</option>
@@ -90,7 +90,7 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
           { key: "vehicle", label: textFor(isArabic, "المركبة", "Vehicle") },
           { key: "plate", label: textFor(isArabic, "اللوحة", "Plate") },
           { key: "status", label: textFor(isArabic, "الحالة", "Status") },
-          { key: "online", label: textFor(isArabic, "الاتصال", "Online") },
+          { key: "online", label: textFor(isArabic, "التوفر", "Availability") },
           { key: "rating", label: textFor(isArabic, "التقييم", "Rating") },
           { key: "created", label: textFor(isArabic, "الإنشاء", "Created") },
           { key: "action", label: textFor(isArabic, "إجراءات", "Actions") }
@@ -139,7 +139,8 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
                 { label: textFor(isArabic, "المركبة", "Vehicle"), value: selectedDriver.vehicle },
                 { label: textFor(isArabic, "اللوحة", "Plate"), value: selectedDriver.plate },
                 { label: textFor(isArabic, "الحالة", "Status"), value: statusLabel(selectedDriver.status, isArabic) },
-                { label: textFor(isArabic, "الاتصال", "Online"), value: statusLabel(selectedDriver.onlineStatus, isArabic) },
+                { label: textFor(isArabic, "التوفر", "Availability"), value: statusLabel(selectedDriver.onlineStatus, isArabic) },
+                { label: textFor(isArabic, "آخر تحديث للتوفر", "Availability updated"), value: textFor(isArabic, "غير محفوظ حاليًا - TODO", "Not stored yet - TODO") },
                 { label: textFor(isArabic, "التقييم", "Rating"), value: selectedDriver.rating },
                 { label: textFor(isArabic, "عدد الرحلات", "Ride count"), value: driverRides(selectedDriver).length || selectedDriver.ridesCount },
                 { label: textFor(isArabic, "الأرباح التقريبية", "Estimated earnings"), value: formatMoney(driverRides(selectedDriver).reduce((sum, ride) => sum + Number(ride.fareIls || 0), Number(selectedDriver.earnings || 0))) },

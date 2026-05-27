@@ -292,6 +292,42 @@ try {
     "X-Dev-Phone": captainPhone
   };
 
+  const driverOnlineEvent = waitForSocketEvent(socket, "driver:online-status-updated");
+  const driverOnlinePatch = await request("/api/drivers/status", {
+    method: "POST",
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ online: true })
+  });
+  const driverOnlinePayload = await driverOnlineEvent;
+  assert(driverOnlinePatch.driver?.onlineStatus === "online", "driver status endpoint should persist online status");
+  assert(driverOnlinePayload.driver?.onlineStatus === "online", "driver:online-status-updated should emit online status");
+
+  const adminDriversOnline = await request("/api/admin/drivers");
+  assert(
+    adminDriversOnline.drivers.some((driver) => driver.id === approve.captain.id && driver.onlineStatus === "online"),
+    "admin drivers should show the captain as online after driver status update"
+  );
+
+  const driverOfflinePatch = await request("/api/drivers/status", {
+    method: "POST",
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ online: false })
+  });
+  assert(driverOfflinePatch.driver?.onlineStatus === "offline", "driver status endpoint should persist offline status");
+
+  const offlinePrimaryAvailable = await request("/api/driver/available-rides?cityId=nablus", { headers: activeDriverHeaders });
+  assert(
+    offlinePrimaryAvailable.availableStatus === "driver_offline" && offlinePrimaryAvailable.rides.length === 0,
+    "driver should not receive available rides after going offline"
+  );
+
+  const driverBackOnline = await request("/api/drivers/status", {
+    method: "POST",
+    headers: activeDriverHeaders,
+    body: JSON.stringify({ online: true })
+  });
+  assert(driverBackOnline.driver?.onlineStatus === "online", "driver should be able to return online before accepting rides");
+
   const secondCaptainPhone = `+97059977${Date.now().toString().slice(-4)}`;
   const secondApplicationResponse = await request("/api/captain-applications", {
     method: "POST",
@@ -417,6 +453,17 @@ try {
     body: JSON.stringify({ status: "suspended", onlineStatus: "online" })
   });
   assert(suspendedSecondDriver.driver.status === "suspended", "second driver should be suspendable for dispatch eligibility");
+  assert(suspendedSecondDriver.driver.onlineStatus === "offline", "inactive drivers should be forced offline even if online was requested");
+
+  const inactiveOnlineRejected = await requestRaw("/api/drivers/status", {
+    method: "POST",
+    headers: secondDriverHeaders,
+    body: JSON.stringify({ online: true })
+  });
+  assert(
+    inactiveOnlineRejected.response.status === 403 && inactiveOnlineRejected.payload?.error === "driver_inactive",
+    "inactive driver should not be allowed to become online"
+  );
 
   const inactiveAvailable = await request("/api/driver/available-rides?cityId=nablus", { headers: secondDriverHeaders });
   assert(

@@ -658,6 +658,8 @@ async function handleApi(request, response) {
         city: driver.cityId,
         role: "driver",
         status: driver.status,
+        onlineStatus: driver.onlineStatus,
+        online: driver.online,
         driverId: driver.id
       },
       driver
@@ -677,6 +679,8 @@ async function handleApi(request, response) {
       sendJson(response, 404, { error: "driver_not_found" });
       return;
     }
+    broadcast("driver.status.changed", { driver });
+    emitDriverEvent("driver:online-status-updated", { driver });
     sendJson(response, 200, { driver });
     return;
   }
@@ -907,7 +911,7 @@ async function handleApi(request, response) {
     const driverId = request.driverContext?.id || requestDriverId(request, body);
     if (!driverId) {
       sendJson(response, 400, {
-        error: "driver_id_required",
+        error: "missing_driver_context",
         message: "driverId is required to accept a ride.",
         messageAr: "معرّف الكابتن مطلوب لقبول الرحلة."
       });
@@ -1234,7 +1238,26 @@ async function handleApi(request, response) {
       });
       return;
     }
-    const driver = updateDriverStatus(driverId, { online: Boolean(body.online) });
+    const currentDriver = getDriver(driverId);
+    if (!currentDriver) {
+      sendJson(response, 404, {
+        error: "driver_not_found",
+        message: "Captain was not found.",
+        messageAr: "Captain was not found."
+      });
+      return;
+    }
+    const requestedOnline =
+      typeof body.online === "boolean"
+        ? body.online
+        : String(body.onlineStatus || "").trim().toLowerCase() === "online";
+    if (requestedOnline && currentDriver?.status !== "active") {
+      sendJson(response, 403, dispatchPayload("driver_inactive", {
+        driver: safeDriverContext(currentDriver)
+      }));
+      return;
+    }
+    const driver = currentDriver ? updateDriverStatus(driverId, { online: requestedOnline }) : null;
     if (!driver) {
       sendJson(response, 404, {
         error: "driver_not_found",

@@ -114,3 +114,14 @@ Use this checklist after reviewing the app on a real device:
 8. Available and Current Ride: confirm ride cards are compact, the map is integrated, and only one next action is prominent.
 9. Map: confirm markers, distance badge, fallback card, and small legend feel integrated with the dark theme.
 10. Arabic copy: confirm no technical words or non-ride terms appear in normal customer/driver flows.
+
+## 37D Driver Online Status Sync QA
+
+Use this checklist for captain availability sync on mobile:
+
+1. Driver login: sign in with Driver Dev Login and confirm the home screen reads the saved DB availability, not a local default.
+2. Toggle online: switch the captain to available and confirm the UI updates, the session persists, and Available Rides can show matching requests.
+3. Toggle offline: switch the captain to unavailable and confirm Available Rides shows no new requests with a clear availability message.
+4. Admin sync: open Admin Drivers on web and confirm the same captain shows `online`/`offline` as available/unavailable after refresh or realtime update.
+5. Inactive guard: suspend the captain from Admin and confirm the mobile app cannot switch that captain online.
+6. Current ride safety: if the captain goes unavailable while already on an active ride, confirm the current ride remains usable but new requests are blocked.
