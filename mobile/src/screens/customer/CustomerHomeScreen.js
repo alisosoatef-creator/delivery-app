@@ -65,16 +65,16 @@ export function CustomerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  customerHero: { gap: spacing.sm, alignItems: "flex-end" },
+  customerHero: { gap: spacing.sm, alignItems: "flex-end", paddingVertical: spacing.lg },
   heroCopy: { alignItems: "flex-end", gap: 3 },
   greeting: { color: colors.primary, fontSize: 14, fontWeight: "800", textAlign: "right" },
-  title: { color: colors.text, fontSize: 25, lineHeight: 31, fontWeight: "900", textAlign: "right" },
+  title: { color: colors.text, fontSize: 24, lineHeight: 30, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
   activeRideCard: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  shortcuts: { gap: spacing.sm },
+  shortcuts: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.036)" },
   sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   quickActionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   muted: { color: colors.muted, textAlign: "right", fontWeight: "700" },

@@ -147,13 +147,13 @@ const styles = StyleSheet.create({
   shell: { flex: 1 },
   tabsShell: {
     position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
     minHeight: layout.bottomNavHeight,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(8, 13, 17, 0.9)",
+    borderRadius: radii.xl,
+    backgroundColor: "rgba(6, 11, 15, 0.92)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.085)",
+    borderColor: "rgba(255, 255, 255, 0.095)",
     padding: 5,
     boxShadow: shadows.soft
   },
@@ -182,12 +182,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.16)"
   },
   tabDotActive: {
-    width: 15,
+    width: 13,
     backgroundColor: colors.primary
   },
   tabLabel: {
     color: colors.muted,
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "700"
   },
   tabLabelActive: {

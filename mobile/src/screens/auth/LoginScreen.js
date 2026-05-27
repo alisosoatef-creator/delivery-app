@@ -59,10 +59,10 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.xs, alignItems: "flex-end" },
-  title: { color: colors.text, fontSize: 26, lineHeight: 34, fontWeight: "900", textAlign: "right" },
+  hero: { gap: spacing.sm, alignItems: "flex-end", paddingVertical: spacing.lg },
+  title: { color: colors.text, fontSize: 25, lineHeight: 32, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
-  form: { gap: spacing.sm },
+  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.04)" },
   links: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

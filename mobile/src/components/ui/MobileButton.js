@@ -32,18 +32,18 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 45,
+    minHeight: 44,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     backgroundColor: colors.primary,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.16)",
     boxShadow: shadows.glow
   },
   compact: {
-    minHeight: 36,
+    minHeight: 35,
     paddingHorizontal: spacing.sm
   },
   secondary: {

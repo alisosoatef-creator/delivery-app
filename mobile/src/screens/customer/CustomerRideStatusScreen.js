@@ -6,7 +6,7 @@ import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails, submitRi
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
@@ -338,26 +338,26 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right", marginTop: 2 },
-  searchingCard: { alignItems: "flex-end", gap: spacing.xs },
+  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: "rgba(41, 213, 201, 0.22)" },
   scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
-  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(49, 228, 214, 0.44)" },
+  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(41, 213, 201, 0.42)" },
   scanDotMuted: { opacity: 0.38 },
   searchingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
-  customerStatusSummary: { gap: spacing.xs },
+  customerStatusSummary: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.035)" },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },
   price: { color: colors.primary, fontSize: 22, fontWeight: "800" },
-  driverCard: { gap: spacing.xs },
+  driverCard: { gap: spacing.xs, borderColor: "rgba(41, 213, 201, 0.18)", backgroundColor: "rgba(41, 213, 201, 0.055)" },
   driverHeader: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 44, height: 44, borderRadius: 18, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
+  avatar: { width: 44, height: 44, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, boxShadow: shadows.glow },
   avatarText: { color: colors.black, fontSize: 20, fontWeight: "900" },
   driverInfo: { flex: 1, alignItems: "flex-end" },
   driverMeta: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
   driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
-  finishedCard: { gap: spacing.xs },
-  ratingCard: { gap: spacing.sm, alignItems: "stretch" },
+  finishedCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.04)" },
+  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: "rgba(216, 173, 98, 0.2)", backgroundColor: "rgba(216, 173, 98, 0.045)" },
   savedRating: { color: colors.accent, fontSize: 18, fontWeight: "900", textAlign: "right" },
   starsRow: { flexDirection: "row-reverse", justifyContent: "center", gap: spacing.xs },
   starButton: {
@@ -366,19 +366,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
     borderWidth: 1,
     borderColor: colors.border
   },
-  starButtonActive: { backgroundColor: "rgba(255, 199, 96, 0.16)", borderColor: colors.accent },
+  starButtonActive: { backgroundColor: "rgba(216, 173, 98, 0.18)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
   starText: { color: colors.muted, fontSize: 22, fontWeight: "900" },
   starTextActive: { color: colors.accent },
   reviewInput: {
     minHeight: 76,
-    borderRadius: 18,
+    borderRadius: radii.md,
     padding: spacing.sm,
     color: colors.text,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255, 255, 255, 0.052)",
     borderWidth: 1,
     borderColor: colors.border,
     textAlignVertical: "top",

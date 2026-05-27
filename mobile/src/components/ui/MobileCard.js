@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radii.md,
-    padding: spacing.sm + 2,
+    padding: spacing.md,
     gap: spacing.sm,
     boxShadow: shadows.soft
   },
@@ -44,11 +44,11 @@ const styles = StyleSheet.create({
   },
   flat: {
     boxShadow: "0 0 0 rgba(0,0,0,0)",
-    backgroundColor: "rgba(255, 255, 255, 0.032)"
+    backgroundColor: "rgba(255, 255, 255, 0.038)"
   },
   hero: {
-    backgroundColor: "rgba(42, 218, 206, 0.095)",
-    borderColor: "rgba(42, 218, 206, 0.22)",
+    backgroundColor: "rgba(41, 213, 201, 0.085)",
+    borderColor: "rgba(41, 213, 201, 0.24)",
     boxShadow: shadows.glow
   }
 });

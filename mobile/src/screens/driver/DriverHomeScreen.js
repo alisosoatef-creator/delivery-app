@@ -181,16 +181,16 @@ export function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerCard: { gap: spacing.xs },
+  headerCard: { gap: spacing.xs, paddingVertical: spacing.lg },
   headerTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   title: { color: colors.primary, fontSize: 13, fontWeight: "800", textAlign: "right" },
-  name: { color: colors.text, fontWeight: "900", fontSize: 24, textAlign: "right" },
+  name: { color: colors.text, fontWeight: "900", fontSize: 23, textAlign: "right" },
   vehicle: { color: colors.muted, textAlign: "right", fontWeight: "700", fontSize: 12 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
   sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
   helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 },
   error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12 },
-  availabilityCard: { gap: spacing.xs },
+  availabilityCard: { gap: spacing.xs, backgroundColor: "rgba(255,255,255,0.04)" },
   availabilityHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
   toggle: {

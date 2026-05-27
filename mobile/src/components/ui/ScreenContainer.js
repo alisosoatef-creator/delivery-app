@@ -49,17 +49,16 @@ const styles = StyleSheet.create({
   },
   topGlow: {
     position: "absolute",
-    top: -120,
-    right: -80,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: "rgba(49, 228, 214, 0.08)"
+    top: 0,
+    right: 0,
+    left: 0,
+    height: 86,
+    backgroundColor: "rgba(41, 213, 201, 0.045)"
   },
   header: {
-    gap: spacing.xxs,
+    gap: spacing.xs,
     alignItems: "flex-end",
-    paddingVertical: spacing.xxs
+    paddingVertical: spacing.xs
   },
   headerCompact: {
     paddingVertical: spacing.xxs

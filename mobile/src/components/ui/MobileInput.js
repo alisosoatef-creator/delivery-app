@@ -39,12 +39,12 @@ const styles = StyleSheet.create({
   label: { color: colors.textSoft, fontSize: 12, fontWeight: "700", textAlign: "right" },
   input: {
     minHeight: 45,
-    borderRadius: radii.sm,
-    borderColor: "rgba(255, 255, 255, 0.12)",
+    borderRadius: radii.md,
+    borderColor: "rgba(255, 255, 255, 0.105)",
     borderWidth: 1,
     color: colors.text,
-    backgroundColor: "rgba(255, 255, 255, 0.042)",
-    paddingHorizontal: spacing.sm + 2,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    paddingHorizontal: spacing.md,
     fontSize: 13.5,
     fontWeight: "600"
   },
@@ -55,6 +55,6 @@ const styles = StyleSheet.create({
   },
   focused: {
     borderColor: colors.borderStrong,
-    backgroundColor: "rgba(6, 11, 24, 0.78)"
+    backgroundColor: "rgba(8, 18, 24, 0.9)"
   }
 });

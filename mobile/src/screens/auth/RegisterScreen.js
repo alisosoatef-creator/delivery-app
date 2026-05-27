@@ -67,10 +67,10 @@ export function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { gap: spacing.xs, alignItems: "flex-end", paddingTop: spacing.sm },
+  header: { gap: spacing.xs, alignItems: "flex-end", paddingTop: spacing.md },
   title: { color: colors.text, fontSize: 23, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
-  form: { gap: spacing.sm },
+  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.04)" },
   row: { flexDirection: "row-reverse", gap: spacing.sm },
   flex: { flex: 1 },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }

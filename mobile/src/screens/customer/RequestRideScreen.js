@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { ChoiceChip, InfoRow, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { BrandMark, ChoiceChip, InfoRow, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
 import { createRide, quoteRide } from "../../services/ridesApi";
@@ -150,8 +150,11 @@ export function RequestRideScreen() {
   return (
     <ScreenContainer showHeader={false} compact>
       <View style={styles.header}>
-        <Text selectable style={styles.title}>طلب رحلة</Text>
-        <Text selectable style={styles.subtitle}>حدد الانطلاق والوجهة، وسنحسب السعر فورًا.</Text>
+        <BrandMark compact />
+        <View style={styles.headerCopy}>
+          <Text selectable style={styles.title}>طلب رحلة</Text>
+          <Text selectable style={styles.subtitle}>حدد الانطلاق والوجهة، وسنحسب السعر فورًا.</Text>
+        </View>
       </View>
 
       <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={232} />
@@ -218,7 +221,8 @@ export function RequestRideScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "flex-end", gap: 2 },
+  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  headerCopy: { flex: 1, alignItems: "flex-end", gap: 2 },
   title: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right" },
   panel: { gap: spacing.sm },
@@ -236,7 +240,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.045)",
+    backgroundColor: "rgba(255,255,255,0.052)",
     borderWidth: 1,
     borderColor: colors.border
   },
@@ -251,8 +255,8 @@ const styles = StyleSheet.create({
   suggestion: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderRadius: 15,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
     borderColor: colors.border
   },

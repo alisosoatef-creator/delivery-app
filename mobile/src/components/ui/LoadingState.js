@@ -16,12 +16,12 @@ const styles = StyleSheet.create({
   box: {
     alignItems: "center",
     justifyContent: "center",
-    padding: spacing.lg,
+    padding: spacing.xl,
     gap: spacing.sm,
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
   },
   text: { color: colors.muted, fontWeight: "800", textAlign: "center" },
   skeleton: {

@@ -21,20 +21,20 @@ const styles = StyleSheet.create({
   logo: {
     width: 42,
     height: 42,
-    borderRadius: radii.sm,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: "rgba(41, 213, 201, 0.96)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: "rgba(255, 255, 255, 0.24)",
     boxShadow: shadows.glow
   },
-  logoCompact: { width: 32, height: 32, borderRadius: radii.xs },
+  logoCompact: { width: 31, height: 31, borderRadius: radii.sm },
   logoText: { color: "#031315", fontSize: 22, fontWeight: "900" },
   logoTextCompact: { fontSize: 17 },
   copy: { alignItems: "flex-end", gap: 1 },
   copyCenter: { alignItems: "center" },
-  name: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
-  nameCompact: { fontSize: 17 },
-  tagline: { color: colors.muted, fontSize: 11.5, fontWeight: "700", textAlign: "right" }
+  name: { color: colors.text, fontSize: 23, fontWeight: "900", textAlign: "right" },
+  nameCompact: { fontSize: 18 },
+  tagline: { color: colors.textSoft, fontSize: 11.5, fontWeight: "700", textAlign: "right" }
 });

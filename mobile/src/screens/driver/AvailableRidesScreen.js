@@ -5,7 +5,7 @@ import { acceptRide, fetchAvailableRides } from "../../services/driverApi";
 import { connectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { statusLabel } from "../../utils/rideStatus";
 
 function paymentLabel(method) {
@@ -125,12 +125,12 @@ export function AvailableRidesScreen() {
 
 const styles = StyleSheet.create({
   statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  request: { gap: spacing.xs },
+  request: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.038)", borderColor: "rgba(41, 213, 201, 0.14)", boxShadow: shadows.soft },
   requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   route: { alignItems: "flex-end", gap: 3 },
   destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   path: { color: colors.muted, fontSize: 12, textAlign: "right" },
   details: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.055)" },
+  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: "rgba(255, 255, 255, 0.06)" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

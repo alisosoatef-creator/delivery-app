@@ -243,9 +243,14 @@ const bottomPaddingMatch = mobileTheme.match(/screenBottomPadding:\s*(\d+)/);
 if (!bottomPaddingMatch || Number(bottomPaddingMatch[1]) < 100) {
   throw new Error("Mobile screens need generous bottom padding above compact navigation");
 }
-for (const token of ["background: \"#06090c\"", "primary: \"#2adace\"", "accent: \"#ddb062\"", "bottomNavHeight: 54", "screenBottomPadding: 106"]) {
+for (const token of ["background: \"#05080b\"", "primary: \"#29d5c9\"", "accent: \"#d8ad62\"", "bottomNavHeight: 50", "screenBottomPadding: 106"]) {
   if (!mobileTheme.includes(token)) {
-    throw new Error(`36B refined mobile theme token is missing: ${token}`);
+    throw new Error(`37E refined mobile theme token is missing: ${token}`);
+  }
+}
+for (const token of ["surfaceGlass", "borderStrong", "accentGlow", "graphite", "primaryDeep", "radii"]) {
+  if (!mobileTheme.includes(token)) {
+    throw new Error(`37E mobile identity token is missing: ${token}`);
   }
 }
 
@@ -257,6 +262,11 @@ if (!mobileCard.includes("tone === \"hero\"") || !mobileCard.includes("styles.he
 const brandMark = fs.readFileSync("src/components/ui/BrandMark.js", "utf8");
 if (!brandMark.includes("logoCompact") || !brandMark.includes("nameCompact")) {
   throw new Error("36B needs a compact brand mark for mobile headers");
+}
+for (const token of ["rgba(41, 213, 201, 0.96)", "colors.textSoft", "radii.md", "boxShadow"]) {
+  if (!brandMark.includes(token)) {
+    throw new Error(`37E brand mark polish is missing: ${token}`);
+  }
 }
 
 if (!screenContainer.includes("brandRow") || !screenContainer.includes("<BrandMark compact />")) {
@@ -354,6 +364,11 @@ for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "Goo
     throw new Error(`Forbidden paid Google Maps API usage in mobile source: ${forbiddenMapToken}`);
   }
 }
+for (const token of ["radii.xl", "markerHalo", "badge", "FallbackMap", "locationHint"]) {
+  if (!mobileRideMap.includes(token)) {
+    throw new Error(`37E map visual fallback is missing: ${token}`);
+  }
+}
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
 for (const token of ["من {ride.pickup", "إلى {ride.destination", "acceptRide", "ride:created"]) {
@@ -414,6 +429,9 @@ if (!qaNotes.includes("37D Driver Online Status Sync QA") || !qaNotes.includes("
 if (!qaNotes.includes("37C Ride Rating QA") || !qaNotes.includes("rating card") || !qaNotes.includes("cannot be submitted twice")) {
   throw new Error("Mobile QA notes need the 37C ride rating checklist");
 }
+if (!qaNotes.includes("37E Mobile Visual Identity Final QA") || !qaNotes.includes("Brand header") || !qaNotes.includes("Map identity")) {
+  throw new Error("Mobile QA notes need the 37E visual identity checklist");
+}
 
 const driverEarnings = fs.readFileSync("src/screens/driver/DriverEarningsScreen.js", "utf8");
 for (const token of ["أرباح اليوم", "إجمالي الأرباح", "رحلات مكتملة", "سجل العمليات", "لا توجد عمليات أرباح بعد"]) {
@@ -454,6 +472,11 @@ for (const token of ["submitRideRating", "ratingDraft", "rideRating", "/rating"]
   const ratingSource = `${customerRideStatus}\n${fs.readFileSync("src/services/ridesApi.js", "utf8")}`;
   if (!ratingSource.includes(token)) {
     throw new Error(`37C mobile ride rating is missing: ${token}`);
+  }
+}
+for (const token of ["ratingCard", "starButtonActive", "reviewInput", "savedRating"]) {
+  if (!customerRideStatus.includes(token)) {
+    throw new Error(`37E rating UI polish is missing: ${token}`);
   }
 }
 

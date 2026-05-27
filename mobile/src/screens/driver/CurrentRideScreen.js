@@ -7,7 +7,7 @@ import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { statusLabel } from "../../utils/rideStatus";
 
 const nextActions = {
@@ -271,16 +271,16 @@ const styles = StyleSheet.create({
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
-  routeCard: { gap: spacing.xs },
+  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.038)", borderColor: "rgba(41, 213, 201, 0.16)" },
   routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   routePoints: { gap: spacing.xs },
-  routePoint: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
+  routePoint: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, borderRadius: radii.sm },
   pointLabel: { color: colors.primary, textAlign: "right", fontSize: 12, fontWeight: "900" },
   pointValue: { color: colors.text, textAlign: "right", fontSize: 14, fontWeight: "800", marginTop: 2 },
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  nextActionCard: { gap: spacing.xs },
+  nextActionCard: { gap: spacing.xs, borderColor: "rgba(216, 173, 98, 0.22)", boxShadow: shadows.accentGlow },
   nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
-  completedCard: { gap: spacing.sm }
+  completedCard: { gap: spacing.sm, borderColor: "rgba(66, 231, 156, 0.2)", backgroundColor: "rgba(66, 231, 156, 0.055)" }
 });

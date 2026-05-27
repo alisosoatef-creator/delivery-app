@@ -15,12 +15,12 @@ export function EmptyState({ title = "لا توجد بيانات", message = "",
 
 const styles = StyleSheet.create({
   box: {
-    padding: spacing.md,
+    padding: spacing.lg,
     borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
     gap: spacing.xs,
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     alignItems: "flex-end"
   },
   orb: {

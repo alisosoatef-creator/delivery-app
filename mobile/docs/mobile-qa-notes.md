@@ -136,3 +136,16 @@ Use this checklist for completed ride ratings on mobile:
 4. Confirm the saved rating appears instead of the form and cannot be submitted twice.
 5. Open My Rides and confirm the completed ride shows its rating.
 6. Confirm non-completed or cancelled rides do not show a rating form.
+
+## 37E Mobile Visual Identity Final QA
+
+Use this checklist for the final mobile identity pass:
+
+1. Brand header: confirm the compact Wasel mark and app name feel premium without taking over the screen.
+2. Theme balance: confirm graphite, teal, and warm accent colors feel calm and consistent across customer and driver screens.
+3. Navigation: confirm bottom navigation is slim, readable, safe-area-aware, and does not cover the last action.
+4. Customer flow: confirm Home, Request Ride, Ride Status, My Rides, Wallet, Support, Account, and the rating card feel lighter and more focused.
+5. Driver flow: confirm Driver Home, Available Rides, Current Ride, Earnings, and Support read as a practical captain app.
+6. Map identity: confirm the map frame, markers, distance badge, legend, and fallback card match the premium dark theme.
+7. States: confirm empty, loading, and error states use short Arabic copy without technical words.
+8. Small screens: confirm cards, buttons, inputs, and rating stars stay inside the screen and remain reachable above navigation.

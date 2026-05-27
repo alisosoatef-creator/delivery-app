@@ -202,9 +202,9 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: "rgba(42, 218, 206, 0.22)",
+    borderColor: "rgba(41, 213, 201, 0.22)",
     backgroundColor: colors.surfaceStrong,
     boxShadow: shadows.lift
   },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     bottom: spacing.sm,
     color: colors.black,
-    backgroundColor: "rgba(42, 218, 206, 0.92)",
+    backgroundColor: "rgba(41, 213, 201, 0.94)",
     borderRadius: 999,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     color: colors.text,
-    backgroundColor: "rgba(7, 10, 13, 0.62)",
+    backgroundColor: "rgba(7, 12, 16, 0.72)",
     borderRadius: radii.pill,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
@@ -252,15 +252,15 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   markerHalo: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center"
   },
   markerPin: {
-    width: 24,
-    height: 24,
+    width: 25,
+    height: 25,
     borderRadius: 999,
     alignItems: "center",
     justifyContent: "center",
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
     top: spacing.sm,
     maxWidth: "76%",
     color: colors.text,
-    backgroundColor: "rgba(7, 10, 13, 0.72)",
+    backgroundColor: "rgba(7, 12, 16, 0.76)",
     borderRadius: radii.pill,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
@@ -303,9 +303,9 @@ const styles = StyleSheet.create({
   fallback: {
     gap: spacing.sm,
     justifyContent: "flex-end",
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: "rgba(49, 228, 214, 0.2)",
+    borderColor: "rgba(41, 213, 201, 0.22)",
     backgroundColor: colors.surfaceStrong,
     padding: spacing.md,
     overflow: "hidden",
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: "rgba(49, 228, 214, 0.045)"
+    backgroundColor: "rgba(41, 213, 201, 0.045)"
   },
   routeLine: {
     position: "absolute",
