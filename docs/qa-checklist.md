@@ -48,6 +48,14 @@
 - Payments: confirm cash, demo card, wallet, and pending badges are clear and no full card number, CVV, token, or password hash appears.
 - Settings records cleanup: confirm “إعادة ضبط بيانات التجربة” is shown instead of raw internal labels and requires `RESET_DEMO_DATA`.
 
+## Admin Notifications QA
+- Create a support ticket and confirm the Support sidebar badge increases, then open Support and confirm it is marked read locally.
+- Create a captain application and confirm the Captain Applications badge and Dashboard notification summary update.
+- Create a ride and confirm the Rides badge appears for active/searching rides.
+- Complete or create a payment that is pending/failed and confirm the Payments badge appears when review is needed.
+- Confirm the Dashboard card "تنبيهات تحتاج انتباه" shows the most important 3-5 items and opens the correct admin section.
+- Confirm Socket.IO events trigger safe refetch and that read/clear behavior is local to the current admin session until production persistence is added.
+
 ## Three Window Ride Test
 - Window 1: Customer creates a ride.
 - Window 2: Driver accepts the ride and updates statuses.

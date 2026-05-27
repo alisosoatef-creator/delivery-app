@@ -47,6 +47,15 @@ Driver live location is relayed through Socket.IO only and is not persisted in S
 
 TODO: protect rooms with real authenticated tokens before production, replace broad admin/dev subscriptions with stricter authorization, and add location history retention only if operationally needed.
 
+### Admin Notifications Center
+
+The admin notification center is currently frontend-local and uses existing REST data plus Socket.IO events. No notification rows are persisted in SQLite yet.
+
+- Sidebar badges are calculated from pending captain applications, active rides, pending/failed payments, and open support tickets.
+- Opening `applications`, `rides`, `payments`, or `support` marks that category as read locally for the current admin session.
+- New realtime events increment the local unread badge and invalidate the matching TanStack Query so the admin view refetches safely.
+- Production TODO: persist per-admin read state and protect admin Socket.IO rooms with real sessions.
+
 ## Auth
 
 - `POST /api/auth/request-otp`

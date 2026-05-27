@@ -227,6 +227,7 @@ try {
   assert(activeCustomer.customer.status === "active", "admin customer status patch should reactivate customer");
 
   const captainPhone = `+97059999${Date.now().toString().slice(-4)}`;
+  const captainApplicationCreatedEvent = waitForSocketEvent(socket, "admin:captain-application-created");
   const applicationResponse = await request("/api/captain-applications", {
     method: "POST",
     body: JSON.stringify({
@@ -240,13 +241,18 @@ try {
   });
   const applicationId = applicationResponse.application?.id;
   assert(applicationId, "captain application should return id");
+  const captainApplicationCreatedPayload = await captainApplicationCreatedEvent;
+  assert(captainApplicationCreatedPayload.application?.id === applicationId, "admin:captain-application-created should emit the new application");
 
   const applications = await request("/api/admin/captain-applications");
   assert(applications.applications.some((application) => application.id === applicationId), "captain application should be listed");
 
+  const captainApplicationReviewedEvent = waitForSocketEvent(socket, "admin:captain-application-reviewed");
   const approve = await request(`/api/admin/captain-applications/${applicationId}/approve`, { method: "PATCH" });
   assert(approve.application.status === "approved", "approve should update application status");
   assert(approve.captain?.applicationId === applicationId, "approve should create approved captain");
+  const captainApplicationReviewedPayload = await captainApplicationReviewedEvent;
+  assert(captainApplicationReviewedPayload.application?.status === "approved", "admin:captain-application-reviewed should emit approved status");
   const smokeDriverDb = new DatabaseSync(smokeDbPath, { readOnly: true });
   const driverUser = smokeDriverDb.prepare("SELECT role, status FROM users WHERE phone = ?").get(captainPhone);
   smokeDriverDb.close();

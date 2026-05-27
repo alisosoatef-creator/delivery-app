@@ -1,7 +1,9 @@
 import { lazy, Suspense, useMemo, useState } from "react";
 import { ErrorState, LoadingSkeleton, Toast } from "../../components/ui/index.js";
 import { useAdminData } from "../../hooks/useAdminData.js";
+import { useAdminNotifications } from "../../hooks/useAdminNotifications.js";
 import { useCaptainApplications } from "../../hooks/useCaptainApplications.js";
+import { usePayments } from "../../hooks/usePayments.js";
 import { APP_ROUTE_PATHS } from "../../routes/index.js";
 import { isAuthApiError, isNetworkApiError } from "../../services/apiClient.js";
 import { AdminHeader } from "./AdminHeader.jsx";
@@ -111,6 +113,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
   const adminEnabled = ["admin", "owner"].includes(state.role) && Boolean(state.session);
   const captainApplicationsQuery = useCaptainApplications({ enabled: adminEnabled });
   const adminData = useAdminData({ enabled: adminEnabled });
+  const paymentsData = usePayments({ enabled: adminEnabled, adminEnabled });
   const backendError = captainApplicationsQuery.backendError || adminData.backendError;
   const backendErrorCopy = backendError ? adminBackendErrorCopy(backendError, isArabic) : null;
   const canUseRemoteData = adminEnabled && !backendError;
@@ -132,8 +135,18 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
   );
   const adminDrivers = canUseRemoteData ? adminData.drivers : fallbackDrivers;
   const adminRides = canUseRemoteData ? adminData.rides : null;
+  const adminPayments = paymentsData.adminPayments || [];
   const adminLoading = captainApplicationsQuery.isLoading || adminData.isLoading;
   const adminMutating = captainApplicationsQuery.isMutating || adminData.isMutating;
+  const adminNotifications = useAdminNotifications({
+    enabled: adminEnabled,
+    activeSection,
+    pendingCaptainApplications,
+    adminRides: adminRides || [],
+    adminPayments,
+    supportTickets,
+    isArabic
+  });
 
   const dashboardStats = useMemo(() => {
     if (adminData.dashboardStats) {
@@ -164,6 +177,12 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
   function switchSection(section) {
     setActiveSection(section.key);
     setRoutePath(section.path);
+    adminNotifications.markRead(section.key);
+  }
+
+  function openNotificationSection(notification) {
+    const section = ADMIN_SECTIONS.find((item) => item.key === notification?.section);
+    if (section) switchSection(section);
   }
 
   async function approveCaptainApplication(applicationId) {
@@ -479,6 +498,8 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
     cleanupRecords,
     cleanupResult: adminData.cleanupResult,
     cleanupError: adminData.cleanupError,
+    adminNotifications,
+    onOpenAdminNotification: openNotificationSection,
     placeholder
   };
 
@@ -489,6 +510,7 @@ export function AdminShell({ state, dispatch, isArabic, logout }) {
         activeSection={activeSection}
         isArabic={isArabic}
         onSelect={switchSection}
+        notificationCounts={adminNotifications.counts}
       />
       <section className="admin-workspace">
         <AdminHeader

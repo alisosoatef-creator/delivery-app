@@ -1,4 +1,4 @@
-import { Badge, EmptyState, SectionHeader } from "../../components/ui/index.js";
+import { Badge, Button, EmptyState, SectionHeader } from "../../components/ui/index.js";
 import { AdminStats } from "./AdminStats.jsx";
 import { formatMoney, normalizeRide, statusLabel, textFor } from "./adminFormatters.js";
 
@@ -19,7 +19,7 @@ function buildAdvancedStats(baseStats, rides = [], customers = [], drivers = [])
   };
 }
 
-export function AdminDashboard({ state, dashboardStats, pendingCaptainApplications, supportTickets, pricingRules, isArabic, cityName, adminRides, adminCustomers, adminDrivers }) {
+export function AdminDashboard({ state, dashboardStats, pendingCaptainApplications, supportTickets, pricingRules, isArabic, cityName, adminRides, adminCustomers, adminDrivers, adminNotifications, onOpenAdminNotification }) {
   const advancedStats = buildAdvancedStats(dashboardStats, adminRides || [], adminCustomers || [], adminDrivers || []);
   const recentApplications = pendingCaptainApplications.slice(-4).reverse();
   const openTickets = supportTickets.filter((ticket) => ticket.status === "open").slice(0, 4);
@@ -37,6 +37,33 @@ export function AdminDashboard({ state, dashboardStats, pendingCaptainApplicatio
         meta={textFor(isArabic, "تحديث محلي مباشر", "Local live overview")}
       />
       <AdminStats dashboardStats={advancedStats} isArabic={isArabic} />
+
+      <section className="admin-panel admin-notifications-center" aria-label={textFor(isArabic, "تنبيهات تحتاج انتباه", "Notifications need attention")}>
+        <SectionHeader
+          title={textFor(isArabic, "تنبيهات تحتاج انتباه", "Notifications need attention")}
+          description={textFor(isArabic, "ملخص سريع للأقسام التي فيها جديد أو عناصر مفتوحة.", "A quick summary of sections with new or open items.")}
+          meta={adminNotifications?.socketStatus === "connected" ? textFor(isArabic, "تحديث مباشر", "Live updates") : textFor(isArabic, "تحديث آمن", "Safe refresh")}
+        />
+        <div className="admin-notification-list">
+          {adminNotifications?.items?.length ? adminNotifications.items.map((item) => (
+            <article className="admin-notification-card" key={item.id}>
+              <div>
+                <Badge tone={item.tone}>{item.count}</Badge>
+                <strong>{item.title}</strong>
+                <span>{item.description}</span>
+              </div>
+              <Button variant="secondary" size="sm" onClick={() => onOpenAdminNotification?.(item)}>
+                {textFor(isArabic, "فتح القسم", "Open")}
+              </Button>
+            </article>
+          )) : (
+            <EmptyState
+              title={textFor(isArabic, "لا توجد تنبيهات جديدة", "No active notifications")}
+              description={textFor(isArabic, "كل الأقسام المهمة هادئة الآن.", "Important admin sections are quiet right now.")}
+            />
+          )}
+        </div>
+      </section>
 
       <div className="admin-control-ribbon">
         <article>

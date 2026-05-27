@@ -36,6 +36,7 @@ const requiredFiles = [
   "src/hooks/useSupportTickets.js",
   "src/services/paymentsApi.js",
   "src/hooks/usePayments.js",
+  "src/hooks/useAdminNotifications.js",
   "src/components/ui/Button.jsx",
   "src/components/ui/Card.jsx",
   "src/components/ui/Input.jsx",
@@ -168,6 +169,7 @@ const sourceOrder = [
   "src/hooks/useAuthApi.js",
   "src/hooks/useCaptainApplications.js",
   "src/hooks/useAdminData.js",
+  "src/hooks/useAdminNotifications.js",
   "src/hooks/useRidesApi.js",
   "src/hooks/useDriverData.js",
   "src/hooks/useSupportTickets.js",
@@ -482,6 +484,29 @@ for (const adminSuperControlToken of [
 ]) {
   if (!appSource.includes(adminSuperControlToken) && !stylesSource.includes(adminSuperControlToken)) {
     throw new Error(`Admin Super Control is missing: ${adminSuperControlToken}`);
+  }
+}
+
+for (const adminNotificationToken of [
+  "function useAdminNotifications",
+  "ADMIN_NOTIFICATION_CATEGORIES",
+  "EVENT_TO_NOTIFICATION_CATEGORY",
+  "subscribeToAdminEvents",
+  "adminNotifications",
+  "notificationCounts",
+  "admin-nav-badge",
+  "admin-notifications-center",
+  "admin-notification-card",
+  "تنبيهات تحتاج انتباه",
+  "تذاكر دعم مفتوحة",
+  "طلبات كباتن جديدة",
+  "رحلات تحتاج متابعة",
+  "مدفوعات تحتاج مراجعة",
+  "Admin Notifications QA"
+]) {
+  const combinedAdminNotificationSource = `${appSource}\n${stylesSource}\n${qaChecklistSource}`;
+  if (!combinedAdminNotificationSource.includes(adminNotificationToken)) {
+    throw new Error(`Admin Notifications Center is missing: ${adminNotificationToken}`);
   }
 }
 
