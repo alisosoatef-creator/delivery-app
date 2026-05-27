@@ -1,35 +1,37 @@
-import { Pressable, StyleSheet, Text } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { StyleSheet, Text, View } from "react-native";
+import { chip, colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { PressableScale } from "./PressableScale";
 
 export function ChoiceChip({ label, selected, onPress }) {
   return (
-    <Pressable
-      accessibilityRole="button"
+    <PressableScale
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.chip, selected && styles.selected, pressed && styles.pressed]}
+      style={[styles.chip, selected && styles.selected]}
+      pressedStyle={styles.pressed}
     >
+      <View style={[styles.signal, selected && styles.signalActive]} />
       <Text selectable={false} style={[styles.label, selected && styles.selectedLabel]}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   chip: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    borderColor: depth.hairline,
+    backgroundColor: chip.idle
   },
-  selected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary
-  },
-  pressed: {
-    transform: [{ scale: 0.98 }]
-  },
-  label: { color: colors.text, fontWeight: "900", fontSize: 13 },
-  selectedLabel: { color: colors.black }
+  selected: { backgroundColor: chip.active, borderColor: depth.tealLine, boxShadow: shadows.glow },
+  pressed: { opacity: 0.9 },
+  signal: { width: 5, height: 5, borderRadius: radii.pill, backgroundColor: colors.mutedStrong },
+  signalActive: { width: 14, backgroundColor: colors.primary, boxShadow: "0 0 13px rgba(37, 241, 225, 0.5)" },
+  label: { color: colors.textSoft, fontWeight: "900", fontSize: 12.5 },
+  selectedLabel: { color: colors.text }
 });

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { StyleSheet, Text, UIManager, View } from "react-native";
 import { normalizeCoordinate, safeDistanceKm } from "../../utils/locationUtils";
-import { colors, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { colors, depth, map, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { devLogStartup } from "../../utils/startupDiagnostics";
 
 let MapView = null;
@@ -204,27 +204,27 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: "rgba(41, 213, 201, 0.22)",
-    backgroundColor: colors.surfaceStrong,
+    borderColor: depth.tealLine,
+    backgroundColor: map.frame,
     boxShadow: shadows.lift
   },
   mapShade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(6, 9, 12, 0.04)",
+    backgroundColor: "rgba(2, 5, 8, 0.08)",
     zIndex: 1
   },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)"
+    borderColor: "rgba(255, 255, 255, 0.12)"
   },
   badge: {
     position: "absolute",
     left: spacing.sm,
     bottom: spacing.sm,
     color: colors.black,
-    backgroundColor: "rgba(41, 213, 201, 0.94)",
+    backgroundColor: "rgba(37, 241, 225, 0.94)",
     borderRadius: 999,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
   },
   legendText: {
     color: colors.text,
-    backgroundColor: "rgba(7, 12, 16, 0.72)",
+    backgroundColor: map.overlay,
     borderRadius: radii.pill,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
@@ -265,7 +265,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "rgba(7, 10, 13, 0.9)"
+    borderColor: "rgba(2, 5, 8, 0.92)",
+    boxShadow: shadows.soft
   },
   markerText: {
     color: colors.black,
@@ -276,9 +277,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
     borderRadius: radii.pill,
-    backgroundColor: colors.surfaceStrong,
+    backgroundColor: map.frame,
     borderWidth: 1,
-    borderColor: colors.borderStrong
+    borderColor: depth.tealLine
   },
   calloutText: {
     color: colors.text,
@@ -291,7 +292,7 @@ const styles = StyleSheet.create({
     top: spacing.sm,
     maxWidth: "76%",
     color: colors.text,
-    backgroundColor: "rgba(7, 12, 16, 0.76)",
+    backgroundColor: map.overlay,
     borderRadius: radii.pill,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
@@ -305,8 +306,8 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: "rgba(41, 213, 201, 0.22)",
-    backgroundColor: colors.surfaceStrong,
+    borderColor: depth.tealLine,
+    backgroundColor: map.frame,
     padding: spacing.md,
     overflow: "hidden",
     boxShadow: shadows.soft
@@ -317,14 +318,14 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: "rgba(41, 213, 201, 0.045)"
+    backgroundColor: "rgba(37, 241, 225, 0.055)"
   },
   routeLine: {
     position: "absolute",
     width: "76%",
     height: 5,
     borderRadius: 999,
-    backgroundColor: colors.primary,
+    backgroundColor: map.route,
     top: "44%",
     left: "12%",
     transform: [{ rotate: "-16deg" }]
@@ -352,7 +353,7 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 999,
-    backgroundColor: colors.green,
+    backgroundColor: map.driver,
     top: "28%",
     right: "42%"
   },

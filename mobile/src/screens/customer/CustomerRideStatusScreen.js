@@ -6,7 +6,7 @@ import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails, submitRi
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
 
 const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
@@ -214,14 +214,20 @@ export function CustomerRideStatusScreen() {
         <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
       </View>
 
-      <MobileRideMap
-        pickup={pickupPoint}
-        destination={destinationPoint}
-        driverLocation={accepted ? driverLocation : null}
-        userLocation={state.currentLocation}
-        rideStatus={ride.status}
-        height={258}
-      />
+      <View style={styles.trackingHero}>
+        <MobileRideMap
+          pickup={pickupPoint}
+          destination={destinationPoint}
+          driverLocation={accepted ? driverLocation : null}
+          userLocation={state.currentLocation}
+          rideStatus={ride.status}
+          height={278}
+        />
+        <View style={styles.livePill}>
+          <View style={[styles.liveDot, socketStatus !== "connected" && styles.liveDotOff]} />
+          <Text selectable style={styles.liveText}>{socketStatus === "connected" ? "تتبع مباشر" : "تحديث يدوي"}</Text>
+        </View>
+      </View>
       {liveUnavailable ? (
         <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، يمكنك التحديث يدويًا.</Text>
       ) : null}
@@ -336,28 +342,46 @@ export function CustomerRideStatusScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.muted, fontSize: 13, textAlign: "right", marginTop: 2 },
-  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: "rgba(41, 213, 201, 0.22)" },
+  title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
+  subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2, fontWeight: "800" },
+  trackingHero: { borderRadius: radii.xxl, borderWidth: 1, borderColor: depth.tealLine, overflow: "hidden", boxShadow: shadows.glow },
+  livePill: {
+    position: "absolute",
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 7,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(2, 6, 10, 0.72)",
+    borderWidth: 1,
+    borderColor: depth.glassLine
+  },
+  liveDot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.green, boxShadow: "0 0 13px rgba(68, 227, 157, 0.55)" },
+  liveDotOff: { backgroundColor: colors.accent, boxShadow: "0 0 12px rgba(240, 184, 95, 0.44)" },
+  liveText: { color: colors.text, fontSize: 11.5, fontWeight: "900" },
+  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: depth.tealLine, backgroundColor: "rgba(37, 241, 225, 0.08)" },
   scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
   scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(41, 213, 201, 0.42)" },
   scanDotMuted: { opacity: 0.38 },
   searchingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
-  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
-  customerStatusSummary: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.035)" },
+  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
+  customerStatusSummary: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.043)", borderColor: depth.hairline },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  statusTitle: { color: colors.text, fontSize: 18, fontWeight: "800", textAlign: "right" },
-  price: { color: colors.primary, fontSize: 22, fontWeight: "800" },
-  driverCard: { gap: spacing.xs, borderColor: "rgba(41, 213, 201, 0.18)", backgroundColor: "rgba(41, 213, 201, 0.055)" },
+  statusTitle: { color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "right" },
+  price: { color: colors.primary, fontSize: 24, fontWeight: "900" },
+  driverCard: { gap: spacing.xs, borderColor: depth.amberLine, backgroundColor: "rgba(240, 184, 95, 0.06)", boxShadow: shadows.accentGlow },
   driverHeader: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 44, height: 44, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary, boxShadow: shadows.glow },
+  avatar: { width: 48, height: 48, borderRadius: radii.lg, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, boxShadow: shadows.accentGlow },
   avatarText: { color: colors.black, fontSize: 20, fontWeight: "900" },
   driverInfo: { flex: 1, alignItems: "flex-end" },
   driverMeta: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
   driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
-  finishedCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.04)" },
-  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: "rgba(216, 173, 98, 0.2)", backgroundColor: "rgba(216, 173, 98, 0.045)" },
+  finishedCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.045)", borderColor: depth.hairline },
+  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: depth.amberLine, backgroundColor: "rgba(240, 184, 95, 0.06)", boxShadow: shadows.accentGlow },
   savedRating: { color: colors.accent, fontSize: 18, fontWeight: "900", textAlign: "right" },
   starsRow: { flexDirection: "row-reverse", justifyContent: "center", gap: spacing.xs },
   starButton: {
@@ -370,7 +394,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border
   },
-  starButtonActive: { backgroundColor: "rgba(216, 173, 98, 0.18)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
+  starButtonActive: { backgroundColor: "rgba(240, 184, 95, 0.2)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
   starText: { color: colors.muted, fontSize: 22, fontWeight: "900" },
   starTextActive: { color: colors.accent },
   reviewInput: {

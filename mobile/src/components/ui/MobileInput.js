@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function MobileInput({
   label,
@@ -36,14 +36,14 @@ export function MobileInput({
 
 const styles = StyleSheet.create({
   field: { gap: spacing.xs },
-  label: { color: colors.textSoft, fontSize: 12, fontWeight: "700", textAlign: "right" },
+  label: { color: colors.textSoft, fontSize: 12, fontWeight: "800", textAlign: "right" },
   input: {
-    minHeight: 45,
-    borderRadius: radii.md,
-    borderColor: "rgba(255, 255, 255, 0.105)",
+    minHeight: 48,
+    borderRadius: radii.lg,
+    borderColor: depth.hairline,
     borderWidth: 1,
     color: colors.text,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: "rgba(255, 255, 255, 0.058)",
     paddingHorizontal: spacing.md,
     fontSize: 13.5,
     fontWeight: "600"
@@ -55,6 +55,7 @@ const styles = StyleSheet.create({
   },
   focused: {
     borderColor: colors.borderStrong,
-    backgroundColor: "rgba(8, 18, 24, 0.9)"
+    backgroundColor: "rgba(10, 24, 31, 0.94)",
+    boxShadow: shadows.glow
   }
 });

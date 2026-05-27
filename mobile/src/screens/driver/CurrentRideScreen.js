@@ -7,7 +7,7 @@ import { startDriverLocationWatch } from "../../services/locationService";
 import { connectMobileSocket, emitDriverLocation, emitDriverLocationUnavailable, joinRideRoom, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { statusLabel } from "../../utils/rideStatus";
 
 const nextActions = {
@@ -202,9 +202,11 @@ export function CurrentRideScreen() {
             </View>
             <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
           </View>
-          <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={252} />
+          <View style={styles.mapStage}>
+            <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={270} />
+          </View>
           {socketStatus !== "connected" ? <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، ويمكنك المتابعة يدويًا.</Text> : null}
-          <MobileCard tone="flat" style={styles.routeCard}>
+          <MobileCard tone="glass" style={styles.routeCard}>
             <View style={styles.routeHeader}>
               <MobileBadge label={statusLabel(currentRide.status)} tone={completed ? "success" : "info"} />
               <Text selectable style={styles.cardTitle}>مسار الرحلة</Text>
@@ -265,22 +267,23 @@ export function CurrentRideScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
+  title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
   cardTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
-  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
+  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
-  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.038)", borderColor: "rgba(41, 213, 201, 0.16)" },
+  mapStage: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.tealLine, boxShadow: shadows.glow },
+  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.052)", borderColor: depth.tealLine },
   routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   routePoints: { gap: spacing.xs },
-  routePoint: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, borderRadius: radii.sm },
+  routePoint: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs, borderTopWidth: 1, borderTopColor: depth.hairline, borderRadius: radii.sm },
   pointLabel: { color: colors.primary, textAlign: "right", fontSize: 12, fontWeight: "900" },
   pointValue: { color: colors.text, textAlign: "right", fontSize: 14, fontWeight: "800", marginTop: 2 },
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  nextActionCard: { gap: spacing.xs, borderColor: "rgba(216, 173, 98, 0.22)", boxShadow: shadows.accentGlow },
+  nextActionCard: { gap: spacing.xs, borderColor: depth.amberLine, boxShadow: shadows.accentGlow, backgroundColor: "rgba(240, 184, 95, 0.07)" },
   nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
-  completedCard: { gap: spacing.sm, borderColor: "rgba(66, 231, 156, 0.2)", backgroundColor: "rgba(66, 231, 156, 0.055)" }
+  completedCard: { gap: spacing.sm, borderColor: "rgba(68, 227, 157, 0.24)", backgroundColor: "rgba(68, 227, 157, 0.06)" }
 });

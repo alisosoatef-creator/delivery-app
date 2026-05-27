@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function StatCard({ label, value, hint, tone = "gold" }) {
   return (
@@ -18,19 +18,20 @@ const styles = StyleSheet.create({
     flexBasis: 0,
     minWidth: 104,
     padding: spacing.sm,
-    borderRadius: radii.md,
-    backgroundColor: "rgba(49, 228, 214, 0.09)",
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(37, 241, 225, 0.095)",
     borderWidth: 1,
-    borderColor: "rgba(49, 228, 214, 0.24)",
-    gap: 3
+    borderColor: depth.tealLine,
+    gap: 3,
+    boxShadow: shadows.soft
   },
   blue: {
-    backgroundColor: "rgba(127, 176, 255, 0.12)",
-    borderColor: "rgba(127, 176, 255, 0.28)"
+    backgroundColor: "rgba(111, 140, 255, 0.13)",
+    borderColor: "rgba(111, 140, 255, 0.28)"
   },
   green: {
-    backgroundColor: "rgba(67, 230, 162, 0.1)",
-    borderColor: "rgba(67, 230, 162, 0.26)"
+    backgroundColor: "rgba(68, 227, 157, 0.12)",
+    borderColor: "rgba(68, 227, 157, 0.26)"
   },
   label: { color: colors.muted, fontSize: 11.5, fontWeight: "800", textAlign: "right" },
   value: { color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "right" },

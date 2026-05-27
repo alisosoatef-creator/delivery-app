@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
+import { StyleSheet, Text, View } from "react-native";
+import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
 import { updateDriverOnlineStatus } from "../../services/driverApi";
 import { clearMobileSession, saveMobileSession } from "../../services/sessionStorage";
 import { connectMobileSocket, disconnectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage } from "../../utils/errorUtils";
-import { colors, money, spacing } from "../../utils/mobileTheme";
+import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 function driverSessionFromState(state, driver = {}) {
   return {
@@ -88,7 +88,7 @@ export function DriverHomeScreen() {
 
   async function toggleAvailability() {
     if (!session.driverId) {
-      setError("بيانات الكابتن غير مكتملة. سجّل الدخول مرة أخرى.");
+      setError("بيانات الكابتن غير مكتملة. سجل الدخول مرة أخرى.");
       return;
     }
     const previous = available;
@@ -117,15 +117,33 @@ export function DriverHomeScreen() {
   }
 
   return (
-    <ScreenContainer showHeader={false}>
-      <MobileCard tone="hero" style={styles.headerCard}>
-        <View style={styles.headerTop}>
-          <MobileBadge label={available ? "متاح لاستقبال الطلبات" : "غير متاح"} tone={available ? "success" : "warning"} />
-          <BrandMark compact />
+    <ScreenContainer showHeader={false} variant="driver">
+      <MobileCard tone="glass" style={styles.cockpit}>
+        <View style={styles.cockpitTop}>
+          <BrandMark compact title="وصل كابتن" />
+          <MobileBadge label={available ? "متاح" : "غير متاح"} tone={available ? "success" : "warning"} />
         </View>
-        <Text selectable style={styles.title}>لوحة الكابتن</Text>
-        <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
-        <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
+        <View style={styles.identity}>
+          <Text selectable style={styles.role}>لوحة الكابتن</Text>
+          <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
+          <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
+        </View>
+        <View style={styles.availabilityStrip}>
+          <View style={styles.availabilityCopy}>
+            <Text selectable style={styles.sectionTitle}>حالة التوفر</Text>
+            <Text selectable style={styles.helper}>{available ? "جاهز لاستقبال الطلبات الآن." : "الطلبات الجديدة متوقفة مؤقتًا."}</Text>
+          </View>
+          <PressableScale
+            accessibilityRole="switch"
+            accessibilityLabel="تبديل حالة توفر الكابتن"
+            disabled={status === "saving"}
+            onPress={toggleAvailability}
+            style={[styles.toggle, available && styles.toggleOn, status === "saving" && styles.toggleSaving]}
+          >
+            <View style={[styles.toggleKnob, available && styles.toggleKnobOn]} />
+          </PressableScale>
+        </View>
+        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       </MobileCard>
 
       <View style={styles.stats}>
@@ -133,86 +151,86 @@ export function DriverHomeScreen() {
         <StatCard label="اليوم" value={money(0)} hint="أرباح تجريبية" />
       </View>
 
-      <MobileCard tone="flat" style={styles.availabilityCard}>
-        <View style={styles.availabilityHeader}>
-          <View style={styles.availabilityCopy}>
-            <Text selectable style={styles.sectionTitle}>حالة التوفر</Text>
-            <Text selectable style={styles.helper}>{available ? "أنت متاح الآن، ويمكنك متابعة الطلبات الجديدة." : "أنت غير متاح. استقبال الطلبات الجديدة متوقف مؤقتًا."}</Text>
-          </View>
-          <Pressable
-            accessibilityRole="switch"
-            accessibilityState={{ checked: available, disabled: status === "saving" }}
-            accessibilityLabel="تبديل حالة توفر الكابتن"
-            onPress={toggleAvailability}
-            disabled={status === "saving"}
-            style={[styles.toggle, available && styles.toggleOn, status === "saving" && styles.toggleSaving]}
-          >
-            <View style={[styles.toggleKnob, available && styles.toggleKnobOn]} />
-          </Pressable>
-        </View>
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-      </MobileCard>
-
       {currentRide ? (
-        <MobileCard tone="soft" style={styles.currentRideCard}>
-          <Text selectable style={styles.sectionTitle}>رحلتي الحالية</Text>
-          <Text selectable numberOfLines={1} style={styles.helper}>{currentRide.pickup || "-"} ← {currentRide.destination || "-"}</Text>
-          <InfoRow label="الحالة" value={currentRide.status || "-"} accent />
+        <MobileCard tone="hero" style={styles.currentRideCard}>
+          <View style={styles.rowBetween}>
+            <MobileBadge label={currentRide.status || "-"} tone="info" />
+            <Text selectable style={styles.sectionTitle}>رحلتي الحالية</Text>
+          </View>
+          <InfoRow label="المسار" value={`${currentRide.pickup || "-"} ← ${currentRide.destination || "-"}`} accent />
           <MobileButton title="فتح الرحلة" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} />
         </MobileCard>
       ) : null}
 
-      <MobileCard tone="flat">
-        <Text selectable style={styles.sectionTitle}>إجراءات سريعة</Text>
-        <View style={styles.actions}>
-          <MobileButton title="عرض الطلبات" variant="accent" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
-          <MobileButton title="رحلتي الحالية" variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} />
-        </View>
-        <InfoRow label="التحديث المباشر" value={state.socketStatus === "connected" ? "متصل" : "يدوي"} />
-      </MobileCard>
-
-      <View style={styles.secondaryActions}>
-        <MobileButton title="الأرباح" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} />
-        <MobileButton title="الدعم" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "support" })} />
-        <MobileButton title="خروج" compact variant="danger" onPress={logout} />
+      <View style={styles.actionGrid}>
+        <MobileCard tone="action" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} style={styles.actionTile}>
+          <Text selectable style={styles.actionNumber}>{availableCount}</Text>
+          <Text selectable style={styles.actionLabel}>عرض الطلبات</Text>
+        </MobileCard>
+        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} style={styles.actionTile}>
+          <Text selectable style={styles.actionNumber}>↗</Text>
+          <Text selectable style={styles.actionLabel}>رحلتي الحالية</Text>
+        </MobileCard>
+        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} style={styles.actionTile}>
+          <Text selectable style={styles.actionNumber}>₪</Text>
+          <Text selectable style={styles.actionLabel}>الأرباح</Text>
+        </MobileCard>
+        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "support" })} style={styles.actionTile}>
+          <Text selectable style={styles.actionNumber}>?</Text>
+          <Text selectable style={styles.actionLabel}>الدعم</Text>
+        </MobileCard>
       </View>
+
+      <MobileCard tone="flat">
+        <InfoRow label="التحديث المباشر" value={state.socketStatus === "connected" ? "متصل" : "يدوي"} />
+        <MobileButton title="خروج" compact variant="danger" onPress={logout} />
+      </MobileCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  headerCard: { gap: spacing.xs, paddingVertical: spacing.lg },
-  headerTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: { color: colors.primary, fontSize: 13, fontWeight: "800", textAlign: "right" },
-  name: { color: colors.text, fontWeight: "900", fontSize: 23, textAlign: "right" },
-  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "700", fontSize: 12 },
+  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.tealLine },
+  cockpitTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  identity: { alignItems: "flex-end", gap: 3 },
+  role: { color: colors.primary, fontSize: 13, fontWeight: "900", textAlign: "right" },
+  name: { color: colors.text, fontWeight: "900", fontSize: 27, textAlign: "right" },
+  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12 },
+  availabilityStrip: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: depth.hairline,
+    backgroundColor: "rgba(0, 0, 0, 0.14)"
+  },
+  availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
   sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
   helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 },
   error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12 },
-  availabilityCard: { gap: spacing.xs, backgroundColor: "rgba(255,255,255,0.04)" },
-  availabilityHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
   toggle: {
-    width: 54,
-    height: 31,
-    borderRadius: 999,
+    width: 58,
+    height: 32,
+    borderRadius: radii.pill,
     padding: 4,
     alignItems: "flex-start",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.075)",
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: depth.hairline
   },
-  toggleOn: {
-    alignItems: "flex-end",
-    backgroundColor: "rgba(66, 231, 156, 0.16)",
-    borderColor: "rgba(66, 231, 156, 0.4)"
-  },
+  toggleOn: { alignItems: "flex-end", backgroundColor: "rgba(68, 227, 157, 0.16)", borderColor: "rgba(68, 227, 157, 0.4)", boxShadow: shadows.glow },
   toggleSaving: { opacity: 0.6 },
-  toggleKnob: { width: 21, height: 21, borderRadius: 999, backgroundColor: colors.muted },
+  toggleKnob: { width: 22, height: 22, borderRadius: radii.pill, backgroundColor: colors.muted },
   toggleKnobOn: { backgroundColor: colors.green },
   currentRideCard: { gap: spacing.xs },
-  actions: { gap: spacing.sm },
-  secondaryActions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }
+  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  actionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.sm },
+  actionTile: { width: "47.5%", minHeight: 96, justifyContent: "space-between" },
+  actionNumber: { color: colors.primary, fontSize: 23, fontWeight: "900", textAlign: "right" },
+  actionLabel: { color: colors.text, fontSize: 14, fontWeight: "900", textAlign: "right" }
 });

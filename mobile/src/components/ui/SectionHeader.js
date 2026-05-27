@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing, typography } from "../../utils/mobileTheme";
+import { colors, depth, radii, spacing, typography } from "../../utils/mobileTheme";
 
 export function SectionHeader({ eyebrow, title, subtitle, action }) {
   return (
@@ -19,7 +19,12 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: spacing.sm
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    borderRightWidth: 3,
+    borderRightColor: depth.tealLine,
+    borderRadius: radii.sm
   },
   copy: { flex: 1, gap: spacing.xxs, alignItems: "flex-end" },
   eyebrow: { color: colors.primary, fontSize: typography.caption, fontWeight: "700", textAlign: "right" },

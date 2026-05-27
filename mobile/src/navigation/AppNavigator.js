@@ -1,6 +1,6 @@
-import { I18nManager, Pressable, StyleSheet, Text, View } from "react-native";
+import { I18nManager, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LoadingState } from "../components/ui";
+import { LoadingState, PressableScale } from "../components/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
 import { RegisterScreen } from "../screens/auth/RegisterScreen";
@@ -20,7 +20,7 @@ import { DriverEarningsScreen } from "../screens/driver/DriverEarningsScreen";
 import { DriverHomeScreen } from "../screens/driver/DriverHomeScreen";
 import { DriverSupportScreen } from "../screens/driver/DriverSupportScreen";
 import { useMobileApp } from "../store/mobileStore";
-import { colors, layout, radii, shadows, spacing } from "../utils/mobileTheme";
+import { colors, layout, nav, radii, shadows, spacing } from "../utils/mobileTheme";
 
 I18nManager.allowRTL(true);
 
@@ -44,20 +44,20 @@ const driverScreens = {
 };
 
 const customerTabs = [
-  ["home", "بيت"],
-  ["request", "طلب"],
-  ["rides", "رحلات"],
-  ["wallet", "دفع"],
-  ["support", "دعم"],
-  ["account", "حساب"]
+  ["home", "بيت", "01"],
+  ["request", "طلب", "02"],
+  ["rides", "رحلات", "03"],
+  ["wallet", "دفع", "04"],
+  ["support", "دعم", "05"],
+  ["account", "حساب", "06"]
 ];
 
 const driverTabs = [
-  ["home", "بيت"],
-  ["available", "طلبات"],
-  ["current", "رحلتي"],
-  ["earnings", "أرباح"],
-  ["support", "دعم"]
+  ["home", "بيت", "01"],
+  ["available", "طلبات", "02"],
+  ["current", "رحلتي", "03"],
+  ["earnings", "أرباح", "04"],
+  ["support", "دعم", "05"]
 ];
 
 function AuthNavigator() {
@@ -75,19 +75,20 @@ function AppTabs({ area }) {
   return (
     <View style={[styles.tabsShell, { bottom: Math.max(spacing.sm, insets.bottom + spacing.xs) }]}>
       <View style={styles.tabs}>
-        {tabs.map(([screen, label]) => {
+        {tabs.map(([screen, label, mark]) => {
           const active = state.activeScreen === screen;
           return (
-            <Pressable
+            <PressableScale
               key={screen}
-              accessibilityRole="button"
               accessibilityLabel={label}
               onPress={() => dispatch({ type: "navigate", area, screen })}
-              style={({ pressed }) => [styles.tab, active && styles.tabActive, pressed && styles.tabPressed]}
+              style={[styles.tab, active && styles.tabActive]}
+              pressedStyle={styles.tabPressed}
             >
-              <View style={[styles.tabDot, active && styles.tabDotActive]} />
+              <Text selectable={false} style={[styles.tabMark, active && styles.tabMarkActive]}>{mark}</Text>
               <Text selectable={false} numberOfLines={1} style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
-            </Pressable>
+              <View style={[styles.tabDot, active && styles.tabDotActive]} />
+            </PressableScale>
           );
         })}
       </View>
@@ -147,15 +148,15 @@ const styles = StyleSheet.create({
   shell: { flex: 1 },
   tabsShell: {
     position: "absolute",
-    left: spacing.md,
-    right: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
     minHeight: layout.bottomNavHeight,
-    borderRadius: radii.xl,
-    backgroundColor: "rgba(6, 11, 15, 0.92)",
+    borderRadius: radii.pill,
+    backgroundColor: nav.dock,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.095)",
-    padding: 5,
-    boxShadow: shadows.soft
+    borderColor: nav.dockBorder,
+    padding: 4,
+    boxShadow: shadows.lift
   },
   tabs: {
     flexDirection: "row-reverse",
@@ -166,45 +167,38 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     minWidth: 0,
-    minHeight: 40,
-    borderRadius: radii.md,
+    minHeight: 38,
+    borderRadius: radii.pill,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
+    gap: 1,
     paddingHorizontal: 2
   },
-  tabActive: { backgroundColor: "rgba(42, 218, 206, 0.095)" },
-  tabPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
+  tabActive: { backgroundColor: nav.active },
+  tabPressed: { opacity: 0.9 },
+  tabMark: { color: colors.mutedStrong, fontSize: 9, fontWeight: "900", lineHeight: 11 },
+  tabMarkActive: { color: colors.primary },
   tabDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 999,
+    width: 2,
+    height: 2,
+    borderRadius: radii.pill,
     backgroundColor: "rgba(255, 255, 255, 0.16)"
   },
-  tabDotActive: {
-    width: 13,
-    backgroundColor: colors.primary
-  },
-  tabLabel: {
-    color: colors.muted,
-    fontSize: 9.5,
-    fontWeight: "700"
-  },
-  tabLabelActive: {
-    color: colors.text
-  },
+  tabDotActive: { width: 18, height: 3, backgroundColor: nav.activeLine, boxShadow: shadows.glow },
+  tabLabel: { color: colors.muted, fontSize: 9, fontWeight: "800" },
+  tabLabelActive: { color: colors.text },
   toast: {
     color: colors.text,
-    backgroundColor: "rgba(49, 228, 214, 0.15)",
+    backgroundColor: "rgba(37, 241, 225, 0.15)",
     padding: spacing.sm,
     textAlign: "center",
-    fontWeight: "700"
+    fontWeight: "800"
   },
   banner: {
     color: colors.text,
-    backgroundColor: "rgba(255, 111, 124, 0.15)",
+    backgroundColor: "rgba(255, 100, 117, 0.15)",
     padding: spacing.sm,
     textAlign: "center",
-    fontWeight: "700"
+    fontWeight: "800"
   }
 });

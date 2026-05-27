@@ -8,6 +8,7 @@ export { MobileBadge } from "./MobileBadge";
 export { MobileButton } from "./MobileButton";
 export { MobileCard } from "./MobileCard";
 export { MobileInput } from "./MobileInput";
+export { PressableScale } from "./PressableScale";
 export { ScreenContainer } from "./ScreenContainer";
 export { SectionHeader } from "./SectionHeader";
 export { StatCard } from "./StatCard";

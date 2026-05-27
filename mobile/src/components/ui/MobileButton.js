@@ -1,14 +1,17 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
-import { colors, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { button, colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { PressableScale } from "./PressableScale";
 
 export function MobileButton({ title, onPress, variant = "primary", disabled = false, compact = false, icon, loading = false, style }) {
   const blocked = disabled || loading;
+  const solid = ["primary", "success", "accent"].includes(variant);
+
   return (
-    <Pressable
-      accessibilityRole="button"
+    <PressableScale
       accessibilityLabel={title}
       onPress={blocked ? undefined : onPress}
-      style={({ pressed }) => [
+      disabled={blocked}
+      style={[
         styles.button,
         compact && styles.compact,
         variant === "secondary" && styles.secondary,
@@ -17,62 +20,44 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
         variant === "success" && styles.success,
         variant === "accent" && styles.accent,
         blocked && styles.disabled,
-        pressed && !blocked && styles.pressed,
         style
       ]}
+      pressedStyle={styles.pressed}
     >
       <View style={styles.content}>
-        {loading ? <ActivityIndicator color={["primary", "success", "accent"].includes(variant) ? colors.black : colors.primary} size="small" /> : null}
-        {icon && !loading ? <Text selectable={false} style={[styles.icon, variant !== "primary" && styles.secondaryLabel]}>{icon}</Text> : null}
-        <Text style={[styles.label, variant !== "primary" && styles.secondaryLabel]}>{title}</Text>
+        <View style={[styles.beam, solid && styles.beamSolid]} />
+        {loading ? <ActivityIndicator color={solid ? colors.black : colors.primary} size="small" /> : null}
+        {icon && !loading ? <Text selectable={false} style={[styles.icon, !solid && styles.secondaryLabel]}>{icon}</Text> : null}
+        <Text style={[styles.label, !solid && styles.secondaryLabel]}>{title}</Text>
       </View>
-    </Pressable>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 44,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
     paddingHorizontal: spacing.lg,
-    backgroundColor: colors.primary,
+    backgroundColor: button.primary,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.16)",
-    boxShadow: shadows.glow
+    borderColor: "rgba(255, 255, 255, 0.18)",
+    boxShadow: shadows.glowStrong,
+    overflow: "hidden"
   },
-  compact: {
-    minHeight: 35,
-    paddingHorizontal: spacing.sm
-  },
-  secondary: {
-    backgroundColor: colors.surfaceGlass,
-    borderColor: colors.border
-  },
-  danger: {
-    backgroundColor: "rgba(255, 111, 124, 0.16)",
-    borderColor: "rgba(255, 111, 124, 0.45)",
-    boxShadow: "0 14px 34px rgba(255, 111, 124, 0.12)"
-  },
-  ghost: {
-    backgroundColor: "transparent",
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    boxShadow: "0 0 0 rgba(0, 0, 0, 0)"
-  },
-  success: {
-    backgroundColor: colors.green,
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    boxShadow: "0 18px 42px rgba(67, 230, 162, 0.16)"
-  },
-  accent: {
-    backgroundColor: colors.accent,
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    boxShadow: shadows.accentGlow
-  },
-  disabled: { opacity: 0.52 },
-  pressed: { transform: [{ scale: 0.975 }], opacity: 0.88 },
-  content: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs },
+  compact: { minHeight: 36, paddingHorizontal: spacing.md },
+  secondary: { backgroundColor: button.secondary, borderColor: depth.glassLine, boxShadow: shadows.soft },
+  danger: { backgroundColor: "rgba(255, 100, 117, 0.16)", borderColor: "rgba(255, 100, 117, 0.42)", boxShadow: shadows.dangerGlow },
+  ghost: { backgroundColor: "transparent", borderColor: depth.hairline, boxShadow: "0 0 0 rgba(0, 0, 0, 0)" },
+  success: { backgroundColor: colors.green, borderColor: "rgba(255, 255, 255, 0.16)", boxShadow: "0 18px 42px rgba(68, 227, 157, 0.18)" },
+  accent: { backgroundColor: button.accent, borderColor: "rgba(255, 255, 255, 0.16)", boxShadow: shadows.accentGlow },
+  disabled: { opacity: 0.46 },
+  pressed: { opacity: 0.9 },
+  content: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: spacing.xs },
+  beam: { position: "absolute", width: 88, height: 88, borderRadius: radii.pill, right: -54, backgroundColor: "rgba(255, 255, 255, 0.11)" },
+  beamSolid: { backgroundColor: "rgba(255, 255, 255, 0.18)" },
   icon: { color: colors.black, fontWeight: "900", fontSize: 14 },
   label: { color: "#031315", fontWeight: "900", fontSize: 13.5, letterSpacing: 0, textAlign: "center" },
   secondaryLabel: { color: colors.text }

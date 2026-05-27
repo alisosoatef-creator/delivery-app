@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { BrandMark, ChoiceChip, InfoRow, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { BrandMark, ChoiceChip, InfoRow, MobileButton, MobileCard, MobileInput, PressableScale, ScreenContainer } from "../../components/ui";
 import { requestCurrentLocation } from "../../services/locationService";
 import { searchPlaces } from "../../services/placesApi";
 import { createRide, quoteRide } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { pointFromCity, pointFromPlace, safeDistanceKm } from "../../utils/locationUtils";
-import { colors, km, money, spacing } from "../../utils/mobileTheme";
+import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { cityOptions } from "../../utils/westBankCities";
 
 function paymentLabel(method) {
@@ -109,7 +109,7 @@ export function RequestRideScreen() {
   async function submitRide() {
     setError("");
     if (!pickup) {
-      setError("حدد نقطة الانطلاق أو استخدم موقع المدينة الافتراضي.");
+      setError("حدد نقطة الانطلاق أو استخدم موقع المدينة.");
       return;
     }
     if (!destination) {
@@ -149,125 +149,111 @@ export function RequestRideScreen() {
 
   return (
     <ScreenContainer showHeader={false} compact>
-      <View style={styles.header}>
+      <View style={styles.commandHeader}>
         <BrandMark compact />
         <View style={styles.headerCopy}>
-          <Text selectable style={styles.title}>طلب رحلة</Text>
-          <Text selectable style={styles.subtitle}>حدد الانطلاق والوجهة، وسنحسب السعر فورًا.</Text>
+          <Text selectable style={styles.eyebrow}>مشوار جديد</Text>
+          <Text selectable style={styles.title}>ابنِ رحلتك بسرعة</Text>
         </View>
       </View>
 
-      <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={232} />
-
-      <View style={styles.quickSteps}>
-        <Text selectable style={[styles.quickStep, pickup && styles.quickStepDone]}>1. الانطلاق</Text>
-        <Text selectable style={[styles.quickStep, destination && styles.quickStepDone]}>2. الوجهة</Text>
-        <Text selectable style={[styles.quickStep, quote && styles.quickStepDone]}>3. السعر</Text>
+      <View style={styles.mapDeck}>
+        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={246} />
+        <View style={styles.mapPulse} />
       </View>
 
-      <MobileCard tone="flat" style={styles.panel}>
-        <View style={styles.stepHeader}>
-          <Text selectable style={styles.stepTitle}>الانطلاق</Text>
-          <MobileButton title={status === "location" ? "..." : "موقعي"} compact variant="secondary" onPress={useGpsLocation} loading={status === "location"} />
+      <MobileCard tone="glass" style={styles.composer}>
+        <View style={styles.composerTop}>
+          <View style={styles.stepBlock}>
+            <Text selectable style={styles.stepNumber}>01</Text>
+            <Text selectable style={styles.stepLabel}>نقطة الانطلاق</Text>
+          </View>
+          <MobileButton title={status === "location" ? "جارٍ..." : "موقعي"} compact variant="secondary" onPress={useGpsLocation} loading={status === "location"} />
         </View>
-        <View style={styles.chips}>
+        <View style={styles.cityRail}>
           {cityOptions().slice(0, 6).map((city) => (
             <ChoiceChip key={city.value} label={city.label} selected={cityId === city.value} onPress={() => useCityFallback(city.value)} />
           ))}
         </View>
         <InfoRow label="من" value={pickup?.label || "-"} accent />
 
-        <Text selectable style={styles.stepTitle}>الوجهة</Text>
-        <MobileInput label="" value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
-        {status === "quote" ? <Text selectable style={styles.muted}>جاري حساب السعر والمسافة...</Text> : null}
+        <View style={styles.stepBlockWide}>
+          <Text selectable style={styles.stepNumber}>02</Text>
+          <Text selectable style={styles.stepLabel}>الوجهة</Text>
+        </View>
+        <MobileInput value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
+        {status === "quote" ? <Text selectable style={styles.muted}>نحسب السعر والمسافة الآن...</Text> : null}
         {suggestions.map((place) => (
-          <Pressable key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={({ pressed }) => [styles.suggestion, pressed && styles.pressed]}>
-            <Text selectable style={styles.suggestionTitle}>{place.label}</Text>
-            <Text selectable style={styles.suggestionMeta}>{place.category || "مكان"} · {place.city}</Text>
-          </Pressable>
+          <PressableScale key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={styles.suggestion} pressedStyle={styles.pressed}>
+            <View>
+              <Text selectable style={styles.suggestionTitle}>{place.label}</Text>
+              <Text selectable style={styles.suggestionMeta}>{place.category || "مكان"} · {place.city}</Text>
+            </View>
+            <Text selectable={false} style={styles.suggestionArrow}>↗</Text>
+          </PressableScale>
         ))}
       </MobileCard>
 
-      <MobileCard tone="hero" style={styles.summarySticky}>
-        <Text selectable style={styles.stepTitle}>ملخص الطلب</Text>
-        <InfoRow label="نقطة الانطلاق" value={pickup?.label || "-"} accent />
-        <InfoRow label="الوجهة" value={destination?.label || "اختر وجهتك"} />
-        {quote ? (
-          <View style={styles.summaryRow}>
-            <Text selectable style={styles.price}>{money(quote.fareIls)}</Text>
-            <View style={styles.summaryMeta}>
-              <Text selectable style={styles.meta}>{km(quote.distanceKm)}</Text>
-              <Text selectable style={styles.meta}>{quote.etaMinutes || "-"} دقيقة</Text>
-            </View>
+      <MobileCard tone="action" style={styles.summarySticky}>
+        <View style={styles.summaryHeader}>
+          <View>
+            <Text selectable style={styles.stepNumber}>03</Text>
+            <Text selectable style={styles.stepLabel}>جاهز للطلب</Text>
           </View>
-        ) : (
-          <Text selectable style={styles.muted}>اختر وجهة لحساب السعر.</Text>
-        )}
-        <View style={styles.chips}>
+          <Text selectable style={styles.price}>{quote ? money(quote.fareIls) : "--"}</Text>
+        </View>
+        <View style={styles.metrics}>
+          <Text selectable style={styles.metric}>{destination?.label || "اختر الوجهة"}</Text>
+          <Text selectable style={styles.metric}>{quote ? km(quote.distanceKm) : "المسافة"}</Text>
+          <Text selectable style={styles.metric}>{quote?.etaMinutes ? `${quote.etaMinutes} دقيقة` : "الوقت"}</Text>
+        </View>
+        <View style={styles.cityRail}>
           {["cash", "visa", "wallet"].map((method) => (
-            <ChoiceChip
-              key={method}
-              label={paymentLabel(method)}
-              selected={paymentMethod === method}
-              onPress={() => setPaymentMethod(method)}
-            />
+            <ChoiceChip key={method} label={paymentLabel(method)} selected={paymentMethod === method} onPress={() => setPaymentMethod(method)} />
           ))}
         </View>
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "create" ? "جاري الطلب..." : "طلب الرحلة"} variant="accent" onPress={submitRide} loading={status === "create"} />
+        <MobileButton title={status === "create" ? "جاري الطلب..." : "طلب الرحلة الآن"} variant="accent" onPress={submitRide} loading={status === "create"} />
       </MobileCard>
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  headerCopy: { flex: 1, alignItems: "flex-end", gap: 2 },
+  commandHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  headerCopy: { flex: 1, alignItems: "flex-end" },
+  eyebrow: { color: colors.primary, fontSize: 12, fontWeight: "900", textAlign: "right" },
   title: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.muted, fontSize: 13, textAlign: "right" },
-  panel: { gap: spacing.sm },
-  quickSteps: {
-    flexDirection: "row-reverse",
-    gap: spacing.xs,
-    flexWrap: "wrap"
-  },
-  quickStep: {
-    flex: 1,
-    minWidth: 86,
-    color: colors.muted,
-    textAlign: "center",
-    fontSize: 12,
-    fontWeight: "800",
-    paddingVertical: 6,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.052)",
-    borderWidth: 1,
-    borderColor: colors.border
-  },
-  quickStepDone: {
-    color: colors.black,
-    backgroundColor: colors.primary,
-    borderColor: colors.primary
-  },
-  stepHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  stepTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },
-  chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
+  mapDeck: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.tealLine, boxShadow: shadows.glow },
+  mapPulse: { position: "absolute", right: 18, top: 18, width: 9, height: 9, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 20px rgba(37, 241, 225, 0.66)" },
+  composer: { gap: spacing.sm },
+  composerTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  stepBlock: { alignItems: "flex-end" },
+  stepBlockWide: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, justifyContent: "flex-start" },
+  stepNumber: { color: colors.primary, fontSize: 11, fontWeight: "900", textAlign: "right" },
+  stepLabel: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
+  cityRail: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   suggestion: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    borderRadius: 15,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: depth.hairline
   },
-  pressed: { transform: [{ scale: 0.99 }] },
-  suggestionTitle: { color: colors.text, fontWeight: "800", textAlign: "right" },
+  pressed: { opacity: 0.9 },
+  suggestionTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
   suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 2, fontSize: 12 },
+  suggestionArrow: { color: colors.primary, fontSize: 16, fontWeight: "900" },
   summarySticky: { gap: spacing.sm },
-  summaryRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  price: { color: colors.primary, fontSize: 27, fontWeight: "900", textAlign: "right" },
-  summaryMeta: { alignItems: "flex-start", gap: 3 },
-  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" },
-  muted: { color: colors.muted, textAlign: "right" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
+  summaryHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  price: { color: colors.text, fontSize: 30, fontWeight: "900", textAlign: "right" },
+  metrics: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
+  metric: { color: colors.textSoft, backgroundColor: "rgba(0, 0, 0, 0.16)", paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, fontSize: 12, fontWeight: "800" },
+  muted: { color: colors.muted, textAlign: "right", fontWeight: "700" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800" }
 });

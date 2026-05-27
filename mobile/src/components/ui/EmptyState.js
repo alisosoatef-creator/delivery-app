@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { MobileButton } from "./MobileButton";
 
 export function EmptyState({ title = "لا توجد بيانات", message = "", actionTitle, onAction }) {
@@ -16,18 +16,20 @@ export function EmptyState({ title = "لا توجد بيانات", message = "",
 const styles = StyleSheet.create({
   box: {
     padding: spacing.lg,
-    borderRadius: radii.md,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: depth.hairline,
     gap: spacing.xs,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    alignItems: "flex-end"
+    backgroundColor: "rgba(255, 255, 255, 0.044)",
+    alignItems: "flex-end",
+    boxShadow: shadows.soft
   },
   orb: {
     width: 34,
-    height: 5,
+    height: 6,
     borderRadius: 999,
-    backgroundColor: colors.primary
+    backgroundColor: colors.primary,
+    boxShadow: shadows.glow
   },
   title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15.5 },
   message: { color: colors.muted, lineHeight: 20, textAlign: "right", fontSize: 12.5 }

@@ -1,5 +1,5 @@
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function LoadingState({ message = "جاري التحميل..." }) {
   return (
@@ -18,17 +18,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: spacing.xl,
     gap: spacing.sm,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: depth.tealLine,
+    backgroundColor: "rgba(37, 241, 225, 0.045)",
+    boxShadow: shadows.glow
   },
   text: { color: colors.muted, fontWeight: "800", textAlign: "center" },
   skeleton: {
     width: "88%",
     height: 10,
     borderRadius: 999,
-    backgroundColor: "rgba(255, 255, 255, 0.08)"
+    backgroundColor: "rgba(255, 255, 255, 0.09)"
   },
   skeletonShort: {
     width: "54%"

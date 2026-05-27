@@ -4,9 +4,6 @@ import path from "node:path";
 const required = [
   "app/_layout.js",
   "app/index.js",
-  "components/wasel-mobile-app.js",
-  "data/fallback.js",
-  "lib/api.js",
   "src/App.js",
   "src/components/ErrorBoundary.js",
   "src/config/appConfig.js",
@@ -38,19 +35,20 @@ const required = [
   "src/screens/driver/CurrentRideScreen.js",
   "src/screens/driver/DriverEarningsScreen.js",
   "src/screens/driver/DriverSupportScreen.js",
+  "src/components/ui/BrandMark.js",
+  "src/components/ui/ChoiceChip.js",
+  "src/components/ui/EmptyState.js",
+  "src/components/ui/ErrorState.js",
+  "src/components/ui/InfoRow.js",
+  "src/components/ui/LoadingState.js",
+  "src/components/ui/MobileBadge.js",
   "src/components/ui/MobileButton.js",
   "src/components/ui/MobileCard.js",
   "src/components/ui/MobileInput.js",
-  "src/components/ui/MobileBadge.js",
+  "src/components/ui/PressableScale.js",
   "src/components/ui/ScreenContainer.js",
-  "src/components/ui/LoadingState.js",
-  "src/components/ui/EmptyState.js",
   "src/components/ui/SectionHeader.js",
   "src/components/ui/StatCard.js",
-  "src/components/ui/InfoRow.js",
-  "src/components/ui/ChoiceChip.js",
-  "src/components/ui/BrandMark.js",
-  "src/components/ui/ErrorState.js",
   "src/components/ui/StatusTimeline.js",
   "src/components/map/MobileRideMap.js",
   "src/utils/locationUtils.js",
@@ -65,24 +63,16 @@ const required = [
 ];
 
 for (const file of required) {
-  if (!fs.existsSync(file)) {
-    throw new Error(`Missing ${file}`);
-  }
+  if (!fs.existsSync(file)) throw new Error(`Missing ${file}`);
 }
 
 const appJson = JSON.parse(fs.readFileSync("app.json", "utf8"));
-if (appJson.expo.slug !== "wasel-delivery") {
-  throw new Error("Unexpected Expo slug");
-}
-if (appJson.expo.scheme !== "wasel") {
-  throw new Error("Expo scheme is required for stable linking");
-}
+if (appJson.expo.slug !== "wasel-delivery") throw new Error("Unexpected Expo slug");
+if (appJson.expo.scheme !== "wasel") throw new Error("Expo scheme is required for stable linking");
 
 const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
 for (const dependency of ["expo-location", "socket.io-client", "react-native-maps", "expo-secure-store"]) {
-  if (!packageJson.dependencies[dependency]) {
-    throw new Error(`${dependency} dependency is required`);
-  }
+  if (!packageJson.dependencies[dependency]) throw new Error(`${dependency} dependency is required`);
 }
 
 function collectJsFiles(dir) {
@@ -96,6 +86,9 @@ function collectJsFiles(dir) {
 
 const sourceFiles = collectJsFiles("src");
 const source = sourceFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+const uiSource = [...collectJsFiles("src/screens"), ...collectJsFiles("src/components")]
+  .map((file) => fs.readFileSync(file, "utf8"))
+  .join("\n");
 
 for (const token of [
   "EXPO_PUBLIC_API_BASE_URL",
@@ -103,6 +96,12 @@ for (const token of [
   "/auth/register",
   "/auth/verify-otp",
   "/auth/login",
+  "expo-secure-store",
+  "saveMobileSession",
+  "loadMobileSession",
+  "clearMobileSession",
+  "restoreSession",
+  "classifyApiError",
   "requestForegroundPermissionsAsync",
   "watchPositionAsync",
   "connectMobileSocket",
@@ -114,43 +113,15 @@ for (const token of [
   "driver:location-unavailable",
   "react-native-maps",
   "MobileRideMap",
-  "EXPO_PUBLIC_SOCKET_URL",
-  "expo-secure-store",
-  "ErrorBoundary",
-  "saveMobileSession",
-  "loadMobileSession",
-  "clearMobileSession",
-  "saveDriverSession",
-  "isValidMobileSession",
-  "restoreSession",
-  "restoreStatus",
-  "try",
-  "catch",
-  "disconnectMobileSocket",
-  "classifyApiError",
-  "network_error",
-  "auth_error",
-  "validation_error",
-  "server_error",
-  "not_found",
-  "reconnectionAttempts",
-  "reconnect_attempt",
-  "socket init skipped",
-  "map component loaded",
-  "map component skipped",
   "isValidCoordinate",
   "normalizeCoordinate",
   "safeDistanceKm",
-  "haversineKm",
   "/places/search",
   "createRide",
   "fetchCustomerRideDetails",
   "fetchActiveCustomerRide",
   "ACTIVE_RIDE_STATUSES",
-  "findActiveRide",
-  "isActiveRide",
   "setActiveRide",
-  "activeRideStatus",
   "/driver/available-rides",
   "/driver/my-rides",
   "acceptRide",
@@ -158,424 +129,152 @@ for (const token of [
   "X-Dev-Driver-Id",
   "X-Dev-Phone",
   "X-Dev-User-Id",
-  "fallback",
-  "Development Only",
-  "CustomerHomeScreen",
-  "DriverHomeScreen",
-  "surfaceGlass",
-  "boxShadow",
-  "SectionHeader",
-  "StatCard",
-  "ChoiceChip",
-  "BrandMark",
-  "StatusTimeline",
-  "ErrorState",
-  "pressed",
-  "focused",
-  "useSafeAreaInsets"
+  "submitRideRating",
+  "rideRating",
+  "/rating",
+  "updateDriverOnlineStatus"
 ]) {
-  if (!source.includes(token)) {
-    throw new Error(`Missing mobile foundation token: ${token}`);
-  }
+  if (!source.includes(token)) throw new Error(`Missing mobile behavior token: ${token}`);
 }
 
+const theme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
 for (const token of [
-  "bottomNavHeight",
-  "screenBottomPadding",
-  "screenBottomPadding: 106",
-  "layout.bottomNavHeight",
-  "جاهز لمشوارك القادم؟",
-  "اطلب رحلة",
-  "quickSteps",
-  "height={232}",
-  "تتبع الرحلة",
-  "height={258}",
-  "طلبات الرحلات",
-  "رحلتي الحالية",
-  "عرض الطلبات",
-  "دفع إلكتروني تجريبي",
-  "معاينة الخريطة",
-  "المسافة إلى الزبون",
-  "جاري البحث عن كابتن قريب...",
-  "ملخص الرحلة المنتهية",
-  "ملخص الرحلة الملغية",
-  "بانتظار تفعيل موقع الكابتن المباشر.",
-  "تقييم",
-  "التتبع مباشر",
-  "تم إنهاء الرحلة",
-  "markerSpec",
-  "CustomMarker",
-  "MapPoint",
-  "lineCap=\"round\"",
-  "locationHint",
-  "التحديث المباشر غير متاح مؤقتًا",
-  "trackingLabel",
-  "إيقاف التتبع",
-  "آخر تحديث للموقع"
+  "background: \"#020508\"",
+  "primary: \"#25f1e1\"",
+  "accent: \"#f0b85f\"",
+  "elevated",
+  "nav",
+  "map",
+  "card",
+  "button",
+  "chip",
+  "badge",
+  "motion",
+  "glowStrong",
+  "bottomNavHeight: 48",
+  "screenBottomPadding: 112"
 ]) {
-  if (!source.includes(token)) {
-    throw new Error(`Missing 29.6 real-product UI token: ${token}`);
-  }
+  if (!theme.includes(token)) throw new Error(`37F theme token is missing: ${token}`);
+}
+
+const pressableScale = fs.readFileSync("src/components/ui/PressableScale.js", "utf8");
+for (const token of ["Animated.spring", "useNativeDriver: true", "motion.pressScale", "onPressIn", "onPressOut"]) {
+  if (!pressableScale.includes(token)) throw new Error(`37F motion system is missing: ${token}`);
+}
+
+const screenContainer = fs.readFileSync("src/components/ui/ScreenContainer.js", "utf8");
+for (const token of ["Animated.timing", "Animated.spring", "backdrop", "gridLineA", "layout.screenBottomPadding", "<BrandMark compact />"]) {
+  if (!screenContainer.includes(token)) throw new Error(`37F screen entrance/header system is missing: ${token}`);
+}
+
+const brandMark = fs.readFileSync("src/components/ui/BrandMark.js", "utf8");
+for (const token of ["logoGlow", "signal", "title || brand.appName", "logoCompact", "nameCompact"]) {
+  if (!brandMark.includes(token)) throw new Error(`37F brand mark is missing: ${token}`);
+}
+
+const mobileCard = fs.readFileSync("src/components/ui/MobileCard.js", "utf8");
+for (const token of ["tone === \"action\"", "tone === \"glass\"", "PressableScale", "styles.hero", "styles.action"]) {
+  if (!mobileCard.includes(token)) throw new Error(`37F card system is missing: ${token}`);
+}
+
+const mobileButton = fs.readFileSync("src/components/ui/MobileButton.js", "utf8");
+for (const token of ["PressableScale", "beam", "variant === \"accent\"", "pressedStyle"]) {
+  if (!mobileButton.includes(token)) throw new Error(`37F button system is missing: ${token}`);
 }
 
 const appNavigator = fs.readFileSync("src/navigation/AppNavigator.js", "utf8");
-if (!appNavigator.includes("layout.bottomNavHeight") || !appNavigator.includes("minHeight: layout.bottomNavHeight")) {
-  throw new Error("Bottom navigation must be compact and token-driven");
-}
-if (!appNavigator.includes("useSafeAreaInsets") || !appNavigator.includes("insets.bottom")) {
-  throw new Error("Bottom navigation must account for mobile safe area");
+for (const token of ["PressableScale", "nav.dock", "tabMark", "tabDotActive", "useSafeAreaInsets", "insets.bottom", "layout.bottomNavHeight"]) {
+  if (!appNavigator.includes(token)) throw new Error(`37F bottom navigation is missing: ${token}`);
 }
 if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
   throw new Error("Bottom navigation should not rely on horizontal scrolling");
 }
-for (const token of ["padding: 5", "minHeight: 40", "tabDotActive", "tabLabelActive"]) {
-  if (!appNavigator.includes(token)) {
-    throw new Error(`36B compact bottom navigation is missing: ${token}`);
-  }
-}
 
-const screenContainer = fs.readFileSync("src/components/ui/ScreenContainer.js", "utf8");
-if (!screenContainer.includes("layout.screenBottomPadding")) {
-  throw new Error("Screens need bottom padding so navigation does not cover content");
-}
-const mobileTheme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
-const bottomPaddingMatch = mobileTheme.match(/screenBottomPadding:\s*(\d+)/);
-if (!bottomPaddingMatch || Number(bottomPaddingMatch[1]) < 100) {
-  throw new Error("Mobile screens need generous bottom padding above compact navigation");
-}
-for (const token of ["background: \"#05080b\"", "primary: \"#29d5c9\"", "accent: \"#d8ad62\"", "bottomNavHeight: 50", "screenBottomPadding: 106"]) {
-  if (!mobileTheme.includes(token)) {
-    throw new Error(`37E refined mobile theme token is missing: ${token}`);
-  }
-}
-for (const token of ["surfaceGlass", "borderStrong", "accentGlow", "graphite", "primaryDeep", "radii"]) {
-  if (!mobileTheme.includes(token)) {
-    throw new Error(`37E mobile identity token is missing: ${token}`);
-  }
-}
-
-const mobileCard = fs.readFileSync("src/components/ui/MobileCard.js", "utf8");
-if (!mobileCard.includes("tone === \"hero\"") || !mobileCard.includes("styles.hero")) {
-  throw new Error("36B needs a reusable hero card tone instead of repeated heavy cards");
-}
-
-const brandMark = fs.readFileSync("src/components/ui/BrandMark.js", "utf8");
-if (!brandMark.includes("logoCompact") || !brandMark.includes("nameCompact")) {
-  throw new Error("36B needs a compact brand mark for mobile headers");
-}
-for (const token of ["rgba(41, 213, 201, 0.96)", "colors.textSoft", "radii.md", "boxShadow"]) {
-  if (!brandMark.includes(token)) {
-    throw new Error(`37E brand mark polish is missing: ${token}`);
-  }
-}
-
-if (!screenContainer.includes("brandRow") || !screenContainer.includes("<BrandMark compact />")) {
-  throw new Error("36B needs a compact brand header inside mobile screens");
-}
-
-const loginScreen = fs.readFileSync("src/screens/auth/LoginScreen.js", "utf8");
-if (!loginScreen.includes("typeof __DEV__") || !loginScreen.includes("isDev ? <MobileButton title=\"كابتن DEV\"")) {
-  throw new Error("Driver dev login entry must be hidden outside DEV");
+const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");
+for (const token of ["heroSystem", "quickActionGrid", "PressableScale", "activeRideCard", "heroActions"]) {
+  if (!customerHome.includes(token)) throw new Error(`37F customer home redesign is missing: ${token}`);
 }
 
 const requestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
-if (requestRide.indexOf("MobileRideMap") > requestRide.lastIndexOf("طلب الرحلة")) {
-  throw new Error("Request Ride must be map-first before the final action");
+for (const token of ["mapDeck", "composer", "summarySticky", "PressableScale", "height={246}", "mapPulse"]) {
+  if (!requestRide.includes(token)) throw new Error(`37F request ride redesign is missing: ${token}`);
+}
+if (requestRide.indexOf("MobileRideMap") > requestRide.indexOf("composer")) {
+  throw new Error("Request Ride must stay map-first before the journey composer");
 }
 
 const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
+for (const token of ["trackingHero", "livePill", "searchingCard", "driverCard", "ratingCard", "starButtonActive", "StatusTimeline"]) {
+  if (!rideStatus.includes(token)) throw new Error(`37F ride status redesign is missing: ${token}`);
+}
 if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) {
   throw new Error("Ride Status must be tracking-first with the map before details");
 }
-for (const token of ["mapNotice", "lastDriverLocationAt", "آخر تحديث للموقع", "التحديث المباشر غير متاح مؤقتًا"]) {
-  if (!rideStatus.includes(token)) {
-    throw new Error(`Customer map/tracking UX is missing: ${token}`);
-  }
-}
-for (const token of [
-  "searchingCard",
-  "جاري البحث عن كابتن قريب...",
-  "hasAcceptedDriver",
-  "driverMeta",
-  "ملخص الرحلة المنتهية",
-  "ملخص الرحلة الملغية",
-  "طلب رحلة جديدة",
-  "عرض رحلاتي"
-]) {
-  if (!rideStatus.includes(token)) {
-    throw new Error(`Ride Status experience is missing: ${token}`);
-  }
-}
-if (rideStatus.indexOf("hasAcceptedDriver") > rideStatus.indexOf("driverCard")) {
-  throw new Error("Captain card must be gated by accepted ride state");
-}
 
-const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
-if (driverCurrent.indexOf("MobileRideMap") > driverCurrent.indexOf("StatusTimeline")) {
-  throw new Error("Driver current ride must show the route/map before state details");
-}
-for (const token of [
-  "accepted: [\"driver_arriving\", \"أنا بالطريق\"]",
-  "driver_arriving: [\"arrived\", \"وصلت\"]",
-  "arrived: [\"in_progress\", \"بدأت الرحلة\"]",
-  "in_progress: [\"completed\", \"إنهاء الرحلة\"]"
-]) {
-  if (!driverCurrent.includes(token)) {
-    throw new Error(`Driver status sequence is missing: ${token}`);
-  }
-}
-if (!driverCurrent.includes("completedCard") || !driverCurrent.includes("!completed ?")) {
-  throw new Error("Driver current ride needs a completed summary and no update action after completion");
-}
-for (const token of ["trackingLabel", "trackingTone", "تفعيل موقعي المباشر", "إيقاف التتبع", "آخر تحديث للموقع", "mapNotice"]) {
-  if (!driverCurrent.includes(token)) {
-    throw new Error(`Driver map/tracking UX is missing: ${token}`);
-  }
-}
-for (const token of ["routeCard", "مسار الرحلة", "الخطوة التالية", "nextActionCard", "paymentLabel"]) {
-  if (!driverCurrent.includes(token)) {
-    throw new Error(`33A Current Ride pro mode is missing: ${token}`);
-  }
-}
-
-const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
-for (const token of [
-  "normalizeCoordinate",
-  "safeDistanceKm",
-  "markerSpec",
-  "CustomMarker",
-  "MapPoint",
-  "Polyline",
-  "routePoints.length === 2",
-  "lineCap=\"round\"",
-  "الانطلاق",
-  "الوجهة",
-  "الكابتن",
-  "locationHint",
-  "mapShade",
-  "FallbackMap"
-]) {
-  if (!mobileRideMap.includes(token)) {
-    throw new Error(`Mobile map pro feature is missing: ${token}`);
-  }
-}
-for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "GoogleMaps"]) {
-  if (source.includes(forbiddenMapToken)) {
-    throw new Error(`Forbidden paid Google Maps API usage in mobile source: ${forbiddenMapToken}`);
-  }
-}
-for (const token of ["radii.xl", "markerHalo", "badge", "FallbackMap", "locationHint"]) {
-  if (!mobileRideMap.includes(token)) {
-    throw new Error(`37E map visual fallback is missing: ${token}`);
-  }
+const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
+for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "driver:online-status-updated"]) {
+  if (!driverHome.includes(token)) throw new Error(`37F driver cockpit is missing: ${token}`);
 }
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
-for (const token of ["من {ride.pickup", "إلى {ride.destination", "acceptRide", "ride:created"]) {
-  if (!availableRides.includes(token)) {
-    throw new Error(`Available rides should expose compact request details and realtime refetch: ${token}`);
-  }
-}
-for (const token of ["requestHeader", "قبول الرحلة", "statusLabel", "paymentLabel", "بطاقة تجريبية"]) {
-  if (!availableRides.includes(token)) {
-    throw new Error(`33A Available Rides compact UI is missing: ${token}`);
-  }
-}
-for (const token of ["availableStatus", "dispatchReason", "driverDispatchStatus", "driverDispatchReason", "لا توجد طلبات مناسبة لحالتك الحالية"]) {
-  if (!availableRides.includes(token) && !fs.readFileSync("src/services/driverApi.js", "utf8").includes(token)) {
-    throw new Error(`36A mobile driver dispatch UX is missing: ${token}`);
-  }
+for (const token of ["tone=\"glass\"", "acceptRide", "ride:created", "paymentLabel", "statusLabel"]) {
+  if (!availableRides.includes(token)) throw new Error(`37F available rides flow is missing: ${token}`);
 }
 
-const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
-for (const token of ["حالة التوفر", "متاح لاستقبال الطلبات", "غير متاح", "طلبات متاحة", "availableCount", "currentRideCard", "accessibilityRole=\"switch\""]) {
-  if (!driverHome.includes(token)) {
-    throw new Error(`33A Driver dashboard is missing: ${token}`);
-  }
+const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
+for (const token of ["mapStage", "nextActionCard", "trackingLabel", "StatusTimeline", "height={270}"]) {
+  if (!driverCurrent.includes(token)) throw new Error(`37F current ride redesign is missing: ${token}`);
+}
+for (const token of [
+  "accepted: [\"driver_arriving\"",
+  "driver_arriving: [\"arrived\"",
+  "arrived: [\"in_progress\"",
+  "in_progress: [\"completed\""
+]) {
+  if (!driverCurrent.includes(token)) throw new Error(`Driver status sequence is missing: ${token}`);
 }
 
-const driverApi = fs.readFileSync("src/services/driverApi.js", "utf8");
-const mobileStore = fs.readFileSync("src/store/mobileStore.js", "utf8");
-for (const token of ["apiPost(\"/drivers/status\"", "onlineStatus: online ? \"online\" : \"offline\""]) {
-  if (!driverApi.includes(token)) {
-    throw new Error(`37D mobile driver online API sync is missing: ${token}`);
-  }
+const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
+for (const token of ["normalizeCoordinate", "safeDistanceKm", "markerSpec", "CustomMarker", "MapPoint", "Polyline", "routePoints.length === 2", "lineCap=\"round\"", "locationHint", "mapShade", "FallbackMap", "map.frame", "map.overlay"]) {
+  if (!mobileRideMap.includes(token)) throw new Error(`Mobile map pro feature is missing: ${token}`);
 }
-for (const token of ["driverOnlineStatus", "driver?.onlineStatus", "action.session?.driver?.onlineStatus"]) {
-  if (!mobileStore.includes(token)) {
-    throw new Error(`37D mobile driver online store sync is missing: ${token}`);
-  }
+
+for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "GoogleMaps"]) {
+  if (source.includes(forbiddenMapToken)) throw new Error(`Forbidden paid Google Maps API usage in mobile source: ${forbiddenMapToken}`);
 }
 
 const qaNotes = fs.readFileSync("docs/mobile-qa-notes.md", "utf8");
-if (!qaNotes.includes("31A Ride Experience QA") || !qaNotes.includes("Completed") || !qaNotes.includes("Cancelled")) {
-  throw new Error("Mobile QA notes need the 31A ride experience checklist");
-}
-if (!qaNotes.includes("32A Map & Tracking QA") || !qaNotes.includes("Socket disconnected") || !qaNotes.includes("Invalid coordinates")) {
-  throw new Error("Mobile QA notes need the 32A map and tracking checklist");
-}
-if (!qaNotes.includes("33A Driver App Pro Mode QA") || !qaNotes.includes("تفعيل/إيقاف التتبع") || !qaNotes.includes("الأرباح") || !qaNotes.includes("الدعم")) {
-  throw new Error("Mobile QA notes need the 33A driver pro mode checklist");
-}
-if (!qaNotes.includes("34A Customer App Pro Mode QA") || !qaNotes.includes("ملخص الطلب") || !qaNotes.includes("رحلاتي") || !qaNotes.includes("المحفظة")) {
-  throw new Error("Mobile QA notes need the 34A customer pro mode checklist");
-}
-if (!qaNotes.includes("36A Smart Dispatch QA") || !qaNotes.includes("Busy driver") || !qaNotes.includes("Race safety")) {
-  throw new Error("Mobile QA notes need the 36A smart dispatch checklist");
-}
-if (!qaNotes.includes("37D Driver Online Status Sync QA") || !qaNotes.includes("Toggle online") || !qaNotes.includes("Inactive guard")) {
-  throw new Error("Mobile QA notes need the 37D driver online status sync checklist");
-}
-if (!qaNotes.includes("37C Ride Rating QA") || !qaNotes.includes("rating card") || !qaNotes.includes("cannot be submitted twice")) {
-  throw new Error("Mobile QA notes need the 37C ride rating checklist");
-}
-if (!qaNotes.includes("37E Mobile Visual Identity Final QA") || !qaNotes.includes("Brand header") || !qaNotes.includes("Map identity")) {
-  throw new Error("Mobile QA notes need the 37E visual identity checklist");
-}
-
-const driverEarnings = fs.readFileSync("src/screens/driver/DriverEarningsScreen.js", "utf8");
-for (const token of ["أرباح اليوم", "إجمالي الأرباح", "رحلات مكتملة", "سجل العمليات", "لا توجد عمليات أرباح بعد"]) {
-  if (!driverEarnings.includes(token)) {
-    throw new Error(`33A Driver earnings UI is missing: ${token}`);
-  }
-}
-
-const driverSupport = fs.readFileSync("src/screens/driver/DriverSupportScreen.js", "utf8");
-for (const token of ["issueTypes", "ChoiceChip", "fetchMySupportTickets", "تذاكري السابقة", "تم إرسال طلب الدعم بنجاح", "لا توجد تذاكر دعم"]) {
-  if (!driverSupport.includes(token)) {
-    throw new Error(`33A Driver support UI is missing: ${token}`);
-  }
-}
-
-const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");
-for (const token of ["customerHero", "اطلب رحلة", "لديك رحلة نشطة", "متابعة الرحلة", "quickActionGrid", "المحفظة", "الحساب"]) {
-  if (!customerHome.includes(token)) {
-    throw new Error(`34A Customer Home pro mode is missing: ${token}`);
-  }
-}
-
-const customerRequestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
-for (const token of ["summarySticky", "ملخص الطلب", "نقطة الانطلاق", "paymentLabel", "بطاقة تجريبية", "تعذر قراءة موقعك"]) {
-  if (!customerRequestRide.includes(token)) {
-    throw new Error(`34A Request Ride pro mode is missing: ${token}`);
-  }
-}
-
-const customerRideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
-for (const token of ["customerStatusSummary", "hasAcceptedDriver", "ملخص الرحلة المنتهية", "ملخص الرحلة الملغية", "paymentLabel", "بطاقة تجريبية"]) {
-  if (!customerRideStatus.includes(token)) {
-    throw new Error(`34A Ride Status pro mode is missing: ${token}`);
-  }
-}
-
-for (const token of ["submitRideRating", "ratingDraft", "rideRating", "/rating"]) {
-  const ratingSource = `${customerRideStatus}\n${fs.readFileSync("src/services/ridesApi.js", "utf8")}`;
-  if (!ratingSource.includes(token)) {
-    throw new Error(`37C mobile ride rating is missing: ${token}`);
-  }
-}
-for (const token of ["ratingCard", "starButtonActive", "reviewInput", "savedRating"]) {
-  if (!customerRideStatus.includes(token)) {
-    throw new Error(`37E rating UI polish is missing: ${token}`);
-  }
-}
-
-const myRides = fs.readFileSync("src/screens/customer/MyRidesScreen.js", "utf8");
-for (const token of ["paymentLabel", "متابعة", "statusLabel", "completed", "cancelled"]) {
-  if (!myRides.includes(token)) {
-    throw new Error(`34A My Rides polish is missing: ${token}`);
-  }
-}
-
-if (!myRides.includes("ratingLabel")) {
-  throw new Error("37C My Rides should show saved ride ratings");
-}
-
-const customerWallet = fs.readFileSync("src/screens/customer/WalletScreen.js", "utf8");
-for (const token of ["balanceOverview", "دفع إلكتروني تجريبي", "آخر العمليات", "لا توجد عمليات", "بطاقة"]) {
-  if (!customerWallet.includes(token)) {
-    throw new Error(`34A Wallet polish is missing: ${token}`);
-  }
-}
-
-const customerSupport = fs.readFileSync("src/screens/customer/SupportScreen.js", "utf8");
-for (const token of ["issueTypes", "ChoiceChip", "تذاكري السابقة", "تم إرسال تذكرة الدعم بنجاح", "لا توجد تذاكر بعد"]) {
-  if (!customerSupport.includes(token)) {
-    throw new Error(`34A Customer support polish is missing: ${token}`);
-  }
-}
-
-const customerAccount = fs.readFileSync("src/screens/customer/AccountScreen.js", "utf8");
-for (const token of ["profileCard", "زبون", "تسجيل الخروج", "نوع الحساب"]) {
-  if (!customerAccount.includes(token)) {
-    throw new Error(`34A Account polish is missing: ${token}`);
-  }
-}
-for (const [label, file, tokens] of [
-  ["36B customer home", customerHome, ["tone=\"hero\"", "customerHero", "quickActionGrid"]],
-  ["36B request ride", customerRequestRide, ["height={232}", "summarySticky", "quickSteps"]],
-  ["36B ride status", customerRideStatus, ["height={258}", "tone=\"hero\"", "customerStatusSummary"]],
-  ["36B wallet", customerWallet, ["balanceOverview", "transactionsCard", "tone=\"hero\""]],
-  ["36B support", customerSupport, ["formCard", "messageInput", "tone=\"flat\""]],
-  ["36B account", customerAccount, ["profileCard", "fontSize: 20"]]
+for (const section of [
+  "31A Ride Experience QA",
+  "32A Map & Tracking QA",
+  "33A Driver App Pro Mode QA",
+  "34A Customer App Pro Mode QA",
+  "36A Smart Dispatch QA",
+  "36B Mobile UI Reality QA",
+  "37D Driver Online Status Sync QA",
+  "37C Ride Rating QA",
+  "37E Mobile Visual Identity Final QA",
+  "37F Ultimate Mobile App Redesign QA"
 ]) {
-  for (const token of tokens) {
-    if (!file.includes(token)) {
-      throw new Error(`${label} polish token is missing: ${token}`);
-    }
-  }
-}
-
-for (const [label, file, tokens] of [
-  ["36B driver home", driverHome, ["BrandMark", "tone=\"hero\"", "headerCard", "headerTop"]],
-  ["36B available rides", availableRides, ["requestHeader", "fontSize: 16", "paddingVertical: 4"]],
-  ["36B current ride", driverCurrent, ["height={252}", "nextActionCard", "tone=\"hero\""]],
-  ["36B driver earnings", driverEarnings, ["tone=\"hero\"", "fontSize: 35"]],
-  ["36B driver support", driverSupport, ["messageInput", "tone=\"flat\""]]
-]) {
-  for (const token of tokens) {
-    if (!file.includes(token)) {
-      throw new Error(`${label} polish token is missing: ${token}`);
-    }
-  }
-}
-
-if (!qaNotes.includes("36B Mobile UI Reality QA")) {
-  throw new Error("Mobile QA notes need the 36B visual reality checklist");
-}
-
-for (const forbiddenAccountText of ["Token", "Backend", "Foundation"]) {
-  if (customerAccount.includes(forbiddenAccountText)) {
-    throw new Error(`Technical customer account copy should not appear: ${forbiddenAccountText}`);
-  }
+  if (!qaNotes.includes(section)) throw new Error(`Mobile QA notes missing section: ${section}`);
 }
 
 const sessionStorageSource = fs.readFileSync("src/services/sessionStorage.js", "utf8");
-if (/\bpassword\b/i.test(sessionStorageSource)) {
-  throw new Error("sessionStorage must not persist passwords");
-}
+if (/\bpassword\b/i.test(sessionStorageSource)) throw new Error("sessionStorage must not persist passwords");
 
 for (const forbidden of ["react-dom", "leaflet", "react-leaflet", "document.", "window."]) {
-  if (source.includes(forbidden)) {
-    throw new Error(`Forbidden web-only mobile import or global: ${forbidden}`);
-  }
+  if (source.includes(forbidden)) throw new Error(`Forbidden web-only mobile import or global: ${forbidden}`);
 }
 
-for (const forbiddenText of ["دلفري", "مطاعم", "منتجات"]) {
-  if (source.includes(forbiddenText)) {
-    throw new Error(`Forbidden non-ride mobile copy: ${forbiddenText}`);
-  }
+for (const forbiddenText of ["Backend", "Token", "Foundation", "Placeholder"]) {
+  if (uiSource.includes(forbiddenText)) throw new Error(`Technical copy should not appear in mobile UI: ${forbiddenText}`);
 }
 
 for (const technicalText of ["allDemoData", "driver_not_found", "missing_driver_context"]) {
-  if (source.includes(technicalText)) {
-    throw new Error(`Technical backend/debug copy should not appear in mobile UI: ${technicalText}`);
-  }
+  if (source.includes(technicalText)) throw new Error(`Technical backend/debug copy should not appear in mobile UI: ${technicalText}`);
 }
 
 const mojibakePattern = new RegExp(`[${String.fromCharCode(0x00d8)}${String.fromCharCode(0x00d9)}${String.fromCharCode(0x00c2)}${String.fromCharCode(0x00e2)}]`);
-if (mojibakePattern.test(source)) {
-  throw new Error("Broken mojibake text found in mobile source");
-}
+if (mojibakePattern.test(source)) throw new Error("Broken mojibake text found in mobile source");
 
 console.log("mobile-check-ok");

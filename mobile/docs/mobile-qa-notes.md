@@ -149,3 +149,19 @@ Use this checklist for the final mobile identity pass:
 6. Map identity: confirm the map frame, markers, distance badge, legend, and fallback card match the premium dark theme.
 7. States: confirm empty, loading, and error states use short Arabic copy without technical words.
 8. Small screens: confirm cards, buttons, inputs, and rating stars stay inside the screen and remain reachable above navigation.
+
+## 37F Ultimate Mobile App Redesign QA
+
+Use this checklist for the full visual rebuild:
+
+1. First 3 seconds: open Expo Go and confirm Home feels like a new product, not the old dark card layout.
+2. New design system: confirm theme tokens include layered graphite backgrounds, electric teal, warm accent, glass surfaces, motion, nav, card, button, chip, badge, and map tokens.
+3. Motion: press primary buttons, chips, ride cards, and bottom tabs; confirm scale/opacity feedback feels smooth and lightweight.
+4. Brand/header: confirm the Wasel mark has a strong signal/glow treatment and page headers feel premium without consuming too much space.
+5. Bottom dock: confirm the floating dock is thinner, numbered, safe-area-aware, and visually different from previous nav.
+6. Customer Home: confirm the hero, active ride, and quick actions are rebuilt around a clear "request ride" command.
+7. Request Ride: confirm the map appears first, the journey composer follows, and the final summary/CTA feels like a command panel.
+8. Ride Status: confirm the tracking map is the hero, live pill is visible, timeline is compact, captain card appears only after acceptance, and rating UI is refined.
+9. Driver app: confirm cockpit, availability strip, action grid, available ride cards, and current ride map/action flow feel built for fast captain use.
+10. Map: confirm markers, badges, legend, and fallback card match the new electronic visual identity without showing coordinates.
+11. Performance: scroll through all tabs and confirm no heavy animation, lag, or Expo Go crash.

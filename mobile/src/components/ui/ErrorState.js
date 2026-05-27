@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radii, spacing } from "../../utils/mobileTheme";
+import { colors, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { MobileButton } from "./MobileButton";
 
 export function ErrorState({ title = "حدث خطأ", message = "تعذر تنفيذ الطلب الآن.", actionTitle, onAction }) {
@@ -16,12 +16,13 @@ export function ErrorState({ title = "حدث خطأ", message = "تعذر تنف
 const styles = StyleSheet.create({
   box: {
     padding: spacing.lg,
-    borderRadius: radii.lg,
+    borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: "rgba(255, 111, 124, 0.34)",
-    backgroundColor: "rgba(255, 111, 124, 0.09)",
+    backgroundColor: "rgba(255, 100, 117, 0.095)",
     gap: spacing.sm,
-    alignItems: "flex-end"
+    alignItems: "flex-end",
+    boxShadow: shadows.dangerGlow
   },
   line: { width: 56, height: 6, borderRadius: 999, backgroundColor: colors.red },
   title: { color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "right" },

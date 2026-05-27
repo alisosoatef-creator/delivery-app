@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors } from "../../utils/mobileTheme";
+import { badge, colors, depth, radii } from "../../utils/mobileTheme";
 
 export function MobileBadge({ label, tone = "neutral" }) {
   return (
@@ -20,16 +20,16 @@ export function MobileBadge({ label, tone = "neutral" }) {
 const styles = StyleSheet.create({
   badge: {
     alignSelf: "flex-start",
-    borderRadius: 999,
-    paddingHorizontal: 11,
+    borderRadius: radii.pill,
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    backgroundColor: "rgba(255, 255, 255, 0.075)",
+    backgroundColor: "rgba(255, 255, 255, 0.07)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.09)"
+    borderColor: depth.hairline
   },
-  success: { backgroundColor: "rgba(67, 230, 162, 0.13)", borderColor: "rgba(67, 230, 162, 0.34)" },
-  warning: { backgroundColor: "rgba(231, 195, 111, 0.14)", borderColor: "rgba(231, 195, 111, 0.36)" },
-  danger: { backgroundColor: "rgba(255, 111, 124, 0.13)", borderColor: "rgba(255, 111, 124, 0.36)" },
-  info: { backgroundColor: "rgba(127, 176, 255, 0.13)", borderColor: "rgba(127, 176, 255, 0.34)" },
-  label: { color: colors.text, fontSize: 12, fontWeight: "900", letterSpacing: 0, textAlign: "center" }
+  success: { backgroundColor: badge.success, borderColor: "rgba(68, 227, 157, 0.34)" },
+  warning: { backgroundColor: badge.warning, borderColor: "rgba(240, 184, 95, 0.36)" },
+  danger: { backgroundColor: badge.danger, borderColor: "rgba(255, 100, 117, 0.36)" },
+  info: { backgroundColor: badge.info, borderColor: "rgba(37, 241, 225, 0.32)" },
+  label: { color: colors.text, fontSize: 11.5, fontWeight: "900", letterSpacing: 0, textAlign: "center" }
 });

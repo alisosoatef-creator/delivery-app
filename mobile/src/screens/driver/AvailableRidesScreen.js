@@ -5,7 +5,7 @@ import { acceptRide, fetchAvailableRides } from "../../services/driverApi";
 import { connectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { statusLabel } from "../../utils/rideStatus";
 
 function paymentLabel(method) {
@@ -102,7 +102,7 @@ export function AvailableRidesScreen() {
         <EmptyState title="لا توجد طلبات الآن" message={dispatchMessage || "عند طلب رحلة من زبون ستظهر هنا."} actionTitle="تحديث" onAction={load} />
       ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone="flat" style={styles.request}>
+        <MobileCard key={ride.id} tone="glass" style={styles.request}>
           <View style={styles.requestHeader}>
             <View style={styles.route}>
               <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
@@ -125,12 +125,12 @@ export function AvailableRidesScreen() {
 
 const styles = StyleSheet.create({
   statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  request: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.038)", borderColor: "rgba(41, 213, 201, 0.14)", boxShadow: shadows.soft },
+  request: { gap: spacing.sm, backgroundColor: "rgba(255, 255, 255, 0.058)", borderColor: depth.tealLine, boxShadow: shadows.glow },
   requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   route: { alignItems: "flex-end", gap: 3 },
   destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   path: { color: colors.muted, fontSize: 12, textAlign: "right" },
   details: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radii.pill, backgroundColor: "rgba(255, 255, 255, 0.06)" },
+  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0, 0, 0, 0.16)", borderWidth: 1, borderColor: depth.hairline },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

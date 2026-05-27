@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
 
 export function InfoRow({ label, value, accent = false }) {
   return (
@@ -17,8 +17,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.sm,
     paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.sm,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.065)"
+    borderBottomColor: depth.hairline
   },
   label: { color: colors.muted, fontWeight: "800", textAlign: "right" },
   accent: { color: colors.primary },
