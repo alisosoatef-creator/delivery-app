@@ -56,6 +56,13 @@
 - Confirm the Dashboard card "تنبيهات تحتاج انتباه" shows the most important 3-5 items and opens the correct admin section.
 - Confirm Socket.IO events trigger safe refetch and that read/clear behavior is local to the current admin session until production persistence is added.
 
+## Admin Support & Complaints QA
+- Open Support and confirm search, status, role, and issue type filters work together.
+- Open a ticket drawer and confirm sender, role, phone, city, status, created time, updated time, and complaint message are visible.
+- For a ticket with `rideId`, confirm linked ride details show pickup, destination, status, fare, payment method, customer, captain, and timeline.
+- Confirm the customer or captain quick info card shows only safe account details and never password hashes, tokens, full card numbers, or CVV values.
+- Close and reopen a ticket from both the table row and the drawer, then confirm the UI updates without a full page refresh.
+
 ## Three Window Ride Test
 - Window 1: Customer creates a ride.
 - Window 2: Driver accepts the ride and updates statuses.

@@ -510,6 +510,25 @@ for (const adminNotificationToken of [
   }
 }
 
+for (const adminSupportProToken of [
+  "ticketPerson",
+  "linkedRideForTicket",
+  "support-ticket-drawer",
+  "support-person-card",
+  "support-linked-ride-card",
+  "Complaint message",
+  "Linked ride",
+  "Customer quick info",
+  "Captain quick info",
+  "AdminTimeline",
+  "Admin Support & Complaints QA"
+]) {
+  const combinedAdminSupportProSource = `${adminUiSource}\n${stylesSource}\n${qaChecklistSource}`;
+  if (!combinedAdminSupportProSource.includes(adminSupportProToken)) {
+    throw new Error(`Admin Support & Complaints Pro is missing: ${adminSupportProToken}`);
+  }
+}
+
 for (const adminSensitiveToken of ["passwordHash", "full card number", "CVV", "token"]) {
   if (adminUiSource.includes(adminSensitiveToken) && !adminUiSource.includes("لا تخزن رقم بطاقة كامل أو CVV") && adminSensitiveToken !== "token") {
     throw new Error(`Admin UI must not expose sensitive data token: ${adminSensitiveToken}`);

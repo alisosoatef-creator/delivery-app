@@ -179,6 +179,7 @@ export function normalizeTicket(ticket = {}) {
     name: ticket.userName || ticket.name || "-",
     phone: ticket.phone || "-",
     role: ticket.role || "customer",
+    city: ticket.city || ticket.cityLabel || ticket.cityId || "",
     type: ticket.type || "-",
     message: ticket.message || "-",
     status: ticket.status || "open",

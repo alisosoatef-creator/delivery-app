@@ -190,7 +190,8 @@ Cash rides are marked `paid` when completed in this development build. VISA is a
 - `GET /api/support/my-tickets?phone=...&role=customer|driver`
   - Returns tickets for the current local user phone and role.
 - `GET /api/admin/support/tickets`
-  - Returns all tickets for admin review.
+  - Returns all tickets for admin review, including `role`, `phone`, optional `rideId`, and ticket timestamps.
+  - The admin UI resolves linked ride, customer, and captain details from the existing admin rides/customers/drivers datasets. A production backend can replace this with a joined detail endpoint later.
 - `PATCH /api/admin/support/tickets/:id/status`
   - Body: `{ "status": "open|closed" }`
   - Updates ticket state and emits `support:ticket-updated`.

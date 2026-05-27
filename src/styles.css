@@ -7071,6 +7071,44 @@ textarea:focus-visible,
   line-height: var(--line-normal);
 }
 
+.admin-support-detail-card {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-soft) 52%, transparent), transparent 70%),
+    var(--surface-muted);
+  padding: var(--space-4);
+}
+
+.admin-support-detail-card .ds-section-header {
+  margin: 0;
+}
+
+.support-ticket-drawer {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+}
+
+.support-person-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--info-soft) 72%, transparent), transparent 74%),
+    var(--surface-muted);
+}
+
+.support-linked-ride-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--green-soft) 70%, transparent), transparent 72%),
+    var(--surface-muted);
+}
+
+.support-linked-ride-card .empty-state {
+  margin: 0;
+  border-style: dashed;
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
 .admin-drawer-actions {
   display: flex;
   flex-wrap: wrap;
