@@ -46,7 +46,10 @@ function migrateDatabase(database) {
     ["durationMinutes", "INTEGER"],
     ["acceptedAt", "TEXT"],
     ["cancelledAt", "TEXT"],
-    ["completedAt", "TEXT"]
+    ["completedAt", "TEXT"],
+    ["rating", "INTEGER"],
+    ["review", "TEXT"],
+    ["ratedAt", "TEXT"]
   ];
 
   for (const [columnName, columnType] of rideMigrations) {
@@ -250,6 +253,12 @@ function captainApplicationRow(row) {
 function driverRow(row) {
   if (!row) return null;
   const onlineStatus = row.status === "active" && row.onlineStatus === "online" ? "online" : "offline";
+  const ratingStats = one(
+    "SELECT COUNT(*) AS count, COALESCE(AVG(rating), 0) AS average FROM rides WHERE driverId = ? AND rating IS NOT NULL",
+    row.id
+  );
+  const ratingCount = Number(ratingStats?.count || 0);
+  const ratingAverage = ratingCount ? Number(Number(ratingStats.average).toFixed(2)) : Number(row.rating || 0);
   return {
     id: row.id,
     applicationId: row.applicationId || undefined,
@@ -268,7 +277,9 @@ function driverRow(row) {
     onlineStatus,
     online: onlineStatus === "online",
     availability: onlineStatus,
-    rating: row.rating,
+    rating: ratingAverage,
+    ratingAverage,
+    ratingCount,
     distanceKm: row.distanceKm,
     etaMinutes: row.etaMinutes,
     lat: row.lat,
@@ -283,6 +294,16 @@ function rideRow(row) {
   const durationMinutes = row.durationMinutes ?? null;
   const hasAcceptedDriver = Boolean(row.driverId) && !["searching", "cancelled", "canceled"].includes(row.status);
   const driver = hasAcceptedDriver ? getDriver(row.driverId) : null;
+  const ratingValue = row.rating == null ? null : Number(row.rating);
+  const rideRating = ratingValue
+    ? {
+        rating: ratingValue,
+        value: ratingValue,
+        comment: row.review || "",
+        review: row.review || "",
+        ratedAt: row.ratedAt || ""
+      }
+    : null;
   return {
     id: row.id,
     customerId: row.customerId || "",
@@ -310,6 +331,11 @@ function rideRow(row) {
     fareIls: row.price,
     paymentMethod: row.paymentMethod,
     status: row.status,
+    rating: rideRating,
+    rideRating,
+    ratingValue,
+    review: row.review || "",
+    ratedAt: row.ratedAt || "",
     dispatchStatus: row.driverId ? "assigned" : row.status === "searching" ? "searching" : "not_assigned",
     hasAcceptedDriver,
     createdAt: row.createdAt,
@@ -907,6 +933,57 @@ export function updateRideStatus(rideId, status) {
     rideId
   );
   return getRide(rideId);
+}
+
+function refreshDriverRating(driverId) {
+  if (!driverId) return null;
+  const stats = one(
+    "SELECT COUNT(*) AS count, COALESCE(AVG(rating), 0) AS average FROM rides WHERE driverId = ? AND rating IS NOT NULL",
+    driverId
+  );
+  const count = Number(stats?.count || 0);
+  if (!count) return getDriver(driverId);
+  const average = Number(Number(stats.average).toFixed(2));
+  run("UPDATE drivers SET rating = ? WHERE id = ?", average, driverId);
+  return getDriver(driverId);
+}
+
+export function createRideRating(rideId, { customerId = "", customerPhone = "", rating, comment = "" } = {}) {
+  const numericRating = Number(rating);
+  if (!Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    return { ok: false, status: 400, error: "invalid_rating" };
+  }
+
+  const ride = getRide(rideId);
+  if (!ride) return { ok: false, status: 404, error: "ride_not_found" };
+
+  const normalizedCustomerId = String(customerId || "").trim();
+  const normalizedPhone = String(customerPhone || "").trim();
+  const belongsToCustomer =
+    (normalizedCustomerId && ride.customerId === normalizedCustomerId) ||
+    (normalizedPhone && ride.customerPhone === normalizedPhone);
+
+  if (!belongsToCustomer) return { ok: false, status: 404, error: "ride_not_found" };
+  if (normalizeRideStatus(ride.status) !== RIDE_STATUSES.completed) {
+    return { ok: false, status: 409, error: "ride_not_completed", ride };
+  }
+  if (ride.rating) {
+    return { ok: false, status: 409, error: "rating_already_exists", ride };
+  }
+
+  const ratedAt = nowIso();
+  const cleanComment = String(comment || "").trim().slice(0, 500);
+  run(
+    "UPDATE rides SET rating = ?, review = ?, ratedAt = ?, updatedAt = ? WHERE id = ?",
+    numericRating,
+    cleanComment,
+    ratedAt,
+    ratedAt,
+    rideId
+  );
+  const ratedRide = getRide(rideId);
+  const driver = refreshDriverRating(ratedRide.driverId);
+  return { ok: true, ride: ratedRide, rating: ratedRide.rating, driver };
 }
 
 export function acceptRide(rideId, driverId) {

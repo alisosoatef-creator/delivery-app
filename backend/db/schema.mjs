@@ -90,7 +90,10 @@ export function createSchema(db) {
       updatedAt TEXT,
       acceptedAt TEXT,
       cancelledAt TEXT,
-      completedAt TEXT
+      completedAt TEXT,
+      rating INTEGER,
+      review TEXT,
+      ratedAt TEXT
     );
 
     CREATE TABLE IF NOT EXISTS support_tickets (

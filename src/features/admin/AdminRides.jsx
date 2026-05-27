@@ -25,6 +25,7 @@ const RIDE_COLUMNS = [
   { key: "distance", label: "Distance", value: (ride) => formatDistance(ride.distanceKm) },
   { key: "fare", label: "Fare", value: (ride) => formatMoney(ride.fareIls) },
   { key: "paymentMethod", label: "Payment", value: (ride) => ride.paymentMethod },
+  { key: "rating", label: "Rating", value: (ride) => ride.ratingValue ? `${ride.ratingValue}/5` : "" },
   { key: "status", label: "Status", value: (ride) => ride.status },
   { key: "createdAt", label: "Created", value: (ride) => ride.createdAt }
 ];
@@ -114,7 +115,7 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
 
       <DataTable
         className="rides-table advanced-admin-table"
-        gridTemplateColumns="minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(120px, .9fr) minmax(140px, 1fr) minmax(220px, 1.6fr) minmax(90px, .8fr) minmax(100px, .8fr) minmax(90px, .8fr) minmax(90px, .8fr) minmax(115px, .9fr) minmax(130px, 1fr) minmax(88px, .7fr)"
+        gridTemplateColumns="minmax(120px, 1fr) minmax(150px, 1.2fr) minmax(120px, .9fr) minmax(140px, 1fr) minmax(220px, 1.6fr) minmax(90px, .8fr) minmax(100px, .8fr) minmax(90px, .8fr) minmax(90px, .8fr) minmax(85px, .7fr) minmax(115px, .9fr) minmax(130px, 1fr) minmax(88px, .7fr)"
         columns={[
           { key: "id", label: textFor(isArabic, "رقم الرحلة", "Ride ID") },
           { key: "customer", label: textFor(isArabic, "الزبون", "Customer") },
@@ -125,6 +126,7 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
           { key: "distance", label: textFor(isArabic, "المسافة", "Distance") },
           { key: "fare", label: textFor(isArabic, "السعر", "Fare") },
           { key: "payment", label: textFor(isArabic, "الدفع", "Payment") },
+          { key: "rating", label: textFor(isArabic, "التقييم", "Rating") },
           { key: "status", label: textFor(isArabic, "الحالة", "Status") },
           { key: "created", label: textFor(isArabic, "الإنشاء", "Created") },
           { key: "details", label: textFor(isArabic, "تفاصيل", "Details") }
@@ -142,6 +144,7 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
             <span>{formatDistance(ride.distanceKm)}</span>
             <span>{formatMoney(ride.fareIls)}</span>
             <span>{paymentMethodLabel(ride.paymentMethod, isArabic)}</span>
+            <span>{ride.ratingValue ? `${ride.ratingValue}/5` : "-"}</span>
             <Badge className="admin-status-badge-ar" tone={adminStatusTone(ride.status)}>{statusLabel(ride.status, isArabic)}</Badge>
             <span>{formatDate(ride.createdAt, isArabic)}</span>
             <Button variant="secondary" size="sm" onClick={() => setSelectedRide(ride)}>
@@ -174,6 +177,7 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
                 { label: textFor(isArabic, "الوقت المتوقع", "ETA"), value: selectedRide.durationMinutes ? `${selectedRide.durationMinutes} min` : "-" },
                 { label: textFor(isArabic, "السعر", "Fare"), value: formatMoney(selectedRide.fareIls) },
                 { label: textFor(isArabic, "طريقة الدفع", "Payment method"), value: paymentMethodLabel(selectedRide.paymentMethod, isArabic) },
+                { label: textFor(isArabic, "تقييم الرحلة", "Ride rating"), value: selectedRide.ratingValue ? `${selectedRide.ratingValue}/5${selectedRide.review ? ` - ${selectedRide.review}` : ""}` : textFor(isArabic, "لم يتم التقييم بعد", "Not rated yet") },
                 { label: textFor(isArabic, "حالة الدفع", "Payment status"), value: selectedRide.paymentStatus || textFor(isArabic, "غير محدد", "Not set") },
                 { label: textFor(isArabic, "تاريخ الإنشاء", "Created at"), value: formatDate(selectedRide.createdAt, isArabic) },
                 { label: textFor(isArabic, "وقت القبول", "Accepted at"), value: formatDate(selectedRide.acceptedAt, isArabic) },

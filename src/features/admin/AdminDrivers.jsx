@@ -11,7 +11,7 @@ const DRIVER_EXPORT_COLUMNS = [
   { key: "plate", label: "Plate", value: (driver) => driver.plate },
   { key: "status", label: "Status", value: (driver) => driver.status },
   { key: "online", label: "Availability", value: (driver) => driver.onlineStatus },
-  { key: "rating", label: "Rating", value: (driver) => driver.rating }
+  { key: "rating", label: "Rating", value: (driver) => `${driver.rating}${driver.ratingCount ? ` (${driver.ratingCount})` : ""}` }
 ];
 
 export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, adminDrivers, updateDriverStatus, adminMutating, adminRides, supportTickets }) {
@@ -108,7 +108,7 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
               <span>{driver.plate}</span>
               <Badge className="admin-status-badge-ar" tone={adminStatusTone(driver.status)}>{statusLabel(driver.status, isArabic)}</Badge>
               <Badge className="admin-status-badge-ar" tone={adminStatusTone(driver.onlineStatus)}>{statusLabel(driver.onlineStatus, isArabic)}</Badge>
-              <span>{driver.rating}</span>
+              <span>{driver.rating}{driver.ratingCount ? ` (${driver.ratingCount})` : ""}</span>
               <span>{formatDate(driver.createdAt, isArabic, { dateOnly: true })}</span>
               <div className="admin-action-row compact-actions">
                 <Button variant="secondary" size="sm" onClick={() => setSelectedDriver(driver)}>{textFor(isArabic, "عرض", "View")}</Button>
@@ -141,7 +141,7 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
                 { label: textFor(isArabic, "الحالة", "Status"), value: statusLabel(selectedDriver.status, isArabic) },
                 { label: textFor(isArabic, "التوفر", "Availability"), value: statusLabel(selectedDriver.onlineStatus, isArabic) },
                 { label: textFor(isArabic, "آخر تحديث للتوفر", "Availability updated"), value: textFor(isArabic, "غير محفوظ حاليًا - TODO", "Not stored yet - TODO") },
-                { label: textFor(isArabic, "التقييم", "Rating"), value: selectedDriver.rating },
+                { label: textFor(isArabic, "متوسط التقييم", "Average rating"), value: selectedDriver.ratingCount ? `${selectedDriver.rating}/5 (${selectedDriver.ratingCount})` : selectedDriver.rating },
                 { label: textFor(isArabic, "عدد الرحلات", "Ride count"), value: driverRides(selectedDriver).length || selectedDriver.ridesCount },
                 { label: textFor(isArabic, "الأرباح التقريبية", "Estimated earnings"), value: formatMoney(driverRides(selectedDriver).reduce((sum, ride) => sum + Number(ride.fareIls || 0), Number(selectedDriver.earnings || 0))) },
                 { label: textFor(isArabic, "تاريخ الإنشاء", "Created at"), value: formatDate(selectedDriver.createdAt, isArabic) }

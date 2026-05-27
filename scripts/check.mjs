@@ -1862,4 +1862,27 @@ for (const authSmokeToken of [
   }
 }
 
+for (const rideRatingToken of [
+  "rating INTEGER",
+  "review TEXT",
+  "ratedAt TEXT",
+  "createRideRating",
+  "rating_already_exists",
+  "ride_not_completed",
+  "invalid_rating",
+  "/api/customer/rides",
+  "ride:rating-created",
+  "ratingValue",
+  "ratingCount",
+  "Ride Rating QA",
+  "completed ride can be rated",
+  "customer should not rate the same ride twice",
+  "admin rides should include submitted ride rating"
+]) {
+  const rideRatingSource = `${backendSchemaSource}\n${backendDatabaseSource}\n${backendSource}\n${backendSmokeSource}\n${appSource}\n${qaChecklistSource}`;
+  if (!rideRatingSource.includes(rideRatingToken)) {
+    throw new Error(`37C ride rating system is missing: ${rideRatingToken}`);
+  }
+}
+
 console.log("project-check-ok");

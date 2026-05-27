@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
-import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails } from "../../services/ridesApi";
+import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails, submitRideRating } from "../../services/ridesApi";
 import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
@@ -45,6 +45,10 @@ export function CustomerRideStatusScreen() {
   const [socketStatus, setSocketStatus] = useState(state.socketStatus || "offline");
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [ratingDraft, setRatingDraft] = useState(5);
+  const [reviewDraft, setReviewDraft] = useState("");
+  const [ratingStatus, setRatingStatus] = useState("idle");
+  const [ratingError, setRatingError] = useState("");
   const session = { token: state.token, role: "customer", phone: state.currentUser?.phone, userId: state.currentUser?.id };
   const pickupPoint = useMemo(() => ridePoint(ride, "pickup"), [ride]);
   const destinationPoint = useMemo(() => ridePoint(ride, "destination"), [ride]);
@@ -162,6 +166,21 @@ export function CustomerRideStatusScreen() {
     }
   }
 
+  async function submitRating() {
+    if (!ride?.id || ride.status !== "completed") return;
+    setRatingStatus("saving");
+    setRatingError("");
+    try {
+      const payload = await submitRideRating(ride.id, { rating: ratingDraft, comment: reviewDraft }, session);
+      setRide(payload.ride);
+      dispatch({ type: "setCurrentRide", ride: payload.ride, area: "customer", screen: "ride-status", toast: "تم حفظ تقييم الرحلة." });
+    } catch (requestError) {
+      setRatingError(apiErrorMessage(requestError, "تعذر حفظ تقييم الرحلة."));
+    } finally {
+      setRatingStatus("idle");
+    }
+  }
+
   if (!ride) {
     return (
       <ScreenContainer showHeader={false}>
@@ -180,6 +199,7 @@ export function CustomerRideStatusScreen() {
   const searching = ride.status === "searching";
   const completed = ride.status === "completed";
   const cancelled = ride.status === "cancelled";
+  const rideRating = ride.rating || ride.rideRating || null;
   const summaryTitle = completed ? "انتهت الرحلة" : cancelled ? "تم إلغاء الرحلة" : statusLabel(ride.status);
   const liveUnavailable = accepted && socketStatus !== "connected";
   const driverLocationTime = timeLabel(driverLocation?.timestamp || state.lastDriverLocationAt);
@@ -262,6 +282,47 @@ export function CustomerRideStatusScreen() {
           {cancelled ? <Text selectable style={styles.muted}>تم إلغاء الرحلة. يمكنك طلب رحلة جديدة في أي وقت.</Text> : null}
         </MobileCard>
       ) : null}
+      {completed ? (
+        <MobileCard tone="flat" style={styles.ratingCard}>
+          <Text selectable style={styles.statusTitle}>قيّم الرحلة</Text>
+          {rideRating ? (
+            <>
+              <Text selectable style={styles.savedRating}>تقييمك: {"★".repeat(Number(rideRating.rating || rideRating.value || 0))}</Text>
+              {rideRating.comment || rideRating.review ? <Text selectable style={styles.muted}>{rideRating.comment || rideRating.review}</Text> : null}
+              <MobileBadge label="تم حفظ التقييم" tone="success" />
+            </>
+          ) : (
+            <>
+              <Text selectable style={styles.muted}>اختر من 1 إلى 5 نجوم، ويمكنك إضافة تعليق اختياري.</Text>
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Pressable
+                    key={star}
+                    accessibilityRole="button"
+                    accessibilityLabel={`تقييم ${star} نجوم`}
+                    onPress={() => setRatingDraft(star)}
+                    style={[styles.starButton, ratingDraft >= star && styles.starButtonActive]}
+                  >
+                    <Text selectable={false} style={[styles.starText, ratingDraft >= star && styles.starTextActive]}>★</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <TextInput
+                value={reviewDraft}
+                onChangeText={setReviewDraft}
+                placeholder="تعليق اختياري عن الرحلة"
+                placeholderTextColor={colors.muted}
+                multiline
+                maxLength={500}
+                style={styles.reviewInput}
+                textAlign="right"
+              />
+              {ratingError ? <Text selectable style={styles.error}>{ratingError}</Text> : null}
+              <MobileButton title="إرسال التقييم" variant="accent" onPress={submitRating} loading={ratingStatus === "saving"} />
+            </>
+          )}
+        </MobileCard>
+      ) : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       <View style={styles.actions}>
         {!finished ? <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} /> : null}
@@ -296,6 +357,33 @@ const styles = StyleSheet.create({
   cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
   driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
   finishedCard: { gap: spacing.xs },
+  ratingCard: { gap: spacing.sm, alignItems: "stretch" },
+  savedRating: { color: colors.accent, fontSize: 18, fontWeight: "900", textAlign: "right" },
+  starsRow: { flexDirection: "row-reverse", justifyContent: "center", gap: spacing.xs },
+  starButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  starButtonActive: { backgroundColor: "rgba(255, 199, 96, 0.16)", borderColor: colors.accent },
+  starText: { color: colors.muted, fontSize: 22, fontWeight: "900" },
+  starTextActive: { color: colors.accent },
+  reviewInput: {
+    minHeight: 76,
+    borderRadius: 18,
+    padding: spacing.sm,
+    color: colors.text,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: colors.border,
+    textAlignVertical: "top",
+    fontWeight: "700"
+  },
   muted: { color: colors.muted, textAlign: "right", lineHeight: 21, fontWeight: "600" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }

@@ -411,6 +411,9 @@ if (!qaNotes.includes("36A Smart Dispatch QA") || !qaNotes.includes("Busy driver
 if (!qaNotes.includes("37D Driver Online Status Sync QA") || !qaNotes.includes("Toggle online") || !qaNotes.includes("Inactive guard")) {
   throw new Error("Mobile QA notes need the 37D driver online status sync checklist");
 }
+if (!qaNotes.includes("37C Ride Rating QA") || !qaNotes.includes("rating card") || !qaNotes.includes("cannot be submitted twice")) {
+  throw new Error("Mobile QA notes need the 37C ride rating checklist");
+}
 
 const driverEarnings = fs.readFileSync("src/screens/driver/DriverEarningsScreen.js", "utf8");
 for (const token of ["أرباح اليوم", "إجمالي الأرباح", "رحلات مكتملة", "سجل العمليات", "لا توجد عمليات أرباح بعد"]) {
@@ -447,11 +450,22 @@ for (const token of ["customerStatusSummary", "hasAcceptedDriver", "ملخص ا�
   }
 }
 
+for (const token of ["submitRideRating", "ratingDraft", "rideRating", "/rating"]) {
+  const ratingSource = `${customerRideStatus}\n${fs.readFileSync("src/services/ridesApi.js", "utf8")}`;
+  if (!ratingSource.includes(token)) {
+    throw new Error(`37C mobile ride rating is missing: ${token}`);
+  }
+}
+
 const myRides = fs.readFileSync("src/screens/customer/MyRidesScreen.js", "utf8");
 for (const token of ["paymentLabel", "متابعة", "statusLabel", "completed", "cancelled"]) {
   if (!myRides.includes(token)) {
     throw new Error(`34A My Rides polish is missing: ${token}`);
   }
+}
+
+if (!myRides.includes("ratingLabel")) {
+  throw new Error("37C My Rides should show saved ride ratings");
 }
 
 const customerWallet = fs.readFileSync("src/screens/customer/WalletScreen.js", "utf8");

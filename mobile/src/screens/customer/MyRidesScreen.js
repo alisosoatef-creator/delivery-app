@@ -12,6 +12,12 @@ function paymentLabel(method) {
   return "نقدًا";
 }
 
+function ratingLabel(ride) {
+  const rating = ride.rating || ride.rideRating;
+  const value = rating?.rating || rating?.value || ride.ratingValue;
+  return value ? `تقييم ${value}/5` : "";
+}
+
 export function MyRidesScreen() {
   const { state, dispatch } = useMobileApp();
   const [rides, setRides] = useState([]);
@@ -59,6 +65,7 @@ export function MyRidesScreen() {
           <View style={styles.metaRow}>
             <Text selectable style={styles.meta}>{money(ride.price || ride.fareIls)}</Text>
             <Text selectable style={styles.meta}>{paymentLabel(ride.paymentMethod)}</Text>
+            {ratingLabel(ride) ? <MobileBadge label={ratingLabel(ride)} tone="success" /> : null}
             {isActiveRide(ride) ? <MobileButton title="متابعة" compact onPress={() => continueRide(ride)} /> : null}
           </View>
         </MobileCard>

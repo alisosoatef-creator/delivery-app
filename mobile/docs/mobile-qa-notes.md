@@ -125,3 +125,14 @@ Use this checklist for captain availability sync on mobile:
 4. Admin sync: open Admin Drivers on web and confirm the same captain shows `online`/`offline` as available/unavailable after refresh or realtime update.
 5. Inactive guard: suspend the captain from Admin and confirm the mobile app cannot switch that captain online.
 6. Current ride safety: if the captain goes unavailable while already on an active ride, confirm the current ride remains usable but new requests are blocked.
+
+## 37C Ride Rating QA
+
+Use this checklist for completed ride ratings on mobile:
+
+1. Complete a customer ride from the driver flow and return to Customer Ride Status.
+2. Confirm the rating card appears only for a completed ride.
+3. Select 1-5 stars, add an optional comment, and submit the rating.
+4. Confirm the saved rating appears instead of the form and cannot be submitted twice.
+5. Open My Rides and confirm the completed ride shows its rating.
+6. Confirm non-completed or cancelled rides do not show a rating form.

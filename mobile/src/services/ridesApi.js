@@ -33,3 +33,14 @@ export async function fetchCustomerRideDetails({ rideId, phone = "", userId = ""
 export function cancelRide(rideId, session = {}) {
   return apiPatch(`/rides/${rideId}/status`, { status: "cancelled" }, { token: session.token, role: session.role || "customer", phone: session.phone, userId: session.userId, customerId: session.userId });
 }
+
+export function submitRideRating(rideId, { rating, comment = "" } = {}, session = {}) {
+  const params = new URLSearchParams();
+  if (session.phone) params.set("phone", session.phone);
+  if (session.userId) params.set("customerId", session.userId);
+  return apiPost(
+    `/customer/rides/${rideId}/rating${params.toString() ? `?${params}` : ""}`,
+    { rating, comment, customerId: session.userId, customerPhone: session.phone },
+    { token: session.token, role: session.role || "customer", phone: session.phone, userId: session.userId, customerId: session.userId }
+  );
+}

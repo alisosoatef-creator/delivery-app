@@ -543,6 +543,16 @@ try {
   });
   assert(customerRideAfterAccept.ride?.driver?.id === approve.captain.id, "customer ride contains driver after accept");
 
+  const earlyRating = await requestRaw(`/api/customer/rides/${rideId}/rating?phone=${encodeURIComponent(phone)}&customerId=${encodeURIComponent(login.user.id)}`, {
+    method: "POST",
+    headers: customerHeaders,
+    body: JSON.stringify({ rating: 5, comment: "Great captain, but the ride is not completed yet." })
+  });
+  assert(
+    earlyRating.response.status === 409 && earlyRating.payload?.error === "ride_not_completed",
+    "customer should not rate a ride before completion"
+  );
+
   socket.emit("join:ride", { rideId });
   const driverLocationEvent = waitForSocketEvent(socket, "driver:location-updated");
   socket.emit("driver:location-updated", {
@@ -607,6 +617,50 @@ try {
   assert(completedPayload.ride?.id === rideId, "ride:completed should emit the completed ride");
   assert(cashPaymentPayload.payment?.rideId === rideId, "completed cash ride should emit payment:created");
   assert(cashPaymentPayload.payment?.method === "cash", "completed cash ride should create a cash payment");
+
+  const invalidRating = await requestRaw(`/api/customer/rides/${rideId}/rating?phone=${encodeURIComponent(phone)}&customerId=${encodeURIComponent(login.user.id)}`, {
+    method: "POST",
+    headers: customerHeaders,
+    body: JSON.stringify({ rating: 6, comment: "Invalid rating should be rejected." })
+  });
+  assert(
+    invalidRating.response.status === 400 && invalidRating.payload?.error === "invalid_rating",
+    "invalid ride rating should be rejected"
+  );
+
+  const rideRating = await request(`/api/customer/rides/${rideId}/rating?phone=${encodeURIComponent(phone)}&customerId=${encodeURIComponent(login.user.id)}`, {
+    method: "POST",
+    headers: customerHeaders,
+    body: JSON.stringify({ rating: 5, comment: "رحلة ممتازة وكابتن محترم." })
+  });
+  assert(rideRating.rating?.rating === 5, "completed ride can be rated");
+  assert(rideRating.ride?.rating?.rating === 5, "rated ride response should include the stored rating");
+
+  const duplicateRating = await requestRaw(`/api/customer/rides/${rideId}/rating?phone=${encodeURIComponent(phone)}&customerId=${encodeURIComponent(login.user.id)}`, {
+    method: "POST",
+    headers: customerHeaders,
+    body: JSON.stringify({ rating: 4, comment: "Duplicate rating should be blocked." })
+  });
+  assert(
+    duplicateRating.response.status === 409 && duplicateRating.payload?.error === "rating_already_exists",
+    "customer should not rate the same ride twice"
+  );
+
+  const ratedCustomerRide = await request(`/api/customer/rides/${rideId}?phone=${encodeURIComponent(phone)}`, {
+    headers: customerHeaders
+  });
+  assert(ratedCustomerRide.ride?.rating?.rating === 5, "customer ride details should include rating after submission");
+  const ratedAdminRides = await request("/api/admin/rides");
+  assert(
+    ratedAdminRides.rides.some((adminRide) => adminRide.id === rideId && adminRide.rating?.rating === 5),
+    "admin rides should include submitted ride rating"
+  );
+  const ratedAdminDrivers = await request("/api/admin/drivers");
+  const ratedAdminDriver = ratedAdminDrivers.drivers.find((driver) => driver.id === approve.captain.id);
+  assert(
+    ratedAdminDriver?.ratingCount >= 1 && Number(ratedAdminDriver.ratingAverage || ratedAdminDriver.rating) >= 5,
+    "admin drivers should include captain rating average and count"
+  );
 
   const customerWallet = await request(`/api/customer/wallet?phone=${encodeURIComponent(phone)}&userId=${encodeURIComponent(login.user.id)}`);
   assert(typeof customerWallet.wallet?.balance === "number", "customer wallet should return a numeric balance");

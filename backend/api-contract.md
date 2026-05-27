@@ -117,6 +117,7 @@ Cleanup never deletes users, approved drivers/captains, pricing rules, or system
 - `POST /api/rides/:id/pay`
 - `GET /api/customer/rides`
 - `GET /api/customer/rides/:id`
+- `POST /api/customer/rides/:id/rating`
 - `PATCH /api/rides/:id/status`
 - `POST /api/rides/:id/status`
 - `PATCH /api/rides/:id/accept`
@@ -125,6 +126,11 @@ Cleanup never deletes users, approved drivers/captains, pricing rules, or system
 New customer rides start with `status = "searching"` and do not include captain details before a driver accepts the ride.
 `PATCH /api/rides/:id/accept` assigns one active, online, not-busy approved driver only when the ride is still `searching`.
 Smart dispatch acceptance errors are intentionally explicit: `ride_not_available`, `driver_busy`, `driver_offline`, `driver_inactive`, `city_not_supported`, and `missing_driver_context`.
+
+`POST /api/customer/rides/:id/rating` stores one customer rating after a ride is `completed`.
+Payload: `{ "rating": 1-5, "comment": "optional text" }`.
+The endpoint verifies that the ride belongs to the customer through `customerId`/`phone` query params or dev headers, rejects non-completed rides with `ride_not_completed`, rejects duplicates with `rating_already_exists`, rejects invalid values with `invalid_rating`, and returns `ride_not_found` when the ride is missing or does not belong to the customer.
+Customer rides and admin rides include `rating`, `ratingValue`, `review`, and `ratedAt`. Driver rows include `ratingAverage` and `ratingCount`, and `drivers.rating` is refreshed from completed ride ratings.
 
 ## Driver
 

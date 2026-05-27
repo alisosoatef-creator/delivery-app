@@ -6,6 +6,7 @@ import {
   acceptRide,
   createDriverFromApplication,
   createRidePayment,
+  createRideRating,
   createOrUpdateCustomerUser,
   createOtpCode,
   databaseInfo,
@@ -825,6 +826,50 @@ async function handleApi(request, response) {
       return;
     }
     sendJson(response, 200, { ok: true });
+    return;
+  }
+
+  const customerRideRatingMatch = url.pathname.match(/^\/api\/customer\/rides\/([^/]+)\/rating$/);
+  if (request.method === "POST" && customerRideRatingMatch) {
+    const body = await readJson(request);
+    const customerId =
+      body.customerId ||
+      url.searchParams.get("customerId") ||
+      url.searchParams.get("userId") ||
+      requestHeader(request, "x-dev-customer-id") ||
+      requestHeader(request, "x-dev-user-id") ||
+      "";
+    const customerPhone =
+      body.customerPhone ||
+      body.phone ||
+      url.searchParams.get("customerPhone") ||
+      url.searchParams.get("phone") ||
+      requestHeader(request, "x-dev-phone") ||
+      "";
+    const result = createRideRating(customerRideRatingMatch[1], {
+      customerId,
+      customerPhone,
+      rating: body.rating,
+      comment: body.comment || body.review || ""
+    });
+    if (!result.ok) {
+      const status = result.status || 400;
+      const messages = {
+        invalid_rating: "Rating must be a whole number from 1 to 5.",
+        ride_not_found: "Ride was not found for this customer.",
+        ride_not_completed: "Ride can be rated only after completion.",
+        rating_already_exists: "This ride already has a rating."
+      };
+      sendJson(response, status, {
+        error: result.error,
+        message: messages[result.error] || "Ride rating could not be saved.",
+        ride: result.ride || undefined
+      });
+      return;
+    }
+    broadcast("ride.rating.created", { ride: result.ride, rating: result.rating, driver: result.driver });
+    emitRideEvent("ride:rating-created", { ride: result.ride, rating: result.rating, driver: result.driver });
+    sendJson(response, 201, { ride: result.ride, rating: result.rating, driver: result.driver });
     return;
   }
 

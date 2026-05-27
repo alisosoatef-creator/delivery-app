@@ -127,7 +127,9 @@ export function normalizeDriver(driver = {}, cityLabel = "-") {
     plate: driver.plate || driver.vehiclePlate || "-",
     status,
     onlineStatus,
-    rating: driver.rating ?? "-",
+    rating: driver.ratingAverage ?? driver.rating ?? "-",
+    ratingAverage: driver.ratingAverage ?? driver.rating ?? "-",
+    ratingCount: driver.ratingCount ?? 0,
     ridesCount: driver.ridesCount ?? driver.trips ?? 0,
     earnings: driver.earningsIls ?? driver.earnings ?? 0,
     createdAt: driver.createdAt || driver.approvedAt || ""
@@ -135,6 +137,8 @@ export function normalizeDriver(driver = {}, cityLabel = "-") {
 }
 
 export function normalizeRide(ride = {}) {
+  const rideRating = ride.rating || ride.rideRating || null;
+  const ratingValue = rideRating?.rating || rideRating?.value || ride.ratingValue || "";
   return {
     ...ride,
     id: ride.id,
@@ -151,6 +155,10 @@ export function normalizeRide(ride = {}) {
     paymentMethod: ride.paymentMethod || "cash",
     paymentStatus: ride.paymentStatus || ride.payment?.status || "",
     status: ride.status || "searching",
+    rating: rideRating,
+    ratingValue,
+    review: rideRating?.comment || rideRating?.review || ride.review || "",
+    ratedAt: rideRating?.ratedAt || ride.ratedAt || "",
     createdAt: ride.createdAt || ride.time || "",
     acceptedAt: ride.acceptedAt || "",
     cancelledAt: ride.cancelledAt || "",

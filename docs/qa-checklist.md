@@ -39,6 +39,15 @@
 - Confirm an active ride is not cancelled when the captain goes offline; only new requests are blocked.
 - Confirm `driver:online-status-updated` triggers admin/driver refetch or UI refresh.
 
+## Ride Rating QA
+- Complete a customer ride and confirm the customer sees a 1-5 star rating card.
+- Try rating a ride before `completed` and confirm the API returns `ride_not_completed`.
+- Submit a valid rating with an optional comment and confirm the ride shows the saved rating.
+- Try rating the same ride again and confirm the API returns `rating_already_exists`.
+- Submit rating `0` or `6` and confirm the API returns `invalid_rating`.
+- Open Admin Rides and confirm the ride rating/comment appears in the table or details drawer.
+- Open Admin Drivers and confirm the captain average rating and rating count update.
+
 ## Admin Flow
 - Use `AdminDevLogin` only in development.
 - Confirm Admin Dashboard loads without showing customer or driver-only controls.
