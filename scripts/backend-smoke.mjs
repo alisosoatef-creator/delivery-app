@@ -260,9 +260,10 @@ try {
 
   const activeDriver = await request(`/api/admin/drivers/${approve.captain.id}/status`, {
     method: "PATCH",
-    body: JSON.stringify({ status: "active" })
+    body: JSON.stringify({ status: "active", onlineStatus: "online" })
   });
   assert(activeDriver.driver.status === "active", "admin driver status patch should reactivate driver");
+  assert(activeDriver.driver.onlineStatus === "online", "admin driver status patch should make the smoke captain available");
 
   const adminDrivers = await request("/api/admin/drivers");
   assert(
@@ -283,6 +284,32 @@ try {
     "X-Dev-Role": "driver",
     "X-Dev-Driver-Id": approve.captain.id,
     "X-Dev-Phone": captainPhone
+  };
+
+  const secondCaptainPhone = `+97059977${Date.now().toString().slice(-4)}`;
+  const secondApplicationResponse = await request("/api/captain-applications", {
+    method: "POST",
+    body: JSON.stringify({
+      fullName: "Smoke Captain Two",
+      phone: secondCaptainPhone,
+      city: "نابلس",
+      age: 34,
+      vehicleType: "Sedan",
+      vehiclePlate: "SMK-2"
+    })
+  });
+  const secondApprove = await request(`/api/admin/captain-applications/${secondApplicationResponse.application.id}/approve`, { method: "PATCH" });
+  const secondDriverDevLogin = await request("/api/driver/dev-login", {
+    method: "POST",
+    headers: driverHeaders,
+    body: JSON.stringify({ driverId: secondApprove.captain.id })
+  });
+  assert(secondDriverDevLogin.driver?.id === secondApprove.captain.id, "second driver dev login should return the real driver id");
+  const secondDriverHeaders = {
+    Authorization: `Bearer ${secondDriverDevLogin.token}`,
+    "X-Dev-Role": "driver",
+    "X-Dev-Driver-Id": secondApprove.captain.id,
+    "X-Dev-Phone": secondCaptainPhone
   };
 
   const quote = await request("/api/rides/quote", {
@@ -371,6 +398,42 @@ try {
     availableBeforeAccept.rides.some((availableRide) => availableRide.id === rideId),
     "driver available rides should include the ride before acceptance"
   );
+  assert(availableBeforeAccept.availableStatus === "ok", "active online driver should be eligible for available rides");
+
+  const offlineAvailable = await request("/api/driver/available-rides?cityId=nablus", { headers: secondDriverHeaders });
+  assert(
+    offlineAvailable.availableStatus === "driver_offline" && offlineAvailable.rides.length === 0,
+    "offline active driver should not receive available rides"
+  );
+
+  const suspendedSecondDriver = await request(`/api/admin/drivers/${secondApprove.captain.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "suspended", onlineStatus: "online" })
+  });
+  assert(suspendedSecondDriver.driver.status === "suspended", "second driver should be suspendable for dispatch eligibility");
+
+  const inactiveAvailable = await request("/api/driver/available-rides?cityId=nablus", { headers: secondDriverHeaders });
+  assert(
+    inactiveAvailable.availableStatus === "driver_inactive" && inactiveAvailable.rides.length === 0,
+    "inactive driver should not receive available rides"
+  );
+
+  const inactiveAccept = await requestRaw(`/api/rides/${rideId}/accept`, {
+    method: "PATCH",
+    headers: secondDriverHeaders,
+    body: JSON.stringify({})
+  });
+  assert(
+    inactiveAccept.response.status === 403 && inactiveAccept.payload?.error === "driver_inactive",
+    "inactive driver should be blocked from accepting rides with a clear dispatch error"
+  );
+
+  const reactivatedSecondDriver = await request(`/api/admin/drivers/${secondApprove.captain.id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status: "active", onlineStatus: "online" })
+  });
+  assert(reactivatedSecondDriver.driver.onlineStatus === "online", "second driver should be online before racing an accepted ride");
+
   const availableByDriverHeaders = await request("/api/driver/available-rides", { headers: activeDriverHeaders });
   assert(
     Array.isArray(availableByDriverHeaders.rides) && availableByDriverHeaders.rides.some((availableRide) => availableRide.id === rideId),
@@ -392,6 +455,35 @@ try {
   assert(acceptedRide.ride.driverId === approve.captain.id, "ride accept endpoint should assign driver id");
   assert(acceptedRide.ride.driver?.id === approve.captain.id, "accepted ride should include driver details");
   assert(acceptedPayload.ride?.id === rideId, "ride:accepted should emit the accepted ride");
+
+  const secondDriverAcceptsTakenRide = await requestRaw(`/api/rides/${rideId}/accept`, {
+    method: "PATCH",
+    headers: secondDriverHeaders,
+    body: JSON.stringify({})
+  });
+  assert(
+    secondDriverAcceptsTakenRide.response.status === 409 && secondDriverAcceptsTakenRide.payload?.error === "ride_not_available",
+    "ride accepted by one driver should not be accepted by another driver"
+  );
+
+  const busyRide = await request("/api/rides", {
+    method: "POST",
+    body: JSON.stringify({ ...ridePayload, pickup: "Busy A", destination: "Busy B" })
+  });
+  const busyAvailable = await request("/api/driver/available-rides?cityId=nablus", { headers: activeDriverHeaders });
+  assert(
+    busyAvailable.availableStatus === "driver_busy" && !busyAvailable.rides.some((availableRide) => availableRide.id === busyRide.ride.id),
+    "busy driver should not receive another available searching ride"
+  );
+  const busyAccept = await requestRaw(`/api/rides/${busyRide.ride.id}/accept`, {
+    method: "PATCH",
+    headers: activeDriverHeaders,
+    body: JSON.stringify({})
+  });
+  assert(
+    busyAccept.response.status === 409 && busyAccept.payload?.error === "driver_busy",
+    "busy driver should be blocked from accepting a second active ride"
+  );
 
   const customerRideAfterAccept = await request(`/api/customer/rides/${rideId}?phone=${encodeURIComponent(phone)}`, {
     headers: customerHeaders

@@ -20,15 +20,31 @@ export function AvailableRidesScreen() {
   const [status, setStatus] = useState("loading");
   const [socketStatus, setSocketStatus] = useState(state.socketStatus || "offline");
   const [error, setError] = useState("");
+  const [dispatchMessage, setDispatchMessage] = useState("");
   const session = { ...state.session, token: state.token, role: "driver", driverId: state.currentUser?.driverId, phone: state.currentUser?.phone, userId: state.currentUser?.id };
 
   function load() {
     setStatus("loading");
     setError("");
+    setDispatchMessage("");
     fetchAvailableRides(session)
-      .then((items) => {
+      .then((payload) => {
+        const items = Array.isArray(payload) ? payload : payload.rides || [];
+        const nextDispatchMessage =
+          !Array.isArray(payload) && payload.availableStatus && payload.availableStatus !== "ok"
+            ? payload.dispatchReason || "لا توجد طلبات مناسبة لحالتك الحالية."
+            : "";
         setRides(items);
-        dispatch({ type: "patch", patch: { availableRides: items, connectionMessage: "" } });
+        setDispatchMessage(nextDispatchMessage);
+        dispatch({
+          type: "patch",
+          patch: {
+            availableRides: items,
+            driverDispatchStatus: Array.isArray(payload) ? "ok" : payload.availableStatus,
+            driverDispatchReason: nextDispatchMessage,
+            connectionMessage: ""
+          }
+        });
       })
       .catch((requestError) => {
         setError(apiErrorMessage(requestError, "تعذر تحميل الرحلات المتاحة."));
@@ -76,7 +92,7 @@ export function AvailableRidesScreen() {
       {status === "loading" ? <LoadingState message="جاري تحميل الطلبات المتاحة..." /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
-        <EmptyState title="لا توجد طلبات الآن" message="عند طلب رحلة من زبون ستظهر هنا." actionTitle="تحديث" onAction={load} />
+        <EmptyState title="لا توجد طلبات الآن" message={dispatchMessage || "عند طلب رحلة من زبون ستظهر هنا."} actionTitle="تحديث" onAction={load} />
       ) : null}
       {rides.map((ride) => (
         <MobileCard key={ride.id} tone="flat" style={styles.request}>

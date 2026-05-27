@@ -81,6 +81,11 @@ function driverOperationError(error, isArabic, fallbackAr, fallbackEn) {
     ride_not_found: ["لم يتم العثور على الرحلة. حدّث القائمة وحاول مرة أخرى.", "Ride was not found. Refresh and try again."],
     driver_not_found: ["لم يتم العثور على الكابتن الموافق عليه.", "Approved captain was not found."],
     driver_not_active: ["الكابتن غير نشط أو موقوف من الإدارة.", "Captain is not active or was suspended."],
+    driver_inactive: ["الكابتن غير نشط أو موقوف من الإدارة.", "Captain is inactive or suspended."],
+    driver_offline: ["الكابتن غير متاح الآن. فعّل حالة أونلاين لاستقبال الطلبات.", "Captain is offline. Go online to receive requests."],
+    driver_busy: ["لديك رحلة نشطة الآن. أنهِ الرحلة الحالية قبل قبول طلب جديد.", "You already have an active ride. Finish it before accepting another request."],
+    ride_not_available: ["الرحلة لم تعد متاحة للقبول.", "This ride is no longer available."],
+    city_not_supported: ["المدينة غير مدعومة لتوزيع الطلبات حاليًا.", "This city is not supported for dispatch yet."],
     ride_already_accepted: ["تم قبول هذه الرحلة من كابتن آخر.", "This ride was already accepted by another captain."],
     ride_not_searching: ["لا يمكن قبول رحلة لم تعد في حالة البحث.", "Only searching rides can be accepted."],
     driver_ride_mismatch: ["هذه الرحلة مرتبطة بكابتن آخر.", "This ride belongs to another captain."],
@@ -418,6 +423,15 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
   const emptyAvailableMessage = state.driverOnline
     ? (isArabic ? "لا توجد رحلات متاحة الآن. استخدم تحديث لجلب الطلبات الجديدة." : "No available rides now. Refresh to fetch new requests.")
     : (isArabic ? "افتح أونلاين حتى تتمكن من قبول الرحلات." : "Go online to accept available rides.");
+  const dispatchAvailableMessage =
+    driverData.availableStatus && !["ok", "idle"].includes(driverData.availableStatus)
+      ? (driverData.dispatchReason || driverOperationError(
+        { payload: { error: driverData.availableStatus } },
+        isArabic,
+        emptyAvailableMessage,
+        emptyAvailableMessage
+      ))
+      : emptyAvailableMessage;
 
   return (
     <div className="driver-dashboard">
@@ -474,6 +488,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
             <span>role: <strong>{state.role || "-"}</strong></span>
             <span>token: <strong>{state.token ? "exists" : "missing"}</strong></span>
             <span>availableStatus: <strong>{driverData.availableStatus}</strong></span>
+            <span>dispatchReason: <strong>{driverData.dispatchReason || "-"}</strong></span>
             <span>myRidesStatus: <strong>{driverData.myRidesStatus}</strong></span>
             <span>available: <strong>{availableRides.length}</strong></span>
             <span>myRides: <strong>{driverRides.length}</strong></span>
@@ -556,7 +571,7 @@ export function DriverPanel({ state, dispatch, t, isArabic, selectedDriver }) {
             ))}
           </div>
         ) : (
-          <div className="empty">{emptyAvailableMessage}</div>
+          <div className="empty">{dispatchAvailableMessage}</div>
         )}
       </section>
 

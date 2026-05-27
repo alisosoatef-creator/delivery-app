@@ -341,6 +341,11 @@ for (const token of ["requestHeader", "قبول الرحلة", "statusLabel", "p
     throw new Error(`33A Available Rides compact UI is missing: ${token}`);
   }
 }
+for (const token of ["availableStatus", "dispatchReason", "driverDispatchStatus", "driverDispatchReason", "لا توجد طلبات مناسبة لحالتك الحالية"]) {
+  if (!availableRides.includes(token) && !fs.readFileSync("src/services/driverApi.js", "utf8").includes(token)) {
+    throw new Error(`36A mobile driver dispatch UX is missing: ${token}`);
+  }
+}
 
 const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
 for (const token of ["حالة التوفر", "متاح لاستقبال الطلبات", "غير متاح", "طلبات متاحة", "availableCount", "currentRideCard", "accessibilityRole=\"switch\""]) {
@@ -361,6 +366,9 @@ if (!qaNotes.includes("33A Driver App Pro Mode QA") || !qaNotes.includes("تفع
 }
 if (!qaNotes.includes("34A Customer App Pro Mode QA") || !qaNotes.includes("ملخص الطلب") || !qaNotes.includes("رحلاتي") || !qaNotes.includes("المحفظة")) {
   throw new Error("Mobile QA notes need the 34A customer pro mode checklist");
+}
+if (!qaNotes.includes("36A Smart Dispatch QA") || !qaNotes.includes("Busy driver") || !qaNotes.includes("Race safety")) {
+  throw new Error("Mobile QA notes need the 36A smart dispatch checklist");
 }
 
 const driverEarnings = fs.readFileSync("src/screens/driver/DriverEarningsScreen.js", "utf8");

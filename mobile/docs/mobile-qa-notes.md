@@ -87,3 +87,15 @@ Use this checklist for the upgraded customer experience:
 7. Wallet: تأكد أن رصيد المحفظة واضح، وأن الدفع الإلكتروني التجريبي مشروح بهدوء.
 8. Support: أرسل تذكرة دعم، واختر نوع المشكلة، وتأكد أن التذاكر السابقة تظهر بشكل مختصر.
 9. Account: تأكد أن الحساب لا يعرض أي معلومات حساسة، وأن زر تسجيل الخروج واضح.
+
+## 36A Smart Dispatch QA
+
+Use this checklist for driver dispatch behavior on mobile:
+
+1. Driver online: sign in as an approved captain, switch availability online, create a customer ride, and confirm the request appears in Available Rides.
+2. Driver offline: switch the captain offline and confirm Available Rides shows no requests with a clear availability message.
+3. Driver inactive: suspend a captain from Admin and confirm the mobile driver app does not show new requests.
+4. Busy driver: accept one ride, create a second ride, and confirm the same captain does not see or accept the second request until the active ride is completed/cancelled.
+5. Race safety: try accepting an already accepted ride from another captain and confirm the app shows a clear not-available message.
+6. City normalization: create requests with Arabic/English city labels and confirm matching city requests still appear.
+7. Realtime/refetch: create a ride while the driver screen is open and confirm the list updates automatically or after tapping refresh.

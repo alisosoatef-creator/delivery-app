@@ -22,6 +22,15 @@
 - Accept a ride and move it through `driver_arriving`, `arrived`, `in_progress`, and `completed`.
 - Test live tracking status with GPS allowed and with GPS denied.
 
+## Smart Dispatch QA
+- Put one approved captain online and confirm a new `searching` ride appears in Available Rides.
+- Put another approved captain offline and confirm no new requests are shown, with a clear offline message.
+- Suspend a captain and confirm no requests are shown, with a clear inactive/suspended message.
+- Accept a ride with Captain A, then confirm Captain B cannot accept the same ride and sees a not-available result.
+- While Captain A has an active ride, create a second ride and confirm Captain A does not see or accept it until the first ride is completed/cancelled.
+- Confirm Arabic/English city names such as `nablus` and `نابلس` do not hide matching requests.
+- If driver location is available, confirm nearby requests are listed before farther requests; if not, confirm same-city fallback still works.
+
 ## Admin Flow
 - Use `AdminDevLogin` only in development.
 - Confirm Admin Dashboard loads without showing customer or driver-only controls.

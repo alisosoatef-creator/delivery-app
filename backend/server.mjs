@@ -33,6 +33,7 @@ import {
   listCities,
   listCustomerRides,
   listCustomers,
+  listDriverActiveRides,
   listDriverRides,
   listDriverRequests,
   listDrivers,
@@ -44,6 +45,7 @@ import {
   listSupportTickets,
   listWalletTransactions,
   markOtpUsed,
+  normalizeDispatchCityId,
   publicUser,
   createSavedPaymentMethod,
   updateCaptainApplicationStatus,
@@ -212,6 +214,91 @@ function safeDriverContext(driver) {
   };
 }
 
+function driverOnlineStatus(driver) {
+  return String(driver?.onlineStatus || driver?.availability || (driver?.online ? "online" : "offline")).trim().toLowerCase();
+}
+
+function isDriverOnlineForDispatch(driver) {
+  return driverOnlineStatus(driver) === "online";
+}
+
+function driverLocationFromRequest(url, driver) {
+  const queryLat = Number(url.searchParams.get("lat"));
+  const queryLng = Number(url.searchParams.get("lng"));
+  if (Number.isFinite(queryLat) && Number.isFinite(queryLng)) return { lat: queryLat, lng: queryLng };
+  const driverLat = Number(driver?.lat);
+  const driverLng = Number(driver?.lng);
+  if (Number.isFinite(driverLat) && Number.isFinite(driverLng)) return { lat: driverLat, lng: driverLng };
+  return null;
+}
+
+function dispatchMessage(code) {
+  const messages = {
+    ok: {
+      message: "Driver is eligible for dispatch.",
+      messageAr: "الكابتن مؤهل لاستقبال الطلبات."
+    },
+    missing_driver_context: {
+      message: "Driver context is required.",
+      messageAr: "بيانات الكابتن مطلوبة لاستقبال الطلبات."
+    },
+    driver_inactive: {
+      message: "Captain is inactive or suspended.",
+      messageAr: "الكابتن غير نشط أو موقوف من الإدارة."
+    },
+    driver_offline: {
+      message: "Captain is offline and will not receive new ride requests.",
+      messageAr: "الكابتن غير متاح حاليًا ولن يستقبل طلبات جديدة."
+    },
+    driver_busy: {
+      message: "Captain already has an active ride.",
+      messageAr: "لدى الكابتن رحلة نشطة حاليًا."
+    },
+    ride_not_available: {
+      message: "Ride is no longer available for acceptance.",
+      messageAr: "الرحلة لم تعد متاحة للقبول."
+    },
+    city_not_supported: {
+      message: "Requested city is not supported for dispatch.",
+      messageAr: "المدينة المطلوبة غير مدعومة لتوزيع الرحلات."
+    }
+  };
+  return messages[code] || messages.ok;
+}
+
+function driverDispatchEligibility(driver, { checkBusy = true } = {}) {
+  if (!driver) {
+    return { ok: false, status: 400, code: "missing_driver_context", ...dispatchMessage("missing_driver_context") };
+  }
+  if (driver.status !== "active") {
+    return { ok: false, status: 403, code: "driver_inactive", driver, ...dispatchMessage("driver_inactive") };
+  }
+  if (!isDriverOnlineForDispatch(driver)) {
+    return { ok: false, status: 403, code: "driver_offline", driver, ...dispatchMessage("driver_offline") };
+  }
+  if (checkBusy) {
+    const activeRide = listDriverActiveRides({ driverId: driver.id })[0] || null;
+    if (activeRide) {
+      return { ok: false, status: 409, code: "driver_busy", driver, activeRide, ...dispatchMessage("driver_busy") };
+    }
+  }
+  return { ok: true, status: 200, code: "ok", driver, ...dispatchMessage("ok") };
+}
+
+function dispatchPayload(code, extra = {}) {
+  const message = dispatchMessage(code);
+  return { error: code, ...message, ...extra };
+}
+
+function resolveDispatchCity(url, driver) {
+  const requestedCity = url.searchParams.get("cityId") || url.searchParams.get("city") || driver?.cityId || driver?.city || "";
+  const cityId = normalizeDispatchCityId(requestedCity);
+  if (requestedCity && !cityId) {
+    return { ok: false, code: "city_not_supported", requestedCity };
+  }
+  return { ok: true, cityId };
+}
+
 function validateDriverRequest(request) {
   const session = devSessionFromRequest(request);
   const driverId = requestHeader(request, "x-dev-driver-id");
@@ -259,17 +346,6 @@ function validateDriverRequest(request) {
       messageAr: "Approved captain was not found for the provided driver context.",
       role: session.role,
       driverId
-    };
-  }
-  if (driver.status !== "active") {
-    return {
-      ok: false,
-      status: 403,
-      error: "driver_not_active",
-      message: "Captain is not active.",
-      messageAr: "Captain is not active.",
-      role: session.role,
-      driverId: driver.id
     };
   }
   return { ok: true, driver, session };
@@ -623,12 +699,47 @@ async function handleApi(request, response) {
 
   if (request.method === "GET" && url.pathname === "/api/driver/available-rides") {
     const headerDriver = request.driverContext || getDriver(requestHeader(request, "x-dev-driver-id"));
-    const cityFilter = backendConfig.isProduction ? (url.searchParams.get("cityId") || headerDriver?.cityId || "") : "";
-    const rides = listAvailableRides({ cityId: cityFilter });
-    debugDriverRequest("available-rides", request, headerDriver, { cityFilter, returned: rides.length });
+    const dispatchEligibility = driverDispatchEligibility(headerDriver);
+    if (!dispatchEligibility.ok) {
+      debugDriverRequest("available-rides blocked", request, headerDriver, {
+        dispatchStatus: dispatchEligibility.code,
+        activeRideId: dispatchEligibility.activeRide?.id || ""
+      });
+      sendJson(response, 200, {
+        driver: safeDriverContext(headerDriver),
+        availableStatus: dispatchEligibility.code,
+        dispatchReason: dispatchEligibility.messageAr,
+        activeRide: dispatchEligibility.activeRide || null,
+        rides: []
+      });
+      return;
+    }
+    const cityResolution = resolveDispatchCity(url, headerDriver);
+    if (!cityResolution.ok) {
+      debugDriverRequest("available-rides city blocked", request, headerDriver, {
+        dispatchStatus: cityResolution.code,
+        requestedCity: cityResolution.requestedCity
+      });
+      sendJson(response, 200, {
+        driver: safeDriverContext(headerDriver),
+        availableStatus: cityResolution.code,
+        dispatchReason: dispatchMessage(cityResolution.code).messageAr,
+        rides: []
+      });
+      return;
+    }
+    const driverLocation = driverLocationFromRequest(url, headerDriver);
+    const rides = listAvailableRides({ cityId: cityResolution.cityId, driverLocation });
+    debugDriverRequest("available-rides", request, headerDriver, {
+      cityFilter: cityResolution.cityId,
+      hasDriverLocation: Boolean(driverLocation),
+      returned: rides.length
+    });
     sendJson(response, 200, {
       driver: safeDriverContext(headerDriver),
       availableStatus: "ok",
+      dispatchReason: dispatchMessage("ok").messageAr,
+      dispatchSort: driverLocation ? "distance" : "city_then_created",
       rides
     });
     return;
@@ -820,40 +931,31 @@ async function handleApi(request, response) {
       });
       return;
     }
-    if (driver.status !== "active") {
-      sendJson(response, 403, {
-        error: "driver_not_active",
-        message: "Captain is not active.",
-        messageAr: "الكابتن غير نشط حاليًا."
-      });
+    const basicEligibility = driverDispatchEligibility(driver, { checkBusy: false });
+    if (!basicEligibility.ok) {
+      sendJson(response, basicEligibility.status, dispatchPayload(basicEligibility.code, {
+        driver: safeDriverContext(driver)
+      }));
       return;
     }
-    if (currentRide.driverId) {
-      sendJson(response, 409, {
-        error: "ride_already_accepted",
-        message: "Ride is already accepted by another captain.",
-        messageAr: "تم قبول هذه الرحلة مسبقًا من كابتن آخر.",
-        driverId: currentRide.driverId,
+    if (currentRide.driverId || currentRide.status !== "searching") {
+      sendJson(response, 409, dispatchPayload("ride_not_available", {
+        driverId: currentRide.driverId || "",
         currentStatus: rideStatusMessage(currentRide.status)
-      });
+      }));
       return;
     }
-    if (currentRide.status !== "searching") {
-      sendJson(response, 409, {
-        error: "ride_not_searching",
-        message: `Ride cannot be accepted because it is ${rideStatusMessage(currentRide.status)}.`,
-        messageAr: `لا يمكن قبول الرحلة لأنها بحالة ${rideStatusMessage(currentRide.status)}.`,
-        currentStatus: rideStatusMessage(currentRide.status)
-      });
+    const busyEligibility = driverDispatchEligibility(driver, { checkBusy: true });
+    if (!busyEligibility.ok) {
+      sendJson(response, busyEligibility.status, dispatchPayload(busyEligibility.code, {
+        driver: safeDriverContext(driver),
+        activeRide: busyEligibility.activeRide || null
+      }));
       return;
     }
     const ride = acceptRide(rideAcceptMatch[1], driverId);
     if (!ride) {
-      sendJson(response, 409, {
-        error: "ride_accept_failed",
-        message: "Ride could not be accepted after validation.",
-        messageAr: "تعذر قبول الرحلة بعد التحقق."
-      });
+      sendJson(response, 409, dispatchPayload("ride_not_available"));
       return;
     }
     broadcast("ride.status.changed", { ride });
@@ -902,7 +1004,7 @@ async function handleApi(request, response) {
     }
     if (driver.status !== "active") {
       sendJson(response, 403, {
-        error: "driver_not_active",
+        error: "driver_inactive",
         message: "Captain is not active.",
         messageAr: "الكابتن غير نشط حاليًا."
       });

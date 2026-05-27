@@ -114,7 +114,8 @@ Cleanup never deletes users, approved drivers/captains, pricing rules, or system
 
 `POST /api/rides/:id/status` remains supported for the current frontend.
 New customer rides start with `status = "searching"` and do not include captain details before a driver accepts the ride.
-`PATCH /api/rides/:id/accept` assigns an active approved driver only when the ride is still `searching`. It returns specific error codes such as `ride_not_searching`, `ride_already_accepted`, `driver_not_active`, and `driver_ride_mismatch` so the frontend can show actionable captain errors.
+`PATCH /api/rides/:id/accept` assigns one active, online, not-busy approved driver only when the ride is still `searching`.
+Smart dispatch acceptance errors are intentionally explicit: `ride_not_available`, `driver_busy`, `driver_offline`, `driver_inactive`, `city_not_supported`, and `missing_driver_context`.
 
 ## Driver
 
@@ -128,8 +129,24 @@ Driver development login is limited to active approved captains in the local dat
 
 Driver endpoints require the development driver context headers after login:
 `Authorization: Bearer <dev-driver-session-token>`, `X-Dev-Role: driver`, `X-Dev-Driver-Id: <drivers.id>`, and `X-Dev-Phone`.
-Unauthorized driver requests return specific errors: `auth_required`, `driver_role_required`, `missing_driver_context`, `driver_not_found`, or `driver_not_active`.
-In development, `GET /api/driver/available-rides` returns all `searching` rides for an active approved captain so Arabic/English city mismatches do not hide new ride requests during testing.
+Unauthorized driver requests return specific errors: `auth_required`, `driver_role_required`, `missing_driver_context`, or `driver_not_found`.
+
+### Smart Dispatch
+
+`GET /api/driver/available-rides` now returns only ride requests that the current captain is eligible to see:
+
+- The captain must be `active`.
+- The captain must be `online`.
+- The captain must not already have an active ride in `accepted`, `driver_arriving`, `arrived`, or `in_progress`.
+- Rides are limited to `searching` rides with no assigned driver.
+- City names are normalized across Arabic, English, and stored city IDs.
+- If the captain location is available through query params or stored driver location, rides are sorted by distance to pickup and include `dispatchDistanceKm`.
+- If location is not available, the endpoint falls back to same-city filtering and creation time ordering.
+
+The response includes `availableStatus`, `dispatchReason`, optional `activeRide`, and `dispatchSort`.
+When the captain is offline, inactive, busy, or the city is unsupported, the endpoint returns an empty `rides` array with a clear status such as `driver_offline`, `driver_inactive`, `driver_busy`, or `city_not_supported` instead of a generic backend error.
+
+Realtime filtering to only eligible driver rooms remains a production TODO. For now `ride:created`, `ride:accepted`, and status events trigger safe refetch on the driver clients.
 
 ## Payments and Wallet
 

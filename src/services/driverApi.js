@@ -34,7 +34,10 @@ export async function fetchAvailableDriverRides({ cityId = "", driverId = "", ph
   return {
     rides: payload?.rides || [],
     driver: payload?.driver || null,
-    availableStatus: payload?.availableStatus || "ok"
+    availableStatus: payload?.availableStatus || "ok",
+    dispatchReason: payload?.dispatchReason || "",
+    dispatchSort: payload?.dispatchSort || "",
+    activeRide: payload?.activeRide || null
   };
 }
 

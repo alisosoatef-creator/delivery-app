@@ -21,7 +21,14 @@ export function driverDevLogin(payload) {
 
 export async function fetchAvailableRides(session = {}) {
   const payload = await apiGet("/driver/available-rides", driverSession(session));
-  return payload?.rides || [];
+  return {
+    rides: payload?.rides || [],
+    driver: payload?.driver || null,
+    availableStatus: payload?.availableStatus || "ok",
+    dispatchReason: payload?.dispatchReason || "",
+    dispatchSort: payload?.dispatchSort || "",
+    activeRide: payload?.activeRide || null
+  };
 }
 
 export async function fetchDriverRides(session = {}) {

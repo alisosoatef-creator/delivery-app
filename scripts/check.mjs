@@ -494,6 +494,9 @@ for (const adminSensitiveToken of ["passwordHash", "full card number", "CVV", "t
 if (!qaChecklistSource.includes("Admin Super Control QA") || !qaChecklistSource.includes("RESET_DEMO_DATA")) {
   throw new Error("QA checklist must include Admin Super Control QA and records cleanup confirmation.");
 }
+if (!qaChecklistSource.includes("Smart Dispatch QA") || !qaChecklistSource.includes("driver_offline") && !qaChecklistSource.includes("offline")) {
+  throw new Error("QA checklist must include Smart Dispatch QA coverage.");
+}
 
 for (const blockedAdminRoleToken of ["Operations", "Finance", "Dispatcher", "operations dashboard", "finance dashboard", "dispatcher"]) {
   if (adminUiSource.includes(blockedAdminRoleToken)) {
@@ -1455,6 +1458,30 @@ for (const driverUnauthorizedFixToken of [
   const combinedDriverUnauthorizedSource = `${appSource}\n${backendSource}\n${backendSecuritySource}\n${backendSmokeSource}`;
   if (!combinedDriverUnauthorizedSource.includes(driverUnauthorizedFixToken)) {
     throw new Error(`Driver unauthorized/available-rides fix is missing: ${driverUnauthorizedFixToken}`);
+  }
+}
+
+for (const smartDispatchToken of [
+  "driverDispatchEligibility",
+  "normalizeDispatchCityId",
+  "listDriverActiveRides",
+  "driver_offline",
+  "driver_inactive",
+  "driver_busy",
+  "ride_not_available",
+  "city_not_supported",
+  "dispatchReason",
+  "dispatchSort",
+  "dispatchDistanceKm",
+  "active online driver should be eligible for available rides",
+  "offline active driver should not receive available rides",
+  "inactive driver should not receive available rides",
+  "busy driver should be blocked from accepting a second active ride",
+  "ride accepted by one driver should not be accepted by another driver"
+]) {
+  const combinedSmartDispatchSource = `${appSource}\n${backendSource}\n${backendDatabaseSource}\n${backendSmokeSource}`;
+  if (!combinedSmartDispatchSource.includes(smartDispatchToken)) {
+    throw new Error(`Smart dispatch logic is missing: ${smartDispatchToken}`);
   }
 }
 

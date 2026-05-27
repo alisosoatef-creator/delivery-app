@@ -22,7 +22,7 @@ export function classifyApiError(status) {
 
 function fallbackMessage(status, payload = null) {
   if (!status) return "لا يمكن الاتصال بالخادم حاليًا. تحقق من الشبكة و API URL.";
-  if (status === 401 || status === 403) return "انتهت الجلسة أو لا تملك صلاحية لهذا الطلب.";
+  if (status === 401 || status === 403) return payload?.messageAr || payload?.message || "انتهت الجلسة أو لا تملك صلاحية لهذا الطلب.";
   if (status === 404) return "العنصر المطلوب غير موجود.";
   if (status === 400 || status === 422) return payload?.messageAr || "تحقق من البيانات المدخلة.";
   if (status >= 500) return "حدث خطأ في الخادم. حاول لاحقًا.";

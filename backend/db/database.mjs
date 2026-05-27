@@ -309,6 +309,7 @@ function rideRow(row) {
     fareIls: row.price,
     paymentMethod: row.paymentMethod,
     status: row.status,
+    dispatchStatus: row.driverId ? "assigned" : row.status === "searching" ? "searching" : "not_assigned",
     hasAcceptedDriver,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
@@ -407,6 +408,65 @@ function paymentProvider(method = "cash", requestedMethod = "") {
 
 function paidWalletTypes() {
   return new Set(["credit", "refund", "release"]);
+}
+
+const ACTIVE_DRIVER_RIDE_STATUSES = new Set([
+  RIDE_STATUSES.accepted,
+  RIDE_STATUSES.driverArriving,
+  RIDE_STATUSES.arrived,
+  RIDE_STATUSES.inProgress
+]);
+
+function validDispatchCoordinate(point) {
+  const lat = Number(point?.lat);
+  const lng = Number(point?.lng);
+  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+}
+
+function dispatchCoordinateFromRide(ride) {
+  const lat = Number(ride?.pickupLat);
+  const lng = Number(ride?.pickupLng);
+  return validDispatchCoordinate({ lat, lng }) ? { lat, lng } : null;
+}
+
+function haversineDispatchKm(from, to) {
+  if (!validDispatchCoordinate(from) || !validDispatchCoordinate(to)) return null;
+  const earthRadiusKm = 6371;
+  const toRadians = (value) => (Number(value) * Math.PI) / 180;
+  const dLat = toRadians(to.lat - from.lat);
+  const dLng = toRadians(to.lng - from.lng);
+  const lat1 = toRadians(from.lat);
+  const lat2 = toRadians(to.lat);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function rankDispatchRides(rides, driverLocation = null) {
+  if (!validDispatchCoordinate(driverLocation)) return rides;
+  return rides
+    .map((ride) => {
+      const pickupPoint = dispatchCoordinateFromRide(ride);
+      const dispatchDistanceKm = haversineDispatchKm(driverLocation, pickupPoint);
+      return {
+        ...ride,
+        dispatchDistanceKm: dispatchDistanceKm === null ? null : Number(dispatchDistanceKm.toFixed(2))
+      };
+    })
+    .sort((first, second) => {
+      const firstDistance = Number.isFinite(first.dispatchDistanceKm) ? first.dispatchDistanceKm : Number.POSITIVE_INFINITY;
+      const secondDistance = Number.isFinite(second.dispatchDistanceKm) ? second.dispatchDistanceKm : Number.POSITIVE_INFINITY;
+      if (firstDistance !== secondDistance) return firstDistance - secondDistance;
+      return String(first.createdAt || "").localeCompare(String(second.createdAt || ""));
+    });
+}
+
+export function normalizeDispatchCityId(value = "") {
+  const normalizedCity = normalizeCityId(value, "");
+  if (!normalizedCity) return "";
+  const city = one("SELECT id FROM cities WHERE id = ?", normalizedCity);
+  return city?.id || "";
 }
 
 export function databaseInfo() {
@@ -788,12 +848,13 @@ export function listRides() {
   return many("SELECT * FROM rides ORDER BY createdAt DESC").map(rideRow);
 }
 
-export function listAvailableRides({ cityId = "" } = {}) {
+export function listAvailableRides({ cityId = "", driverLocation = null } = {}) {
   const normalizedCity = cityId ? normalizeCityId(cityId) : "";
   const query = normalizedCity
     ? "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL AND city = ? ORDER BY createdAt ASC"
     : "SELECT * FROM rides WHERE status = 'searching' AND driverId IS NULL ORDER BY createdAt ASC";
-  return (normalizedCity ? many(query, normalizedCity) : many(query)).map(rideRow);
+  const rides = (normalizedCity ? many(query, normalizedCity) : many(query)).map(rideRow);
+  return rankDispatchRides(rides, driverLocation);
 }
 
 export function listCustomerRides({ customerId = "", customerPhone = "" } = {}) {
@@ -875,6 +936,24 @@ export function listDriverRides({ driverId = "", phone = "" } = {}) {
   const driver = driverId ? getDriver(driverId) : phone ? getDriverByPhone(phone) : null;
   if (!driver) return [];
   return many("SELECT * FROM rides WHERE driverId = ? ORDER BY createdAt DESC", driver.id).map(rideRow);
+}
+
+export function listDriverActiveRides({ driverId = "", phone = "" } = {}) {
+  const driver = driverId ? getDriver(driverId) : phone ? getDriverByPhone(phone) : null;
+  if (!driver) return [];
+  return many(
+    `
+      SELECT * FROM rides
+      WHERE driverId = ?
+        AND status IN ('accepted', 'driver_arriving', 'arrived', 'in_progress')
+      ORDER BY updatedAt DESC, createdAt DESC
+    `,
+    driver.id
+  ).map(rideRow);
+}
+
+export function getDriverActiveRide(driverId = "") {
+  return listDriverActiveRides({ driverId }).find((ride) => ACTIVE_DRIVER_RIDE_STATUSES.has(ride.status)) || null;
 }
 
 export function updateDriverRideStatus(rideId, { driverId, status }) {
