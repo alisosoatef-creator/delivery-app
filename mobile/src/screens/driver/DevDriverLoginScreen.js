@@ -42,7 +42,7 @@ export function DevDriverLoginScreen() {
   return (
     <ScreenContainer showHeader={false}>
       <BrandMark />
-      <MobileCard tone="soft">
+      <MobileCard tone="hero">
         <MobileBadge label="Development Only" tone="warning" />
         <Text selectable style={styles.title}>مدخل الكابتن</Text>
         <Text selectable style={styles.subtitle}>هذا المدخل للتطوير فقط، ولا يفعّل طلبات الانضمام قبل موافقة الإدارة.</Text>
@@ -57,7 +57,7 @@ export function DevDriverLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  title: { color: colors.text, fontSize: 23, fontWeight: "800", textAlign: "right" },
-  subtitle: { color: colors.muted, lineHeight: 21, textAlign: "right", marginBottom: spacing.xs },
+  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
+  subtitle: { color: colors.muted, lineHeight: 20, textAlign: "right", marginBottom: spacing.xs, fontSize: 12 },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

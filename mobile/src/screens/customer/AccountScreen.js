@@ -1,4 +1,4 @@
-import { StyleSheet, Text } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { logoutCustomer } from "../../services/authApi";
 import { clearMobileSession } from "../../services/sessionStorage";
@@ -22,15 +22,18 @@ export function AccountScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="بياناتك الأساسية وخيارات الخروج الآمن من التطبيق.">
-      <MobileCard tone="gold" style={styles.profileCard}>
-        <MobileBadge label="زبون" tone="success" />
+    <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="بيانات الدخول وخيارات الحساب بشكل مختصر.">
+      <MobileCard tone="hero" style={styles.profileCard}>
+        <View style={styles.profileTop}>
+          <View style={styles.avatar}><Text selectable={false} style={styles.avatarText}>ز</Text></View>
+          <MobileBadge label="زبون" tone="success" />
+        </View>
         <Text selectable style={styles.name}>{user.fullName || user.name || "زبون"}</Text>
         <Text selectable style={styles.phone}>{user.phone || "-"}</Text>
       </MobileCard>
 
       <MobileCard tone="flat">
-        <SectionHeader title="تفاصيل الحساب" subtitle="نحافظ على بيانات الدخول بدون عرض معلومات حساسة داخل الشاشة." />
+        <SectionHeader title="تفاصيل الحساب" subtitle="معلومات أساسية دون أي بيانات حساسة." />
         <InfoRow label="المدينة" value={user.city || state.selectedCity || "-"} accent />
         <InfoRow label="العمر" value={user.age ? String(user.age) : "-"} />
         <InfoRow label="نوع الحساب" value="زبون" />
@@ -42,7 +45,10 @@ export function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
-  profileCard: { gap: 6 },
-  name: { color: colors.text, fontWeight: "900", fontSize: 24, textAlign: "right" },
-  phone: { color: colors.muted, textAlign: "right", fontWeight: "800" }
+  profileCard: { gap: 5 },
+  profileTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
+  avatar: { width: 38, height: 38, borderRadius: 14, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center" },
+  avatarText: { color: colors.black, fontWeight: "900", fontSize: 17 },
+  name: { color: colors.text, fontWeight: "900", fontSize: 20, textAlign: "right" },
+  phone: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12 }
 });

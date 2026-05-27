@@ -8,14 +8,14 @@ export function DriverEarningsScreen() {
   const completedRides = 0;
 
   return (
-    <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="ملخص سريع وواضح لأداء اليوم والعمليات المالية.">
-      <MobileCard tone="gold" style={styles.hero}>
+    <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="ملخص سريع لأداء اليوم والعمليات المالية.">
+      <MobileCard tone="hero" style={styles.hero}>
         <View style={styles.heroHeader}>
           <MobileBadge label="تجريبي" tone="warning" />
           <Text selectable style={styles.heroLabel}>إجمالي الأرباح</Text>
         </View>
         <Text selectable style={styles.total}>{money(totalEarnings)}</Text>
-        <Text selectable style={styles.caption}>الأرقام الحالية مبدئية للتجربة وسيتم ربط تفاصيل الأرباح والتسويات المالية لاحقًا.</Text>
+        <Text selectable style={styles.caption}>الأرقام الحالية للتجربة وسيتم ربط التسويات المالية لاحقًا.</Text>
       </MobileCard>
 
       <View style={styles.stats}>
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   hero: { gap: spacing.sm },
   heroHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   heroLabel: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  total: { color: colors.text, fontSize: 42, fontWeight: "900", textAlign: "right" },
-  caption: { color: colors.muted, textAlign: "right", lineHeight: 22, fontWeight: "800" },
+  total: { color: colors.text, fontSize: 35, fontWeight: "900", textAlign: "right" },
+  caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "800", fontSize: 12 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm }
 });

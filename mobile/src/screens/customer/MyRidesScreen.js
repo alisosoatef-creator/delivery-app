@@ -41,14 +41,14 @@ export function MyRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="رحلاتي" subtitle="قائمة مختصرة لكل المشاوير السابقة والنشطة." compact>
+    <ScreenContainer title="رحلاتي" subtitle="رحلاتك النشطة والسابقة في قائمة خفيفة." compact>
       {status === "loading" ? <LoadingState /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
         <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة لتظهر هنا." actionTitle="طلب رحلة" onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
       ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "soft" : "flat"} style={styles.rideCard}>
+        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "hero" : "flat"} style={styles.rideCard}>
           <View style={styles.rideHeader}>
             <View style={styles.rideTitleWrap}>
               <Text selectable style={styles.rideTitle}>{ride.destination || "رحلة"}</Text>
@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
   rideCard: { gap: spacing.xs },
   rideHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   rideTitleWrap: { flex: 1, alignItems: "flex-end", gap: 3 },
-  rideTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
+  rideTitle: { color: colors.text, fontSize: 15.5, fontWeight: "900", textAlign: "right" },
   ridePath: { color: colors.muted, fontSize: 12, textAlign: "right" },
-  metaRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm, justifyContent: "space-between" },
+  metaRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, justifyContent: "space-between", flexWrap: "wrap" },
   meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" }
 });

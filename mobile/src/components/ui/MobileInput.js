@@ -38,14 +38,14 @@ const styles = StyleSheet.create({
   field: { gap: spacing.xs },
   label: { color: colors.textSoft, fontSize: 12, fontWeight: "700", textAlign: "right" },
   input: {
-    minHeight: 48,
+    minHeight: 45,
     borderRadius: radii.sm,
     borderColor: "rgba(255, 255, 255, 0.12)",
     borderWidth: 1,
     color: colors.text,
-    backgroundColor: "rgba(3, 7, 18, 0.54)",
-    paddingHorizontal: spacing.md,
-    fontSize: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.042)",
+    paddingHorizontal: spacing.sm + 2,
+    fontSize: 13.5,
     fontWeight: "600"
   },
   multiline: {

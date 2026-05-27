@@ -167,6 +167,7 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 
   return (
     <View style={[styles.wrapper, { height }]}>
+      <View pointerEvents="none" style={styles.mapShade} />
       <MapView style={StyleSheet.absoluteFillObject} initialRegion={initialRegion} region={initialRegion}>
         {routePoints.length === 2 ? (
           <Polyline
@@ -201,15 +202,20 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(49, 228, 214, 0.26)",
+    borderColor: "rgba(42, 218, 206, 0.22)",
     backgroundColor: colors.surfaceStrong,
     boxShadow: shadows.lift
   },
+  mapShade: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(6, 9, 12, 0.04)",
+    zIndex: 1
+  },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.1)"
   },
@@ -218,7 +224,7 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     bottom: spacing.sm,
     color: colors.black,
-    backgroundColor: colors.primary,
+    backgroundColor: "rgba(42, 218, 206, 0.92)",
     borderRadius: 999,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
@@ -232,17 +238,17 @@ const styles = StyleSheet.create({
     bottom: spacing.sm,
     flexDirection: "row-reverse",
     gap: spacing.xs,
-    maxWidth: "58%",
+    maxWidth: "54%",
     flexWrap: "wrap"
   },
   legendText: {
     color: colors.text,
-    backgroundColor: "rgba(7, 10, 13, 0.68)",
+    backgroundColor: "rgba(7, 10, 13, 0.62)",
     borderRadius: radii.pill,
     overflow: "hidden",
     paddingHorizontal: spacing.sm,
     paddingVertical: 5,
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "800"
   },
   markerHalo: {
@@ -297,13 +303,13 @@ const styles = StyleSheet.create({
   fallback: {
     gap: spacing.sm,
     justifyContent: "flex-end",
-    borderRadius: radii.xl,
+    borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: "rgba(49, 228, 214, 0.2)",
     backgroundColor: colors.surfaceStrong,
     padding: spacing.md,
     overflow: "hidden",
-    boxShadow: shadows.lift
+    boxShadow: shadows.soft
   },
   fallbackGrid: {
     position: "absolute",

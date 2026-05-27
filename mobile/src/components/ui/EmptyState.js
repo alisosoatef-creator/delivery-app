@@ -15,20 +15,20 @@ export function EmptyState({ title = "لا توجد بيانات", message = "",
 
 const styles = StyleSheet.create({
   box: {
-    padding: spacing.lg,
-    borderRadius: radii.lg,
+    padding: spacing.md,
+    borderRadius: radii.md,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: spacing.sm,
+    gap: spacing.xs,
     backgroundColor: "rgba(255, 255, 255, 0.045)",
     alignItems: "flex-end"
   },
   orb: {
-    width: 44,
-    height: 6,
+    width: 34,
+    height: 5,
     borderRadius: 999,
     backgroundColor: colors.primary
   },
-  title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 17 },
-  message: { color: colors.muted, lineHeight: 22, textAlign: "right" }
+  title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15.5 },
+  message: { color: colors.muted, lineHeight: 20, textAlign: "right", fontSize: 12.5 }
 });

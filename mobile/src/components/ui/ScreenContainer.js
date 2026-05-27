@@ -1,5 +1,6 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { colors, layout, spacing, typography } from "../../utils/mobileTheme";
+import { BrandMark } from "./BrandMark";
 
 export function ScreenContainer({
   title,
@@ -20,9 +21,12 @@ export function ScreenContainer({
       <View style={styles.topGlow} />
       {showHeader ? (
         <View style={[styles.header, compact && styles.headerCompact]}>
-          {eyebrow ? <Text selectable style={styles.eyebrow}>{eyebrow}</Text> : null}
+          <View style={styles.brandRow}>
+            <BrandMark compact />
+            {eyebrow ? <Text selectable style={styles.eyebrow}>{eyebrow}</Text> : null}
+          </View>
           <Text selectable style={styles.title}>{title}</Text>
-          {subtitle ? <Text selectable style={styles.subtitle}>{subtitle}</Text> : null}
+          {subtitle ? <Text selectable numberOfLines={2} style={styles.subtitle}>{subtitle}</Text> : null}
         </View>
       ) : null}
       {children}
@@ -35,13 +39,13 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: {
     padding: layout.screenPadding,
-    gap: spacing.md,
-    paddingTop: spacing.lg,
+    gap: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: layout.screenBottomPadding
   },
   contentCompact: {
     gap: spacing.sm,
-    paddingTop: spacing.md
+    paddingTop: spacing.sm
   },
   topGlow: {
     position: "absolute",
@@ -55,13 +59,20 @@ const styles = StyleSheet.create({
   header: {
     gap: spacing.xxs,
     alignItems: "flex-end",
-    paddingVertical: spacing.xs
+    paddingVertical: spacing.xxs
   },
   headerCompact: {
     paddingVertical: spacing.xxs
   },
+  brandRow: {
+    alignSelf: "stretch",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
   eyebrow: { color: colors.primary, fontSize: typography.caption, fontWeight: "800", textAlign: "right" },
-  title: { color: colors.text, fontSize: typography.title, fontWeight: "800", textAlign: "right", letterSpacing: 0 },
-  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
+  title: { color: colors.text, fontSize: typography.title, fontWeight: "900", textAlign: "right", letterSpacing: 0 },
+  subtitle: { color: colors.muted, fontSize: 12.5, lineHeight: 19, textAlign: "right" },
   footer: { paddingTop: spacing.sm }
 });

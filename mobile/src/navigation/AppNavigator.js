@@ -147,14 +147,14 @@ const styles = StyleSheet.create({
   shell: { flex: 1 },
   tabsShell: {
     position: "absolute",
-    left: spacing.md,
-    right: spacing.md,
+    left: spacing.lg,
+    right: spacing.lg,
     minHeight: layout.bottomNavHeight,
-    borderRadius: radii.xl,
-    backgroundColor: "rgba(11, 16, 21, 0.92)",
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(8, 13, 17, 0.9)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    padding: spacing.xs,
+    borderColor: "rgba(255, 255, 255, 0.085)",
+    padding: 5,
     boxShadow: shadows.soft
   },
   tabs: {
@@ -166,28 +166,28 @@ const styles = StyleSheet.create({
   tab: {
     flex: 1,
     minWidth: 0,
-    minHeight: 46,
-    borderRadius: radii.lg,
+    minHeight: 40,
+    borderRadius: radii.md,
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
     paddingHorizontal: 2
   },
-  tabActive: { backgroundColor: "rgba(49, 228, 214, 0.12)" },
+  tabActive: { backgroundColor: "rgba(42, 218, 206, 0.095)" },
   tabPressed: { transform: [{ scale: 0.98 }], opacity: 0.9 },
   tabDot: {
-    width: 4,
-    height: 4,
+    width: 3,
+    height: 3,
     borderRadius: 999,
     backgroundColor: "rgba(255, 255, 255, 0.16)"
   },
   tabDotActive: {
-    width: 18,
+    width: 15,
     backgroundColor: colors.primary
   },
   tabLabel: {
     color: colors.muted,
-    fontSize: 10.5,
+    fontSize: 10,
     fontWeight: "700"
   },
   tabLabelActive: {

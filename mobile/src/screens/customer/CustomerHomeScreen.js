@@ -19,15 +19,15 @@ export function CustomerHomeScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <View style={styles.customerHero}>
+      <MobileCard tone="hero" style={styles.customerHero}>
         <BrandMark compact />
         <View style={styles.heroCopy}>
           <Text selectable style={styles.greeting}>أهلًا {firstName}</Text>
           <Text selectable style={styles.title}>جاهز لمشوارك القادم؟</Text>
-          <Text selectable style={styles.subtitle}>اختر وجهتك وشاهد السعر ثم اطلب كابتن قريب خلال لحظات.</Text>
+          <Text selectable style={styles.subtitle}>وجهتك، السعر، والكابتن القريب في تجربة واحدة سريعة.</Text>
         </View>
         <MobileButton title="اطلب رحلة" variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
-      </View>
+      </MobileCard>
 
       {activeRide ? (
         <MobileCard tone="soft" style={styles.activeRideCard}>
@@ -43,8 +43,8 @@ export function CustomerHomeScreen() {
       ) : null}
 
       <View style={styles.stats}>
-        <StatCard label="رحلاتي" value="سجل" hint="السابقة والنشطة" tone="blue" />
-        <StatCard label="الدفع" value="نقدًا" hint="الخيار الأساسي" />
+        <StatCard label="رحلاتي" value="سجل" hint="نشطة وسابقة" tone="blue" />
+        <StatCard label="الدفع" value="نقدًا" hint="أو بطاقة تجريبية" />
       </View>
 
       <MobileCard tone="flat" style={styles.shortcuts}>
@@ -65,11 +65,11 @@ export function CustomerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  customerHero: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.sm },
+  customerHero: { gap: spacing.sm, alignItems: "flex-end" },
   heroCopy: { alignItems: "flex-end", gap: 3 },
   greeting: { color: colors.primary, fontSize: 14, fontWeight: "800", textAlign: "right" },
-  title: { color: colors.text, fontSize: 28, lineHeight: 35, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "right" },
+  title: { color: colors.text, fontSize: 25, lineHeight: 31, fontWeight: "900", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
   activeRideCard: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },

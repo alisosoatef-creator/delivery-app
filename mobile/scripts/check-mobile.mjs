@@ -182,14 +182,14 @@ for (const token of [
 for (const token of [
   "bottomNavHeight",
   "screenBottomPadding",
-  "screenBottomPadding: 122",
+  "screenBottomPadding: 106",
   "layout.bottomNavHeight",
   "جاهز لمشوارك القادم؟",
   "اطلب رحلة",
-  "الخريطة أولًا",
-  "height={255}",
+  "quickSteps",
+  "height={232}",
   "تتبع الرحلة",
-  "height={300}",
+  "height={258}",
   "طلبات الرحلات",
   "رحلتي الحالية",
   "عرض الطلبات",
@@ -228,6 +228,11 @@ if (!appNavigator.includes("useSafeAreaInsets") || !appNavigator.includes("inset
 if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
   throw new Error("Bottom navigation should not rely on horizontal scrolling");
 }
+for (const token of ["padding: 5", "minHeight: 40", "tabDotActive", "tabLabelActive"]) {
+  if (!appNavigator.includes(token)) {
+    throw new Error(`36B compact bottom navigation is missing: ${token}`);
+  }
+}
 
 const screenContainer = fs.readFileSync("src/components/ui/ScreenContainer.js", "utf8");
 if (!screenContainer.includes("layout.screenBottomPadding")) {
@@ -235,8 +240,27 @@ if (!screenContainer.includes("layout.screenBottomPadding")) {
 }
 const mobileTheme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
 const bottomPaddingMatch = mobileTheme.match(/screenBottomPadding:\s*(\d+)/);
-if (!bottomPaddingMatch || Number(bottomPaddingMatch[1]) < 110) {
+if (!bottomPaddingMatch || Number(bottomPaddingMatch[1]) < 100) {
   throw new Error("Mobile screens need generous bottom padding above compact navigation");
+}
+for (const token of ["background: \"#06090c\"", "primary: \"#2adace\"", "accent: \"#ddb062\"", "bottomNavHeight: 54", "screenBottomPadding: 106"]) {
+  if (!mobileTheme.includes(token)) {
+    throw new Error(`36B refined mobile theme token is missing: ${token}`);
+  }
+}
+
+const mobileCard = fs.readFileSync("src/components/ui/MobileCard.js", "utf8");
+if (!mobileCard.includes("tone === \"hero\"") || !mobileCard.includes("styles.hero")) {
+  throw new Error("36B needs a reusable hero card tone instead of repeated heavy cards");
+}
+
+const brandMark = fs.readFileSync("src/components/ui/BrandMark.js", "utf8");
+if (!brandMark.includes("logoCompact") || !brandMark.includes("nameCompact")) {
+  throw new Error("36B needs a compact brand mark for mobile headers");
+}
+
+if (!screenContainer.includes("brandRow") || !screenContainer.includes("<BrandMark compact />")) {
+  throw new Error("36B needs a compact brand header inside mobile screens");
 }
 
 const loginScreen = fs.readFileSync("src/screens/auth/LoginScreen.js", "utf8");
@@ -318,6 +342,7 @@ for (const token of [
   "الوجهة",
   "الكابتن",
   "locationHint",
+  "mapShade",
   "FallbackMap"
 ]) {
   if (!mobileRideMap.includes(token)) {
@@ -433,6 +458,39 @@ for (const token of ["profileCard", "زبون", "تسجيل الخروج", "نو
     throw new Error(`34A Account polish is missing: ${token}`);
   }
 }
+for (const [label, file, tokens] of [
+  ["36B customer home", customerHome, ["tone=\"hero\"", "customerHero", "quickActionGrid"]],
+  ["36B request ride", customerRequestRide, ["height={232}", "summarySticky", "quickSteps"]],
+  ["36B ride status", customerRideStatus, ["height={258}", "tone=\"hero\"", "customerStatusSummary"]],
+  ["36B wallet", customerWallet, ["balanceOverview", "transactionsCard", "tone=\"hero\""]],
+  ["36B support", customerSupport, ["formCard", "messageInput", "tone=\"flat\""]],
+  ["36B account", customerAccount, ["profileCard", "fontSize: 20"]]
+]) {
+  for (const token of tokens) {
+    if (!file.includes(token)) {
+      throw new Error(`${label} polish token is missing: ${token}`);
+    }
+  }
+}
+
+for (const [label, file, tokens] of [
+  ["36B driver home", driverHome, ["BrandMark", "tone=\"hero\"", "headerCard", "headerTop"]],
+  ["36B available rides", availableRides, ["requestHeader", "fontSize: 16", "paddingVertical: 4"]],
+  ["36B current ride", driverCurrent, ["height={252}", "nextActionCard", "tone=\"hero\""]],
+  ["36B driver earnings", driverEarnings, ["tone=\"hero\"", "fontSize: 35"]],
+  ["36B driver support", driverSupport, ["messageInput", "tone=\"flat\""]]
+]) {
+  for (const token of tokens) {
+    if (!file.includes(token)) {
+      throw new Error(`${label} polish token is missing: ${token}`);
+    }
+  }
+}
+
+if (!qaNotes.includes("36B Mobile UI Reality QA")) {
+  throw new Error("Mobile QA notes need the 36B visual reality checklist");
+}
+
 for (const forbiddenAccountText of ["Token", "Backend", "Foundation"]) {
   if (customerAccount.includes(forbiddenAccountText)) {
     throw new Error(`Technical customer account copy should not appear: ${forbiddenAccountText}`);

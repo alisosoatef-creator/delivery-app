@@ -58,15 +58,15 @@ export function SupportScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="اختر نوع المشكلة واكتب رسالتك باختصار، وسيتابعها فريق الإدارة.">
-      <MobileCard tone="gold" style={styles.formCard}>
-        <SectionHeader title="كيف نساعدك؟" subtitle="كلما كانت الرسالة أوضح كان الحل أسرع." />
+    <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="أرسل طلبًا مختصرًا وسنتابعه من لوحة الإدارة.">
+      <MobileCard tone="flat" style={styles.formCard}>
+        <SectionHeader title="كيف نساعدك؟" subtitle="اختر النوع ثم اكتب التفاصيل المهمة فقط." />
         <View style={styles.chips}>
           {issueTypes.map((item) => (
             <ChoiceChip key={item.value} label={item.label} selected={type === item.value} onPress={() => setType(item.value)} />
           ))}
         </View>
-        <MobileInput label="رسالتك" value={message} onChangeText={setMessage} placeholder="اكتب تفاصيل المشكلة" multiline />
+        <MobileInput label="رسالتك" value={message} onChangeText={setMessage} placeholder="اكتب تفاصيل المشكلة" multiline style={styles.messageInput} />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         {success ? <Text selectable style={styles.success}>{success}</Text> : null}
         <MobileButton title="إرسال تذكرة" onPress={submit} disabled={!message.trim()} />
@@ -92,11 +92,12 @@ export function SupportScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.md },
+  formCard: { gap: spacing.sm },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   error: { color: colors.red, textAlign: "right", fontWeight: "800" },
   success: { color: colors.green, textAlign: "right", fontWeight: "800" },
-  ticket: { paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs },
+  messageInput: { minHeight: 96 },
+  ticket: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs },
   ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
   ticketMessage: { color: colors.muted, lineHeight: 22, textAlign: "right" }

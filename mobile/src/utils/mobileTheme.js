@@ -1,24 +1,24 @@
 export const colors = {
-  background: "#070a0d",
-  backgroundAlt: "#0b1015",
-  graphite: "#11171d",
-  surface: "rgba(17, 23, 29, 0.96)",
-  surfaceStrong: "#131b22",
-  surfaceSoft: "rgba(25, 34, 42, 0.86)",
-  surfaceGlass: "rgba(255, 255, 255, 0.065)",
-  border: "rgba(255, 255, 255, 0.105)",
-  borderStrong: "rgba(49, 228, 214, 0.34)",
+  background: "#06090c",
+  backgroundAlt: "#0a0f13",
+  graphite: "#10161b",
+  surface: "rgba(14, 21, 26, 0.96)",
+  surfaceStrong: "#111a20",
+  surfaceSoft: "rgba(20, 30, 36, 0.88)",
+  surfaceGlass: "rgba(255, 255, 255, 0.052)",
+  border: "rgba(255, 255, 255, 0.085)",
+  borderStrong: "rgba(42, 218, 206, 0.28)",
   text: "#f7fbfb",
-  textSoft: "#d7e1e4",
-  muted: "#91a0a6",
-  mutedStrong: "#647277",
-  primary: "#31e4d6",
-  primaryDeep: "#0b958e",
-  accent: "#f2b84b",
-  accentSoft: "#ffe0a3",
-  gold: "#f2b84b",
-  goldDeep: "#946226",
-  amber: "#f2b84b",
+  textSoft: "#d5e0e2",
+  muted: "#8c9aa0",
+  mutedStrong: "#5e6b71",
+  primary: "#2adace",
+  primaryDeep: "#087b76",
+  accent: "#ddb062",
+  accentSoft: "#f1d59c",
+  gold: "#ddb062",
+  goldDeep: "#80623a",
+  amber: "#ddb062",
   green: "#42e79c",
   greenDeep: "#11764f",
   red: "#ff6f7c",
@@ -30,49 +30,49 @@ export const colors = {
 };
 
 export const gradients = {
-  app: ["#070a0d", "#0b1015", "#101a20"],
-  primary: ["#31e4d6", "#75a7ff"],
-  gold: ["#ffe0a3", "#f2b84b"],
+  app: ["#06090c", "#0a1014", "#0f181d"],
+  primary: ["#2adace", "#5fa9ff"],
+  gold: ["#f1d59c", "#ddb062"],
   danger: ["#ff8a95", "#d84c5c"]
 };
 
 export const radii = {
   xs: 8,
   sm: 12,
-  md: 16,
-  lg: 22,
-  xl: 28,
+  md: 14,
+  lg: 19,
+  xl: 24,
   pill: 999
 };
 
 export const spacing = {
   xxs: 4,
   xs: 7,
-  sm: 10,
-  md: 14,
-  lg: 20,
-  xl: 28
+  sm: 9,
+  md: 13,
+  lg: 18,
+  xl: 24
 };
 
 export const typography = {
-  hero: 30,
-  title: 23,
-  section: 17,
+  hero: 27,
+  title: 21,
+  section: 16,
   body: 14,
   caption: 11
 };
 
 export const shadows = {
-  soft: "0 12px 28px rgba(0, 0, 0, 0.34)",
-  lift: "0 18px 42px rgba(0, 0, 0, 0.42)",
-  glow: "0 16px 38px rgba(49, 228, 214, 0.12)",
-  accentGlow: "0 16px 38px rgba(242, 184, 75, 0.13)"
+  soft: "0 10px 24px rgba(0, 0, 0, 0.28)",
+  lift: "0 14px 34px rgba(0, 0, 0, 0.36)",
+  glow: "0 14px 32px rgba(42, 218, 206, 0.105)",
+  accentGlow: "0 14px 32px rgba(221, 176, 98, 0.11)"
 };
 
 export const layout = {
   screenPadding: spacing.md,
-  bottomNavHeight: 62,
-  screenBottomPadding: 122
+  bottomNavHeight: 54,
+  screenBottomPadding: 106
 };
 
 export const brand = {

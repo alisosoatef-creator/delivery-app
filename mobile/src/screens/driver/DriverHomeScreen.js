@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
+import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatCard } from "../../components/ui";
 import { clearMobileSession } from "../../services/sessionStorage";
 import { disconnectMobileSocket } from "../../services/socketClient";
 import { useMobileApp } from "../../store/mobileStore";
@@ -21,19 +21,22 @@ export function DriverHomeScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <View style={styles.header}>
-        <MobileBadge label={available ? "متاح لاستقبال الطلبات" : "غير متاح"} tone={available ? "success" : "warning"} />
+      <MobileCard tone="hero" style={styles.headerCard}>
+        <View style={styles.headerTop}>
+          <MobileBadge label={available ? "متاح لاستقبال الطلبات" : "غير متاح"} tone={available ? "success" : "warning"} />
+          <BrandMark compact />
+        </View>
         <Text selectable style={styles.title}>لوحة الكابتن</Text>
         <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
         <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
-      </View>
+      </MobileCard>
 
       <View style={styles.stats}>
         <StatCard label="طلبات متاحة" value={String(availableCount)} hint={available ? "جاهز" : "متوقف"} tone={available ? "green" : "warning"} />
         <StatCard label="اليوم" value={money(0)} hint="أرباح تجريبية" />
       </View>
 
-      <MobileCard tone={available ? "soft" : "flat"} style={styles.availabilityCard}>
+      <MobileCard tone="flat" style={styles.availabilityCard}>
         <View style={styles.availabilityHeader}>
           <View style={styles.availabilityCopy}>
             <Text selectable style={styles.sectionTitle}>حالة التوفر</Text>
@@ -60,7 +63,7 @@ export function DriverHomeScreen() {
         </MobileCard>
       ) : null}
 
-      <MobileCard tone="soft">
+      <MobileCard tone="flat">
         <Text selectable style={styles.sectionTitle}>إجراءات سريعة</Text>
         <View style={styles.actions}>
           <MobileButton title="عرض الطلبات" variant="accent" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
@@ -79,19 +82,20 @@ export function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { alignItems: "flex-end", gap: spacing.xs, paddingTop: spacing.sm },
-  title: { color: colors.primary, fontSize: 14, fontWeight: "700", textAlign: "right" },
-  name: { color: colors.text, fontWeight: "800", fontSize: 28, textAlign: "right" },
-  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "600" },
+  headerCard: { gap: spacing.xs },
+  headerTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  title: { color: colors.primary, fontSize: 13, fontWeight: "800", textAlign: "right" },
+  name: { color: colors.text, fontWeight: "900", fontSize: 24, textAlign: "right" },
+  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "700", fontSize: 12 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 16, fontWeight: "800", textAlign: "right" },
-  helper: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "700" },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
+  helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 },
   availabilityCard: { gap: spacing.xs },
   availabilityHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
   toggle: {
-    width: 58,
-    height: 34,
+    width: 54,
+    height: 31,
     borderRadius: 999,
     padding: 4,
     alignItems: "flex-start",
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(66, 231, 156, 0.16)",
     borderColor: "rgba(66, 231, 156, 0.4)"
   },
-  toggleKnob: { width: 24, height: 24, borderRadius: 999, backgroundColor: colors.muted },
+  toggleKnob: { width: 21, height: 21, borderRadius: 999, backgroundColor: colors.muted },
   toggleKnobOn: { backgroundColor: colors.green },
   currentRideCard: { gap: spacing.xs },
   actions: { gap: spacing.sm },

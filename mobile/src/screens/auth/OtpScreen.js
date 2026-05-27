@@ -27,7 +27,7 @@ export function OtpScreen() {
 
   return (
     <ScreenContainer title="تأكيد الحساب" subtitle={`أدخل رمز التفعيل للرقم ${state.pendingPhone || "-"}.`} compact>
-      <MobileCard tone="soft" style={styles.card}>
+      <MobileCard tone="hero" style={styles.card}>
         <MobileBadge label="OTP تجريبي" tone="warning" />
         <Text selectable style={styles.code}>1234</Text>
         <Text selectable style={styles.hint}>هذا الرمز للتطوير فقط وسيستبدل لاحقًا بخدمة OTP حقيقية.</Text>
@@ -41,7 +41,7 @@ export function OtpScreen() {
 
 const styles = StyleSheet.create({
   card: { gap: spacing.sm },
-  code: { color: colors.primary, fontSize: 42, fontWeight: "800", textAlign: "center" },
-  hint: { color: colors.muted, textAlign: "center", lineHeight: 21 },
+  code: { color: colors.primary, fontSize: 36, fontWeight: "900", textAlign: "center" },
+  hint: { color: colors.muted, textAlign: "center", lineHeight: 20, fontSize: 12 },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

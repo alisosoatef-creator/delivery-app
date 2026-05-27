@@ -195,9 +195,9 @@ export function CurrentRideScreen() {
             </View>
             <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
           </View>
-          <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={285} />
+          <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={252} />
           {socketStatus !== "connected" ? <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، ويمكنك المتابعة يدويًا.</Text> : null}
-          <MobileCard tone="soft" style={styles.routeCard}>
+          <MobileCard tone="flat" style={styles.routeCard}>
             <View style={styles.routeHeader}>
               <MobileBadge label={statusLabel(currentRide.status)} tone={completed ? "success" : "info"} />
               <Text selectable style={styles.cardTitle}>مسار الرحلة</Text>
@@ -214,7 +214,7 @@ export function CurrentRideScreen() {
             </View>
           </MobileCard>
 
-          <MobileCard tone="soft">
+          <MobileCard tone="flat">
             <StatusTimeline status={currentRide.status} />
             <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
             <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
@@ -237,14 +237,14 @@ export function CurrentRideScreen() {
               </View>
             </MobileCard>
           ) : (
-            <MobileCard tone="soft" style={styles.completedCard}>
+            <MobileCard tone="hero" style={styles.completedCard}>
               <Text selectable style={styles.cardTitle}>تم إنهاء الرحلة</Text>
               <Text selectable style={styles.muted}>تم حفظ الرحلة ضمن سجل الكابتن. يمكنك العودة للطلبات لاستقبال رحلة جديدة.</Text>
               <MobileButton title="عرض الطلبات" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} />
             </MobileCard>
           )}
           {action ? (
-            <MobileCard tone="gold" style={styles.nextActionCard}>
+            <MobileCard tone="hero" style={styles.nextActionCard}>
               <Text selectable style={styles.nextActionHint}>الخطوة التالية</Text>
               <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0])} />
             </MobileCard>
@@ -258,13 +258,13 @@ export function CurrentRideScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
+  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
-  cardTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
+  cardTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
-  routeCard: { gap: spacing.sm },
+  routeCard: { gap: spacing.xs },
   routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   routePoints: { gap: spacing.xs },
   routePoint: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border },
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  nextActionCard: { gap: spacing.sm },
+  nextActionCard: { gap: spacing.xs },
   nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
   completedCard: { gap: spacing.sm }
 });

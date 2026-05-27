@@ -32,7 +32,7 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: 45,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     boxShadow: shadows.glow
   },
   compact: {
-    minHeight: 40,
+    minHeight: 36,
     paddingHorizontal: spacing.sm
   },
   secondary: {
@@ -74,6 +74,6 @@ const styles = StyleSheet.create({
   pressed: { transform: [{ scale: 0.975 }], opacity: 0.88 },
   content: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs },
   icon: { color: colors.black, fontWeight: "900", fontSize: 14 },
-  label: { color: "#031315", fontWeight: "800", fontSize: 14, letterSpacing: 0, textAlign: "center" },
+  label: { color: "#031315", fontWeight: "900", fontSize: 13.5, letterSpacing: 0, textAlign: "center" },
   secondaryLabel: { color: colors.text }
 });

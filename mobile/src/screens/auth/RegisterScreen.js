@@ -46,7 +46,7 @@ export function RegisterScreen() {
       <View style={styles.header}>
         <BrandMark compact />
         <Text selectable style={styles.title}>حساب زبون جديد</Text>
-        <Text selectable style={styles.subtitle}>املأ البيانات الأساسية ثم فعّل الحساب برمز OTP التجريبي.</Text>
+        <Text selectable style={styles.subtitle}>بيانات أساسية ثم تفعيل سريع برمز OTP التجريبي.</Text>
       </View>
       <MobileCard tone="flat" style={styles.form}>
         <MobileInput label="الاسم الكامل" value={form.fullName} onChangeText={(value) => update("fullName", value)} />
@@ -68,7 +68,7 @@ export function RegisterScreen() {
 
 const styles = StyleSheet.create({
   header: { gap: spacing.xs, alignItems: "flex-end", paddingTop: spacing.sm },
-  title: { color: colors.text, fontSize: 25, fontWeight: "800", textAlign: "right" },
+  title: { color: colors.text, fontSize: 23, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
   form: { gap: spacing.sm },
   row: { flexDirection: "row-reverse", gap: spacing.sm },

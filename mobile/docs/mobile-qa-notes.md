@@ -99,3 +99,18 @@ Use this checklist for driver dispatch behavior on mobile:
 5. Race safety: try accepting an already accepted ride from another captain and confirm the app shows a clear not-available message.
 6. City normalization: create requests with Arabic/English city labels and confirm matching city requests still appear.
 7. Realtime/refetch: create a ride while the driver screen is open and confirm the list updates automatically or after tapping refresh.
+
+## 36B Mobile UI Reality QA
+
+Use this checklist after reviewing the app on a real device:
+
+1. Brand header: confirm the compact Wasel mark appears clearly without taking too much vertical space.
+2. Bottom navigation: confirm it is slim, the active state is visible, and the last card/button on every tab stays above it.
+3. Customer Home: confirm the hero feels focused, the "اطلب رحلة" action is obvious, and shortcuts are compact.
+4. Request Ride: confirm the map appears near the top, pickup/destination/price controls are compact, and the final action is reachable.
+5. Ride Status: confirm the map, tracking state, driver card, and summaries are clear without large overlays.
+6. My Rides, Wallet, Support, Account: confirm cards are lighter, text is readable, and empty states do not leave dead space.
+7. Driver Home: confirm availability, stats, current ride, and quick actions read like a working driver dashboard.
+8. Available and Current Ride: confirm ride cards are compact, the map is integrated, and only one next action is prominent.
+9. Map: confirm markers, distance badge, fallback card, and small legend feel integrated with the dark theme.
+10. Arabic copy: confirm no technical words or non-ride terms appear in normal customer/driver flows.

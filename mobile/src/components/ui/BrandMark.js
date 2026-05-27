@@ -19,9 +19,9 @@ const styles = StyleSheet.create({
   wrap: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
   center: { justifyContent: "center" },
   logo: {
-    width: 46,
-    height: 46,
-    borderRadius: radii.md,
+    width: 42,
+    height: 42,
+    borderRadius: radii.sm,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: colors.primary,
@@ -29,12 +29,12 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.18)",
     boxShadow: shadows.glow
   },
-  logoCompact: { width: 36, height: 36, borderRadius: radii.sm },
-  logoText: { color: "#031315", fontSize: 24, fontWeight: "900" },
-  logoTextCompact: { fontSize: 19 },
+  logoCompact: { width: 32, height: 32, borderRadius: radii.xs },
+  logoText: { color: "#031315", fontSize: 22, fontWeight: "900" },
+  logoTextCompact: { fontSize: 17 },
   copy: { alignItems: "flex-end", gap: 1 },
   copyCenter: { alignItems: "center" },
-  name: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
-  nameCompact: { fontSize: 18 },
-  tagline: { color: colors.muted, fontSize: 12, fontWeight: "600", textAlign: "right" }
+  name: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
+  nameCompact: { fontSize: 17 },
+  tagline: { color: colors.muted, fontSize: 11.5, fontWeight: "700", textAlign: "right" }
 });

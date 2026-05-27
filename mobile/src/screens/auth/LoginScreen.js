@@ -39,11 +39,11 @@ export function LoginScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <View style={styles.hero}>
+      <MobileCard tone="hero" style={styles.hero}>
         <BrandMark />
         <Text selectable style={styles.title}>مشوارك التالي يبدأ من هنا.</Text>
         <Text selectable style={styles.subtitle}>دخول سريع، طلب واضح، وتتبع مباشر للكابتن.</Text>
-      </View>
+      </MobileCard>
       <MobileCard tone="flat" style={styles.form}>
         <MobileInput label="الاسم أو رقم الهاتف" value={identifier} onChangeText={setIdentifier} placeholder="+970..." />
         <MobileInput label="كلمة السر" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
@@ -59,10 +59,10 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.sm, alignItems: "flex-end", paddingTop: spacing.lg },
-  title: { color: colors.text, fontSize: 31, lineHeight: 39, fontWeight: "800", textAlign: "right" },
-  subtitle: { color: colors.muted, fontSize: 14, lineHeight: 22, textAlign: "right" },
-  form: { gap: spacing.md },
+  hero: { gap: spacing.xs, alignItems: "flex-end" },
+  title: { color: colors.text, fontSize: 26, lineHeight: 34, fontWeight: "900", textAlign: "right" },
+  subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
+  form: { gap: spacing.sm },
   links: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

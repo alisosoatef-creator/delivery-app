@@ -10,6 +10,7 @@ export function MobileCard({ children, tone = "default", style }) {
         tone === "gold" && styles.gold,
         tone === "danger" && styles.danger,
         tone === "flat" && styles.flat,
+        tone === "hero" && styles.hero,
         style
       ]}
     >
@@ -24,7 +25,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     borderWidth: 1,
     borderRadius: radii.md,
-    padding: spacing.md,
+    padding: spacing.sm + 2,
     gap: spacing.sm,
     boxShadow: shadows.soft
   },
@@ -33,7 +34,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.12)"
   },
   gold: {
-    backgroundColor: "rgba(49, 228, 214, 0.095)",
+    backgroundColor: "rgba(42, 218, 206, 0.085)",
     borderColor: colors.borderStrong,
     boxShadow: shadows.glow
   },
@@ -43,6 +44,11 @@ const styles = StyleSheet.create({
   },
   flat: {
     boxShadow: "0 0 0 rgba(0,0,0,0)",
-    backgroundColor: "rgba(255, 255, 255, 0.038)"
+    backgroundColor: "rgba(255, 255, 255, 0.032)"
+  },
+  hero: {
+    backgroundColor: "rgba(42, 218, 206, 0.095)",
+    borderColor: "rgba(42, 218, 206, 0.22)",
+    boxShadow: shadows.glow
   }
 });

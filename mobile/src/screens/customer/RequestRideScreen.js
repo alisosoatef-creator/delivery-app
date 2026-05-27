@@ -151,10 +151,10 @@ export function RequestRideScreen() {
     <ScreenContainer showHeader={false} compact>
       <View style={styles.header}>
         <Text selectable style={styles.title}>طلب رحلة</Text>
-        <Text selectable style={styles.subtitle}>الخريطة أولًا، التفاصيل تحتها.</Text>
+        <Text selectable style={styles.subtitle}>حدد الانطلاق والوجهة، وسنحسب السعر فورًا.</Text>
       </View>
 
-      <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={255} />
+      <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={232} />
 
       <View style={styles.quickSteps}>
         <Text selectable style={[styles.quickStep, pickup && styles.quickStepDone]}>1. الانطلاق</Text>
@@ -164,7 +164,7 @@ export function RequestRideScreen() {
 
       <MobileCard tone="flat" style={styles.panel}>
         <View style={styles.stepHeader}>
-          <Text selectable style={styles.stepTitle}>1. نقطة الانطلاق</Text>
+          <Text selectable style={styles.stepTitle}>الانطلاق</Text>
           <MobileButton title={status === "location" ? "..." : "موقعي"} compact variant="secondary" onPress={useGpsLocation} loading={status === "location"} />
         </View>
         <View style={styles.chips}>
@@ -174,7 +174,7 @@ export function RequestRideScreen() {
         </View>
         <InfoRow label="من" value={pickup?.label || "-"} accent />
 
-        <Text selectable style={styles.stepTitle}>2. الوجهة</Text>
+        <Text selectable style={styles.stepTitle}>الوجهة</Text>
         <MobileInput label="" value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
         {status === "quote" ? <Text selectable style={styles.muted}>جاري حساب السعر والمسافة...</Text> : null}
         {suggestions.map((place) => (
@@ -185,7 +185,7 @@ export function RequestRideScreen() {
         ))}
       </MobileCard>
 
-      <MobileCard tone="soft" style={styles.summarySticky}>
+      <MobileCard tone="hero" style={styles.summarySticky}>
         <Text selectable style={styles.stepTitle}>ملخص الطلب</Text>
         <InfoRow label="نقطة الانطلاق" value={pickup?.label || "-"} accent />
         <InfoRow label="الوجهة" value={destination?.label || "اختر وجهتك"} />
@@ -219,7 +219,7 @@ export function RequestRideScreen() {
 
 const styles = StyleSheet.create({
   header: { alignItems: "flex-end", gap: 2 },
-  title: { color: colors.text, fontSize: 25, fontWeight: "800", textAlign: "right" },
+  title: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right" },
   panel: { gap: spacing.sm },
   quickSteps: {
@@ -229,12 +229,12 @@ const styles = StyleSheet.create({
   },
   quickStep: {
     flex: 1,
-    minWidth: 92,
+    minWidth: 86,
     color: colors.muted,
     textAlign: "center",
     fontSize: 12,
     fontWeight: "800",
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
     borderRadius: 999,
     backgroundColor: "rgba(255,255,255,0.045)",
     borderWidth: 1,
@@ -246,10 +246,10 @@ const styles = StyleSheet.create({
     borderColor: colors.primary
   },
   stepHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  stepTitle: { color: colors.text, fontSize: 15, fontWeight: "800", textAlign: "right" },
+  stepTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   suggestion: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
     borderRadius: 14,
     backgroundColor: "rgba(255, 255, 255, 0.045)",
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 2, fontSize: 12 },
   summarySticky: { gap: spacing.sm },
   summaryRow: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  price: { color: colors.primary, fontSize: 31, fontWeight: "800", textAlign: "right" },
+  price: { color: colors.primary, fontSize: 27, fontWeight: "900", textAlign: "right" },
   summaryMeta: { alignItems: "flex-start", gap: 3 },
   meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" },
   muted: { color: colors.muted, textAlign: "right" },

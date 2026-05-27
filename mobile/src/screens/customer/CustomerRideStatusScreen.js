@@ -200,14 +200,14 @@ export function CustomerRideStatusScreen() {
         driverLocation={accepted ? driverLocation : null}
         userLocation={state.currentLocation}
         rideStatus={ride.status}
-        height={300}
+        height={258}
       />
       {liveUnavailable ? (
         <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، يمكنك التحديث يدويًا.</Text>
       ) : null}
 
       {searching ? (
-        <MobileCard tone="soft" style={styles.searchingCard}>
+        <MobileCard tone="hero" style={styles.searchingCard}>
           <View style={styles.scanVisual}>
             <View style={styles.scanDot} />
             <View style={[styles.scanDot, styles.scanDotMuted]} />
@@ -218,7 +218,7 @@ export function CustomerRideStatusScreen() {
         </MobileCard>
       ) : null}
 
-      <MobileCard tone={finished ? "flat" : "soft"} style={styles.customerStatusSummary}>
+      <MobileCard tone={finished ? "flat" : "flat"} style={styles.customerStatusSummary}>
         <View style={styles.rowBetween}>
           <Text selectable style={styles.statusTitle}>{summaryTitle}</Text>
           <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
@@ -253,7 +253,7 @@ export function CustomerRideStatusScreen() {
       ) : null}
 
       {finished ? (
-        <MobileCard tone={completed ? "soft" : "flat"} style={styles.finishedCard}>
+        <MobileCard tone={completed ? "hero" : "flat"} style={styles.finishedCard}>
           <Text selectable style={styles.statusTitle}>{completed ? "ملخص الرحلة المنتهية" : "ملخص الرحلة الملغية"}</Text>
           <InfoRow label="الوجهة" value={ride.destination || "-"} accent />
           <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
@@ -275,13 +275,13 @@ export function CustomerRideStatusScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  title: { color: colors.text, fontSize: 24, fontWeight: "800", textAlign: "right" },
+  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, textAlign: "right", marginTop: 2 },
   searchingCard: { alignItems: "flex-end", gap: spacing.xs },
   scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
   scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(49, 228, 214, 0.44)" },
   scanDotMuted: { opacity: 0.38 },
-  searchingTitle: { color: colors.text, fontSize: 17, fontWeight: "900", textAlign: "right" },
+  searchingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700", marginTop: -spacing.xs },
   customerStatusSummary: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },

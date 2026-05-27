@@ -59,8 +59,8 @@ export function DriverSupportScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل مشكلة مرتبطة بالرحلات أو الأرباح أو حسابك، وسيتابعها فريق الإدارة.">
-      <MobileCard tone="gold" style={styles.formCard}>
+    <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل مشكلتك وسيتابعها فريق الإدارة.">
+      <MobileCard tone="flat" style={styles.formCard}>
         <View style={styles.formHeader}>
           <MobileBadge label="مخصص للكباتن" tone="info" />
           <Text selectable style={styles.formTitle}>ما الذي تحتاجه؟</Text>
@@ -70,7 +70,7 @@ export function DriverSupportScreen() {
             <ChoiceChip key={item.value} label={item.label} selected={type === item.value} onPress={() => setType(item.value)} />
           ))}
         </View>
-        <MobileInput label="رسالة الدعم" value={message} onChangeText={setMessage} placeholder="اكتب التفاصيل باختصار ووضوح" multiline />
+        <MobileInput label="رسالة الدعم" value={message} onChangeText={setMessage} placeholder="اكتب التفاصيل باختصار ووضوح" multiline style={styles.messageInput} />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         {success ? <Text selectable style={styles.success}>{success}</Text> : null}
         <MobileButton title="إرسال الطلب" onPress={submit} disabled={!message.trim()} />
@@ -96,14 +96,15 @@ export function DriverSupportScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.md },
+  formCard: { gap: spacing.sm },
   formHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  formTitle: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 16 },
+  formTitle: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15 },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   error: { color: colors.red, textAlign: "right", fontWeight: "800" },
   success: { color: colors.green, textAlign: "right", fontWeight: "800" },
-  ticket: { paddingVertical: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs },
+  messageInput: { minHeight: 96 },
+  ticket: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs },
   ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  ticketMessage: { color: colors.muted, textAlign: "right", lineHeight: 21, fontWeight: "700" }
+  ticketMessage: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 }
 });
