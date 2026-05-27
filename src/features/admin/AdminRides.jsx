@@ -8,6 +8,8 @@ import {
   formatDistance,
   formatMoney,
   normalizeRide,
+  adminStatusTone,
+  paymentMethodLabel,
   statusLabel,
   textFor
 } from "./adminFormatters.js";
@@ -29,6 +31,7 @@ const RIDE_COLUMNS = [
 
 export function AdminRides({ state, isArabic, adminRides, adminLoading, backendError }) {
   const [statusFilter, setStatusFilter] = useState("all");
+  const [cityFilter, setCityFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRide, setSelectedRide] = useState(null);
 
@@ -53,13 +56,16 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
     const normalizedSearch = searchTerm.trim().toLowerCase();
     return rides.filter((ride) => {
       const matchesStatus = statusFilter === "all" || ride.status === statusFilter;
+      const matchesCity = cityFilter === "all" || ride.city === cityFilter;
       const searchableText = `${ride.id} ${ride.customer} ${ride.customerPhone} ${ride.pickup} ${ride.dropoff} ${ride.city}`.toLowerCase();
-      return matchesStatus && (!normalizedSearch || searchableText.includes(normalizedSearch));
+      return matchesStatus && matchesCity && (!normalizedSearch || searchableText.includes(normalizedSearch));
     });
-  }, [rides, searchTerm, statusFilter]);
+  }, [cityFilter, rides, searchTerm, statusFilter]);
 
   const completedCount = rides.filter((ride) => ride.status === "completed").length;
   const cancelledCount = rides.filter((ride) => ride.status === "cancelled").length;
+  const activeCount = rides.filter((ride) => ["searching", "accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status)).length;
+  const cityOptions = useMemo(() => ["all", ...new Set(rides.map((ride) => ride.city).filter(Boolean))], [rides]);
 
   return (
     <section className="admin-panel admin-advanced-section">
@@ -74,7 +80,8 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
         }
       />
 
-      <div className="admin-analytics-strip">
+      <div className="admin-analytics-strip admin-super-summary">
+        <div><span>{textFor(isArabic, "نشطة", "Active")}</span><strong>{activeCount}</strong></div>
         <div><span>{textFor(isArabic, "مكتملة", "Completed")}</span><strong>{completedCount}</strong></div>
         <div><span>{textFor(isArabic, "ملغاة", "Cancelled")}</span><strong>{cancelledCount}</strong></div>
         <div><span>{textFor(isArabic, "متوسط السعر", "Avg fare")}</span><strong>{formatMoney(rides.reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0) / Math.max(rides.length, 1))}</strong></div>
@@ -91,6 +98,9 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
         />
         <Select label={textFor(isArabic, "الحالة", "Status")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           {ADMIN_RIDE_STATUSES.map((status) => <option key={status} value={status}>{statusLabel(status, isArabic)}</option>)}
+        </Select>
+        <Select label={textFor(isArabic, "المدينة", "City")} value={cityFilter} onChange={(event) => setCityFilter(event.target.value)}>
+          {cityOptions.map((city) => <option key={city} value={city}>{city === "all" ? statusLabel("all", isArabic) : city}</option>)}
         </Select>
       </div>
 
@@ -131,8 +141,8 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
             <span>{ride.city}</span>
             <span>{formatDistance(ride.distanceKm)}</span>
             <span>{formatMoney(ride.fareIls)}</span>
-            <span>{statusLabel(ride.paymentMethod, isArabic)}</span>
-            <Badge tone={ride.status === "completed" ? "success" : ride.status === "cancelled" ? "danger" : "warning"}>{statusLabel(ride.status, isArabic)}</Badge>
+            <span>{paymentMethodLabel(ride.paymentMethod, isArabic)}</span>
+            <Badge className="admin-status-badge-ar" tone={adminStatusTone(ride.status)}>{statusLabel(ride.status, isArabic)}</Badge>
             <span>{formatDate(ride.createdAt, isArabic)}</span>
             <Button variant="secondary" size="sm" onClick={() => setSelectedRide(ride)}>
               {textFor(isArabic, "عرض", "View")}
@@ -163,7 +173,7 @@ export function AdminRides({ state, isArabic, adminRides, adminLoading, backendE
                 { label: textFor(isArabic, "المسافة", "Distance"), value: formatDistance(selectedRide.distanceKm) },
                 { label: textFor(isArabic, "الوقت المتوقع", "ETA"), value: selectedRide.durationMinutes ? `${selectedRide.durationMinutes} min` : "-" },
                 { label: textFor(isArabic, "السعر", "Fare"), value: formatMoney(selectedRide.fareIls) },
-                { label: textFor(isArabic, "طريقة الدفع", "Payment method"), value: statusLabel(selectedRide.paymentMethod, isArabic) },
+                { label: textFor(isArabic, "طريقة الدفع", "Payment method"), value: paymentMethodLabel(selectedRide.paymentMethod, isArabic) },
                 { label: textFor(isArabic, "حالة الدفع", "Payment status"), value: selectedRide.paymentStatus || textFor(isArabic, "غير محدد", "Not set") },
                 { label: textFor(isArabic, "تاريخ الإنشاء", "Created at"), value: formatDate(selectedRide.createdAt, isArabic) },
                 { label: textFor(isArabic, "وقت القبول", "Accepted at"), value: formatDate(selectedRide.acceptedAt, isArabic) },

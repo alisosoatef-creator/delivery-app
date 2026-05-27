@@ -30,6 +30,15 @@
 - Confirm Settings tabs render: General, Pricing, Payments, Support, Security, Team.
 - Confirm Team roles are only `owner`, `admin`, and `support`.
 
+## Admin Super Control QA
+- Dashboard: confirm the control ribbon summarizes active rides, completed/cancelled rides, active captains, open support, and completed payments.
+- Rides: filter by status and city, open the ride drawer, and confirm customer, captain, route, fare, payment, status, and timeline are readable.
+- Drivers: confirm active/suspended and online/offline badges are clear, then open driver details for vehicle, plate, rides, and estimated earnings.
+- Customers: confirm status, verification, city, ride count, recent rides, and linked support details are visible without technical data.
+- Support: filter by status, role, and type, then close and reopen a ticket from the row and detail drawer.
+- Payments: confirm cash, demo card, wallet, and pending badges are clear and no full card number, CVV, token, or password hash appears.
+- Settings records cleanup: confirm “إعادة ضبط بيانات التجربة” is shown instead of raw internal labels and requires `RESET_DEMO_DATA`.
+
 ## Three Window Ride Test
 - Window 1: Customer creates a ride.
 - Window 2: Driver accepts the ride and updates statuses.

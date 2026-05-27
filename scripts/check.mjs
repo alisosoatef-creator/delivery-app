@@ -468,6 +468,33 @@ for (const advancedAdminToken of [
   }
 }
 
+for (const adminSuperControlToken of [
+  "phase-35A-admin-super-control",
+  "admin-super-control-dashboard",
+  "admin-control-ribbon",
+  "admin-super-summary",
+  "admin-status-badge-ar",
+  "paymentMethodLabel",
+  "adminStatusTone",
+  "cityFilter",
+  "إعادة ضبط بيانات التجربة",
+  "RESET_DEMO_DATA"
+]) {
+  if (!appSource.includes(adminSuperControlToken) && !stylesSource.includes(adminSuperControlToken)) {
+    throw new Error(`Admin Super Control is missing: ${adminSuperControlToken}`);
+  }
+}
+
+for (const adminSensitiveToken of ["passwordHash", "full card number", "CVV", "token"]) {
+  if (adminUiSource.includes(adminSensitiveToken) && !adminUiSource.includes("لا تخزن رقم بطاقة كامل أو CVV") && adminSensitiveToken !== "token") {
+    throw new Error(`Admin UI must not expose sensitive data token: ${adminSensitiveToken}`);
+  }
+}
+
+if (!qaChecklistSource.includes("Admin Super Control QA") || !qaChecklistSource.includes("RESET_DEMO_DATA")) {
+  throw new Error("QA checklist must include Admin Super Control QA and records cleanup confirmation.");
+}
+
 for (const blockedAdminRoleToken of ["Operations", "Finance", "Dispatcher", "operations dashboard", "finance dashboard", "dispatcher"]) {
   if (adminUiSource.includes(blockedAdminRoleToken)) {
     throw new Error(`Admin UI must not expose deferred admin role: ${blockedAdminRoleToken}`);

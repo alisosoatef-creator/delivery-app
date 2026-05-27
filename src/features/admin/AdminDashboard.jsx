@@ -24,15 +24,42 @@ export function AdminDashboard({ state, dashboardStats, pendingCaptainApplicatio
   const recentApplications = pendingCaptainApplications.slice(-4).reverse();
   const openTickets = supportTickets.filter((ticket) => ticket.status === "open").slice(0, 4);
   const activeRides = (adminRides || []).map(normalizeRide).filter((ride) => ["searching", "accepted", "driver_arriving", "arrived", "in_progress"].includes(ride.status)).slice(0, 4);
+  const completedRides = (adminRides || []).map(normalizeRide).filter((ride) => ride.status === "completed").length;
+  const cancelledRides = (adminRides || []).map(normalizeRide).filter((ride) => ride.status === "cancelled").length;
+  const activeDrivers = (adminDrivers || []).filter((driver) => (driver.status || "active") === "active").length;
+  const estimatedPayments = (adminRides || []).map(normalizeRide).filter((ride) => ride.status === "completed").reduce((sum, ride) => sum + Number(ride.fareIls || 0), 0);
 
   return (
-    <div className="admin-section-stack admin-dashboard-advanced">
+    <div className="admin-section-stack admin-dashboard-advanced admin-super-control-dashboard">
       <SectionHeader
         title={textFor(isArabic, "لوحة التحكم", "Dashboard")}
         description={textFor(isArabic, "نظرة تشغيلية على الرحلات، الطلبات، الدعم، الإيرادات، والكباتن.", "Operational view across rides, applications, support, revenue, and captains.")}
         meta={textFor(isArabic, "تحديث محلي مباشر", "Local live overview")}
       />
       <AdminStats dashboardStats={advancedStats} isArabic={isArabic} />
+
+      <div className="admin-control-ribbon">
+        <article>
+          <span>{textFor(isArabic, "الرحلات النشطة", "Active rides")}</span>
+          <strong>{activeRides.length}</strong>
+        </article>
+        <article>
+          <span>{textFor(isArabic, "المكتملة / الملغاة", "Completed / Cancelled")}</span>
+          <strong>{completedRides} / {cancelledRides}</strong>
+        </article>
+        <article>
+          <span>{textFor(isArabic, "الكباتن النشطون", "Active captains")}</span>
+          <strong>{activeDrivers}</strong>
+        </article>
+        <article>
+          <span>{textFor(isArabic, "الدعم المفتوح", "Open support")}</span>
+          <strong>{openTickets.length}</strong>
+        </article>
+        <article>
+          <span>{textFor(isArabic, "مدفوعات مكتملة", "Completed payments")}</span>
+          <strong>{formatMoney(estimatedPayments)}</strong>
+        </article>
+      </div>
 
       <div className="admin-grid-two">
         <section className="admin-panel nested-admin-panel">

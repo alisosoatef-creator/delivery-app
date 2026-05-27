@@ -76,6 +76,27 @@ export function statusLabel(status, isArabic) {
   }[status] || status || "-";
 }
 
+export function paymentMethodLabel(method, isArabic) {
+  const normalized = method || "cash";
+  if (!isArabic) {
+    return normalized === "visa" || normalized === "visa-placeholder"
+      ? "VISA placeholder"
+      : normalized === "wallet"
+        ? "Wallet"
+        : "Cash";
+  }
+  if (normalized === "visa" || normalized === "visa-placeholder") return "بطاقة تجريبية";
+  if (normalized === "wallet") return "المحفظة";
+  return "نقدًا";
+}
+
+export function adminStatusTone(status) {
+  if (["active", "approved", "completed", "paid", "closed", "online"].includes(status)) return "success";
+  if (["cancelled", "rejected", "suspended", "failed"].includes(status)) return "danger";
+  if (["driver_arriving", "arrived", "in_progress", "accepted", "open", "pending", "searching"].includes(status)) return "warning";
+  return "neutral";
+}
+
 export function normalizeCustomer(customer = {}) {
   return {
     ...customer,

@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Badge, Button, DataTable, EmptyState, ErrorState, SectionHeader, Select, StatCard } from "../../components/ui/index.js";
 import { usePayments } from "../../hooks/usePayments.js";
 import { AdminDetailDrawer, DetailGrid, DrawerCloseButton, DrawerPlaceholder } from "./AdminDetailDrawer.jsx";
-import { exportRowsToCsv, formatDate, formatMoney, normalizePayment, statusLabel, textFor } from "./adminFormatters.js";
+import { adminStatusTone, exportRowsToCsv, formatDate, formatMoney, normalizePayment, paymentMethodLabel, statusLabel, textFor } from "./adminFormatters.js";
 import { mockPaymentRecords } from "./adminMockData.js";
 
 function paymentRecordFromRide(ride) {
@@ -67,8 +67,8 @@ export function AdminPayments({ adminRides, isArabic, state }) {
       />
 
       <div className="admin-stat-grid three admin-payment-summary">
-        <StatCard className="admin-stat-card" label={textFor(isArabic, "كاش", "Cash")} value={formatMoney(cashTotal)} />
-        <StatCard className="admin-stat-card" label="VISA Placeholder" value={formatMoney(visaTotal)} />
+        <StatCard className="admin-stat-card" label={textFor(isArabic, "نقدًا", "Cash")} value={formatMoney(cashTotal)} />
+        <StatCard className="admin-stat-card" label={textFor(isArabic, "بطاقة تجريبية", "VISA Placeholder")} value={formatMoney(visaTotal)} />
         <StatCard className="admin-stat-card" label={textFor(isArabic, "المحفظة", "Wallet")} value={formatMoney(walletTotal)} />
         <StatCard className="admin-stat-card" label={textFor(isArabic, "معلقة", "Pending")} value={pendingCount} />
       </div>
@@ -77,9 +77,9 @@ export function AdminPayments({ adminRides, isArabic, state }) {
         <div className="admin-filter-row advanced-filter-bar">
           <Select label={textFor(isArabic, "طريقة الدفع", "Method")} value={methodFilter} onChange={(event) => setMethodFilter(event.target.value)}>
             <option value="all">{textFor(isArabic, "كل الطرق", "All methods")}</option>
-            <option value="cash">{statusLabel("cash", isArabic)}</option>
-            <option value="visa">VISA Placeholder</option>
-            <option value="wallet">{statusLabel("wallet", isArabic)}</option>
+            <option value="cash">{paymentMethodLabel("cash", isArabic)}</option>
+            <option value="visa">{paymentMethodLabel("visa", isArabic)}</option>
+            <option value="wallet">{paymentMethodLabel("wallet", isArabic)}</option>
           </Select>
           <Select label={textFor(isArabic, "الحالة", "Status")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
             <option value="all">{statusLabel("all", isArabic)}</option>
@@ -121,10 +121,10 @@ export function AdminPayments({ adminRides, isArabic, state }) {
               <strong>{payment.rideId}</strong>
               <span>{payment.customerName}</span>
               <span>{payment.driverName}</span>
-              <span>{payment.method === "visa" ? "VISA Placeholder" : statusLabel(payment.method, isArabic)}</span>
+              <span>{paymentMethodLabel(payment.method, isArabic)}</span>
               <span>{payment.provider}</span>
               <span>{formatMoney(payment.amount)}</span>
-              <Badge tone={payment.status === "paid" ? "success" : payment.status === "failed" ? "danger" : "warning"}>{statusLabel(payment.status, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={adminStatusTone(payment.status)}>{statusLabel(payment.status, isArabic)}</Badge>
               <span>{formatDate(payment.createdAt, isArabic)}</span>
               <Button variant="secondary" size="sm" onClick={() => setSelectedPayment(payment)}>{textFor(isArabic, "عرض", "View")}</Button>
             </div>
@@ -180,7 +180,7 @@ export function AdminPayments({ adminRides, isArabic, state }) {
                 { label: textFor(isArabic, "رقم الرحلة", "Ride ID"), value: selectedPayment.rideId },
                 { label: textFor(isArabic, "الزبون", "Customer"), value: selectedPayment.customerName },
                 { label: textFor(isArabic, "الكابتن", "Captain"), value: selectedPayment.driverName },
-                { label: textFor(isArabic, "طريقة الدفع", "Method"), value: selectedPayment.method === "visa" ? "VISA Placeholder" : statusLabel(selectedPayment.method, isArabic) },
+                { label: textFor(isArabic, "طريقة الدفع", "Method"), value: paymentMethodLabel(selectedPayment.method, isArabic) },
                 { label: "Provider", value: selectedPayment.provider },
                 { label: textFor(isArabic, "المبلغ", "Amount"), value: formatMoney(selectedPayment.amount) },
                 { label: textFor(isArabic, "الحالة", "Status"), value: statusLabel(selectedPayment.status, isArabic) },
@@ -188,7 +188,7 @@ export function AdminPayments({ adminRides, isArabic, state }) {
               ]}
             />
             <DrawerPlaceholder title={textFor(isArabic, "ملاحظة الدفع", "Payment note")}>
-              {textFor(isArabic, "VISA ما زالت Placeholder ولا يتم تخزين رقم بطاقة كامل أو CVV.", "VISA remains a placeholder. Full card numbers and CVV are not stored.")}
+              {textFor(isArabic, "البطاقة التجريبية لا تخزن رقم بطاقة كامل أو CVV.", "VISA remains a placeholder. Full card numbers and CVV are not stored.")}
             </DrawerPlaceholder>
           </>
         )}

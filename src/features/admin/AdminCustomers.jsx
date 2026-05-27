@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, DataTable, EmptyState, ErrorState, Input, LoadingSkeleton, SectionHeader, Select } from "../../components/ui/index.js";
 import { AdminDetailDrawer, DetailGrid, DrawerCloseButton, DrawerPlaceholder } from "./AdminDetailDrawer.jsx";
-import { exportRowsToCsv, formatDate, formatMoney, normalizeCustomer, normalizeRide, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
+import { adminStatusTone, exportRowsToCsv, formatDate, formatMoney, normalizeCustomer, normalizeRide, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
 import { mockCustomers } from "./adminMockData.js";
 
 const CUSTOMER_EXPORT_COLUMNS = [
@@ -33,6 +33,9 @@ export function AdminCustomers({ isArabic, adminCustomers, updateCustomerStatus,
       return matchesStatus && matchesVerified && (!needle || searchable.includes(needle));
     });
   }, [customers, searchTerm, statusFilter, verifiedFilter]);
+  const activeCount = customers.filter((customer) => customer.status === "active").length;
+  const verifiedCount = customers.filter((customer) => customer.isVerified).length;
+  const suspendedCount = customers.filter((customer) => customer.status === "suspended").length;
 
   function relatedRides(customer) {
     return rides.filter((ride) => ride.customerPhone === customer.phone || ride.customer === customer.name).slice(0, 4);
@@ -54,6 +57,12 @@ export function AdminCustomers({ isArabic, adminCustomers, updateCustomerStatus,
           </Button>
         }
       />
+
+      <div className="admin-analytics-strip admin-super-summary">
+        <div><span>{textFor(isArabic, "زبائن نشطون", "Active customers")}</span><strong>{activeCount}</strong></div>
+        <div><span>{textFor(isArabic, "حسابات مؤكدة", "Verified accounts")}</span><strong>{verifiedCount}</strong></div>
+        <div><span>{textFor(isArabic, "موقوفون", "Suspended")}</span><strong>{suspendedCount}</strong></div>
+      </div>
 
       <div className="admin-filter-bar advanced-filter-bar">
         <Input label={textFor(isArabic, "بحث", "Search")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={textFor(isArabic, "الاسم، الهاتف، أو المدينة", "Name, phone, or city")} />
@@ -101,9 +110,9 @@ export function AdminCustomers({ isArabic, adminCustomers, updateCustomerStatus,
               <span>{customer.phone}</span>
               <span>{customer.city}</span>
               <span>{customer.age}</span>
-              <Badge tone={customer.isVerified ? "success" : "warning"}>{customer.isVerified ? textFor(isArabic, "مؤكد", "Verified") : textFor(isArabic, "غير مؤكد", "Unverified")}</Badge>
+              <Badge className="admin-status-badge-ar" tone={customer.isVerified ? "success" : "warning"}>{customer.isVerified ? textFor(isArabic, "مؤكد", "Verified") : textFor(isArabic, "غير مؤكد", "Unverified")}</Badge>
               <span>{customer.trips}</span>
-              <Badge tone={customer.status === "active" ? "success" : "danger"}>{statusLabel(customer.status, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={adminStatusTone(customer.status)}>{statusLabel(customer.status, isArabic)}</Badge>
               <span>{formatDate(customer.createdAt, isArabic, { dateOnly: true })}</span>
               <div className="admin-action-row compact-actions">
                 <Button variant="secondary" size="sm" onClick={() => setSelectedCustomer(customer)}>{textFor(isArabic, "عرض", "View")}</Button>

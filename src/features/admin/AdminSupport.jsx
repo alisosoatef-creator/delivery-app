@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, DataTable, EmptyState, Input, SectionHeader, Select } from "../../components/ui/index.js";
 import { AdminDetailDrawer, DetailGrid, DrawerCloseButton, DrawerPlaceholder } from "./AdminDetailDrawer.jsx";
-import { ADMIN_SUPPORT_ROLES, exportRowsToCsv, formatDate, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
+import { ADMIN_SUPPORT_ROLES, adminStatusTone, exportRowsToCsv, formatDate, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
 
 const TICKET_EXPORT_COLUMNS = [
   { key: "name", label: "Name", value: (ticket) => ticket.name },
@@ -33,6 +33,10 @@ export function AdminSupport({ supportTickets, closeSupportTicket, adminMutating
       return matchesStatus && matchesRole && matchesType && (!needle || searchable.includes(needle));
     });
   }, [roleFilter, searchTerm, statusFilter, tickets, typeFilter]);
+  const openCount = tickets.filter((ticket) => ticket.status === "open").length;
+  const closedCount = tickets.filter((ticket) => ticket.status === "closed").length;
+  const customerCount = tickets.filter((ticket) => ticket.role === "customer").length;
+  const driverCount = tickets.filter((ticket) => ticket.role === "driver").length;
 
   return (
     <section className="admin-panel admin-advanced-section">
@@ -42,6 +46,12 @@ export function AdminSupport({ supportTickets, closeSupportTicket, adminMutating
         meta={`${filteredTickets.length} / ${tickets.length}`}
         actions={<Button variant="secondary" onClick={() => exportRowsToCsv("support-tickets.csv", filteredTickets, TICKET_EXPORT_COLUMNS)} disabled={!filteredTickets.length}>Export CSV</Button>}
       />
+
+      <div className="admin-analytics-strip admin-super-summary">
+        <div><span>{textFor(isArabic, "مفتوحة", "Open")}</span><strong>{openCount}</strong></div>
+        <div><span>{textFor(isArabic, "مغلقة", "Closed")}</span><strong>{closedCount}</strong></div>
+        <div><span>{textFor(isArabic, "زبائن / كباتن", "Customers / Captains")}</span><strong>{customerCount} / {driverCount}</strong></div>
+      </div>
 
       <div className="admin-filter-bar support-ticket-filters advanced-filter-bar">
         <Input label={textFor(isArabic, "بحث", "Search")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={textFor(isArabic, "الاسم، الهاتف، الرسالة أو رقم الرحلة", "Name, phone, message, or ride ID")} />
@@ -80,11 +90,11 @@ export function AdminSupport({ supportTickets, closeSupportTicket, adminMutating
             <div className="admin-table-row" key={ticket.id}>
               <strong>{ticket.name}</strong>
               <span>{ticket.phone}</span>
-              <Badge tone={ticket.role === "driver" ? "info" : "neutral"}>{statusLabel(ticket.role, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={ticket.role === "driver" ? "info" : "neutral"}>{statusLabel(ticket.role, isArabic)}</Badge>
               <span>{ticket.type}</span>
               <span className="admin-truncate">{ticket.message}</span>
               <span>{ticket.rideId || "-"}</span>
-              <Badge tone={ticket.status === "open" ? "success" : "neutral"}>{statusLabel(ticket.status, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={adminStatusTone(ticket.status)}>{statusLabel(ticket.status, isArabic)}</Badge>
               <span>{formatDate(ticket.createdAt, isArabic)}</span>
               <div className="admin-action-row compact-actions">
                 <Button variant="secondary" size="sm" onClick={() => setSelectedTicket(ticket)}>{textFor(isArabic, "عرض", "View")}</Button>

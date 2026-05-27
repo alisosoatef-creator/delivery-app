@@ -6737,6 +6737,63 @@ textarea:focus-visible,
   align-items: end;
 }
 
+/* phase-35A-admin-super-control */
+.admin-super-control-dashboard {
+  container-type: inline-size;
+}
+
+.admin-control-ribbon {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: var(--space-3);
+}
+
+.admin-control-ribbon article,
+.admin-super-summary > div {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent 72%),
+    var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.admin-control-ribbon article::after,
+.admin-super-summary > div::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(180deg, var(--accent), var(--premium-gold));
+}
+
+.admin-control-ribbon article {
+  display: grid;
+  gap: 6px;
+  padding: var(--space-4);
+}
+
+.admin-control-ribbon span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  font-weight: 950;
+}
+
+.admin-control-ribbon strong {
+  color: var(--text-strong);
+  font-size: clamp(1.25rem, 2.4vw, 1.75rem);
+  font-weight: 950;
+}
+
+.admin-status-badge-ar {
+  justify-self: start;
+  min-width: max-content;
+}
+
 .advanced-admin-table {
   gap: 10px;
   border: 1px solid var(--border);

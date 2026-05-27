@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Badge, Button, DataTable, EmptyState, Input, SectionHeader, Select } from "../../components/ui/index.js";
 import { AdminDetailDrawer, DetailGrid, DrawerCloseButton, DrawerPlaceholder } from "./AdminDetailDrawer.jsx";
-import { exportRowsToCsv, formatDate, formatMoney, normalizeDriver, normalizeRide, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
+import { adminStatusTone, exportRowsToCsv, formatDate, formatMoney, normalizeDriver, normalizeRide, normalizeTicket, statusLabel, textFor } from "./adminFormatters.js";
 
 const DRIVER_EXPORT_COLUMNS = [
   { key: "name", label: "Name", value: (driver) => driver.name },
@@ -39,6 +39,9 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
       return matchesStatus && matchesOnline && (!needle || searchable.includes(needle));
     });
   }, [drivers, onlineFilter, searchTerm, statusFilter]);
+  const onlineCount = drivers.filter((driver) => driver.onlineStatus === "online").length;
+  const activeCount = drivers.filter((driver) => driver.status === "active").length;
+  const suspendedCount = drivers.filter((driver) => driver.status === "suspended").length;
 
   function driverRides(driver) {
     return rides.filter((ride) => ride.driverId === driver.id || ride.captain === driver.name || ride.captain === driver.id).slice(0, 5);
@@ -56,6 +59,12 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
         meta={`${filteredDrivers.length} / ${drivers.length}`}
         actions={<Button variant="secondary" onClick={() => exportRowsToCsv("admin-drivers.csv", filteredDrivers, DRIVER_EXPORT_COLUMNS)} disabled={!filteredDrivers.length}>Export CSV</Button>}
       />
+
+      <div className="admin-analytics-strip admin-super-summary">
+        <div><span>{textFor(isArabic, "كباتن نشطون", "Active captains")}</span><strong>{activeCount}</strong></div>
+        <div><span>{textFor(isArabic, "متصلون الآن", "Online now")}</span><strong>{onlineCount}</strong></div>
+        <div><span>{textFor(isArabic, "موقوفون", "Suspended")}</span><strong>{suspendedCount}</strong></div>
+      </div>
 
       <div className="admin-filter-bar advanced-filter-bar">
         <Input label={textFor(isArabic, "بحث", "Search")} value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} placeholder={textFor(isArabic, "الاسم، الهاتف، المركبة أو اللوحة", "Name, phone, vehicle, or plate")} />
@@ -97,8 +106,8 @@ export function AdminDrivers({ state, approvedCaptains, isArabic, cityName, admi
               <span>{driver.city}</span>
               <span>{driver.vehicle}</span>
               <span>{driver.plate}</span>
-              <Badge tone={driver.status === "active" ? "success" : "danger"}>{statusLabel(driver.status, isArabic)}</Badge>
-              <Badge tone={driver.onlineStatus === "online" ? "success" : "neutral"}>{statusLabel(driver.onlineStatus, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={adminStatusTone(driver.status)}>{statusLabel(driver.status, isArabic)}</Badge>
+              <Badge className="admin-status-badge-ar" tone={adminStatusTone(driver.onlineStatus)}>{statusLabel(driver.onlineStatus, isArabic)}</Badge>
               <span>{driver.rating}</span>
               <span>{formatDate(driver.createdAt, isArabic, { dateOnly: true })}</span>
               <div className="admin-action-row compact-actions">
