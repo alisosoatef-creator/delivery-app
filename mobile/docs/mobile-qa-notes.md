@@ -179,3 +179,29 @@ Use this checklist for the black/purple full redesign:
 7. Maps: confirm MobileRideMap uses the purple identity, clean frame, compact badges, clear markers, and a polished fallback.
 8. Motion: press CTAs, chips, cards, and nav tabs and confirm the interaction is smooth without visual noise.
 9. Stability: complete a ride, rate it, open history, toggle driver availability, and verify no UI redesign broke the existing flows.
+
+## 37H Mobile UI System Stabilization
+
+Use this checklist after the layout stabilization pass:
+
+1. Pressable layout: confirm buttons, cards, chips, nav tabs, and quick actions keep their width/flex sizing while pressed.
+2. Bottom navigation: confirm every label stays horizontal on small screens and no numeric marks squeeze the tabs.
+3. Safe area: confirm the bottom dock does not cover the last button or card in every customer and driver tab.
+4. Customer Home quick actions: confirm the four shortcut cards keep two stable columns when space allows and never collapse into vertical letters.
+5. Chips and buttons: confirm long Arabic labels truncate or wrap cleanly without breaking the row layout.
+6. Stat cards: confirm two-card rows remain readable on compact screens.
+7. Regression check: run `npm.cmd run mobile:check` and confirm it rejects an `Animated.View` wrapper inside `PressableScale`.
+
+## 38A Mobile Command UI Rebuild QA
+
+Use this checklist for the accepted v2 direction:
+
+1. Navigation: confirm the customer dock has four primary destinations and wallet/support are reachable contextually from Home and Account.
+2. Customer Home: confirm the first screen is map-first with a clear destination command, not a repeated hero card.
+3. Request Ride: confirm the map, pickup, destination search, quote, payment chips, and final CTA read as one coherent composer.
+4. Ride Status: confirm the live map appears before details, the status command card is readable, and rating still appears after completion.
+5. Driver Home: confirm the cockpit foregrounds availability, current ride, request count, earnings, and support without crowding.
+6. Driver Current Ride: confirm the next action, tracking controls, map, timeline, customer details, and completion flow remain obvious.
+7. Secondary screens: confirm Wallet, Trips, Account, Customer Support, Driver Earnings, and Driver Support use the same command/glass surfaces.
+8. RTL: confirm Arabic labels truncate or wrap cleanly in chips, tabs, buttons, stats, route rows, and badges.
+9. Stability: run `npm.cmd run mobile:check`, `npm.cmd run build`, `npm.cmd run check`, `npm.cmd run api:check`, and `npm.cmd run verify`.

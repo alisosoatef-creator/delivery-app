@@ -43,7 +43,7 @@ export function DevDriverLoginScreen() {
     <ScreenContainer showHeader={false}>
       <MobileCard tone="glass" style={styles.hero}>
         <BrandMark />
-        <MobileBadge label="Development Only" tone="warning" />
+        <MobileBadge label="مدخل تجريبي" tone="warning" />
         <Text selectable style={styles.title}>مدخل الكابتن</Text>
         <Text selectable style={styles.subtitle}>هذا المدخل للتطوير فقط، ولا يفعّل طلبات الانضمام قبل موافقة الإدارة.</Text>
         <MobileInput label="Driver ID" value={driverId} onChangeText={setDriverId} placeholder={drivers[0]?.id || "driver_..."} />

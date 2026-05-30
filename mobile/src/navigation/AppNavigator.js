@@ -44,20 +44,17 @@ const driverScreens = {
 };
 
 const customerTabs = [
-  ["home", "بيت", "01"],
-  ["request", "طلب", "02"],
-  ["rides", "رحلات", "03"],
-  ["wallet", "دفع", "04"],
-  ["support", "دعم", "05"],
-  ["account", "حساب", "06"]
+  ["home", "الرئيسية"],
+  ["request", "اطلب"],
+  ["rides", "رحلاتي"],
+  ["account", "حسابي"]
 ];
 
 const driverTabs = [
-  ["home", "بيت", "01"],
-  ["available", "طلبات", "02"],
-  ["current", "رحلتي", "03"],
-  ["earnings", "أرباح", "04"],
-  ["support", "دعم", "05"]
+  ["home", "الرئيسية"],
+  ["available", "طلبات"],
+  ["current", "رحلتي"],
+  ["earnings", "الأرباح"]
 ];
 
 function AuthNavigator() {
@@ -75,7 +72,7 @@ function AppTabs({ area }) {
   return (
     <View style={[styles.tabsShell, { bottom: Math.max(spacing.sm, insets.bottom + spacing.xs) }]}>
       <View style={styles.tabs}>
-        {tabs.map(([screen, label, mark]) => {
+        {tabs.map(([screen, label]) => {
           const active = state.activeScreen === screen;
           return (
             <PressableScale
@@ -85,9 +82,15 @@ function AppTabs({ area }) {
               style={[styles.tab, active && styles.tabActive]}
               pressedStyle={styles.tabPressed}
             >
-              <Text selectable={false} style={[styles.tabMark, active && styles.tabMarkActive]}>{mark}</Text>
-              <Text selectable={false} numberOfLines={1} style={[styles.tabLabel, active && styles.tabLabelActive]}>{label}</Text>
               <View style={[styles.tabDot, active && styles.tabDotActive]} />
+              <Text
+                selectable={false}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                style={[styles.tabLabel, active && styles.tabLabelActive]}
+              >
+                {label}
+              </Text>
             </PressableScale>
           );
         })}
@@ -148,44 +151,53 @@ const styles = StyleSheet.create({
   shell: { flex: 1 },
   tabsShell: {
     position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
+    left: spacing.md,
+    right: spacing.md,
     minHeight: layout.bottomNavHeight,
     borderRadius: radii.pill,
     backgroundColor: nav.dock,
     borderWidth: 1,
     borderColor: nav.dockBorder,
-    padding: 4,
+    padding: 5,
     boxShadow: shadows.lift
   },
   tabs: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.xxs
+    gap: spacing.xs
   },
   tab: {
     flex: 1,
-    minWidth: 0,
-    minHeight: 38,
+    flexBasis: 0,
+    flexShrink: 1,
+    minWidth: 58,
+    minHeight: 46,
     borderRadius: radii.pill,
     alignItems: "center",
     justifyContent: "center",
-    gap: 1,
-    paddingHorizontal: 2
+    gap: 4,
+    paddingHorizontal: spacing.xs
   },
   tabActive: { backgroundColor: nav.active },
   tabPressed: { opacity: 0.9 },
-  tabMark: { color: colors.mutedStrong, fontSize: 9, fontWeight: "900", lineHeight: 11 },
-  tabMarkActive: { color: colors.primary },
   tabDot: {
-    width: 2,
-    height: 2,
+    width: 5,
+    height: 5,
     borderRadius: radii.pill,
     backgroundColor: "rgba(255, 255, 255, 0.16)"
   },
-  tabDotActive: { width: 18, height: 3, backgroundColor: nav.activeLine, boxShadow: shadows.glow },
-  tabLabel: { color: colors.muted, fontSize: 9, fontWeight: "800" },
+  tabDotActive: { width: 22, height: 5, backgroundColor: nav.activeLine, boxShadow: shadows.glow },
+  tabLabel: {
+    color: colors.muted,
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "800",
+    textAlign: "center",
+    writingDirection: "rtl",
+    includeFontPadding: false,
+    alignSelf: "stretch"
+  },
   tabLabelActive: { color: colors.text },
   toast: {
     color: colors.text,

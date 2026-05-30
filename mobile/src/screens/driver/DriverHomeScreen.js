@@ -99,7 +99,7 @@ export function DriverHomeScreen() {
     try {
       const payload = await updateDriverOnlineStatus(nextAvailable, session);
       await applyDriverSession(payload.driver);
-      dispatch({ type: "toast", message: nextAvailable ? "أصبحت متاحًا لاستقبال الطلبات." : "أصبحت غير متاح للطلبات الجديدة." });
+      dispatch({ type: "toast", message: nextAvailable ? "أصبحت متاحا لاستقبال الطلبات." : "أصبحت غير متاح للطلبات الجديدة." });
     } catch (requestError) {
       setAvailable(previous);
       const message = apiErrorMessage(requestError, "تعذر تحديث حالة توفر الكابتن.");
@@ -117,21 +117,21 @@ export function DriverHomeScreen() {
   }
 
   return (
-    <ScreenContainer showHeader={false} variant="driver">
-      <MobileCard tone="glass" style={styles.cockpit}>
+    <ScreenContainer showHeader={false} variant="driver" compact>
+      <MobileCard tone="command" style={styles.cockpit}>
         <View style={styles.cockpitTop}>
           <BrandMark compact title="وصل كابتن" />
           <MobileBadge label={available ? "متاح" : "غير متاح"} tone={available ? "success" : "warning"} />
         </View>
         <View style={styles.identity}>
-          <Text selectable style={styles.role}>لوحة الكابتن</Text>
+          <Text selectable style={styles.role}>لوحة التشغيل</Text>
           <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
           <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
         </View>
         <View style={styles.availabilityStrip}>
           <View style={styles.availabilityCopy}>
-            <Text selectable style={styles.sectionTitle}>حالة التوفر</Text>
-            <Text selectable style={styles.helper}>{available ? "جاهز لاستقبال الطلبات الآن." : "الطلبات الجديدة متوقفة مؤقتًا."}</Text>
+            <Text selectable style={styles.sectionTitle}>استقبال الطلبات</Text>
+            <Text selectable style={styles.helper}>{available ? "القناة مفتوحة للطلبات المناسبة." : "الطلبات الجديدة متوقفة مؤقتا."}</Text>
           </View>
           <PressableScale
             accessibilityRole="switch"
@@ -165,11 +165,11 @@ export function DriverHomeScreen() {
       <View style={styles.actionGrid}>
         <MobileCard tone="action" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>{availableCount}</Text>
-          <Text selectable style={styles.actionLabel}>عرض الطلبات</Text>
+          <Text selectable style={styles.actionLabel}>الطلبات</Text>
         </MobileCard>
         <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>↗</Text>
-          <Text selectable style={styles.actionLabel}>رحلتي الحالية</Text>
+          <Text selectable style={styles.actionLabel}>رحلتي</Text>
         </MobileCard>
         <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>₪</Text>
@@ -181,7 +181,7 @@ export function DriverHomeScreen() {
         </MobileCard>
       </View>
 
-      <MobileCard tone="flat">
+      <MobileCard tone="glass">
         <InfoRow label="التحديث المباشر" value={state.socketStatus === "connected" ? "متصل" : "يدوي"} />
         <MobileButton title="خروج" compact variant="danger" onPress={logout} />
       </MobileCard>
@@ -190,12 +190,12 @@ export function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.violetLine },
+  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.greenLine },
   cockpitTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { alignItems: "flex-end", gap: 3 },
-  role: { color: colors.primary, fontSize: 13, fontWeight: "900", textAlign: "right" },
-  name: { color: colors.text, fontWeight: "900", fontSize: 27, textAlign: "right" },
-  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12 },
+  role: { color: colors.green, fontSize: 13, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
+  name: { color: colors.text, fontWeight: "900", fontSize: 27, textAlign: "right", writingDirection: "rtl" },
+  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12, writingDirection: "rtl" },
   availabilityStrip: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -205,16 +205,16 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: depth.hairline,
-    backgroundColor: "rgba(0, 0, 0, 0.14)"
+    backgroundColor: "rgba(0, 0, 0, 0.16)"
   },
   availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right" },
-  helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12 },
+  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
+  helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12, writingDirection: "rtl" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12, writingDirection: "rtl" },
   toggle: {
-    width: 58,
-    height: 32,
+    width: 60,
+    height: 34,
     borderRadius: radii.pill,
     padding: 4,
     alignItems: "flex-start",
@@ -223,14 +223,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: depth.hairline
   },
-  toggleOn: { alignItems: "flex-end", backgroundColor: "rgba(68, 227, 157, 0.16)", borderColor: "rgba(68, 227, 157, 0.4)", boxShadow: shadows.glow },
+  toggleOn: { alignItems: "flex-end", backgroundColor: "rgba(66, 231, 157, 0.16)", borderColor: "rgba(66, 231, 157, 0.4)", boxShadow: shadows.glow },
   toggleSaving: { opacity: 0.6 },
-  toggleKnob: { width: 22, height: 22, borderRadius: radii.pill, backgroundColor: colors.muted },
+  toggleKnob: { width: 24, height: 24, borderRadius: radii.pill, backgroundColor: colors.muted },
   toggleKnobOn: { backgroundColor: colors.green },
   currentRideCard: { gap: spacing.xs },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   actionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.sm },
   actionTile: { width: "47.5%", minHeight: 96, justifyContent: "space-between" },
   actionNumber: { color: colors.primary, fontSize: 23, fontWeight: "900", textAlign: "right" },
-  actionLabel: { color: colors.text, fontSize: 14, fontWeight: "900", textAlign: "right" }
+  actionLabel: { color: colors.text, fontSize: 14, fontWeight: "900", textAlign: "right", writingDirection: "rtl" }
 });

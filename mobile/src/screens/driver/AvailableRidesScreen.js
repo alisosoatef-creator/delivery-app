@@ -11,7 +11,7 @@ import { statusLabel } from "../../utils/rideStatus";
 function paymentLabel(method) {
   if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
   if (method === "wallet") return "المحفظة";
-  return "نقدًا";
+  return "نقدا";
 }
 
 export function AvailableRidesScreen() {
@@ -91,7 +91,7 @@ export function AvailableRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="طلبات الرحلات" subtitle={socketStatus === "connected" ? "الطلبات الجديدة تظهر مباشرة." : "حدّث الطلبات يدويًا عند الحاجة."} compact>
+    <ScreenContainer title="طلبات الرحلات" subtitle={socketStatus === "connected" ? "الطلبات الجديدة تظهر مباشرة." : "حدث الطلبات يدويا عند الحاجة."} compact>
       <View style={styles.statusLine}>
         <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
         <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
@@ -127,10 +127,10 @@ const styles = StyleSheet.create({
   statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   request: { gap: spacing.sm, backgroundColor: "rgba(255, 255, 255, 0.058)", borderColor: depth.violetLine, boxShadow: shadows.glow },
   requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
-  route: { alignItems: "flex-end", gap: 3 },
-  destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
-  path: { color: colors.muted, fontSize: 12, textAlign: "right" },
+  route: { flex: 1, alignItems: "flex-end", gap: 3, minWidth: 0 },
+  destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
+  path: { color: colors.muted, fontSize: 12, textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
   details: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0, 0, 0, 0.16)", borderWidth: 1, borderColor: depth.hairline },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
+  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0, 0, 0, 0.16)", borderWidth: 1, borderColor: depth.hairline, overflow: "hidden" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700", writingDirection: "rtl" }
 });

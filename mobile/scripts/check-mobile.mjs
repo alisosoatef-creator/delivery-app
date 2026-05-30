@@ -139,11 +139,10 @@ for (const token of [
 
 const theme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
 for (const token of [
-  "background: \"#05030b\"",
-  "primary: \"#9a69ff\"",
-  "magenta: \"#ff5bc8\"",
-  "indigo: \"#635bff\"",
-  "accent: \"#f3b86a\"",
+  "background: \"#040308\"",
+  "primary: \"#a682ff\"",
+  "magenta: \"#ff6bd3\"",
+  "green: \"#42e79d\"",
   "elevated",
   "nav",
   "map",
@@ -153,10 +152,10 @@ for (const token of [
   "badge",
   "motion",
   "glowStrong",
-  "bottomNavHeight: 48",
-  "screenBottomPadding: 112"
+  "bottomNavHeight: 58",
+  "screenBottomPadding: 124"
 ]) {
-  if (!theme.includes(token)) throw new Error(`37G purple identity theme token is missing: ${token}`);
+  if (!theme.includes(token)) throw new Error(`v2 command theme token is missing: ${token}`);
 }
 for (const oldIdentity of ["#25f1e1", "37, 241, 225", "41, 213, 201", "tealLine"]) {
   if (source.includes(oldIdentity)) throw new Error(`Old teal identity token should not remain: ${oldIdentity}`);
@@ -164,71 +163,86 @@ for (const oldIdentity of ["#25f1e1", "37, 241, 225", "41, 213, 201", "tealLine"
 
 const pressableScale = fs.readFileSync("src/components/ui/PressableScale.js", "utf8");
 for (const token of ["Animated.spring", "useNativeDriver: true", "motion.pressScale", "onPressIn", "onPressOut"]) {
-  if (!pressableScale.includes(token)) throw new Error(`37F motion system is missing: ${token}`);
+  if (!pressableScale.includes(token)) throw new Error(`motion system is missing: ${token}`);
+}
+for (const token of ["Animated.createAnimatedComponent(Pressable)", "AnimatedPressable", "const baseStyle = typeof style === \"function\"", "accessibilityState"]) {
+  if (!pressableScale.includes(token)) throw new Error(`stable PressableScale is missing: ${token}`);
+}
+if (pressableScale.includes("<Animated.View") || pressableScale.includes("</Animated.View>")) {
+  throw new Error("PressableScale must not wrap Pressable in Animated.View because it breaks flex layout");
 }
 
 const screenContainer = fs.readFileSync("src/components/ui/ScreenContainer.js", "utf8");
-for (const token of ["Animated.timing", "Animated.spring", "backdrop", "gridLineA", "layout.screenBottomPadding", "<BrandMark compact />"]) {
-  if (!screenContainer.includes(token)) throw new Error(`37F screen entrance/header system is missing: ${token}`);
+for (const token of ["Animated.timing", "Animated.spring", "stageLayer", "useSafeAreaInsets", "layout.screenBottomPadding", "<BrandMark compact />"]) {
+  if (!screenContainer.includes(token)) throw new Error(`v2 screen shell is missing: ${token}`);
 }
 
 const brandMark = fs.readFileSync("src/components/ui/BrandMark.js", "utf8");
 for (const token of ["logoGlow", "signal", "title || brand.appName", "logoCompact", "nameCompact"]) {
-  if (!brandMark.includes(token)) throw new Error(`37F brand mark is missing: ${token}`);
+  if (!brandMark.includes(token)) throw new Error(`brand mark is missing: ${token}`);
 }
 
 const mobileCard = fs.readFileSync("src/components/ui/MobileCard.js", "utf8");
-for (const token of ["tone === \"action\"", "tone === \"glass\"", "PressableScale", "styles.hero", "styles.action"]) {
-  if (!mobileCard.includes(token)) throw new Error(`37F card system is missing: ${token}`);
+for (const token of ["tone === \"action\"", "tone === \"glass\"", "tone === \"command\"", "tone === \"map\"", "PressableScale"]) {
+  if (!mobileCard.includes(token)) throw new Error(`v2 card system is missing: ${token}`);
 }
 
 const mobileButton = fs.readFileSync("src/components/ui/MobileButton.js", "utf8");
 for (const token of ["PressableScale", "beam", "variant === \"accent\"", "pressedStyle"]) {
-  if (!mobileButton.includes(token)) throw new Error(`37F button system is missing: ${token}`);
+  if (!mobileButton.includes(token)) throw new Error(`button system is missing: ${token}`);
 }
 
 const appNavigator = fs.readFileSync("src/navigation/AppNavigator.js", "utf8");
-for (const token of ["PressableScale", "nav.dock", "tabMark", "tabDotActive", "useSafeAreaInsets", "insets.bottom", "layout.bottomNavHeight"]) {
-  if (!appNavigator.includes(token)) throw new Error(`37G bottom navigation is missing: ${token}`);
+for (const token of ["PressableScale", "nav.dock", "tabDotActive", "useSafeAreaInsets", "insets.bottom", "layout.bottomNavHeight"]) {
+  if (!appNavigator.includes(token)) throw new Error(`bottom navigation is missing: ${token}`);
+}
+for (const token of ["numberOfLines={1}", "ellipsizeMode=\"tail\"", "flexBasis: 0", "minWidth: 58", "writingDirection: \"rtl\""]) {
+  if (!appNavigator.includes(token)) throw new Error(`stable bottom navigation is missing: ${token}`);
+}
+for (const forbidden of ["tabMark", "minWidth: 0", "\"01\"", "\"02\"", "\"03\"", "\"04\"", "\"05\"", "\"06\"", "[\"wallet\", \"محفظة\"]", "[\"support\", \"دعم\"]"]) {
+  if (appNavigator.includes(forbidden)) throw new Error(`bottom navigation regression found: ${forbidden}`);
 }
 if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
   throw new Error("Bottom navigation should not rely on horizontal scrolling");
 }
 
 const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");
-for (const token of ["heroSystem", "quickActionGrid", "PressableScale", "activeRideCard", "heroActions"]) {
-  if (!customerHome.includes(token)) throw new Error(`37F customer home redesign is missing: ${token}`);
+for (const token of ["MobileRideMap", "mapHero", "heroSystem", "searchBar", "quickActionGrid", "activeRideCard", "heroActions"]) {
+  if (!customerHome.includes(token)) throw new Error(`v2 customer home is missing: ${token}`);
+}
+for (const token of ["flexBasis: \"47.5%\"", "minWidth: 132", "maxWidth: \"48.5%\"", "numberOfLines={1}", "numberOfLines={2}", "alignSelf: \"stretch\""]) {
+  if (!customerHome.includes(token)) throw new Error(`stable quick actions are missing: ${token}`);
 }
 
 const requestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
-for (const token of ["mapDeck", "composer", "summarySticky", "PressableScale", "height={246}", "mapPulse"]) {
-  if (!requestRide.includes(token)) throw new Error(`37F request ride redesign is missing: ${token}`);
+for (const token of ["mapDeck", "composer", "summarySticky", "PressableScale", "height={246}", "mapPulse", "SectionHeader"]) {
+  if (!requestRide.includes(token)) throw new Error(`v2 request ride is missing: ${token}`);
 }
 if (requestRide.indexOf("MobileRideMap") > requestRide.indexOf("composer")) {
   throw new Error("Request Ride must stay map-first before the journey composer");
 }
 
 const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
-for (const token of ["trackingHero", "livePill", "searchingCard", "driverCard", "ratingCard", "starButtonActive", "StatusTimeline"]) {
-  if (!rideStatus.includes(token)) throw new Error(`37F ride status redesign is missing: ${token}`);
+for (const token of ["statusCommand", "trackingHero", "livePill", "searchingCard", "driverCard", "ratingCard", "starButtonActive", "StatusTimeline"]) {
+  if (!rideStatus.includes(token)) throw new Error(`v2 ride status is missing: ${token}`);
 }
 if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) {
   throw new Error("Ride Status must be tracking-first with the map before details");
 }
 
 const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
-for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "driver:online-status-updated"]) {
-  if (!driverHome.includes(token)) throw new Error(`37F driver cockpit is missing: ${token}`);
+for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "driver:online-status-updated", "updateDriverOnlineStatus"]) {
+  if (!driverHome.includes(token)) throw new Error(`v2 driver cockpit is missing: ${token}`);
 }
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
 for (const token of ["tone=\"glass\"", "acceptRide", "ride:created", "paymentLabel", "statusLabel"]) {
-  if (!availableRides.includes(token)) throw new Error(`37F available rides flow is missing: ${token}`);
+  if (!availableRides.includes(token)) throw new Error(`available rides flow is missing: ${token}`);
 }
 
 const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
-for (const token of ["mapStage", "nextActionCard", "trackingLabel", "StatusTimeline", "height={270}"]) {
-  if (!driverCurrent.includes(token)) throw new Error(`37F current ride redesign is missing: ${token}`);
+for (const token of ["statusCommand", "mapStage", "nextActionCard", "trackingLabel", "StatusTimeline", "height={270}"]) {
+  if (!driverCurrent.includes(token)) throw new Error(`v2 current ride is missing: ${token}`);
 }
 for (const token of [
   "accepted: [\"driver_arriving\"",
@@ -241,7 +255,7 @@ for (const token of [
 
 const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
 for (const token of ["normalizeCoordinate", "safeDistanceKm", "markerSpec", "CustomMarker", "MapPoint", "Polyline", "routePoints.length === 2", "lineCap=\"round\"", "locationHint", "mapShade", "FallbackMap", "map.frame", "map.overlay"]) {
-  if (!mobileRideMap.includes(token)) throw new Error(`Mobile map pro feature is missing: ${token}`);
+  if (!mobileRideMap.includes(token)) throw new Error(`Mobile map feature is missing: ${token}`);
 }
 
 for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "GoogleMaps"]) {
@@ -250,15 +264,15 @@ for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "Goo
 
 for (const [label, file, tokens] of [
   ["My Rides", "src/screens/customer/MyRidesScreen.js", ["tone={isActiveRide(ride) ? \"hero\" : \"glass\"}", "ratingLabel", "metaRow"]],
-  ["Wallet", "src/screens/customer/WalletScreen.js", ["balanceOverview", "tone=\"glass\"", "transactionsCard"]],
-  ["Customer Support", "src/screens/customer/SupportScreen.js", ["formCard", "tone=\"glass\"", "ChoiceChip"]],
-  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "tone=\"glass\"", "logout"]],
-  ["Driver Earnings", "src/screens/driver/DriverEarningsScreen.js", ["tone=\"glass\"", "total", "StatCard"]],
-  ["Driver Support", "src/screens/driver/DriverSupportScreen.js", ["tone=\"glass\"", "ChoiceChip", "messageInput"]]
+  ["Wallet", "src/screens/customer/WalletScreen.js", ["balanceOverview", "walletRails", "transactionsCard"]],
+  ["Customer Support", "src/screens/customer/SupportScreen.js", ["formCard", "tone=\"command\"", "ChoiceChip"]],
+  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "actionGrid", "logout"]],
+  ["Driver Earnings", "src/screens/driver/DriverEarningsScreen.js", ["tone=\"command\"", "total", "StatCard"]],
+  ["Driver Support", "src/screens/driver/DriverSupportScreen.js", ["tone=\"command\"", "ChoiceChip", "messageInput"]]
 ]) {
   const fileSource = fs.readFileSync(file, "utf8");
   for (const token of tokens) {
-    if (!fileSource.includes(token)) throw new Error(`37G ${label} redesign token is missing: ${token}`);
+    if (!fileSource.includes(token)) throw new Error(`v2 ${label} token is missing: ${token}`);
   }
 }
 
@@ -272,9 +286,8 @@ for (const section of [
   "36B Mobile UI Reality QA",
   "37D Driver Online Status Sync QA",
   "37C Ride Rating QA",
-  "37E Mobile Visual Identity Final QA",
-  "37F Ultimate Mobile App Redesign QA",
-  "37G Full Mobile Redesign A-Z QA"
+  "37H Mobile UI System Stabilization",
+  "38A Mobile Command UI Rebuild QA"
 ]) {
   if (!qaNotes.includes(section)) throw new Error(`Mobile QA notes missing section: ${section}`);
 }

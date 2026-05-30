@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { Animated, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, depth, layout, radii, shadows, spacing, typography } from "../../utils/mobileTheme";
 import { BrandMark } from "./BrandMark";
 
@@ -14,12 +15,13 @@ export function ScreenContainer({
   contentStyle,
   variant = "page"
 }) {
+  const insets = useSafeAreaInsets();
   const fade = useRef(new Animated.Value(0)).current;
-  const slide = useRef(new Animated.Value(12)).current;
+  const slide = useRef(new Animated.Value(14)).current;
 
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fade, { toValue: 1, duration: 260, useNativeDriver: true }),
+      Animated.timing(fade, { toValue: 1, duration: 240, useNativeDriver: true }),
       Animated.spring(slide, { toValue: 0, friction: 8, tension: 120, useNativeDriver: true })
     ]).start();
   }, [fade, slide]);
@@ -28,11 +30,16 @@ export function ScreenContainer({
     <ScrollView
       style={styles.root}
       contentInsetAdjustmentBehavior="automatic"
-      contentContainerStyle={[styles.content, compact && styles.contentCompact, contentStyle]}
+      contentContainerStyle={[
+        styles.content,
+        compact && styles.contentCompact,
+        { paddingTop: Math.max(spacing.md, insets.top + spacing.xs) },
+        contentStyle
+      ]}
     >
-      <View style={styles.backdrop} />
-      <View style={styles.gridLineA} />
-      <View style={styles.gridLineB} />
+      <View pointerEvents="none" style={styles.stageLayer} />
+      <View pointerEvents="none" style={styles.stageLineTop} />
+      <View pointerEvents="none" style={styles.stageLineMid} />
       <Animated.View style={{ opacity: fade, transform: [{ translateY: slide }], gap: spacing.sm }}>
         {showHeader ? (
           <View style={[styles.header, styles[`${variant}Header`], compact && styles.headerCompact]}>
@@ -41,7 +48,7 @@ export function ScreenContainer({
               {eyebrow ? <Text selectable style={styles.eyebrow}>{eyebrow}</Text> : null}
             </View>
             {title ? <Text selectable style={styles.title}>{title}</Text> : null}
-            {subtitle ? <Text selectable numberOfLines={2} style={styles.subtitle}>{subtitle}</Text> : null}
+            {subtitle ? <Text selectable numberOfLines={3} style={styles.subtitle}>{subtitle}</Text> : null}
           </View>
         ) : null}
         {children}
@@ -56,34 +63,34 @@ const styles = StyleSheet.create({
   content: {
     padding: layout.screenPadding,
     gap: spacing.sm,
-    paddingTop: spacing.md,
     paddingBottom: layout.screenBottomPadding
   },
-  contentCompact: { gap: spacing.sm, paddingTop: spacing.sm },
-  backdrop: {
+  contentCompact: { gap: spacing.sm },
+  stageLayer: {
     position: "absolute",
-    top: -70,
-    right: -80,
-    width: 240,
-    height: 240,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(154, 105, 255, 0.095)"
-  },
-  gridLineA: {
-    position: "absolute",
-    top: 82,
-    left: 0,
+    top: 0,
     right: 0,
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
-  },
-  gridLineB: {
-    position: "absolute",
-    top: 146,
     left: 0,
-    right: 0,
+    height: 210,
+    backgroundColor: "rgba(166, 130, 255, 0.035)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.045)"
+  },
+  stageLineTop: {
+    position: "absolute",
+    top: 78,
+    right: layout.screenPadding,
+    left: layout.screenPadding,
     height: 1,
-    backgroundColor: "rgba(154, 105, 255, 0.04)"
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  stageLineMid: {
+    position: "absolute",
+    top: 138,
+    right: layout.screenPadding,
+    left: layout.screenPadding,
+    height: 1,
+    backgroundColor: "rgba(166, 130, 255, 0.06)"
   },
   header: {
     gap: spacing.xs,
@@ -92,13 +99,13 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: depth.hairline,
-    backgroundColor: "rgba(255, 255, 255, 0.035)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
     boxShadow: shadows.soft
   },
   pageHeader: {},
-  homeHeader: { borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.06)" },
-  trackingHeader: { borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.052)" },
-  driverHeader: { borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.052)" },
+  homeHeader: { borderColor: depth.violetLine, backgroundColor: "rgba(166, 130, 255, 0.07)" },
+  trackingHeader: { borderColor: depth.amberLine, backgroundColor: "rgba(246, 195, 111, 0.055)" },
+  driverHeader: { borderColor: depth.greenLine, backgroundColor: "rgba(66, 231, 157, 0.05)" },
   headerCompact: { paddingVertical: spacing.sm },
   brandRow: {
     alignSelf: "stretch",
@@ -107,8 +114,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: spacing.sm
   },
-  eyebrow: { color: colors.primary, fontSize: typography.caption, fontWeight: "900", textAlign: "right" },
-  title: { color: colors.text, fontSize: typography.title, fontWeight: "900", textAlign: "right", letterSpacing: 0 },
-  subtitle: { color: colors.muted, fontSize: 12.5, lineHeight: 19, textAlign: "right" },
+  eyebrow: { color: colors.primary, fontSize: typography.caption, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
+  title: { color: colors.text, fontSize: typography.title, fontWeight: "900", textAlign: "right", letterSpacing: 0, writingDirection: "rtl" },
+  subtitle: { color: colors.muted, fontSize: 12.5, lineHeight: 19, textAlign: "right", writingDirection: "rtl" },
   footer: { paddingTop: spacing.sm }
 });

@@ -36,17 +36,18 @@ export function MobileInput({
 
 const styles = StyleSheet.create({
   field: { gap: spacing.xs },
-  label: { color: colors.textSoft, fontSize: 12, fontWeight: "800", textAlign: "right" },
+  label: { color: colors.textSoft, fontSize: 12, fontWeight: "800", textAlign: "right", writingDirection: "rtl" },
   input: {
-    minHeight: 48,
+    minHeight: 50,
     borderRadius: radii.lg,
     borderColor: depth.hairline,
     borderWidth: 1,
     color: colors.text,
-    backgroundColor: "rgba(255, 255, 255, 0.058)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
     paddingHorizontal: spacing.md,
     fontSize: 13.5,
-    fontWeight: "600"
+    fontWeight: "700",
+    writingDirection: "rtl"
   },
   multiline: {
     minHeight: 112,
@@ -55,7 +56,7 @@ const styles = StyleSheet.create({
   },
   focused: {
     borderColor: colors.borderStrong,
-    backgroundColor: "rgba(10, 24, 31, 0.94)",
+    backgroundColor: "rgba(18, 13, 30, 0.96)",
     boxShadow: shadows.glow
   }
 });

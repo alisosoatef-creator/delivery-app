@@ -9,7 +9,7 @@ import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 function paymentLabel(method) {
   if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
   if (method === "wallet") return "المحفظة";
-  return "نقدًا";
+  return "نقدا";
 }
 
 function ratingLabel(ride) {
@@ -47,7 +47,11 @@ export function MyRidesScreen() {
   }
 
   return (
-    <ScreenContainer title="رحلاتي" subtitle="رحلاتك النشطة والسابقة في قائمة خفيفة." compact>
+    <ScreenContainer title="رحلاتي" subtitle="الرحلات النشطة والسابقة في سجل واضح." compact>
+      <View style={styles.toolbar}>
+        <MobileBadge label={`${rides.length} رحلة`} tone="info" />
+        <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
+      </View>
       {status === "loading" ? <LoadingState /> : null}
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       {status !== "loading" && !rides.length ? (
@@ -70,18 +74,18 @@ export function MyRidesScreen() {
           </View>
         </MobileCard>
       ))}
-      <MobileButton title="تحديث الرحلات" compact variant="secondary" onPress={load} />
     </ScreenContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
+  toolbar: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
+  error: { color: colors.red, textAlign: "right", fontWeight: "700", writingDirection: "rtl" },
   rideCard: { gap: spacing.xs, borderColor: depth.violetLine, backgroundColor: "rgba(255, 255, 255, 0.052)" },
   rideHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
-  rideTitleWrap: { flex: 1, alignItems: "flex-end", gap: 3 },
-  rideTitle: { color: colors.text, fontSize: 15.5, fontWeight: "900", textAlign: "right" },
-  ridePath: { color: colors.muted, fontSize: 12, textAlign: "right" },
+  rideTitleWrap: { flex: 1, alignItems: "flex-end", gap: 3, minWidth: 0 },
+  rideTitle: { color: colors.text, fontSize: 15.5, fontWeight: "900", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
+  ridePath: { color: colors.muted, fontSize: 12, textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
   metaRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, justifyContent: "space-between", flexWrap: "wrap" },
-  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.14)", boxShadow: shadows.soft }
+  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.14)", boxShadow: shadows.soft, overflow: "hidden" }
 });

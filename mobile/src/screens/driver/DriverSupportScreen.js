@@ -59,8 +59,8 @@ export function DriverSupportScreen() {
   }
 
   return (
-    <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل مشكلتك وسيتابعها فريق الإدارة.">
-      <MobileCard tone="glass" style={styles.formCard}>
+    <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل المشكلة وسيتابعها فريق الإدارة.">
+      <MobileCard tone="command" style={styles.formCard}>
         <View style={styles.formHeader}>
           <MobileBadge label="مخصص للكباتن" tone="info" />
           <Text selectable style={styles.formTitle}>ما الذي تحتاجه؟</Text>
@@ -96,15 +96,15 @@ export function DriverSupportScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.sm, borderColor: depth.violetLine },
+  formCard: { gap: spacing.sm, borderColor: depth.greenLine },
   formHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  formTitle: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15 },
+  formTitle: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15, writingDirection: "rtl" },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800" },
-  success: { color: colors.green, textAlign: "right", fontWeight: "800" },
+  error: { color: colors.red, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
+  success: { color: colors.green, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
   messageInput: { minHeight: 96 },
   ticket: { padding: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: depth.hairline, backgroundColor: "rgba(255,255,255,0.04)", gap: spacing.xs },
   ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  ticketMessage: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12 }
+  ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
+  ticketMessage: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12, writingDirection: "rtl" }
 });

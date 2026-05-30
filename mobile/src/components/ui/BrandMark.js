@@ -24,12 +24,12 @@ const styles = StyleSheet.create({
   wrapCompact: { gap: spacing.xs },
   center: { justifyContent: "center" },
   logo: {
-    width: 48,
-    height: 48,
+    width: 50,
+    height: 50,
     borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(154, 105, 255, 0.16)",
+    backgroundColor: "rgba(166, 130, 255, 0.14)",
     borderWidth: 1,
     borderColor: depth.violetLine,
     overflow: "hidden",
@@ -37,11 +37,12 @@ const styles = StyleSheet.create({
   },
   logoGlow: {
     position: "absolute",
-    width: 72,
-    height: 72,
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(255, 91, 200, 0.12)",
-    transform: [{ translateX: -18 }, { translateY: -16 }]
+    backgroundColor: colors.magenta
   },
   logoCompact: { width: 34, height: 34, borderRadius: radii.md },
   logoText: { color: colors.text, fontSize: 25, fontWeight: "900" },
@@ -49,8 +50,8 @@ const styles = StyleSheet.create({
   copy: { alignItems: "flex-end", gap: 2 },
   copyCenter: { alignItems: "center" },
   nameRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs },
-  name: { color: colors.text, fontSize: 25, fontWeight: "900", textAlign: "right", letterSpacing: 0 },
+  name: { color: colors.text, fontSize: 25, fontWeight: "900", textAlign: "right", letterSpacing: 0, writingDirection: "rtl" },
   nameCompact: { fontSize: 18 },
-  signal: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(154, 105, 255, 0.62)" },
-  tagline: { color: colors.textSoft, fontSize: 11.5, fontWeight: "700", textAlign: "right" }
+  signal: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.green, boxShadow: "0 0 14px rgba(66, 231, 157, 0.58)" },
+  tagline: { color: colors.textSoft, fontSize: 11.5, fontWeight: "700", textAlign: "right", writingDirection: "rtl" }
 });

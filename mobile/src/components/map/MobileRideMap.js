@@ -79,7 +79,7 @@ function markerSpec(type) {
   if (type === "driver") return { label: "ك", title: "الكابتن", color: colors.green, halo: "rgba(66, 231, 156, 0.18)" };
   if (type === "destination") return { label: "و", title: "الوجهة", color: colors.red, halo: "rgba(255, 111, 124, 0.18)" };
   if (type === "user") return { label: "م", title: "موقعي", color: colors.blue, halo: "rgba(117, 167, 255, 0.18)" };
-  return { label: "ا", title: "الانطلاق", color: colors.primary, halo: "rgba(49, 228, 214, 0.18)" };
+  return { label: "ا", title: "الانطلاق", color: colors.primary, halo: "rgba(166, 130, 255, 0.18)" };
 }
 
 function CustomMarker({ type }) {

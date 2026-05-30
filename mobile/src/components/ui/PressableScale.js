@@ -2,6 +2,8 @@ import { useRef } from "react";
 import { Animated, Pressable } from "react-native";
 import { motion } from "../../utils/mobileTheme";
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 export function PressableScale({
   children,
   onPress,
@@ -24,18 +26,24 @@ export function PressableScale({
   }
 
   return (
-    <Animated.View style={{ transform: [{ scale: value }] }}>
-      <Pressable
-        accessibilityRole={accessibilityRole}
-        accessibilityLabel={accessibilityLabel}
-        disabled={disabled}
-        onPress={onPress}
-        onPressIn={() => !disabled && animate(scale)}
-        onPressOut={() => !disabled && animate(1)}
-        style={({ pressed }) => [style, pressed && !disabled && pressedStyle]}
-      >
-        {children}
-      </Pressable>
-    </Animated.View>
+    <AnimatedPressable
+      accessibilityRole={accessibilityRole}
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      onPressIn={() => !disabled && animate(scale)}
+      onPressOut={() => !disabled && animate(1)}
+      style={({ pressed }) => {
+        const baseStyle = typeof style === "function" ? style({ pressed }) : style;
+        return [
+          baseStyle,
+          { transform: [{ scale: value }] },
+          pressed && !disabled && pressedStyle
+        ];
+      }}
+    >
+      {children}
+    </AnimatedPressable>
   );
 }

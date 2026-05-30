@@ -21,10 +21,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     borderWidth: 1,
     borderColor: depth.violetLine,
-    backgroundColor: "rgba(154, 105, 255, 0.055)",
+    backgroundColor: "rgba(166, 130, 255, 0.055)",
     boxShadow: shadows.glow
   },
-  text: { color: colors.muted, fontWeight: "800", textAlign: "center" },
+  text: { color: colors.muted, fontWeight: "800", textAlign: "center", writingDirection: "rtl" },
   skeleton: {
     width: "88%",
     height: 10,

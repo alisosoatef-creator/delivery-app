@@ -5,7 +5,7 @@ import { MobileButton } from "./MobileButton";
 export function EmptyState({ title = "لا توجد بيانات", message = "", actionTitle, onAction }) {
   return (
     <View style={styles.box}>
-      <View style={styles.orb} />
+      <View style={styles.indicator} />
       <Text selectable style={styles.title}>{title}</Text>
       {message ? <Text selectable style={styles.message}>{message}</Text> : null}
       {actionTitle && onAction ? <MobileButton title={actionTitle} onPress={onAction} variant="secondary" /> : null}
@@ -24,13 +24,13 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     boxShadow: shadows.soft
   },
-  orb: {
+  indicator: {
     width: 34,
     height: 6,
     borderRadius: 999,
     backgroundColor: colors.primary,
     boxShadow: shadows.glow
   },
-  title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15.5 },
-  message: { color: colors.muted, lineHeight: 20, textAlign: "right", fontSize: 12.5 }
+  title: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15.5, writingDirection: "rtl" },
+  message: { color: colors.muted, lineHeight: 20, textAlign: "right", fontSize: 12.5, writingDirection: "rtl" }
 });

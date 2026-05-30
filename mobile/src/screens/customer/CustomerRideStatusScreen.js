@@ -206,13 +206,16 @@ export function CustomerRideStatusScreen() {
 
   return (
     <ScreenContainer showHeader={false} compact>
-      <View style={styles.header}>
+      <MobileCard tone="command" style={styles.statusCommand}>
         <View>
           <Text selectable style={styles.title}>{finished ? "ملخص الرحلة" : "تتبع الرحلة"}</Text>
           <Text selectable style={styles.subtitle}>{ride.status === "searching" ? "جاري البحث عن كابتن قريب" : statusLabel(ride.status)}</Text>
         </View>
-        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-      </View>
+        <View style={styles.commandMeta}>
+          <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+          <Text selectable style={styles.commandPrice}>{money(ride.price || ride.fareIls)}</Text>
+        </View>
+      </MobileCard>
 
       <View style={styles.trackingHero}>
         <MobileRideMap
@@ -244,7 +247,7 @@ export function CustomerRideStatusScreen() {
         </MobileCard>
       ) : null}
 
-      <MobileCard tone={finished ? "flat" : "flat"} style={styles.customerStatusSummary}>
+      <MobileCard tone={finished ? "flat" : "glass"} style={styles.customerStatusSummary}>
         <View style={styles.rowBetween}>
           <Text selectable style={styles.statusTitle}>{summaryTitle}</Text>
           <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
@@ -256,7 +259,7 @@ export function CustomerRideStatusScreen() {
       </MobileCard>
 
       {accepted ? (
-        <MobileCard tone="flat" style={styles.driverCard}>
+        <MobileCard tone="command" style={styles.driverCard}>
           <View style={styles.driverHeader}>
             <View style={styles.avatar}>
               <Text selectable={false} style={styles.avatarText}>ك</Text>
@@ -342,6 +345,15 @@ export function CustomerRideStatusScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  statusCommand: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    borderColor: depth.violetLine
+  },
+  commandMeta: { alignItems: "flex-start", gap: spacing.xs },
+  commandPrice: { color: colors.primary, fontSize: 22, fontWeight: "900", textAlign: "left" },
   title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2, fontWeight: "800" },
   trackingHero: { borderRadius: radii.xxl, borderWidth: 1, borderColor: depth.violetLine, overflow: "hidden", boxShadow: shadows.glow },

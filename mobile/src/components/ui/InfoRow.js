@@ -4,8 +4,8 @@ import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
 export function InfoRow({ label, value, accent = false }) {
   return (
     <View style={styles.row}>
-      <Text selectable style={styles.value}>{value ?? "-"}</Text>
-      <Text selectable style={[styles.label, accent && styles.accent]}>{label}</Text>
+      <Text selectable numberOfLines={2} ellipsizeMode="tail" style={styles.value}>{value ?? "-"}</Text>
+      <Text selectable numberOfLines={1} ellipsizeMode="tail" style={[styles.label, accent && styles.accent]}>{label}</Text>
     </View>
   );
 }
@@ -22,7 +22,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: depth.hairline
   },
-  label: { color: colors.muted, fontWeight: "800", textAlign: "right" },
+  label: { color: colors.muted, fontWeight: "800", textAlign: "right", writingDirection: "rtl", maxWidth: "42%" },
   accent: { color: colors.primary },
-  value: { color: colors.text, fontWeight: "900", textAlign: "left", flexShrink: 1 }
+  value: { color: colors.text, fontWeight: "900", textAlign: "left", writingDirection: "rtl", flexShrink: 1, maxWidth: "58%" }
 });

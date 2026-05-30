@@ -195,13 +195,16 @@ export function CurrentRideScreen() {
       {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الطلبات." actionTitle="عرض الطلبات" onAction={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} /> : null}
       {currentRide ? (
         <>
-          <View style={styles.header}>
+          <MobileCard tone="command" style={styles.statusCommand}>
             <View>
               <Text selectable style={styles.title}>رحلتي الحالية</Text>
               <Text selectable style={styles.subtitle}>{statusLabel(currentRide.status)}</Text>
             </View>
-            <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-          </View>
+            <View style={styles.commandMeta}>
+              <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
+              <Text selectable style={styles.commandPrice}>{money(currentRide.price || currentRide.fareIls)}</Text>
+            </View>
+          </MobileCard>
           <View style={styles.mapStage}>
             <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={270} />
           </View>
@@ -267,6 +270,15 @@ export function CurrentRideScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
+  statusCommand: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    borderColor: depth.greenLine
+  },
+  commandMeta: { alignItems: "flex-start", gap: spacing.xs },
+  commandPrice: { color: colors.green, fontSize: 22, fontWeight: "900", textAlign: "left" },
   title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
   cardTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },

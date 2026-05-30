@@ -28,7 +28,7 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
         <View style={[styles.beam, solid && styles.beamSolid]} />
         {loading ? <ActivityIndicator color={solid ? colors.black : colors.primary} size="small" /> : null}
         {icon && !loading ? <Text selectable={false} style={[styles.icon, !solid && styles.secondaryLabel]}>{icon}</Text> : null}
-        <Text style={[styles.label, !solid && styles.secondaryLabel]}>{title}</Text>
+        <Text selectable={false} numberOfLines={2} ellipsizeMode="tail" style={[styles.label, !solid && styles.secondaryLabel]}>{title}</Text>
       </View>
     </PressableScale>
   );
@@ -36,29 +36,37 @@ export function MobileButton({ title, onPress, variant = "primary", disabled = f
 
 const styles = StyleSheet.create({
   button: {
-    minHeight: 48,
+    minHeight: 50,
+    minWidth: 120,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
     paddingHorizontal: spacing.lg,
     backgroundColor: button.primary,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     boxShadow: shadows.glowStrong,
     overflow: "hidden"
   },
-  compact: { minHeight: 36, paddingHorizontal: spacing.md },
+  compact: { minHeight: 38, minWidth: 92, paddingHorizontal: spacing.md },
   secondary: { backgroundColor: button.secondary, borderColor: depth.glassLine, boxShadow: shadows.soft },
-  danger: { backgroundColor: "rgba(255, 100, 117, 0.16)", borderColor: "rgba(255, 100, 117, 0.42)", boxShadow: shadows.dangerGlow },
+  danger: { backgroundColor: "rgba(255, 104, 122, 0.16)", borderColor: "rgba(255, 104, 122, 0.42)", boxShadow: shadows.dangerGlow },
   ghost: { backgroundColor: "transparent", borderColor: depth.hairline, boxShadow: "0 0 0 rgba(0, 0, 0, 0)" },
-  success: { backgroundColor: colors.green, borderColor: "rgba(255, 255, 255, 0.16)", boxShadow: "0 18px 42px rgba(68, 227, 157, 0.18)" },
-  accent: { backgroundColor: button.accent, borderColor: "rgba(255, 255, 255, 0.16)", boxShadow: shadows.accentGlow },
+  success: { backgroundColor: colors.green, borderColor: "rgba(255, 255, 255, 0.16)", boxShadow: "0 18px 42px rgba(66, 231, 157, 0.18)" },
+  accent: { backgroundColor: button.accent, borderColor: "rgba(255, 255, 255, 0.18)", boxShadow: shadows.accentGlow },
   disabled: { opacity: 0.46 },
   pressed: { opacity: 0.9 },
-  content: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: spacing.xs },
-  beam: { position: "absolute", width: 88, height: 88, borderRadius: radii.pill, right: -54, backgroundColor: "rgba(255, 255, 255, 0.11)" },
+  content: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "center", gap: spacing.xs, alignSelf: "stretch", minWidth: 0 },
+  beam: {
+    position: "absolute",
+    width: 92,
+    height: 92,
+    borderRadius: radii.pill,
+    right: -56,
+    backgroundColor: "rgba(255, 255, 255, 0.1)"
+  },
   beamSolid: { backgroundColor: "rgba(255, 255, 255, 0.18)" },
   icon: { color: colors.black, fontWeight: "900", fontSize: 14 },
-  label: { color: "#031315", fontWeight: "900", fontSize: 13.5, letterSpacing: 0, textAlign: "center" },
+  label: { color: colors.black, fontWeight: "900", fontSize: 13.5, lineHeight: 18, letterSpacing: 0, textAlign: "center", writingDirection: "rtl", flexShrink: 1 },
   secondaryLabel: { color: colors.text }
 });

@@ -9,13 +9,13 @@ export function DriverEarningsScreen() {
 
   return (
     <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="ملخص سريع لأداء اليوم والعمليات المالية.">
-      <MobileCard tone="glass" style={styles.hero}>
+      <MobileCard tone="command" style={styles.hero}>
         <View style={styles.heroHeader}>
           <MobileBadge label="تجريبي" tone="warning" />
           <Text selectable style={styles.heroLabel}>إجمالي الأرباح</Text>
         </View>
         <Text selectable style={styles.total}>{money(totalEarnings)}</Text>
-        <Text selectable style={styles.caption}>الأرقام الحالية للتجربة وسيتم ربط التسويات المالية لاحقًا.</Text>
+        <Text selectable style={styles.caption}>الأرقام الحالية للتجربة وسيتم ربط التسويات المالية لاحقا.</Text>
       </MobileCard>
 
       <View style={styles.stats}>
@@ -23,7 +23,7 @@ export function DriverEarningsScreen() {
         <StatCard label="رحلات مكتملة" value={String(completedRides)} hint="حتى الآن" tone="green" />
       </View>
       <View style={styles.stats}>
-        <StatCard label="قيد التحويل" value={money(0)} hint="لاحقًا" tone="blue" />
+        <StatCard label="قيد التحويل" value={money(0)} hint="لاحقا" tone="blue" />
         <StatCard label="متوسط الرحلة" value={money(0)} hint="تقديري" tone="gold" />
       </View>
 
@@ -38,10 +38,10 @@ export function DriverEarningsScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.sm, borderColor: depth.violetLine, boxShadow: shadows.glow },
+  hero: { gap: spacing.sm, borderColor: depth.greenLine, boxShadow: shadows.glow },
   heroHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  heroLabel: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  total: { color: colors.primary, fontSize: 38, fontWeight: "900", textAlign: "right" },
-  caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "800", fontSize: 12 },
+  heroLabel: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
+  total: { color: colors.green, fontSize: 40, fontWeight: "900", textAlign: "right" },
+  caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "800", fontSize: 12, writingDirection: "rtl" },
   stats: { flexDirection: "row-reverse", gap: spacing.sm }
 });

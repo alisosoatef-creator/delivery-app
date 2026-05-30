@@ -1,49 +1,50 @@
 export const colors = {
-  background: "#05030b",
-  backgroundAlt: "#0c0716",
-  graphite: "#100b1b",
-  ink: "#030207",
-  surface: "rgba(14, 10, 24, 0.94)",
-  surfaceStrong: "#130d21",
-  surfaceSoft: "rgba(22, 15, 36, 0.9)",
-  surfaceGlass: "rgba(255, 255, 255, 0.07)",
-  elevated: "rgba(28, 18, 47, 0.92)",
-  border: "rgba(255, 255, 255, 0.088)",
-  borderStrong: "rgba(154, 105, 255, 0.38)",
-  text: "#fbf8ff",
-  textSoft: "#e4dcff",
-  muted: "#a79bbd",
-  mutedStrong: "#746985",
-  primary: "#9a69ff",
-  primaryDeep: "#5934b8",
-  cyan: "#74d6ff",
-  blue: "#6d7dff",
-  violet: "#bd8cff",
-  magenta: "#ff5bc8",
-  indigo: "#635bff",
-  accent: "#f3b86a",
-  accentSoft: "#ffe0aa",
-  gold: "#f3b86a",
-  goldDeep: "#7e592d",
-  amber: "#f3b86a",
-  green: "#44e39d",
-  greenDeep: "#0e7951",
-  red: "#ff6475",
+  background: "#040308",
+  backgroundAlt: "#090611",
+  graphite: "#12101a",
+  ink: "#020105",
+  surface: "rgba(14, 12, 23, 0.96)",
+  surfaceStrong: "#17131f",
+  surfaceSoft: "rgba(24, 20, 34, 0.92)",
+  surfaceGlass: "rgba(255, 255, 255, 0.065)",
+  elevated: "rgba(31, 25, 45, 0.94)",
+  border: "rgba(255, 255, 255, 0.09)",
+  borderStrong: "rgba(145, 116, 255, 0.42)",
+  text: "#fbf9ff",
+  textSoft: "#e6def8",
+  muted: "#aa9ebc",
+  mutedStrong: "#74697f",
+  primary: "#a682ff",
+  primaryDeep: "#5c3bd6",
+  cyan: "#76d9ff",
+  blue: "#7687ff",
+  violet: "#c5a6ff",
+  magenta: "#ff6bd3",
+  indigo: "#6b62ff",
+  accent: "#f6c36f",
+  accentSoft: "#ffe3ad",
+  gold: "#f6c36f",
+  goldDeep: "#7d5928",
+  amber: "#f6c36f",
+  green: "#42e79d",
+  greenDeep: "#0d7751",
+  red: "#ff687a",
   redDeep: "#742632",
-  black: "#010305"
+  black: "#020305",
+  white: "#ffffff"
 };
 
 export const gradients = {
-  app: ["#05030b", "#0b0614", "#120a22"],
-  hero: ["rgba(154, 105, 255, 0.22)", "rgba(255, 91, 200, 0.10)", "rgba(99, 91, 255, 0.12)"],
-  primary: ["#9a69ff", "#ff5bc8"],
-  gold: ["#ffe0aa", "#f3b86a"],
-  danger: ["#ff8a98", "#d84c5c"],
-  driver: ["rgba(154, 105, 255, 0.17)", "rgba(68, 227, 157, 0.09)"]
+  app: ["#040308", "#0a0712", "#11091d"],
+  hero: ["rgba(166, 130, 255, 0.2)", "rgba(255, 107, 211, 0.08)", "rgba(118, 135, 255, 0.1)"],
+  primary: ["#a682ff", "#ff6bd3"],
+  gold: ["#ffe3ad", "#f6c36f"],
+  danger: ["#ff8f9d", "#d84c5c"],
+  driver: ["rgba(166, 130, 255, 0.14)", "rgba(66, 231, 157, 0.1)"]
 };
 
 export const radii = {
-  xs: 9,
+  xs: 10,
   sm: 14,
   md: 18,
   lg: 24,
@@ -55,16 +56,16 @@ export const radii = {
 export const spacing = {
   xxs: 4,
   xs: 8,
-  sm: 11,
-  md: 15,
-  lg: 21,
-  xl: 28,
-  xxl: 36
+  sm: 12,
+  md: 16,
+  lg: 22,
+  xl: 30,
+  xxl: 38
 };
 
 export const typography = {
-  hero: 30,
-  display: 25,
+  hero: 31,
+  display: 26,
   title: 21,
   section: 16,
   body: 14,
@@ -72,59 +73,61 @@ export const typography = {
 };
 
 export const shadows = {
-  soft: "0 12px 26px rgba(0, 0, 0, 0.32)",
-  lift: "0 22px 52px rgba(0, 0, 0, 0.46)",
-  glow: "0 18px 46px rgba(154, 105, 255, 0.18)",
-  glowStrong: "0 24px 58px rgba(154, 105, 255, 0.28)",
-  accentGlow: "0 18px 42px rgba(243, 184, 106, 0.16)",
-  dangerGlow: "0 18px 42px rgba(255, 100, 117, 0.14)"
+  soft: "0 12px 28px rgba(0, 0, 0, 0.32)",
+  lift: "0 22px 54px rgba(0, 0, 0, 0.48)",
+  glow: "0 18px 44px rgba(166, 130, 255, 0.16)",
+  glowStrong: "0 26px 62px rgba(166, 130, 255, 0.25)",
+  accentGlow: "0 18px 42px rgba(246, 195, 111, 0.17)",
+  dangerGlow: "0 18px 42px rgba(255, 104, 122, 0.14)"
 };
 
 export const depth = {
-  hairline: "rgba(255, 255, 255, 0.06)",
-  glassLine: "rgba(255, 255, 255, 0.14)",
-  violetLine: "rgba(154, 105, 255, 0.28)",
-  magentaLine: "rgba(255, 91, 200, 0.22)",
-  amberLine: "rgba(243, 184, 106, 0.25)"
+  hairline: "rgba(255, 255, 255, 0.07)",
+  glassLine: "rgba(255, 255, 255, 0.15)",
+  violetLine: "rgba(166, 130, 255, 0.3)",
+  magentaLine: "rgba(255, 107, 211, 0.2)",
+  amberLine: "rgba(246, 195, 111, 0.28)",
+  greenLine: "rgba(66, 231, 157, 0.24)"
 };
 
 export const nav = {
-  dock: "rgba(6, 4, 12, 0.9)",
+  dock: "rgba(8, 6, 13, 0.94)",
   dockBorder: "rgba(255, 255, 255, 0.12)",
-  active: "rgba(154, 105, 255, 0.17)",
-  activeLine: "#bd8cff"
+  active: "rgba(166, 130, 255, 0.18)",
+  activeLine: "#c5a6ff"
 };
 
 export const card = {
-  hero: "rgba(154, 105, 255, 0.105)",
-  action: "rgba(243, 184, 106, 0.105)",
+  hero: "rgba(166, 130, 255, 0.1)",
+  action: "rgba(246, 195, 111, 0.11)",
   compact: "rgba(255, 255, 255, 0.045)",
-  glass: "rgba(255, 255, 255, 0.074)"
+  glass: "rgba(255, 255, 255, 0.072)",
+  command: "rgba(15, 12, 24, 0.98)"
 };
 
 export const button = {
-  primary: "#9a69ff",
-  accent: "#f3b86a",
+  primary: "#a682ff",
+  accent: "#f6c36f",
   secondary: "rgba(255, 255, 255, 0.075)"
 };
 
 export const chip = {
-  idle: "rgba(255, 255, 255, 0.055)",
-  active: "rgba(154, 105, 255, 0.18)"
+  idle: "rgba(255, 255, 255, 0.06)",
+  active: "rgba(166, 130, 255, 0.18)"
 };
 
 export const badge = {
-  info: "rgba(154, 105, 255, 0.15)",
-  success: "rgba(68, 227, 157, 0.14)",
-  warning: "rgba(243, 184, 106, 0.15)",
-  danger: "rgba(255, 100, 117, 0.14)"
+  info: "rgba(166, 130, 255, 0.15)",
+  success: "rgba(66, 231, 157, 0.14)",
+  warning: "rgba(246, 195, 111, 0.15)",
+  danger: "rgba(255, 104, 122, 0.14)"
 };
 
 export const map = {
-  frame: "rgba(9, 5, 17, 0.96)",
-  overlay: "rgba(6, 3, 13, 0.76)",
-  route: "#bd8cff",
-  driver: "#f3b86a"
+  frame: "rgba(8, 7, 13, 0.98)",
+  overlay: "rgba(5, 4, 10, 0.78)",
+  route: "#c5a6ff",
+  driver: "#f6c36f"
 };
 
 export const motion = {
@@ -136,13 +139,13 @@ export const motion = {
 
 export const layout = {
   screenPadding: spacing.md,
-  bottomNavHeight: 48,
-  screenBottomPadding: 112
+  bottomNavHeight: 58,
+  screenBottomPadding: 124
 };
 
 export const brand = {
   appName: "وصل",
-  tagline: "مشاوير ذكية في الضفة الغربية"
+  tagline: "تنقل ذكي في الضفة الغربية"
 };
 
 export function money(value) {
