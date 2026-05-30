@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
     borderRightWidth: 3,
-    borderRightColor: depth.tealLine,
+    borderRightColor: depth.violetLine,
     borderRadius: radii.sm
   },
   copy: { flex: 1, gap: spacing.xxs, alignItems: "flex-end" },

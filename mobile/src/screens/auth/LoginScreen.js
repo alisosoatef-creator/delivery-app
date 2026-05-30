@@ -5,7 +5,7 @@ import { loginCustomer } from "../../services/authApi";
 import { saveMobileSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function LoginScreen() {
   const { dispatch } = useMobileApp();
@@ -39,12 +39,12 @@ export function LoginScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <MobileCard tone="hero" style={styles.hero}>
+      <MobileCard tone="glass" style={styles.hero}>
         <BrandMark />
         <Text selectable style={styles.title}>مشوارك التالي يبدأ من هنا.</Text>
         <Text selectable style={styles.subtitle}>دخول سريع، طلب واضح، وتتبع مباشر للكابتن.</Text>
       </MobileCard>
-      <MobileCard tone="flat" style={styles.form}>
+      <MobileCard tone="glass" style={styles.form}>
         <MobileInput label="الاسم أو رقم الهاتف" value={identifier} onChangeText={setIdentifier} placeholder="+970..." />
         <MobileInput label="كلمة السر" value={password} onChangeText={setPassword} secureTextEntry placeholder="••••••••" />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
@@ -59,10 +59,10 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.sm, alignItems: "flex-end", paddingVertical: spacing.lg },
+  hero: { gap: spacing.sm, alignItems: "flex-end", paddingVertical: spacing.lg, borderColor: depth.violetLine, boxShadow: shadows.glow },
   title: { color: colors.text, fontSize: 25, lineHeight: 32, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
-  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.04)" },
+  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.052)" },
   links: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }
 });

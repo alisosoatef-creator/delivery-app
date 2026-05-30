@@ -190,7 +190,7 @@ export function DriverHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.tealLine },
+  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.violetLine },
   cockpitTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   identity: { alignItems: "flex-end", gap: 3 },
   role: { color: colors.primary, fontSize: 13, fontWeight: "900", textAlign: "right" },

@@ -20,8 +20,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: depth.tealLine,
-    backgroundColor: "rgba(37, 241, 225, 0.045)",
+    borderColor: depth.violetLine,
+    backgroundColor: "rgba(154, 105, 255, 0.055)",
     boxShadow: shadows.glow
   },
   text: { color: colors.muted, fontWeight: "800", textAlign: "center" },

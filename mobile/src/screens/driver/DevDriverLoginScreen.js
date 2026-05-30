@@ -5,7 +5,7 @@ import { driverDevLogin, fetchDriverDevDrivers } from "../../services/driverApi"
 import { saveDriverSession } from "../../services/sessionStorage";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function DevDriverLoginScreen() {
   const { dispatch } = useMobileApp();
@@ -41,7 +41,7 @@ export function DevDriverLoginScreen() {
 
   return (
     <ScreenContainer showHeader={false}>
-      <MobileCard tone="hero" style={styles.hero}>
+      <MobileCard tone="glass" style={styles.hero}>
         <BrandMark />
         <MobileBadge label="Development Only" tone="warning" />
         <Text selectable style={styles.title}>مدخل الكابتن</Text>
@@ -57,7 +57,7 @@ export function DevDriverLoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: "flex-end" },
+  hero: { alignItems: "flex-end", borderColor: depth.violetLine, boxShadow: shadows.glow },
   title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, lineHeight: 20, textAlign: "right", marginBottom: spacing.xs, fontSize: 12 },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }

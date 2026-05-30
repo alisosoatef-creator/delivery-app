@@ -40,10 +40,10 @@ const styles = StyleSheet.create({
   },
   compact: { padding: spacing.sm, borderRadius: radii.md },
   soft: { backgroundColor: colors.surfaceSoft, borderColor: depth.glassLine },
-  gold: { backgroundColor: "rgba(37, 241, 225, 0.09)", borderColor: depth.tealLine, boxShadow: shadows.glow },
+  gold: { backgroundColor: "rgba(154, 105, 255, 0.1)", borderColor: depth.violetLine, boxShadow: shadows.glow },
   danger: { backgroundColor: "rgba(255, 100, 117, 0.11)", borderColor: "rgba(255, 100, 117, 0.36)", boxShadow: shadows.dangerGlow },
   flat: { boxShadow: "0 0 0 rgba(0, 0, 0, 0)", backgroundColor: card.compact, borderColor: depth.hairline },
-  hero: { backgroundColor: card.hero, borderColor: depth.tealLine, boxShadow: shadows.glow },
+  hero: { backgroundColor: card.hero, borderColor: depth.violetLine, boxShadow: shadows.glow },
   action: { backgroundColor: card.action, borderColor: depth.amberLine, boxShadow: shadows.accentGlow },
   glass: { backgroundColor: card.glass, borderColor: depth.glassLine, boxShadow: shadows.lift },
   pressed: { opacity: 0.92 }

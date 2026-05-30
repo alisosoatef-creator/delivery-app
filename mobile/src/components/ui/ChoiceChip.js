@@ -28,10 +28,10 @@ const styles = StyleSheet.create({
     borderColor: depth.hairline,
     backgroundColor: chip.idle
   },
-  selected: { backgroundColor: chip.active, borderColor: depth.tealLine, boxShadow: shadows.glow },
+  selected: { backgroundColor: chip.active, borderColor: depth.violetLine, boxShadow: shadows.glow },
   pressed: { opacity: 0.9 },
   signal: { width: 5, height: 5, borderRadius: radii.pill, backgroundColor: colors.mutedStrong },
-  signalActive: { width: 14, backgroundColor: colors.primary, boxShadow: "0 0 13px rgba(37, 241, 225, 0.5)" },
+  signalActive: { width: 14, backgroundColor: colors.primary, boxShadow: "0 0 13px rgba(154, 105, 255, 0.56)" },
   label: { color: colors.textSoft, fontWeight: "900", fontSize: 12.5 },
   selectedLabel: { color: colors.text }
 });

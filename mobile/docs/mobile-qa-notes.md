@@ -165,3 +165,17 @@ Use this checklist for the full visual rebuild:
 9. Driver app: confirm cockpit, availability strip, action grid, available ride cards, and current ride map/action flow feel built for fast captain use.
 10. Map: confirm markers, badges, legend, and fallback card match the new electronic visual identity without showing coordinates.
 11. Performance: scroll through all tabs and confirm no heavy animation, lag, or Expo Go crash.
+
+## 37G Full Mobile Redesign A-Z QA
+
+Use this checklist for the black/purple full redesign:
+
+1. Identity shift: confirm the app no longer feels teal-heavy and now uses deep black, graphite, rich purple, violet, indigo, and subtle magenta.
+2. Bottom navigation: confirm labels stay horizontal, readable, RTL-correct, safe-area-aware, and never cover the last visible action.
+3. Root layout: open every customer and driver tab and confirm no vertical text collapse, clipped buttons, narrow chips, or broken wrapping.
+4. Shared UI: confirm buttons, cards, inputs, chips, badges, timeline, empty/loading/error states, and headers share the new purple/glass system.
+5. Customer screens: verify Home, Request Ride, Ride Status, My Rides, Wallet, Support, and Account all look intentionally redesigned.
+6. Driver screens: verify Driver Home, Available Rides, Current Ride, Earnings, and Support share the cockpit/dashboard language.
+7. Maps: confirm MobileRideMap uses the purple identity, clean frame, compact badges, clear markers, and a polished fallback.
+8. Motion: press CTAs, chips, cards, and nav tabs and confirm the interaction is smooth without visual noise.
+9. Stability: complete a ride, rate it, open history, toggle driver availability, and verify no UI redesign broke the existing flows.

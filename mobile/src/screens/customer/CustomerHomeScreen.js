@@ -88,14 +88,14 @@ export function CustomerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  heroSystem: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.tealLine },
+  heroSystem: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.violetLine },
   heroTop: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   heroCopy: { alignItems: "flex-end", gap: 4 },
   greeting: { color: colors.primary, fontSize: 14, fontWeight: "900", textAlign: "right" },
   title: { color: colors.text, fontSize: 30, lineHeight: 36, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.textSoft, fontSize: 13.5, lineHeight: 21, textAlign: "right" },
   heroActions: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, flexWrap: "wrap" },
-  activeRideCard: { gap: spacing.xs, borderColor: depth.tealLine },
+  activeRideCard: { gap: spacing.xs, borderColor: depth.violetLine },
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   cardTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   activeFooter: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },

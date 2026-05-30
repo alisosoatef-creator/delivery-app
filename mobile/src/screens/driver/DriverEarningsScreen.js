@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, InfoRow, MobileBadge, MobileCard, ScreenContainer, SectionHeader, StatCard } from "../../components/ui";
-import { colors, money, spacing } from "../../utils/mobileTheme";
+import { colors, depth, money, shadows, spacing } from "../../utils/mobileTheme";
 
 export function DriverEarningsScreen() {
   const todayEarnings = 0;
@@ -9,7 +9,7 @@ export function DriverEarningsScreen() {
 
   return (
     <ScreenContainer eyebrow="محفظة الكابتن" title="الأرباح" subtitle="ملخص سريع لأداء اليوم والعمليات المالية.">
-      <MobileCard tone="hero" style={styles.hero}>
+      <MobileCard tone="glass" style={styles.hero}>
         <View style={styles.heroHeader}>
           <MobileBadge label="تجريبي" tone="warning" />
           <Text selectable style={styles.heroLabel}>إجمالي الأرباح</Text>
@@ -27,7 +27,7 @@ export function DriverEarningsScreen() {
         <StatCard label="متوسط الرحلة" value={money(0)} hint="تقديري" tone="gold" />
       </View>
 
-      <MobileCard tone="flat">
+      <MobileCard tone="glass">
         <SectionHeader title="سجل العمليات" subtitle="آخر عمليات المحفظة والتسويات عند توفرها." />
         <InfoRow label="طريقة الحساب" value="تجريبية الآن" accent />
         <InfoRow label="الدفع النقدي" value="يظهر بعد إنهاء الرحلات" />
@@ -38,10 +38,10 @@ export function DriverEarningsScreen() {
 }
 
 const styles = StyleSheet.create({
-  hero: { gap: spacing.sm },
+  hero: { gap: spacing.sm, borderColor: depth.violetLine, boxShadow: shadows.glow },
   heroHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   heroLabel: { color: colors.text, fontWeight: "900", textAlign: "right" },
-  total: { color: colors.text, fontSize: 35, fontWeight: "900", textAlign: "right" },
+  total: { color: colors.primary, fontSize: 38, fontWeight: "900", textAlign: "right" },
   caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "800", fontSize: 12 },
   stats: { flexDirection: "row-reverse", gap: spacing.sm }
 });

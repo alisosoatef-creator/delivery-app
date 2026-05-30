@@ -79,7 +79,7 @@ const styles = StyleSheet.create({
     borderColor: depth.hairline
   },
   dotActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dotCurrent: { width: 15, height: 15, boxShadow: "0 0 18px rgba(37, 241, 225, 0.58)" },
+  dotCurrent: { width: 15, height: 15, boxShadow: "0 0 18px rgba(154, 105, 255, 0.62)" },
   label: { color: colors.mutedStrong, fontSize: 8.5, fontWeight: "800", textAlign: "center" },
   labelActive: { color: colors.textSoft },
   labelCurrent: { color: colors.text },

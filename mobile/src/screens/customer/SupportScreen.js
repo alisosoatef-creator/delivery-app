@@ -4,7 +4,7 @@ import { ChoiceChip, EmptyState, InfoRow, LoadingState, MobileBadge, MobileButto
 import { createSupportTicket, fetchMySupportTickets } from "../../services/supportApi";
 import { useMobileApp } from "../../store/mobileStore";
 import { apiErrorMessage } from "../../utils/errorUtils";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
 
 const issueTypes = [
   { value: "ride_issue", label: "مشكلة في الرحلة" },
@@ -59,7 +59,7 @@ export function SupportScreen() {
 
   return (
     <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="أرسل طلبًا مختصرًا وسنتابعه من لوحة الإدارة.">
-      <MobileCard tone="flat" style={styles.formCard}>
+      <MobileCard tone="glass" style={styles.formCard}>
         <SectionHeader title="كيف نساعدك؟" subtitle="اختر النوع ثم اكتب التفاصيل المهمة فقط." />
         <View style={styles.chips}>
           {issueTypes.map((item) => (
@@ -72,7 +72,7 @@ export function SupportScreen() {
         <MobileButton title="إرسال تذكرة" onPress={submit} disabled={!message.trim()} />
       </MobileCard>
 
-      <MobileCard tone="flat">
+      <MobileCard tone="glass">
         <SectionHeader title="تذاكري السابقة" subtitle="تابع حالة طلبات الدعم من هنا." />
         {loading ? <LoadingState message="جاري تحميل التذاكر..." /> : null}
         {!loading && !tickets.length ? <EmptyState title="لا توجد تذاكر بعد" message="عند إرسال أول تذكرة ستظهر هنا." /> : null}
@@ -92,12 +92,12 @@ export function SupportScreen() {
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.sm },
+  formCard: { gap: spacing.sm, borderColor: depth.violetLine },
   chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
   error: { color: colors.red, textAlign: "right", fontWeight: "800" },
   success: { color: colors.green, textAlign: "right", fontWeight: "800" },
   messageInput: { minHeight: 96 },
-  ticket: { paddingVertical: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.xs },
+  ticket: { padding: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: depth.hairline, backgroundColor: "rgba(255,255,255,0.04)", gap: spacing.xs },
   ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right" },
   ticketMessage: { color: colors.muted, lineHeight: 22, textAlign: "right" }

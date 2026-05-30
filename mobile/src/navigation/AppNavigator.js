@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
   tabLabelActive: { color: colors.text },
   toast: {
     color: colors.text,
-    backgroundColor: "rgba(37, 241, 225, 0.15)",
+    backgroundColor: "rgba(154, 105, 255, 0.16)",
     padding: spacing.sm,
     textAlign: "center",
     fontWeight: "800"

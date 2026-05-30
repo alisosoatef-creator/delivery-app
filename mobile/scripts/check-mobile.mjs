@@ -139,9 +139,11 @@ for (const token of [
 
 const theme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
 for (const token of [
-  "background: \"#020508\"",
-  "primary: \"#25f1e1\"",
-  "accent: \"#f0b85f\"",
+  "background: \"#05030b\"",
+  "primary: \"#9a69ff\"",
+  "magenta: \"#ff5bc8\"",
+  "indigo: \"#635bff\"",
+  "accent: \"#f3b86a\"",
   "elevated",
   "nav",
   "map",
@@ -154,7 +156,10 @@ for (const token of [
   "bottomNavHeight: 48",
   "screenBottomPadding: 112"
 ]) {
-  if (!theme.includes(token)) throw new Error(`37F theme token is missing: ${token}`);
+  if (!theme.includes(token)) throw new Error(`37G purple identity theme token is missing: ${token}`);
+}
+for (const oldIdentity of ["#25f1e1", "37, 241, 225", "41, 213, 201", "tealLine"]) {
+  if (source.includes(oldIdentity)) throw new Error(`Old teal identity token should not remain: ${oldIdentity}`);
 }
 
 const pressableScale = fs.readFileSync("src/components/ui/PressableScale.js", "utf8");
@@ -184,7 +189,7 @@ for (const token of ["PressableScale", "beam", "variant === \"accent\"", "presse
 
 const appNavigator = fs.readFileSync("src/navigation/AppNavigator.js", "utf8");
 for (const token of ["PressableScale", "nav.dock", "tabMark", "tabDotActive", "useSafeAreaInsets", "insets.bottom", "layout.bottomNavHeight"]) {
-  if (!appNavigator.includes(token)) throw new Error(`37F bottom navigation is missing: ${token}`);
+  if (!appNavigator.includes(token)) throw new Error(`37G bottom navigation is missing: ${token}`);
 }
 if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
   throw new Error("Bottom navigation should not rely on horizontal scrolling");
@@ -243,6 +248,20 @@ for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "Goo
   if (source.includes(forbiddenMapToken)) throw new Error(`Forbidden paid Google Maps API usage in mobile source: ${forbiddenMapToken}`);
 }
 
+for (const [label, file, tokens] of [
+  ["My Rides", "src/screens/customer/MyRidesScreen.js", ["tone={isActiveRide(ride) ? \"hero\" : \"glass\"}", "ratingLabel", "metaRow"]],
+  ["Wallet", "src/screens/customer/WalletScreen.js", ["balanceOverview", "tone=\"glass\"", "transactionsCard"]],
+  ["Customer Support", "src/screens/customer/SupportScreen.js", ["formCard", "tone=\"glass\"", "ChoiceChip"]],
+  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "tone=\"glass\"", "logout"]],
+  ["Driver Earnings", "src/screens/driver/DriverEarningsScreen.js", ["tone=\"glass\"", "total", "StatCard"]],
+  ["Driver Support", "src/screens/driver/DriverSupportScreen.js", ["tone=\"glass\"", "ChoiceChip", "messageInput"]]
+]) {
+  const fileSource = fs.readFileSync(file, "utf8");
+  for (const token of tokens) {
+    if (!fileSource.includes(token)) throw new Error(`37G ${label} redesign token is missing: ${token}`);
+  }
+}
+
 const qaNotes = fs.readFileSync("docs/mobile-qa-notes.md", "utf8");
 for (const section of [
   "31A Ride Experience QA",
@@ -254,7 +273,8 @@ for (const section of [
   "37D Driver Online Status Sync QA",
   "37C Ride Rating QA",
   "37E Mobile Visual Identity Final QA",
-  "37F Ultimate Mobile App Redesign QA"
+  "37F Ultimate Mobile App Redesign QA",
+  "37G Full Mobile Redesign A-Z QA"
 ]) {
   if (!qaNotes.includes(section)) throw new Error(`Mobile QA notes missing section: ${section}`);
 }

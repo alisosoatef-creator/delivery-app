@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     width: 240,
     height: 240,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(37, 241, 225, 0.09)"
+    backgroundColor: "rgba(154, 105, 255, 0.095)"
   },
   gridLineA: {
     position: "absolute",
@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(37, 241, 225, 0.035)"
+    backgroundColor: "rgba(154, 105, 255, 0.04)"
   },
   header: {
     gap: spacing.xs,
@@ -96,9 +96,9 @@ const styles = StyleSheet.create({
     boxShadow: shadows.soft
   },
   pageHeader: {},
-  homeHeader: { borderColor: depth.tealLine, backgroundColor: "rgba(37, 241, 225, 0.055)" },
-  trackingHeader: { borderColor: depth.amberLine, backgroundColor: "rgba(240, 184, 95, 0.052)" },
-  driverHeader: { borderColor: depth.tealLine, backgroundColor: "rgba(68, 227, 157, 0.05)" },
+  homeHeader: { borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.06)" },
+  trackingHeader: { borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.052)" },
+  driverHeader: { borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.052)" },
   headerCompact: { paddingVertical: spacing.sm },
   brandRow: {
     alignSelf: "stretch",

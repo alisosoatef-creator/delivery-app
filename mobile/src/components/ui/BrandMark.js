@@ -29,9 +29,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(37, 241, 225, 0.14)",
+    backgroundColor: "rgba(154, 105, 255, 0.16)",
     borderWidth: 1,
-    borderColor: depth.tealLine,
+    borderColor: depth.violetLine,
     overflow: "hidden",
     boxShadow: shadows.glowStrong
   },
@@ -40,7 +40,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(37, 241, 225, 0.18)",
+    backgroundColor: "rgba(255, 91, 200, 0.12)",
     transform: [{ translateX: -18 }, { translateY: -16 }]
   },
   logoCompact: { width: 34, height: 34, borderRadius: radii.md },
@@ -51,6 +51,6 @@ const styles = StyleSheet.create({
   nameRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs },
   name: { color: colors.text, fontSize: 25, fontWeight: "900", textAlign: "right", letterSpacing: 0 },
   nameCompact: { fontSize: 18 },
-  signal: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(37, 241, 225, 0.58)" },
+  signal: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(154, 105, 255, 0.62)" },
   tagline: { color: colors.textSoft, fontSize: 11.5, fontWeight: "700", textAlign: "right" }
 });

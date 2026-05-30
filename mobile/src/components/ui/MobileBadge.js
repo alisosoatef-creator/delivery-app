@@ -28,8 +28,8 @@ const styles = StyleSheet.create({
     borderColor: depth.hairline
   },
   success: { backgroundColor: badge.success, borderColor: "rgba(68, 227, 157, 0.34)" },
-  warning: { backgroundColor: badge.warning, borderColor: "rgba(240, 184, 95, 0.36)" },
+  warning: { backgroundColor: badge.warning, borderColor: "rgba(243, 184, 106, 0.36)" },
   danger: { backgroundColor: badge.danger, borderColor: "rgba(255, 100, 117, 0.36)" },
-  info: { backgroundColor: badge.info, borderColor: "rgba(37, 241, 225, 0.32)" },
+  info: { backgroundColor: badge.info, borderColor: "rgba(154, 105, 255, 0.34)" },
   label: { color: colors.text, fontSize: 11.5, fontWeight: "900", letterSpacing: 0, textAlign: "center" }
 });

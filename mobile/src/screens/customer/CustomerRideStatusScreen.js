@@ -344,7 +344,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2, fontWeight: "800" },
-  trackingHero: { borderRadius: radii.xxl, borderWidth: 1, borderColor: depth.tealLine, overflow: "hidden", boxShadow: shadows.glow },
+  trackingHero: { borderRadius: radii.xxl, borderWidth: 1, borderColor: depth.violetLine, overflow: "hidden", boxShadow: shadows.glow },
   livePill: {
     position: "absolute",
     top: spacing.sm,
@@ -359,12 +359,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: depth.glassLine
   },
-  liveDot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.green, boxShadow: "0 0 13px rgba(68, 227, 157, 0.55)" },
-  liveDotOff: { backgroundColor: colors.accent, boxShadow: "0 0 12px rgba(240, 184, 95, 0.44)" },
+  liveDot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 13px rgba(154, 105, 255, 0.56)" },
+  liveDotOff: { backgroundColor: colors.accent, boxShadow: "0 0 12px rgba(243, 184, 106, 0.44)" },
   liveText: { color: colors.text, fontSize: 11.5, fontWeight: "900" },
-  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: depth.tealLine, backgroundColor: "rgba(37, 241, 225, 0.08)" },
+  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.085)" },
   scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
-  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(41, 213, 201, 0.42)" },
+  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(154, 105, 255, 0.48)" },
   scanDotMuted: { opacity: 0.38 },
   searchingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   statusTitle: { color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "right" },
   price: { color: colors.primary, fontSize: 24, fontWeight: "900" },
-  driverCard: { gap: spacing.xs, borderColor: depth.amberLine, backgroundColor: "rgba(240, 184, 95, 0.06)", boxShadow: shadows.accentGlow },
+  driverCard: { gap: spacing.xs, borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.06)", boxShadow: shadows.accentGlow },
   driverHeader: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
   avatar: { width: 48, height: 48, borderRadius: radii.lg, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, boxShadow: shadows.accentGlow },
   avatarText: { color: colors.black, fontSize: 20, fontWeight: "900" },
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
   cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
   driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
   finishedCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.045)", borderColor: depth.hairline },
-  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: depth.amberLine, backgroundColor: "rgba(240, 184, 95, 0.06)", boxShadow: shadows.accentGlow },
+  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.06)", boxShadow: shadows.accentGlow },
   savedRating: { color: colors.accent, fontSize: 18, fontWeight: "900", textAlign: "right" },
   starsRow: { flexDirection: "row-reverse", justifyContent: "center", gap: spacing.xs },
   starButton: {
@@ -394,7 +394,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border
   },
-  starButtonActive: { backgroundColor: "rgba(240, 184, 95, 0.2)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
+  starButtonActive: { backgroundColor: "rgba(243, 184, 106, 0.2)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
   starText: { color: colors.muted, fontSize: 22, fontWeight: "900" },
   starTextActive: { color: colors.accent },
   reviewInput: {

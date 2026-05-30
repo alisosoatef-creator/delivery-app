@@ -125,7 +125,7 @@ export function AvailableRidesScreen() {
 
 const styles = StyleSheet.create({
   statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  request: { gap: spacing.sm, backgroundColor: "rgba(255, 255, 255, 0.058)", borderColor: depth.tealLine, boxShadow: shadows.glow },
+  request: { gap: spacing.sm, backgroundColor: "rgba(255, 255, 255, 0.058)", borderColor: depth.violetLine, boxShadow: shadows.glow },
   requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
   route: { alignItems: "flex-end", gap: 3 },
   destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },

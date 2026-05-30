@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: depth.tealLine,
+    borderColor: depth.violetLine,
     backgroundColor: map.frame,
     boxShadow: shadows.lift
   },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     left: spacing.sm,
     bottom: spacing.sm,
     color: colors.black,
-    backgroundColor: "rgba(37, 241, 225, 0.94)",
+    backgroundColor: "rgba(154, 105, 255, 0.94)",
     borderRadius: 999,
     overflow: "hidden",
     paddingHorizontal: spacing.md,
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: map.frame,
     borderWidth: 1,
-    borderColor: depth.tealLine
+    borderColor: depth.violetLine
   },
   calloutText: {
     color: colors.text,
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     borderRadius: radii.xl,
     borderWidth: 1,
-    borderColor: depth.tealLine,
+    borderColor: depth.violetLine,
     backgroundColor: map.frame,
     padding: spacing.md,
     overflow: "hidden",
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     right: 0,
     left: 0,
     bottom: 0,
-    backgroundColor: "rgba(37, 241, 225, 0.055)"
+    backgroundColor: "rgba(154, 105, 255, 0.055)"
   },
   routeLine: {
     position: "absolute",

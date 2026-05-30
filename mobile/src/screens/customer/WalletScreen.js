@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileCard, ScreenContainer } from "../../components/ui";
 import { fetchCustomerWallet } from "../../services/paymentsApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, money, spacing } from "../../utils/mobileTheme";
+import { colors, depth, money, shadows, spacing } from "../../utils/mobileTheme";
 
 export function WalletScreen() {
   const { state } = useMobileApp();
@@ -21,7 +21,7 @@ export function WalletScreen() {
     <ScreenContainer title="المحفظة" subtitle="رصيد مختصر وعمليات الدفع داخل التطبيق." compact>
       {status === "loading" ? <LoadingState message="جاري تحميل المحفظة..." /> : null}
 
-      <MobileCard tone="hero" style={styles.balanceOverview}>
+      <MobileCard tone="glass" style={styles.balanceOverview}>
         <View style={styles.balanceHeader}>
           <MobileBadge label="دفع إلكتروني تجريبي" tone="info" />
           <Text selectable style={styles.label}>رصيد المحفظة</Text>
@@ -30,7 +30,7 @@ export function WalletScreen() {
         <Text selectable style={styles.caption}>الدفع الإلكتروني تجريبي الآن، ولا يتم حفظ بيانات بطاقة حساسة.</Text>
       </MobileCard>
 
-      <MobileCard tone="flat" style={styles.transactionsCard}>
+      <MobileCard tone="glass" style={styles.transactionsCard}>
         <Text selectable style={styles.sectionTitle}>آخر العمليات</Text>
         {!wallet?.transactions?.length ? <EmptyState title="لا توجد عمليات" message="ستظهر عمليات الدفع أو الاسترداد هنا عند توفرها." /> : null}
         {wallet?.transactions?.map((item) => (
@@ -44,12 +44,12 @@ export function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
-  balanceOverview: { gap: spacing.xs },
+  balanceOverview: { gap: spacing.xs, borderColor: depth.violetLine, boxShadow: shadows.glow },
   balanceHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
   label: { color: colors.muted, textAlign: "right", fontSize: 13, fontWeight: "800" },
-  balance: { color: colors.primary, fontSize: 32, fontWeight: "900", textAlign: "right" },
+  balance: { color: colors.text, fontSize: 36, fontWeight: "900", textAlign: "right" },
   caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "700", fontSize: 12.5 },
   transactionsCard: { gap: spacing.xs },
   sectionTitle: { color: colors.text, textAlign: "right", fontSize: 16, fontWeight: "900" },
-  transaction: { borderTopWidth: 1, borderTopColor: colors.border, paddingVertical: spacing.xs }
+  transaction: { borderTopWidth: 1, borderTopColor: depth.hairline, paddingVertical: spacing.xs }
 });

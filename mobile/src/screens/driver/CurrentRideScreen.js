@@ -273,8 +273,8 @@ const styles = StyleSheet.create({
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
   mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
   muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
-  mapStage: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.tealLine, boxShadow: shadows.glow },
-  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.052)", borderColor: depth.tealLine },
+  mapStage: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.violetLine, boxShadow: shadows.glow },
+  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.052)", borderColor: depth.violetLine },
   routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
   routePoints: { gap: spacing.xs },
   routePoint: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs, borderTopWidth: 1, borderTopColor: depth.hairline, borderRadius: radii.sm },
@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
   trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
   trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  nextActionCard: { gap: spacing.xs, borderColor: depth.amberLine, boxShadow: shadows.accentGlow, backgroundColor: "rgba(240, 184, 95, 0.07)" },
+  nextActionCard: { gap: spacing.xs, borderColor: depth.amberLine, boxShadow: shadows.accentGlow, backgroundColor: "rgba(243, 184, 106, 0.07)" },
   nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
   completedCard: { gap: spacing.sm, borderColor: "rgba(68, 227, 157, 0.24)", backgroundColor: "rgba(68, 227, 157, 0.06)" }
 });

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { BrandMark, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
 import { registerCustomer } from "../../services/authApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, spacing } from "../../utils/mobileTheme";
+import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function RegisterScreen() {
   const { dispatch } = useMobileApp();
@@ -48,7 +48,7 @@ export function RegisterScreen() {
         <Text selectable style={styles.title}>حساب زبون جديد</Text>
         <Text selectable style={styles.subtitle}>بيانات أساسية ثم تفعيل سريع برمز OTP التجريبي.</Text>
       </View>
-      <MobileCard tone="flat" style={styles.form}>
+      <MobileCard tone="glass" style={styles.form}>
         <MobileInput label="الاسم الكامل" value={form.fullName} onChangeText={(value) => update("fullName", value)} />
         <MobileInput label="رقم الهاتف" value={form.phone} onChangeText={(value) => update("phone", value)} keyboardType="phone-pad" />
         <MobileInput label="المدينة" value={form.city} onChangeText={(value) => update("city", value)} placeholder="nablus" />
@@ -70,7 +70,7 @@ const styles = StyleSheet.create({
   header: { gap: spacing.xs, alignItems: "flex-end", paddingTop: spacing.md },
   title: { color: colors.text, fontSize: 23, fontWeight: "900", textAlign: "right" },
   subtitle: { color: colors.muted, fontSize: 13, lineHeight: 20, textAlign: "right" },
-  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.04)" },
+  form: { gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.052)", borderColor: depth.violetLine, boxShadow: shadows.glow },
   row: { flexDirection: "row-reverse", gap: spacing.sm },
   flex: { flex: 1 },
   error: { color: colors.red, textAlign: "right", fontWeight: "700" }

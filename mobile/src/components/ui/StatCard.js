@@ -19,9 +19,9 @@ const styles = StyleSheet.create({
     minWidth: 104,
     padding: spacing.sm,
     borderRadius: radii.lg,
-    backgroundColor: "rgba(37, 241, 225, 0.095)",
+    backgroundColor: "rgba(154, 105, 255, 0.11)",
     borderWidth: 1,
-    borderColor: depth.tealLine,
+    borderColor: depth.violetLine,
     gap: 3,
     boxShadow: shadows.soft
   },

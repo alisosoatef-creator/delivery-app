@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
 import { fetchCustomerRides } from "../../services/ridesApi";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, money, spacing } from "../../utils/mobileTheme";
+import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 
 function paymentLabel(method) {
@@ -54,7 +54,7 @@ export function MyRidesScreen() {
         <EmptyState title="لا توجد رحلات بعد" message="اطلب رحلة لتظهر هنا." actionTitle="طلب رحلة" onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
       ) : null}
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "hero" : "flat"} style={styles.rideCard}>
+        <MobileCard key={ride.id} tone={isActiveRide(ride) ? "hero" : "glass"} style={styles.rideCard}>
           <View style={styles.rideHeader}>
             <View style={styles.rideTitleWrap}>
               <Text selectable style={styles.rideTitle}>{ride.destination || "رحلة"}</Text>
@@ -77,11 +77,11 @@ export function MyRidesScreen() {
 
 const styles = StyleSheet.create({
   error: { color: colors.red, textAlign: "right", fontWeight: "700" },
-  rideCard: { gap: spacing.xs },
+  rideCard: { gap: spacing.xs, borderColor: depth.violetLine, backgroundColor: "rgba(255, 255, 255, 0.052)" },
   rideHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "flex-start", gap: spacing.sm },
   rideTitleWrap: { flex: 1, alignItems: "flex-end", gap: 3 },
   rideTitle: { color: colors.text, fontSize: 15.5, fontWeight: "900", textAlign: "right" },
   ridePath: { color: colors.muted, fontSize: 12, textAlign: "right" },
   metaRow: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, justifyContent: "space-between", flexWrap: "wrap" },
-  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "700" }
+  meta: { color: colors.textSoft, fontSize: 13, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0,0,0,0.14)", boxShadow: shadows.soft }
 });
