@@ -26,6 +26,7 @@ const required = [
   "src/hooks/useDevDriverLogin.js",
   "src/hooks/useRideRequestFlow.js",
   "src/hooks/useDriverAvailability.js",
+  "src/hooks/useAvailableDriverRides.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -171,6 +172,25 @@ for (const token of [
   "driver:online-status-updated"
 ]) {
   if (driverHomeSource.includes(token)) throw new Error(`DriverHomeScreen still owns extracted availability/session logic: ${token}`);
+}
+
+const availableRidesSource = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
+if (!availableRidesSource.includes("useAvailableDriverRides")) throw new Error("AvailableRidesScreen must use useAvailableDriverRides");
+for (const token of [
+  "fetchAvailableRides",
+  "acceptRide",
+  "connectMobileSocket",
+  "subscribeToDriverEvents",
+  "useMobileApp",
+  "apiErrorMessage",
+  "connectionMessageFor",
+  "driver:online-status-updated",
+  "ride:created",
+  "ride:accepted",
+  "ride:status-updated",
+  "ride:cancelled"
+]) {
+  if (availableRidesSource.includes(token)) throw new Error(`AvailableRidesScreen still owns extracted rides queue logic: ${token}`);
 }
 
 for (const token of [
@@ -319,7 +339,7 @@ for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableSca
 }
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
-for (const token of ["tone=\"glass\"", "acceptRide", "ride:created", "paymentLabel", "statusLabel"]) {
+for (const token of ["tone=\"glass\"", "useAvailableDriverRides", "paymentLabel", "statusLabel"]) {
   if (!availableRides.includes(token)) throw new Error(`available rides flow is missing: ${token}`);
 }
 
