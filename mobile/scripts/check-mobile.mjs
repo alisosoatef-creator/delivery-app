@@ -506,11 +506,49 @@ if (requestRide.indexOf("MobileRideMap") > requestRide.indexOf("bottomPanel")) {
 }
 
 const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
-for (const token of ["statusCommand", "trackingHero", "livePill", "searchingCard", "driverCard", "ratingCard", "starButtonActive", "StatusTimeline"]) {
-  if (!rideStatus.includes(token)) throw new Error(`v2 ride status is missing: ${token}`);
+if (!rideStatus.includes("../../components/v3/ui")) throw new Error("CustomerRideStatusScreen must use V3 UI primitives");
+if (!rideStatus.includes("../../theme/v3")) throw new Error("CustomerRideStatusScreen must use V3 theme tokens");
+if (rideStatus.includes("../../components/ui")) throw new Error("CustomerRideStatusScreen must not import old UI components after M0-D6");
+if (rideStatus.includes("../../utils/mobileTheme")) throw new Error("CustomerRideStatusScreen must not import old mobileTheme after M0-D6");
+for (const token of [
+  "useCustomerRideTracking",
+  "useRideRating",
+  "MobileRideMap",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3SectionHeader",
+  "V3Text",
+  "setTrackedRide",
+  "driverLocation={accepted ? driverLocation : null}",
+  "userLocation={currentLocation}",
+  "rideStatus={ride.status}",
+  "height={292}",
+  "statusPanel",
+  "livePill",
+  "statusTimeline",
+  "searchingCard",
+  "driverCard",
+  "ratingCard",
+  "starButtonActive",
+  "setRatingDraft(star)",
+  "setReviewDraft",
+  "submitRating",
+  "refresh",
+  "cancel",
+  "goToRequest",
+  "goToRides",
+  "showCancelAction",
+  "showRidesAction",
+  "paymentLabel(ride.paymentMethod)",
+  "money(ride.price || ride.fareIls)",
+  "km(ride.routeDistanceKm || ride.distanceKm)"
+]) {
+  if (!rideStatus.includes(token)) throw new Error(`M0-D6 Customer Ride Status token is missing: ${token}`);
 }
-if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) {
-  throw new Error("Ride Status must be tracking-first with the map before details");
+if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("statusPanel")) {
+  throw new Error("Ride Status must stay map-first before the status panel");
 }
 
 const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");

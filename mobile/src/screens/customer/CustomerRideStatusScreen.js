@@ -1,10 +1,49 @@
-import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useCustomerRideTracking } from "../../hooks/useCustomerRideTracking";
 import { useRideRating } from "../../hooks/useRideRating";
 import { km, money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
+
+const statusSteps = [
+  ["searching", "بحث"],
+  ["accepted", "قبول"],
+  ["driver_arriving", "بالطريق"],
+  ["arrived", "وصل"],
+  ["in_progress", "بدأت"],
+  ["completed", "انتهت"]
+];
+
+const statusOrder = statusSteps.map(([key]) => key);
+
+function StatusRail({ status }) {
+  if (status === "cancelled") {
+    return (
+      <View style={styles.cancelledRail}>
+        <View style={styles.cancelledMark} />
+        <V3Text variant="caption" tone="danger" align="center">تم إلغاء الرحلة</V3Text>
+      </View>
+    );
+  }
+
+  const activeIndex = Math.max(statusOrder.indexOf(status), 0);
+
+  return (
+    <View style={styles.statusTimeline}>
+      {statusSteps.map(([key, label], index) => {
+        const active = index <= activeIndex;
+        const current = index === activeIndex;
+        return (
+          <View key={key} style={styles.timelineStep}>
+            <View style={[styles.timelineDot, active && styles.timelineDotActive, current && styles.timelineDotCurrent]} />
+            <V3Text variant="caption" tone={active ? "soft" : "faint"} align="center" numberOfLines={1}>{label}</V3Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
 
 export function CustomerRideStatusScreen() {
   const {
@@ -47,116 +86,149 @@ export function CustomerRideStatusScreen() {
 
   if (!ride) {
     return (
-      <ScreenContainer showHeader={false}>
-        <EmptyState
-          title={status === "loading" ? "جاري البحث عن رحلة نشطة..." : "لا توجد رحلة نشطة الآن"}
-          message={error || "يمكنك طلب رحلة جديدة والعودة لهذه الشاشة عند الحاجة."}
-          actionTitle="طلب رحلة جديدة"
-          onAction={goToRequest}
-        />
-      </ScreenContainer>
+      <V3Screen>
+        <V3Card tone="raised" contentStyle={styles.emptyState}>
+          <V3Badge label={status === "loading" ? "جاري البحث" : "لا توجد رحلة"} tone={status === "loading" ? "primary" : "blue"} />
+          <V3Text variant="subtitle" align="center">
+            {status === "loading" ? "جاري البحث عن رحلة نشطة..." : "لا توجد رحلة نشطة الآن"}
+          </V3Text>
+          <V3Text tone="muted" align="center">
+            {error || "يمكنك طلب رحلة جديدة والعودة لهذه الشاشة عند الحاجة."}
+          </V3Text>
+          <V3Button title="طلب رحلة جديدة" onPress={goToRequest} />
+        </V3Card>
+      </V3Screen>
     );
   }
 
   return (
-    <ScreenContainer showHeader={false} compact>
-      <MobileCard tone="command" style={styles.statusCommand}>
-        <View>
-          <Text selectable style={styles.title}>{finished ? "ملخص الرحلة" : "تتبع الرحلة"}</Text>
-          <Text selectable style={styles.subtitle}>{ride.status === "searching" ? "جاري البحث عن كابتن قريب" : statusLabel(ride.status)}</Text>
-        </View>
-        <View style={styles.commandMeta}>
-          <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-          <Text selectable style={styles.commandPrice}>{money(ride.price || ride.fareIls)}</Text>
-        </View>
-      </MobileCard>
+    <V3Screen>
+      <V3SectionHeader
+        meta={socketStatus === "connected" ? "تتبع مباشر" : "تحديث يدوي"}
+        title={finished ? "ملخص الرحلة" : "تتبع الرحلة"}
+        subtitle={ride.status === "searching" ? "جاري البحث عن كابتن قريب" : statusLabel(ride.status)}
+        actionLabel={!finished ? "تحديث" : undefined}
+        onAction={!finished ? refresh : undefined}
+      />
 
-      <View style={styles.trackingHero}>
+      <V3Card tone="raised" style={styles.trackingHero} contentStyle={styles.mapContent}>
         <MobileRideMap
           pickup={pickupPoint}
           destination={destinationPoint}
           driverLocation={accepted ? driverLocation : null}
           userLocation={currentLocation}
           rideStatus={ride.status}
-          height={278}
+          height={292}
         />
         <View style={styles.livePill}>
           <View style={[styles.liveDot, socketStatus !== "connected" && styles.liveDotOff]} />
-          <Text selectable style={styles.liveText}>{socketStatus === "connected" ? "تتبع مباشر" : "تحديث يدوي"}</Text>
+          <V3Text variant="caption" tone="soft" numberOfLines={1}>
+            {socketStatus === "connected" ? "تتبع مباشر" : "تحديث يدوي"}
+          </V3Text>
         </View>
-      </View>
+      </V3Card>
+
       {liveUnavailable ? (
-        <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، يمكنك التحديث يدويًا.</Text>
+        <V3Card tone="quiet" compact>
+          <V3Text selectable tone="muted">التحديث المباشر غير متاح مؤقتا، يمكنك التحديث يدويا.</V3Text>
+        </V3Card>
       ) : null}
+
+      <V3Card tone={finished ? "raised" : "accent"} style={styles.statusPanel} contentStyle={styles.statusPanelContent}>
+        <View style={styles.statusHeader}>
+          <View style={styles.statusCopy}>
+            <V3Text variant="subtitle">{summaryTitle}</V3Text>
+            <V3Text variant="caption" tone="muted">{`${ride.pickup || "-"} إلى ${ride.destination || "-"}`}</V3Text>
+          </View>
+          <V3Badge label={money(ride.price || ride.fareIls)} tone="dark" />
+        </View>
+
+        <StatusRail status={ride.status} />
+
+        <View style={styles.metrics}>
+          <V3Badge label={km(ride.routeDistanceKm || ride.distanceKm)} tone="blue" />
+          <V3Badge label={paymentLabel(ride.paymentMethod)} tone="primary" />
+          <V3Badge label={statusLabel(ride.status)} tone={cancelled ? "danger" : completed ? "success" : "warning"} />
+        </View>
+      </V3Card>
 
       {searching ? (
-        <MobileCard tone="hero" style={styles.searchingCard}>
-          <View style={styles.scanVisual}>
-            <View style={styles.scanDot} />
-            <View style={[styles.scanDot, styles.scanDotMuted]} />
-            <View style={styles.scanDot} />
+        <V3Card tone="blue" style={styles.searchingCard} contentStyle={styles.searchingContent}>
+          <View style={styles.searchPulseRow}>
+            <View style={styles.searchPulse} />
+            <View style={[styles.searchPulse, styles.searchPulseMuted]} />
+            <View style={styles.searchPulse} />
           </View>
-          <Text selectable style={styles.searchingTitle}>جاري البحث عن كابتن قريب...</Text>
-          <Text selectable style={styles.muted}>سنظهر بيانات الكابتن فور قبول الرحلة.</Text>
-        </MobileCard>
+          <V3Text variant="subtitle">جاري البحث عن كابتن قريب...</V3Text>
+          <V3Text tone="muted">سنظهر بيانات الكابتن فور قبول الرحلة.</V3Text>
+        </V3Card>
       ) : null}
 
-      <MobileCard tone={finished ? "flat" : "glass"} style={styles.customerStatusSummary}>
-        <View style={styles.rowBetween}>
-          <Text selectable style={styles.statusTitle}>{summaryTitle}</Text>
-          <Text selectable style={styles.price}>{money(ride.price || ride.fareIls)}</Text>
-        </View>
-        <StatusTimeline status={ride.status} />
-        <InfoRow label="المسار" value={`${ride.pickup} ← ${ride.destination}`} accent />
-        <InfoRow label="المسافة" value={km(ride.routeDistanceKm || ride.distanceKm)} />
-        <InfoRow label="الدفع" value={paymentLabel(ride.paymentMethod)} />
-      </MobileCard>
-
       {accepted ? (
-        <MobileCard tone="command" style={styles.driverCard}>
+        <V3Card tone="raised" style={styles.driverCard} contentStyle={styles.driverContent}>
           <View style={styles.driverHeader}>
             <View style={styles.avatar}>
-              <Text selectable={false} style={styles.avatarText}>ك</Text>
+              <V3Text variant="label" align="center" style={styles.avatarText}>ك</V3Text>
             </View>
             <View style={styles.driverInfo}>
-              <Text selectable style={styles.cardTitle}>الكابتن</Text>
-              <Text selectable style={styles.driverName}>{ride.driver.fullName}</Text>
-              <Text selectable style={styles.muted}>{ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}</Text>
+              <V3Text variant="caption" tone="muted">الكابتن</V3Text>
+              <V3Text selectable variant="subtitle" numberOfLines={1}>{ride.driver.fullName}</V3Text>
+              <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>
+                {ride.driver.vehicleType || ride.driver.vehicle || "مركبة"} · {ride.driver.vehiclePlate || ride.driver.plate || "بدون لوحة"}
+              </V3Text>
             </View>
           </View>
           <View style={styles.driverMeta}>
-            <MobileBadge label={`تقييم ${ride.driver.rating || "5.0"}`} tone="success" />
-            <MobileBadge label={driverLocation ? "التتبع مباشر" : "بانتظار الموقع"} tone={driverLocation ? "success" : "warning"} />
+            <V3Badge label={`تقييم ${ride.driver.rating || "5.0"}`} tone="success" />
+            <V3Badge label={driverLocation ? "التتبع مباشر" : "بانتظار الموقع"} tone={driverLocation ? "success" : "warning"} />
           </View>
-          {driverLocationTime ? <Text selectable style={styles.muted}>آخر تحديث للموقع: {driverLocationTime}</Text> : null}
-          {!driverLocation ? <Text selectable style={styles.muted}>بانتظار تفعيل موقع الكابتن المباشر.</Text> : null}
-        </MobileCard>
+          {driverLocationTime ? <V3Text selectable variant="caption" tone="muted">آخر تحديث للموقع: {driverLocationTime}</V3Text> : null}
+          {!driverLocation ? <V3Text selectable variant="caption" tone="muted">بانتظار تفعيل موقع الكابتن المباشر.</V3Text> : null}
+        </V3Card>
       ) : !finished ? (
-        <Text selectable style={styles.muted}>لن تظهر بيانات الكابتن قبل قبول الرحلة.</Text>
+        <V3Text tone="muted">لن تظهر بيانات الكابتن قبل قبول الرحلة.</V3Text>
       ) : null}
 
       {finished ? (
-        <MobileCard tone={completed ? "hero" : "flat"} style={styles.finishedCard}>
-          <Text selectable style={styles.statusTitle}>{completed ? "ملخص الرحلة المنتهية" : "ملخص الرحلة الملغية"}</Text>
-          <InfoRow label="الوجهة" value={ride.destination || "-"} accent />
-          <InfoRow label="السعر" value={money(ride.price || ride.fareIls)} />
-          <InfoRow label="الدفع" value={paymentLabel(ride.paymentMethod)} />
-          {accepted ? <InfoRow label="الكابتن" value={ride.driver.fullName || "-"} /> : null}
-          {cancelled ? <Text selectable style={styles.muted}>تم إلغاء الرحلة. يمكنك طلب رحلة جديدة في أي وقت.</Text> : null}
-        </MobileCard>
+        <V3Card tone={completed ? "accent" : "raised"} contentStyle={styles.finishedContent}>
+          <V3SectionHeader
+            title={completed ? "ملخص الرحلة المنتهية" : "ملخص الرحلة الملغية"}
+            subtitle={cancelled ? "تم إلغاء الرحلة. يمكنك طلب رحلة جديدة في أي وقت." : "شكرا لاستخدام واصل."}
+          />
+          <View style={styles.summaryRows}>
+            <View style={styles.summaryRow}>
+              <V3Text variant="caption" tone="muted">الوجهة</V3Text>
+              <V3Text selectable variant="caption" tone="soft" numberOfLines={1}>{ride.destination || "-"}</V3Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <V3Text variant="caption" tone="muted">السعر</V3Text>
+              <V3Text selectable variant="caption" tone="soft">{money(ride.price || ride.fareIls)}</V3Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <V3Text variant="caption" tone="muted">الدفع</V3Text>
+              <V3Text selectable variant="caption" tone="soft">{paymentLabel(ride.paymentMethod)}</V3Text>
+            </View>
+            {accepted ? (
+              <View style={styles.summaryRow}>
+                <V3Text variant="caption" tone="muted">الكابتن</V3Text>
+                <V3Text selectable variant="caption" tone="soft" numberOfLines={1}>{ride.driver.fullName || "-"}</V3Text>
+              </View>
+            ) : null}
+          </View>
+        </V3Card>
       ) : null}
+
       {completed ? (
-        <MobileCard tone="flat" style={styles.ratingCard}>
-          <Text selectable style={styles.statusTitle}>قيّم الرحلة</Text>
+        <V3Card tone="raised" style={styles.ratingCard} contentStyle={styles.ratingContent}>
+          <V3SectionHeader title="قيّم الرحلة" subtitle="اختر من 1 إلى 5 نجوم ويمكنك إضافة تعليق اختياري." />
           {rideRating ? (
             <>
-              <Text selectable style={styles.savedRating}>تقييمك: {"★".repeat(Number(rideRating.rating || rideRating.value || 0))}</Text>
-              {rideRating.comment || rideRating.review ? <Text selectable style={styles.muted}>{rideRating.comment || rideRating.review}</Text> : null}
-              <MobileBadge label="تم حفظ التقييم" tone="success" />
+              <V3Text selectable variant="subtitle" tone="warning">تقييمك: {"★".repeat(Number(rideRating.rating || rideRating.value || 0))}</V3Text>
+              {rideRating.comment || rideRating.review ? <V3Text selectable tone="muted">{rideRating.comment || rideRating.review}</V3Text> : null}
+              <V3Badge label="تم حفظ التقييم" tone="success" />
             </>
           ) : (
             <>
-              <Text selectable style={styles.muted}>اختر من 1 إلى 5 نجوم، ويمكنك إضافة تعليق اختياري.</Text>
               <View style={styles.starsRow}>
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Pressable
@@ -166,7 +238,7 @@ export function CustomerRideStatusScreen() {
                     onPress={() => setRatingDraft(star)}
                     style={[styles.starButton, ratingDraft >= star && styles.starButtonActive]}
                   >
-                    <Text selectable={false} style={[styles.starText, ratingDraft >= star && styles.starTextActive]}>★</Text>
+                    <V3Text align="center" style={[styles.starText, ratingDraft >= star && styles.starTextActive]}>★</V3Text>
                   </Pressable>
                 ))}
               </View>
@@ -174,107 +246,285 @@ export function CustomerRideStatusScreen() {
                 value={reviewDraft}
                 onChangeText={setReviewDraft}
                 placeholder="تعليق اختياري عن الرحلة"
-                placeholderTextColor={colors.muted}
+                placeholderTextColor={v3Colors.textMuted}
                 multiline
                 maxLength={500}
                 style={styles.reviewInput}
                 textAlign="right"
               />
-              {ratingError ? <Text selectable style={styles.error}>{ratingError}</Text> : null}
-              <MobileButton title="إرسال التقييم" variant="accent" onPress={submitRating} loading={ratingStatus === "saving"} />
+              {ratingError ? <V3Text selectable tone="danger">{ratingError}</V3Text> : null}
+              <V3Button title="إرسال التقييم" onPress={submitRating} loading={ratingStatus === "saving"} />
             </>
           )}
-        </MobileCard>
+        </V3Card>
       ) : null}
-      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
+
+      {error ? (
+        <V3Card tone="quiet" compact style={styles.errorCard}>
+          <V3Text selectable tone="danger">{error}</V3Text>
+        </V3Card>
+      ) : null}
+
       <View style={styles.actions}>
-        {!finished ? <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} /> : null}
-        {showCancelAction ? <MobileButton title="إلغاء الرحلة" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
-        {finished ? <MobileButton title="طلب رحلة جديدة" compact variant="accent" onPress={goToRequest} /> : null}
-        {showRidesAction ? <MobileButton title="عرض رحلاتي" compact variant="secondary" onPress={goToRides} /> : null}
+        {!finished ? (
+          <V3Button title={status === "loading" ? "جاري التحديث..." : "تحديث"} size="sm" fullWidth={false} variant="secondary" onPress={refresh} loading={status === "loading"} />
+        ) : null}
+        {showCancelAction ? (
+          <V3Button title="إلغاء الرحلة" size="sm" fullWidth={false} variant="danger" onPress={cancel} loading={status === "cancel"} />
+        ) : null}
+        {finished ? (
+          <V3Button title="طلب رحلة جديدة" size="sm" fullWidth={false} onPress={goToRequest} />
+        ) : null}
+        {showRidesAction ? (
+          <V3Button title="عرض رحلاتي" size="sm" fullWidth={false} variant="secondary" onPress={goToRides} />
+        ) : null}
       </View>
-    </ScreenContainer>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  statusCommand: {
+  emptyState: {
+    alignItems: "center",
+    gap: v3Spacing.md
+  },
+  trackingHero: {
+    borderColor: v3Colors.borderStrong
+  },
+  mapContent: {
+    padding: 0,
+    overflow: "hidden"
+  },
+  livePill: {
+    position: "absolute",
+    top: v3Spacing.sm,
+    left: v3Spacing.sm,
+    minHeight: 32,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.xs,
+    paddingHorizontal: v3Spacing.sm,
+    borderRadius: v3Radius.pill,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: v3Colors.success,
+    boxShadow: "0 0 14px rgba(69, 224, 164, 0.48)"
+  },
+  liveDotOff: {
+    backgroundColor: v3Colors.warning,
+    boxShadow: "0 0 14px rgba(248, 199, 109, 0.38)"
+  },
+  statusPanel: {
+    borderColor: v3Colors.borderStrong
+  },
+  statusPanelContent: {
+    gap: v3Spacing.md
+  },
+  statusHeader: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    borderColor: depth.violetLine
+    gap: v3Spacing.sm
   },
-  commandMeta: { alignItems: "flex-start", gap: spacing.xs },
-  commandPrice: { color: colors.primary, fontSize: 22, fontWeight: "900", textAlign: "left" },
-  title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2, fontWeight: "800" },
-  trackingHero: { borderRadius: radii.xxl, borderWidth: 1, borderColor: depth.violetLine, overflow: "hidden", boxShadow: shadows.glow },
-  livePill: {
-    position: "absolute",
-    top: spacing.sm,
-    left: spacing.sm,
+  statusCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  statusTimeline: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: v3Spacing.xs,
+    padding: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim
+  },
+  timelineStep: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: v3Spacing.xs
+  },
+  timelineDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Colors.graphite
+  },
+  timelineDotActive: {
+    backgroundColor: v3Colors.purple,
+    borderColor: v3Colors.purpleLight
+  },
+  timelineDotCurrent: {
+    width: 15,
+    height: 15,
+    borderRadius: 8,
+    boxShadow: v3Shadows.purple
+  },
+  cancelledRail: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 7,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(2, 6, 10, 0.72)",
+    justifyContent: "center",
+    gap: v3Spacing.xs,
+    padding: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
     borderWidth: 1,
-    borderColor: depth.glassLine
+    borderColor: "rgba(255, 97, 116, 0.32)",
+    backgroundColor: "rgba(255, 97, 116, 0.1)"
   },
-  liveDot: { width: 7, height: 7, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 13px rgba(154, 105, 255, 0.56)" },
-  liveDotOff: { backgroundColor: colors.accent, boxShadow: "0 0 12px rgba(243, 184, 106, 0.44)" },
-  liveText: { color: colors.text, fontSize: 11.5, fontWeight: "900" },
-  searchingCard: { alignItems: "flex-end", gap: spacing.xs, borderColor: depth.violetLine, backgroundColor: "rgba(154, 105, 255, 0.085)" },
-  scanVisual: { flexDirection: "row-reverse", gap: spacing.xs, alignSelf: "stretch", justifyContent: "center", paddingVertical: spacing.xs },
-  scanDot: { width: 9, height: 9, borderRadius: 999, backgroundColor: colors.primary, boxShadow: "0 0 14px rgba(154, 105, 255, 0.48)" },
-  scanDotMuted: { opacity: 0.38 },
-  searchingTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right" },
-  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
-  customerStatusSummary: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.043)", borderColor: depth.hairline },
-  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  statusTitle: { color: colors.text, fontSize: 18, fontWeight: "900", textAlign: "right" },
-  price: { color: colors.primary, fontSize: 24, fontWeight: "900" },
-  driverCard: { gap: spacing.xs, borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.06)", boxShadow: shadows.accentGlow },
-  driverHeader: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.sm },
-  avatar: { width: 48, height: 48, borderRadius: radii.lg, alignItems: "center", justifyContent: "center", backgroundColor: colors.accent, boxShadow: shadows.accentGlow },
-  avatarText: { color: colors.black, fontSize: 20, fontWeight: "900" },
-  driverInfo: { flex: 1, alignItems: "flex-end" },
-  driverMeta: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  cardTitle: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "700" },
-  driverName: { color: colors.text, textAlign: "right", fontSize: 18, fontWeight: "800" },
-  finishedCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.045)", borderColor: depth.hairline },
-  ratingCard: { gap: spacing.sm, alignItems: "stretch", borderColor: depth.amberLine, backgroundColor: "rgba(243, 184, 106, 0.06)", boxShadow: shadows.accentGlow },
-  savedRating: { color: colors.accent, fontSize: 18, fontWeight: "900", textAlign: "right" },
-  starsRow: { flexDirection: "row-reverse", justifyContent: "center", gap: spacing.xs },
-  starButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 16,
+  cancelledMark: {
+    width: 24,
+    height: 4,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.danger
+  },
+  metrics: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  searchingCard: {
+    borderColor: v3Colors.borderBlue
+  },
+  searchingContent: {
+    alignItems: "flex-end",
+    gap: v3Spacing.sm
+  },
+  searchPulseRow: {
+    alignSelf: "stretch",
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    gap: v3Spacing.xs,
+    paddingVertical: v3Spacing.xs
+  },
+  searchPulse: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: v3Colors.electricBlue,
+    boxShadow: v3Shadows.blue
+  },
+  searchPulseMuted: {
+    opacity: 0.38
+  },
+  driverCard: {
+    borderColor: v3Colors.borderBlue
+  },
+  driverContent: {
+    gap: v3Spacing.md
+  },
+  driverHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  avatar: {
+    width: 54,
+    height: 54,
+    borderRadius: v3Radius.xl,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    backgroundColor: v3Alpha.blueWash,
     borderWidth: 1,
-    borderColor: colors.border
+    borderColor: v3Colors.borderBlue
   },
-  starButtonActive: { backgroundColor: "rgba(243, 184, 106, 0.2)", borderColor: colors.accent, boxShadow: shadows.accentGlow },
-  starText: { color: colors.muted, fontSize: 22, fontWeight: "900" },
-  starTextActive: { color: colors.accent },
+  avatarText: {
+    color: v3Colors.electricBlue
+  },
+  driverInfo: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  driverMeta: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  finishedContent: {
+    gap: v3Spacing.md
+  },
+  summaryRows: {
+    gap: v3Spacing.xs
+  },
+  summaryRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm,
+    padding: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft
+  },
+  ratingCard: {
+    borderColor: "rgba(248, 199, 109, 0.32)"
+  },
+  ratingContent: {
+    gap: v3Spacing.md
+  },
+  starsRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "center",
+    gap: v3Spacing.xs
+  },
+  starButton: {
+    width: 44,
+    height: 44,
+    borderRadius: v3Radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft
+  },
+  starButtonActive: {
+    borderColor: "rgba(248, 199, 109, 0.52)",
+    backgroundColor: "rgba(248, 199, 109, 0.16)",
+    boxShadow: "0 18px 42px rgba(248, 199, 109, 0.16)"
+  },
+  starText: {
+    color: v3Colors.textFaint,
+    fontSize: 22,
+    lineHeight: 26
+  },
+  starTextActive: {
+    color: v3Colors.warning
+  },
   reviewInput: {
-    minHeight: 76,
-    borderRadius: radii.md,
-    padding: spacing.sm,
-    color: colors.text,
-    backgroundColor: "rgba(255, 255, 255, 0.052)",
+    minHeight: 88,
+    borderRadius: v3Radius.lg,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Colors.input,
+    color: v3Colors.text,
+    padding: v3Spacing.md,
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "700",
     textAlignVertical: "top",
-    fontWeight: "700"
+    writingDirection: "rtl"
   },
-  muted: { color: colors.muted, textAlign: "right", lineHeight: 21, fontWeight: "600" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
-  actions: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs }
+  errorCard: {
+    borderColor: "rgba(255, 97, 116, 0.42)"
+  },
+  actions: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  }
 });
