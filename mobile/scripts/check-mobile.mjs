@@ -25,6 +25,7 @@ const required = [
   "src/hooks/useLogout.js",
   "src/hooks/useDevDriverLogin.js",
   "src/hooks/useRideRequestFlow.js",
+  "src/hooks/useDriverAvailability.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -152,6 +153,24 @@ for (const token of [
   "timeLabel"
 ]) {
   if (customerRideStatusSource.includes(token)) throw new Error(`CustomerRideStatusScreen still owns extracted tracking/rating logic: ${token}`);
+}
+
+const driverHomeSource = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
+if (!driverHomeSource.includes("useDriverAvailability")) throw new Error("DriverHomeScreen must use useDriverAvailability");
+for (const token of [
+  "updateDriverOnlineStatus",
+  "saveMobileSession",
+  "clearMobileSession",
+  "connectMobileSocket",
+  "disconnectMobileSocket",
+  "subscribeToDriverEvents",
+  "useMobileApp",
+  "apiErrorMessage",
+  "driverSessionFromState",
+  "applyDriverSession",
+  "driver:online-status-updated"
+]) {
+  if (driverHomeSource.includes(token)) throw new Error(`DriverHomeScreen still owns extracted availability/session logic: ${token}`);
 }
 
 for (const token of [
@@ -295,7 +314,7 @@ if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("StatusTimeline")) 
 }
 
 const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
-for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "driver:online-status-updated", "updateDriverOnlineStatus"]) {
+for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "useDriverAvailability"]) {
   if (!driverHome.includes(token)) throw new Error(`v2 driver cockpit is missing: ${token}`);
 }
 

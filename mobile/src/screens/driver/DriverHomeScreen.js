@@ -1,120 +1,25 @@
-import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
-import { updateDriverOnlineStatus } from "../../services/driverApi";
-import { clearMobileSession, saveMobileSession } from "../../services/sessionStorage";
-import { connectMobileSocket, disconnectMobileSocket, subscribeToDriverEvents } from "../../services/socketClient";
-import { useMobileApp } from "../../store/mobileStore";
-import { apiErrorMessage } from "../../utils/errorUtils";
+import { useDriverAvailability } from "../../hooks/useDriverAvailability";
 import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 
-function driverSessionFromState(state, driver = {}) {
-  return {
-    ...state.session,
-    token: state.token,
-    role: "driver",
-    driverId: state.currentUser?.driverId || state.session?.driverId || driver.id || "",
-    phone: state.currentUser?.phone || state.session?.phone || driver.phone || "",
-    userId: state.currentUser?.id || state.session?.id || ""
-  };
-}
-
 export function DriverHomeScreen() {
-  const { state, dispatch } = useMobileApp();
-  const driver = state.session?.driver || {};
-  const session = driverSessionFromState(state, driver);
-  const [available, setAvailable] = useState((driver.onlineStatus || state.driverOnlineStatus || state.currentUser?.onlineStatus || "offline") === "online");
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-  const availableCount = state.availableRides?.length || 0;
-  const currentRide = state.currentRide;
-
-  useEffect(() => {
-    const nextOnlineStatus = driver.onlineStatus || state.driverOnlineStatus || state.currentUser?.onlineStatus || "offline";
-    setAvailable(nextOnlineStatus === "online");
-  }, [driver.onlineStatus, state.currentUser?.onlineStatus, state.driverOnlineStatus]);
-
-  useEffect(() => {
-    if (!session.driverId || !state.token) return undefined;
-    connectMobileSocket(session);
-    const unsubscribe = subscribeToDriverEvents((payload, eventName) => {
-      if (eventName !== "driver:online-status-updated") return;
-      const updatedDriver = payload?.driver;
-      if (!updatedDriver?.id || String(updatedDriver.id) !== String(session.driverId)) return;
-      applyDriverSession(updatedDriver, false);
-    });
-    return unsubscribe;
-  }, [session.driverId, session.phone, state.token]);
-
-  async function applyDriverSession(updatedDriver, persist = true) {
-    const nextUser = {
-      ...(state.currentUser || {}),
-      driverId: updatedDriver.id,
-      phone: updatedDriver.phone,
-      fullName: updatedDriver.fullName || state.currentUser?.fullName,
-      onlineStatus: updatedDriver.onlineStatus,
-      online: updatedDriver.online
-    };
-    const nextSession = {
-      ...(state.session || {}),
-      token: state.token,
-      driver: { ...(state.session?.driver || {}), ...updatedDriver },
-      driverId: updatedDriver.id,
-      phone: updatedDriver.phone
-    };
-    setAvailable(updatedDriver.onlineStatus === "online");
-    dispatch({
-      type: "patch",
-      patch: {
-        currentUser: nextUser,
-        session: nextSession,
-        driverOnlineStatus: updatedDriver.onlineStatus,
-        connectionMessage: ""
-      }
-    });
-    if (persist) {
-      await saveMobileSession({
-        token: state.token,
-        role: "driver",
-        currentUser: nextUser,
-        session: nextSession,
-        driverSession: updatedDriver,
-        driverId: updatedDriver.id,
-        phone: updatedDriver.phone,
-        userId: nextUser.id
-      });
-    }
-  }
-
-  async function toggleAvailability() {
-    if (!session.driverId) {
-      setError("بيانات الكابتن غير مكتملة. سجل الدخول مرة أخرى.");
-      return;
-    }
-    const previous = available;
-    const nextAvailable = !previous;
-    setAvailable(nextAvailable);
-    setStatus("saving");
-    setError("");
-    try {
-      const payload = await updateDriverOnlineStatus(nextAvailable, session);
-      await applyDriverSession(payload.driver);
-      dispatch({ type: "toast", message: nextAvailable ? "أصبحت متاحا لاستقبال الطلبات." : "أصبحت غير متاح للطلبات الجديدة." });
-    } catch (requestError) {
-      setAvailable(previous);
-      const message = apiErrorMessage(requestError, "تعذر تحديث حالة توفر الكابتن.");
-      setError(message);
-      dispatch({ type: "patch", patch: { connectionMessage: message } });
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function logout() {
-    disconnectMobileSocket();
-    await clearMobileSession();
-    dispatch({ type: "logout", toast: "تم تسجيل خروج الكابتن." });
-  }
+  const {
+    driver,
+    currentUser,
+    available,
+    status,
+    error,
+    availableCount,
+    currentRide,
+    socketStatus,
+    toggleAvailability,
+    logout,
+    goToAvailable,
+    goToCurrent,
+    goToEarnings,
+    goToSupport
+  } = useDriverAvailability();
 
   return (
     <ScreenContainer showHeader={false} variant="driver" compact>
@@ -125,7 +30,7 @@ export function DriverHomeScreen() {
         </View>
         <View style={styles.identity}>
           <Text selectable style={styles.role}>لوحة التشغيل</Text>
-          <Text selectable style={styles.name}>{driver.fullName || state.currentUser?.fullName || "كابتن وصل"}</Text>
+          <Text selectable style={styles.name}>{driver.fullName || currentUser.fullName || "كابتن وصل"}</Text>
           <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
         </View>
         <View style={styles.availabilityStrip}>
@@ -158,31 +63,31 @@ export function DriverHomeScreen() {
             <Text selectable style={styles.sectionTitle}>رحلتي الحالية</Text>
           </View>
           <InfoRow label="المسار" value={`${currentRide.pickup || "-"} ← ${currentRide.destination || "-"}`} accent />
-          <MobileButton title="فتح الرحلة" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} />
+          <MobileButton title="فتح الرحلة" compact variant="accent" onPress={goToCurrent} />
         </MobileCard>
       ) : null}
 
       <View style={styles.actionGrid}>
-        <MobileCard tone="action" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "available" })} style={styles.actionTile}>
+        <MobileCard tone="action" compact onPress={goToAvailable} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>{availableCount}</Text>
           <Text selectable style={styles.actionLabel}>الطلبات</Text>
         </MobileCard>
-        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "current" })} style={styles.actionTile}>
+        <MobileCard tone="flat" compact onPress={goToCurrent} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>↗</Text>
           <Text selectable style={styles.actionLabel}>رحلتي</Text>
         </MobileCard>
-        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "earnings" })} style={styles.actionTile}>
+        <MobileCard tone="flat" compact onPress={goToEarnings} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>₪</Text>
           <Text selectable style={styles.actionLabel}>الأرباح</Text>
         </MobileCard>
-        <MobileCard tone="flat" compact onPress={() => dispatch({ type: "navigate", area: "driver", screen: "support" })} style={styles.actionTile}>
+        <MobileCard tone="flat" compact onPress={goToSupport} style={styles.actionTile}>
           <Text selectable style={styles.actionNumber}>?</Text>
           <Text selectable style={styles.actionLabel}>الدعم</Text>
         </MobileCard>
       </View>
 
       <MobileCard tone="glass">
-        <InfoRow label="التحديث المباشر" value={state.socketStatus === "connected" ? "متصل" : "يدوي"} />
+        <InfoRow label="التحديث المباشر" value={socketStatus === "connected" ? "متصل" : "يدوي"} />
         <MobileButton title="خروج" compact variant="danger" onPress={logout} />
       </MobileCard>
     </ScreenContainer>
