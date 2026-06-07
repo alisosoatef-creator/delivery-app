@@ -17,6 +17,8 @@ const required = [
   "src/services/socketClient.js",
   "src/hooks/useCustomerActiveRide.js",
   "src/hooks/useCustomerRideRealtime.js",
+  "src/hooks/useCustomerRideTracking.js",
+  "src/hooks/useRideRating.js",
   "src/hooks/useCustomerLogin.js",
   "src/hooks/useRegisterCustomer.js",
   "src/hooks/useOtpVerification.js",
@@ -127,6 +129,29 @@ for (const token of [
   "paymentLabel"
 ]) {
   if (requestRideSource.includes(token)) throw new Error(`RequestRideScreen still owns extracted ride request logic: ${token}`);
+}
+
+const customerRideStatusSource = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");
+if (!customerRideStatusSource.includes("useCustomerRideTracking")) throw new Error("CustomerRideStatusScreen must use useCustomerRideTracking");
+if (!customerRideStatusSource.includes("useRideRating")) throw new Error("CustomerRideStatusScreen must use useRideRating");
+for (const token of [
+  "cancelRide",
+  "fetchActiveCustomerRide",
+  "fetchCustomerRideDetails",
+  "submitRideRating",
+  "connectMobileSocket",
+  "joinRideRoom",
+  "subscribeToLocationEvents",
+  "subscribeToRideEvents",
+  "useMobileApp",
+  "apiErrorMessage",
+  "connectionMessageFor",
+  "acceptedStatuses",
+  "hasAcceptedDriver",
+  "ridePoint",
+  "timeLabel"
+]) {
+  if (customerRideStatusSource.includes(token)) throw new Error(`CustomerRideStatusScreen still owns extracted tracking/rating logic: ${token}`);
 }
 
 for (const token of [

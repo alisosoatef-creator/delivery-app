@@ -1,185 +1,48 @@
-import { useEffect, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
-import { cancelRide, fetchActiveCustomerRide, fetchCustomerRideDetails, submitRideRating } from "../../services/ridesApi";
-import { connectMobileSocket, joinRideRoom, subscribeToLocationEvents, subscribeToRideEvents } from "../../services/socketClient";
-import { useMobileApp } from "../../store/mobileStore";
-import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
+import { useCustomerRideTracking } from "../../hooks/useCustomerRideTracking";
+import { useRideRating } from "../../hooks/useRideRating";
 import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
-import { isActiveRide, isFinishedRide, statusLabel } from "../../utils/rideStatus";
-
-const acceptedStatuses = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"];
-
-function hasAcceptedDriver(ride) {
-  return ride?.driver && acceptedStatuses.includes(ride.status);
-}
-
-function paymentLabel(method) {
-  if (method === "visa" || method === "visa-placeholder") return "بطاقة تجريبية";
-  if (method === "wallet") return "المحفظة";
-  return "نقدًا";
-}
-
-function ridePoint(ride, type) {
-  const prefix = type === "pickup" ? "pickup" : "destination";
-  const lat = Number(ride?.[`${prefix}Lat`]);
-  const lng = Number(ride?.[`${prefix}Lng`]);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  return { lat, lng, label: ride?.[prefix] || type };
-}
-
-function timeLabel(value) {
-  if (!value) return "";
-  try {
-    return new Date(value).toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" });
-  } catch {
-    return "";
-  }
-}
 
 export function CustomerRideStatusScreen() {
-  const { state, dispatch } = useMobileApp();
-  const [ride, setRide] = useState(state.currentRide);
-  const [driverLocation, setDriverLocation] = useState(state.driverLocation);
-  const [socketStatus, setSocketStatus] = useState(state.socketStatus || "offline");
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-  const [ratingDraft, setRatingDraft] = useState(5);
-  const [reviewDraft, setReviewDraft] = useState("");
-  const [ratingStatus, setRatingStatus] = useState("idle");
-  const [ratingError, setRatingError] = useState("");
-  const session = { token: state.token, role: "customer", phone: state.currentUser?.phone, userId: state.currentUser?.id };
-  const pickupPoint = useMemo(() => ridePoint(ride, "pickup"), [ride]);
-  const destinationPoint = useMemo(() => ridePoint(ride, "destination"), [ride]);
-
-  useEffect(() => {
-    let mounted = true;
-    async function bootRide() {
-      setStatus("loading");
-      setError("");
-      try {
-        if (ride?.id) {
-          const nextRide = await fetchCustomerRideDetails({ rideId: ride.id, phone: session.phone, userId: session.userId, token: session.token });
-          if (mounted && nextRide) {
-            setRide(nextRide);
-            dispatch({ type: "setCurrentRide", ride: nextRide, area: "customer", screen: "ride-status" });
-          }
-        } else {
-          const activeRide = await fetchActiveCustomerRide(session);
-          if (mounted && activeRide) {
-            setRide(activeRide);
-            dispatch({ type: "setCurrentRide", ride: activeRide, area: "customer", screen: "ride-status" });
-          }
-        }
-        dispatch({ type: "patch", patch: { connectionMessage: "" } });
-      } catch (requestError) {
-        if (mounted) {
-          setError(apiErrorMessage(requestError, "تعذر جلب الرحلة النشطة."));
-          dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
-        }
-      } finally {
-        if (mounted) setStatus("idle");
-      }
-    }
-    bootRide();
-    return () => {
-      mounted = false;
-    };
-  }, [state.currentUser?.id, state.currentUser?.phone, state.token]);
-
-  useEffect(() => {
-    if (!ride?.id) return undefined;
-    const client = connectMobileSocket(
-      { ...session, customerId: session.userId, customerPhone: session.phone, rideId: ride.id },
-      {
-        onConnectionChange: (connected, statusName) => {
-          const nextStatus = statusName || (connected ? "connected" : "disconnected");
-          setSocketStatus(nextStatus);
-          dispatch({ type: "patch", patch: { socketStatus: nextStatus } });
-          if (connected) joinRideRoom(ride.id);
-        }
-      }
-    );
-
-    const unsubscribeRide = subscribeToRideEvents((payload) => {
-      const nextRide = payload?.ride;
-      if (!nextRide || String(nextRide.id) !== String(ride.id)) return;
-      setRide(nextRide);
-      dispatch({ type: "setCurrentRide", ride: nextRide, area: "customer", screen: "ride-status" });
-    });
-
-    const unsubscribeLocation = subscribeToLocationEvents((payload, eventName) => {
-      if (String(payload?.rideId || "") !== String(ride.id)) return;
-      if (eventName === "driver:location-unavailable") {
-        dispatch({ type: "patch", patch: { liveTrackingStatus: "unavailable" } });
-        return;
-      }
-      const location = payload?.location || { lat: payload?.lat, lng: payload?.lng };
-      const nextLocation = {
-        lat: Number(location.lat),
-        lng: Number(location.lng),
-        label: "موقع الكابتن",
-        timestamp: payload?.timestamp || new Date().toISOString()
-      };
-      if (!Number.isFinite(nextLocation.lat) || !Number.isFinite(nextLocation.lng)) return;
-      setDriverLocation(nextLocation);
-      dispatch({ type: "patch", patch: { driverLocation: nextLocation, liveTrackingStatus: "active", lastDriverLocationAt: nextLocation.timestamp } });
-    });
-
-    if (client?.connected) joinRideRoom(ride.id);
-    return () => {
-      unsubscribeRide();
-      unsubscribeLocation();
-    };
-  }, [ride?.id, session.phone, session.token, session.userId]);
-
-  async function refresh() {
-    if (!ride?.id) return;
-    setStatus("loading");
-    setError("");
-    try {
-      const nextRide = await fetchCustomerRideDetails({ rideId: ride.id, phone: session.phone, userId: session.userId, token: session.token });
-      setRide(nextRide);
-      dispatch({ type: "setCurrentRide", ride: nextRide, area: "customer", screen: "ride-status" });
-      dispatch({ type: "patch", patch: { connectionMessage: "" } });
-    } catch (requestError) {
-      setError(apiErrorMessage(requestError, "تعذر تحديث حالة الرحلة."));
-      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function cancel() {
-    setStatus("cancel");
-    setError("");
-    try {
-      const payload = await cancelRide(ride.id, session);
-      setRide(payload.ride);
-      dispatch({ type: "setCurrentRide", ride: payload.ride, area: "customer", screen: "ride-status", toast: "تم إلغاء الرحلة." });
-    } catch (requestError) {
-      setError(apiErrorMessage(requestError, "تعذر إلغاء الرحلة."));
-      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
-    } finally {
-      setStatus("idle");
-    }
-  }
-
-  async function submitRating() {
-    if (!ride?.id || ride.status !== "completed") return;
-    setRatingStatus("saving");
-    setRatingError("");
-    try {
-      const payload = await submitRideRating(ride.id, { rating: ratingDraft, comment: reviewDraft }, session);
-      setRide(payload.ride);
-      dispatch({ type: "setCurrentRide", ride: payload.ride, area: "customer", screen: "ride-status", toast: "تم حفظ تقييم الرحلة." });
-    } catch (requestError) {
-      setRatingError(apiErrorMessage(requestError, "تعذر حفظ تقييم الرحلة."));
-    } finally {
-      setRatingStatus("idle");
-    }
-  }
+  const {
+    ride,
+    setTrackedRide,
+    driverLocation,
+    socketStatus,
+    status,
+    error,
+    currentLocation,
+    pickupPoint,
+    destinationPoint,
+    accepted,
+    finished,
+    searching,
+    completed,
+    cancelled,
+    rideRating,
+    summaryTitle,
+    liveUnavailable,
+    driverLocationTime,
+    showCancelAction,
+    showRidesAction,
+    paymentLabel,
+    statusLabel,
+    refresh,
+    cancel,
+    goToRequest,
+    goToRides
+  } = useCustomerRideTracking();
+  const {
+    ratingDraft,
+    setRatingDraft,
+    reviewDraft,
+    setReviewDraft,
+    ratingStatus,
+    ratingError,
+    submitRating
+  } = useRideRating({ ride, onRideUpdated: setTrackedRide });
 
   if (!ride) {
     return (
@@ -188,21 +51,11 @@ export function CustomerRideStatusScreen() {
           title={status === "loading" ? "جاري البحث عن رحلة نشطة..." : "لا توجد رحلة نشطة الآن"}
           message={error || "يمكنك طلب رحلة جديدة والعودة لهذه الشاشة عند الحاجة."}
           actionTitle="طلب رحلة جديدة"
-          onAction={() => dispatch({ type: "navigate", area: "customer", screen: "request" })}
+          onAction={goToRequest}
         />
       </ScreenContainer>
     );
   }
-
-  const accepted = hasAcceptedDriver(ride);
-  const finished = isFinishedRide(ride);
-  const searching = ride.status === "searching";
-  const completed = ride.status === "completed";
-  const cancelled = ride.status === "cancelled";
-  const rideRating = ride.rating || ride.rideRating || null;
-  const summaryTitle = completed ? "انتهت الرحلة" : cancelled ? "تم إلغاء الرحلة" : statusLabel(ride.status);
-  const liveUnavailable = accepted && socketStatus !== "connected";
-  const driverLocationTime = timeLabel(driverLocation?.timestamp || state.lastDriverLocationAt);
 
   return (
     <ScreenContainer showHeader={false} compact>
@@ -222,7 +75,7 @@ export function CustomerRideStatusScreen() {
           pickup={pickupPoint}
           destination={destinationPoint}
           driverLocation={accepted ? driverLocation : null}
-          userLocation={state.currentLocation}
+          userLocation={currentLocation}
           rideStatus={ride.status}
           height={278}
         />
@@ -335,9 +188,9 @@ export function CustomerRideStatusScreen() {
       {error ? <Text selectable style={styles.error}>{error}</Text> : null}
       <View style={styles.actions}>
         {!finished ? <MobileButton title={status === "loading" ? "جاري التحديث..." : "تحديث"} compact variant="secondary" onPress={refresh} loading={status === "loading"} /> : null}
-        {["searching", "accepted"].includes(ride.status) ? <MobileButton title="إلغاء الرحلة" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
-        {finished ? <MobileButton title="طلب رحلة جديدة" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} /> : null}
-        {!isActiveRide(ride) ? <MobileButton title="عرض رحلاتي" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "rides" })} /> : null}
+        {showCancelAction ? <MobileButton title="إلغاء الرحلة" compact variant="danger" onPress={cancel} loading={status === "cancel"} /> : null}
+        {finished ? <MobileButton title="طلب رحلة جديدة" compact variant="accent" onPress={goToRequest} /> : null}
+        {showRidesAction ? <MobileButton title="عرض رحلاتي" compact variant="secondary" onPress={goToRides} /> : null}
       </View>
     </ScreenContainer>
   );
