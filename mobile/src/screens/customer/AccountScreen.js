@@ -1,25 +1,10 @@
 import { StyleSheet, Text, View } from "react-native";
 import { InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, SectionHeader } from "../../components/ui";
-import { logoutCustomer } from "../../services/authApi";
-import { clearMobileSession } from "../../services/sessionStorage";
-import { disconnectMobileSocket } from "../../services/socketClient";
-import { useMobileApp } from "../../store/mobileStore";
+import { useLogout } from "../../hooks/useLogout";
 import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function AccountScreen() {
-  const { state, dispatch } = useMobileApp();
-  const user = state.currentUser || {};
-
-  async function logout() {
-    try {
-      await logoutCustomer(state.token);
-    } catch {
-      // Local cleanup remains required even when the development backend is offline.
-    }
-    disconnectMobileSocket();
-    await clearMobileSession();
-    dispatch({ type: "logout", toast: "تم تسجيل الخروج." });
-  }
+  const { user, selectedCity, logout, navigateToWallet, navigateToSupport } = useLogout();
 
   return (
     <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="بيانات الدخول وخيارات الحساب بشكل مختصر.">
@@ -35,7 +20,7 @@ export function AccountScreen() {
       <View style={styles.actionGrid}>
         <PressableScale
           accessibilityLabel="المحفظة"
-          onPress={() => dispatch({ type: "navigate", area: "customer", screen: "wallet" })}
+          onPress={navigateToWallet}
           style={styles.actionTile}
           pressedStyle={styles.pressed}
         >
@@ -44,7 +29,7 @@ export function AccountScreen() {
         </PressableScale>
         <PressableScale
           accessibilityLabel="الدعم"
-          onPress={() => dispatch({ type: "navigate", area: "customer", screen: "support" })}
+          onPress={navigateToSupport}
           style={styles.actionTile}
           pressedStyle={styles.pressed}
         >
@@ -55,7 +40,7 @@ export function AccountScreen() {
 
       <MobileCard tone="glass">
         <SectionHeader title="تفاصيل الحساب" subtitle="معلومات أساسية دون أي بيانات حساسة." />
-        <InfoRow label="المدينة" value={user.city || state.selectedCity || "-"} accent />
+        <InfoRow label="المدينة" value={user.city || selectedCity || "-"} accent />
         <InfoRow label="العمر" value={user.age ? String(user.age) : "-"} />
         <InfoRow label="نوع الحساب" value="زبون" />
       </MobileCard>

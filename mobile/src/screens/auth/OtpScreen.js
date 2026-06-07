@@ -1,32 +1,13 @@
-import { useState } from "react";
 import { StyleSheet, Text } from "react-native";
 import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
-import { verifyOtp } from "../../services/authApi";
-import { useMobileApp } from "../../store/mobileStore";
+import { useOtpVerification } from "../../hooks/useOtpVerification";
 import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function OtpScreen() {
-  const { state, dispatch } = useMobileApp();
-  const [code, setCode] = useState("1234");
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-
-  async function submit() {
-    setError("");
-    setStatus("loading");
-    try {
-      await verifyOtp({ phone: state.pendingPhone, code });
-      dispatch({ type: "navigate", area: "auth", screen: "login" });
-      dispatch({ type: "toast", message: "تم تفعيل الحساب. سجل الدخول الآن." });
-    } catch (requestError) {
-      setError(requestError.message || "رمز OTP غير صحيح.");
-    } finally {
-      setStatus("idle");
-    }
-  }
+  const { pendingPhone, code, setCode, status, error, submit } = useOtpVerification();
 
   return (
-    <ScreenContainer title="تأكيد الحساب" subtitle={`أدخل رمز التفعيل للرقم ${state.pendingPhone || "-"}.`} compact>
+    <ScreenContainer title="تأكيد الحساب" subtitle={`أدخل رمز التفعيل للرقم ${pendingPhone || "-"}.`} compact>
       <MobileCard tone="glass" style={styles.card}>
         <MobileBadge label="OTP تجريبي" tone="warning" />
         <Text selectable style={styles.code}>1234</Text>

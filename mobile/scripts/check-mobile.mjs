@@ -17,6 +17,11 @@ const required = [
   "src/services/socketClient.js",
   "src/hooks/useCustomerActiveRide.js",
   "src/hooks/useCustomerRideRealtime.js",
+  "src/hooks/useCustomerLogin.js",
+  "src/hooks/useRegisterCustomer.js",
+  "src/hooks/useOtpVerification.js",
+  "src/hooks/useLogout.js",
+  "src/hooks/useDevDriverLogin.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -89,6 +94,22 @@ const source = sourceFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n
 const uiSource = [...collectJsFiles("src/screens"), ...collectJsFiles("src/components")]
   .map((file) => fs.readFileSync(file, "utf8"))
   .join("\n");
+
+const authSessionExtraction = [
+  ["src/screens/auth/LoginScreen.js", "useCustomerLogin", ["loginCustomer", "saveMobileSession", "useMobileApp", "apiErrorMessage", "connectionMessageFor"]],
+  ["src/screens/auth/RegisterScreen.js", "useRegisterCustomer", ["registerCustomer", "useMobileApp"]],
+  ["src/screens/auth/OtpScreen.js", "useOtpVerification", ["verifyOtp", "useMobileApp"]],
+  ["src/screens/customer/AccountScreen.js", "useLogout", ["logoutCustomer", "clearMobileSession", "disconnectMobileSocket", "useMobileApp"]],
+  ["src/screens/driver/DevDriverLoginScreen.js", "useDevDriverLogin", ["driverDevLogin", "fetchDriverDevDrivers", "saveDriverSession", "useMobileApp", "apiErrorMessage", "connectionMessageFor"]]
+];
+
+for (const [file, hookName, forbiddenTokens] of authSessionExtraction) {
+  const fileSource = fs.readFileSync(file, "utf8");
+  if (!fileSource.includes(hookName)) throw new Error(`${file} must use ${hookName}`);
+  for (const token of forbiddenTokens) {
+    if (fileSource.includes(token)) throw new Error(`${file} still owns extracted auth/session logic: ${token}`);
+  }
+}
 
 for (const token of [
   "EXPO_PUBLIC_API_BASE_URL",

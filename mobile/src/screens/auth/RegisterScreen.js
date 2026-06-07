@@ -1,45 +1,10 @@
-import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { BrandMark, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
-import { registerCustomer } from "../../services/authApi";
-import { useMobileApp } from "../../store/mobileStore";
+import { useRegisterCustomer } from "../../hooks/useRegisterCustomer";
 import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function RegisterScreen() {
-  const { dispatch } = useMobileApp();
-  const [form, setForm] = useState({ fullName: "", phone: "", city: "nablus", age: "", birthDate: "", password: "", confirmPassword: "" });
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-
-  function update(field, value) {
-    setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  async function submit() {
-    setError("");
-    if (!form.fullName || !form.phone || !form.city || !form.age || !form.birthDate || !form.password) {
-      setError("أكمل الحقول المطلوبة.");
-      return;
-    }
-    if (Number(form.age) < 16 || Number(form.age) > 90) {
-      setError("العمر غير منطقي.");
-      return;
-    }
-    if (form.password !== form.confirmPassword) {
-      setError("كلمتا السر غير متطابقتين.");
-      return;
-    }
-    setStatus("loading");
-    try {
-      await registerCustomer({ ...form, age: Number(form.age) });
-      dispatch({ type: "pendingPhone", phone: form.phone });
-      dispatch({ type: "navigate", area: "auth", screen: "otp" });
-    } catch (requestError) {
-      setError(requestError.message || "تعذر إنشاء الحساب.");
-    } finally {
-      setStatus("idle");
-    }
-  }
+  const { form, update, status, error, submit, goToLogin } = useRegisterCustomer();
 
   return (
     <ScreenContainer showHeader={false}>
@@ -60,7 +25,7 @@ export function RegisterScreen() {
         <MobileInput label="تأكيد كلمة السر" value={form.confirmPassword} onChangeText={(value) => update("confirmPassword", value)} secureTextEntry />
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري الإنشاء..." : "إنشاء الحساب"} onPress={submit} loading={status === "loading"} />
-        <MobileButton title="رجوع إلى الدخول" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "login" })} />
+        <MobileButton title="رجوع إلى الدخول" compact variant="secondary" onPress={goToLogin} />
       </MobileCard>
     </ScreenContainer>
   );

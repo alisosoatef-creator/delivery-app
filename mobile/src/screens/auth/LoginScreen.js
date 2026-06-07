@@ -1,41 +1,21 @@
-import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { BrandMark, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
-import { loginCustomer } from "../../services/authApi";
-import { saveMobileSession } from "../../services/sessionStorage";
-import { useMobileApp } from "../../store/mobileStore";
-import { apiErrorMessage, connectionMessageFor } from "../../utils/errorUtils";
+import { useCustomerLogin } from "../../hooks/useCustomerLogin";
 import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function LoginScreen() {
-  const { dispatch } = useMobileApp();
-  const isDev = typeof __DEV__ !== "undefined" && __DEV__;
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
-  const [status, setStatus] = useState("idle");
-  const [error, setError] = useState("");
-
-  async function submit() {
-    setError("");
-    setStatus("loading");
-    try {
-      const payload = await loginCustomer({ identifier, password });
-      await saveMobileSession({
-        token: payload.token,
-        role: payload.user?.role || "customer",
-        currentUser: payload.user,
-        session: { ...payload.user, token: payload.token },
-        phone: payload.user?.phone,
-        userId: payload.user?.id
-      });
-      dispatch({ type: "login", token: payload.token, role: payload.user?.role || "customer", user: payload.user, session: { ...payload.user, token: payload.token }, toast: "تم تسجيل الدخول بنجاح." });
-    } catch (requestError) {
-      setError(apiErrorMessage(requestError, "تعذر تسجيل الدخول."));
-      dispatch({ type: "patch", patch: { connectionMessage: connectionMessageFor(requestError) } });
-    } finally {
-      setStatus("idle");
-    }
-  }
+  const {
+    identifier,
+    setIdentifier,
+    password,
+    setPassword,
+    status,
+    error,
+    isDev,
+    submit,
+    goToRegister,
+    goToDevDriverLogin
+  } = useCustomerLogin();
 
   return (
     <ScreenContainer showHeader={false}>
@@ -50,8 +30,8 @@ export function LoginScreen() {
         {error ? <Text selectable style={styles.error}>{error}</Text> : null}
         <MobileButton title={status === "loading" ? "جاري الدخول..." : "دخول الزبون"} onPress={submit} loading={status === "loading"} />
         <View style={styles.links}>
-          <MobileButton title="حساب جديد" compact variant="secondary" onPress={() => dispatch({ type: "navigate", area: "auth", screen: "register" })} />
-          {isDev ? <MobileButton title="كابتن تجريبي" compact variant="ghost" onPress={() => dispatch({ type: "navigate", area: "driver", screen: "dev-login" })} /> : null}
+          <MobileButton title="حساب جديد" compact variant="secondary" onPress={goToRegister} />
+          {isDev ? <MobileButton title="كابتن تجريبي" compact variant="ghost" onPress={goToDevDriverLogin} /> : null}
         </View>
       </MobileCard>
     </ScreenContainer>
