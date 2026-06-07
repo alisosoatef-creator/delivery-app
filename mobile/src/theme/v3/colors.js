@@ -1,0 +1,40 @@
+export const v3Colors = {
+  background: "#050509",
+  backgroundAlt: "#080912",
+  backgroundDeep: "#020205",
+  graphite: "#11121a",
+  graphiteRaised: "#171925",
+  graphiteSoft: "rgba(255, 255, 255, 0.055)",
+  surface: "rgba(17, 18, 26, 0.96)",
+  surfaceRaised: "rgba(25, 26, 38, 0.96)",
+  surfaceStrong: "#1c1d2a",
+  input: "rgba(255, 255, 255, 0.065)",
+  inputFocused: "rgba(139, 92, 246, 0.12)",
+  border: "rgba(255, 255, 255, 0.095)",
+  borderStrong: "rgba(168, 85, 247, 0.46)",
+  borderBlue: "rgba(34, 211, 238, 0.34)",
+  text: "#fbfaff",
+  textSoft: "#e7def8",
+  textMuted: "#a99dbb",
+  textFaint: "#756b82",
+  purple: "#8b5cf6",
+  purpleDeep: "#5b21b6",
+  purpleLight: "#c4b5fd",
+  electricBlue: "#22d3ee",
+  electricBlueDeep: "#2563eb",
+  magenta: "#d946ef",
+  success: "#45e0a4",
+  warning: "#f8c76d",
+  danger: "#ff6174",
+  black: "#020205",
+  white: "#ffffff"
+};
+
+export const v3Alpha = {
+  purpleWash: "rgba(139, 92, 246, 0.16)",
+  purpleSoft: "rgba(139, 92, 246, 0.1)",
+  blueWash: "rgba(34, 211, 238, 0.12)",
+  whiteWash: "rgba(255, 255, 255, 0.07)",
+  whiteSoft: "rgba(255, 255, 255, 0.045)",
+  blackScrim: "rgba(2, 2, 5, 0.72)"
+};

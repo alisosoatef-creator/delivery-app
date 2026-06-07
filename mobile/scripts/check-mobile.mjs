@@ -73,6 +73,22 @@ const required = [
   "src/utils/rideStatus.js",
   "src/utils/formatters.js",
   "src/utils/mobileTheme.js",
+  "src/theme/v3/colors.js",
+  "src/theme/v3/spacing.js",
+  "src/theme/v3/radius.js",
+  "src/theme/v3/typography.js",
+  "src/theme/v3/shadows.js",
+  "src/theme/v3/index.js",
+  "src/components/v3/V3DesignPreview.js",
+  "src/components/v3/ui/V3Badge.js",
+  "src/components/v3/ui/V3Button.js",
+  "src/components/v3/ui/V3Card.js",
+  "src/components/v3/ui/V3IconButton.js",
+  "src/components/v3/ui/V3Input.js",
+  "src/components/v3/ui/V3Screen.js",
+  "src/components/v3/ui/V3SectionHeader.js",
+  "src/components/v3/ui/V3Text.js",
+  "src/components/v3/ui/index.js",
   "src/utils/westBankCities.js",
   "docs/mobile-qa-notes.md",
   "app.json",
@@ -348,6 +364,22 @@ for (const token of [
   "screenBottomPadding: 124"
 ]) {
   if (!theme.includes(token)) throw new Error(`v2 command theme token is missing: ${token}`);
+}
+
+const v3ThemeSource = [
+  fs.readFileSync("src/theme/v3/colors.js", "utf8"),
+  fs.readFileSync("src/theme/v3/spacing.js", "utf8"),
+  fs.readFileSync("src/theme/v3/radius.js", "utf8"),
+  fs.readFileSync("src/theme/v3/typography.js", "utf8"),
+  fs.readFileSync("src/theme/v3/shadows.js", "utf8"),
+  fs.readFileSync("src/theme/v3/index.js", "utf8")
+].join("\n");
+for (const token of ["v3Colors", "v3Spacing", "v3Radius", "v3Typography", "v3Shadows", "v3Theme", "#050509", "#8b5cf6", "#22d3ee"]) {
+  if (!v3ThemeSource.includes(token)) throw new Error(`V3 theme token is missing: ${token}`);
+}
+const v3UiSource = collectJsFiles("src/components/v3").map((file) => fs.readFileSync(file, "utf8")).join("\n");
+for (const token of ["V3Screen", "V3Text", "V3Button", "V3Card", "V3Input", "V3IconButton", "V3Badge", "V3SectionHeader", "V3DesignPreview"]) {
+  if (!v3UiSource.includes(token)) throw new Error(`V3 UI primitive is missing: ${token}`);
 }
 for (const oldIdentity of ["#25f1e1", "37, 241, 225", "41, 213, 201", "tealLine"]) {
   if (source.includes(oldIdentity)) throw new Error(`Old teal identity token should not remain: ${oldIdentity}`);
