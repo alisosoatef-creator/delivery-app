@@ -29,6 +29,9 @@ const required = [
   "src/hooks/useAvailableDriverRides.js",
   "src/hooks/useDriverCurrentRide.js",
   "src/hooks/useDriverLiveTracking.js",
+  "src/hooks/useCustomerRides.js",
+  "src/hooks/useCustomerWallet.js",
+  "src/hooks/useSupportTickets.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -218,6 +221,46 @@ for (const token of [
   "timeLabel"
 ]) {
   if (currentRideSource.includes(token)) throw new Error(`CurrentRideScreen still owns extracted current ride/tracking logic: ${token}`);
+}
+
+const customerRidesSource = fs.readFileSync("src/screens/customer/MyRidesScreen.js", "utf8");
+if (!customerRidesSource.includes("useCustomerRides")) throw new Error("MyRidesScreen must use useCustomerRides");
+for (const token of [
+  "fetchCustomerRides",
+  "useMobileApp",
+  "useEffect",
+  "useState"
+]) {
+  if (customerRidesSource.includes(token)) throw new Error(`MyRidesScreen still owns extracted customer rides logic: ${token}`);
+}
+
+const customerWalletSource = fs.readFileSync("src/screens/customer/WalletScreen.js", "utf8");
+if (!customerWalletSource.includes("useCustomerWallet")) throw new Error("WalletScreen must use useCustomerWallet");
+for (const token of [
+  "fetchCustomerWallet",
+  "useMobileApp",
+  "useEffect",
+  "useState"
+]) {
+  if (customerWalletSource.includes(token)) throw new Error(`WalletScreen still owns extracted wallet logic: ${token}`);
+}
+
+for (const [file, screenName] of [
+  ["src/screens/customer/SupportScreen.js", "SupportScreen"],
+  ["src/screens/driver/DriverSupportScreen.js", "DriverSupportScreen"]
+]) {
+  const supportSource = fs.readFileSync(file, "utf8");
+  if (!supportSource.includes("useSupportTickets")) throw new Error(`${screenName} must use useSupportTickets`);
+  for (const token of [
+    "createSupportTicket",
+    "fetchMySupportTickets",
+    "useMobileApp",
+    "apiErrorMessage",
+    "useEffect",
+    "useState"
+  ]) {
+    if (supportSource.includes(token)) throw new Error(`${screenName} still owns extracted support logic: ${token}`);
+  }
 }
 
 for (const token of [

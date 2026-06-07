@@ -1,21 +1,10 @@
-import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
-import { fetchCustomerWallet } from "../../services/paymentsApi";
-import { useMobileApp } from "../../store/mobileStore";
+import { useCustomerWallet } from "../../hooks/useCustomerWallet";
 import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function WalletScreen() {
-  const { state } = useMobileApp();
-  const [wallet, setWallet] = useState(null);
-  const [status, setStatus] = useState("loading");
-
-  useEffect(() => {
-    fetchCustomerWallet({ phone: state.currentUser?.phone, userId: state.currentUser?.id, token: state.token })
-      .then(setWallet)
-      .catch(() => setWallet({ balance: 0, transactions: [] }))
-      .finally(() => setStatus("idle"));
-  }, [state.currentUser?.id, state.currentUser?.phone, state.token]);
+  const { wallet, status } = useCustomerWallet();
 
   return (
     <ScreenContainer title="المحفظة" subtitle="رصيد واضح وعمليات الدفع داخل التطبيق." compact>

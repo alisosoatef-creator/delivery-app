@@ -1,61 +1,10 @@
-import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { ChoiceChip, EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
-import { createSupportTicket, fetchMySupportTickets } from "../../services/supportApi";
-import { useMobileApp } from "../../store/mobileStore";
-import { apiErrorMessage } from "../../utils/errorUtils";
+import { useSupportTickets } from "../../hooks/useSupportTickets";
 import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
 
-const issueTypes = [
-  { value: "ride_issue", label: "مشكلة في الرحلة" },
-  { value: "payment_issue", label: "مشكلة في الدفع" },
-  { value: "captain_issue", label: "مشكلة مع كابتن" },
-  { value: "account_issue", label: "مشكلة في الحساب" },
-  { value: "note", label: "ملاحظة" }
-];
-
-function statusTone(status) {
-  return status === "closed" ? "success" : "warning";
-}
-
-function statusLabel(status) {
-  return status === "closed" ? "مغلقة" : "مفتوحة";
-}
-
 export function SupportScreen() {
-  const { state } = useMobileApp();
-  const [type, setType] = useState("ride_issue");
-  const [message, setMessage] = useState("");
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const session = { token: state.token, role: "customer", phone: state.currentUser?.phone };
-
-  function loadTickets() {
-    setLoading(true);
-    fetchMySupportTickets(session)
-      .then(setTickets)
-      .catch(() => setTickets([]))
-      .finally(() => setLoading(false));
-  }
-
-  useEffect(loadTickets, [state.currentUser?.phone, state.token]);
-
-  async function submit() {
-    setError("");
-    setSuccess("");
-    if (!message.trim()) return;
-    try {
-      const selectedType = issueTypes.find((item) => item.value === type);
-      await createSupportTicket({ name: state.currentUser?.fullName, phone: state.currentUser?.phone, role: "customer", type: selectedType?.label || type, message: message.trim() }, session);
-      setMessage("");
-      setSuccess("تم إرسال تذكرة الدعم بنجاح.");
-      loadTickets();
-    } catch (requestError) {
-      setError(apiErrorMessage(requestError, "تعذر إرسال التذكرة."));
-    }
-  }
+  const { type, setType, message, setMessage, tickets, loading, error, success, issueTypes, submit, statusTone, statusLabel } = useSupportTickets({ role: "customer" });
 
   return (
     <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="اختر نوع المشكلة ثم أرسل تفاصيل مختصرة وواضحة.">
