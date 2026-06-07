@@ -1,28 +1,62 @@
-import { StyleSheet, Text } from "react-native";
-import { MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useOtpVerification } from "../../hooks/useOtpVerification";
-import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function OtpScreen() {
   const { pendingPhone, code, setCode, status, error, submit } = useOtpVerification();
 
   return (
-    <ScreenContainer title="تأكيد الحساب" subtitle={`أدخل رمز التفعيل للرقم ${pendingPhone || "-"}.`} compact>
-      <MobileCard tone="glass" style={styles.card}>
-        <MobileBadge label="OTP تجريبي" tone="warning" />
-        <Text selectable style={styles.code}>1234</Text>
-        <Text selectable style={styles.hint}>هذا الرمز للتطوير فقط وسيستبدل لاحقًا بخدمة OTP حقيقية.</Text>
-        <MobileInput label="رمز OTP" value={code} onChangeText={setCode} keyboardType="number-pad" />
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "loading" ? "جاري التحقق..." : "تأكيد الحساب"} onPress={submit} loading={status === "loading"} />
-      </MobileCard>
-    </ScreenContainer>
+    <V3Screen>
+      <V3SectionHeader
+        meta="تأكيد الحساب"
+        title="أدخل رمز التفعيل"
+        subtitle={`رمز التفعيل للرقم ${pendingPhone || "-"}.`}
+      />
+
+      <V3Card tone="accent" contentStyle={styles.card}>
+        <View style={styles.codePanel}>
+          <V3Badge label="OTP تجريبي" tone="warning" />
+          <V3Text selectable variant="title" align="center" style={styles.code}>1234</V3Text>
+          <V3Text tone="muted" align="center">
+            هذا الرمز للتطوير فقط وسيستبدل لاحقا بخدمة OTP حقيقية.
+          </V3Text>
+        </View>
+
+        <V3Input
+          label="رمز OTP"
+          value={code}
+          onChangeText={setCode}
+          keyboardType="number-pad"
+        />
+        {error ? <V3Text selectable tone="danger">{error}</V3Text> : null}
+        <V3Button
+          title={status === "loading" ? "جاري التحقق..." : "تأكيد الحساب"}
+          onPress={submit}
+          loading={status === "loading"}
+        />
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  card: { gap: spacing.sm, borderColor: depth.violetLine, boxShadow: shadows.glow },
-  code: { color: colors.primary, fontSize: 36, fontWeight: "900", textAlign: "center" },
-  hint: { color: colors.muted, textAlign: "center", lineHeight: 20, fontSize: 12 },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
+  card: {
+    gap: v3Spacing.md
+  },
+  codePanel: {
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    padding: v3Spacing.lg,
+    borderRadius: v3Radius.xl,
+    borderWidth: 1,
+    borderColor: v3Colors.borderStrong,
+    backgroundColor: v3Alpha.purpleSoft
+  },
+  code: {
+    color: v3Colors.purpleLight,
+    fontSize: 42,
+    lineHeight: 48,
+    fontVariant: ["tabular-nums"]
+  }
 });

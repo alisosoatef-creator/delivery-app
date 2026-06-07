@@ -1,76 +1,117 @@
-import { StyleSheet, Text, View } from "react-native";
-import { InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useLogout } from "../../hooks/useLogout";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function AccountScreen() {
   const { user, selectedCity, logout, navigateToWallet, navigateToSupport } = useLogout();
+  const displayName = user.fullName || user.name || "زبون";
 
   return (
-    <ScreenContainer eyebrow="الملف الشخصي" title="حسابي" subtitle="بيانات الدخول وخيارات الحساب بشكل مختصر.">
-      <MobileCard tone="command" style={styles.profileCard}>
+    <V3Screen>
+      <V3SectionHeader
+        meta="الملف الشخصي"
+        title="حسابي"
+        subtitle="بيانات الدخول وخيارات الحساب بشكل مختصر."
+      />
+
+      <V3Card tone="accent" contentStyle={styles.profileCard}>
         <View style={styles.profileTop}>
-          <View style={styles.avatar}><Text selectable={false} style={styles.avatarText}>ز</Text></View>
-          <MobileBadge label="زبون" tone="success" />
+          <View style={styles.avatar}>
+            <V3Text variant="subtitle" align="center" style={styles.avatarText}>
+              {displayName.slice(0, 1)}
+            </V3Text>
+          </View>
+          <View style={styles.profileCopy}>
+            <V3Badge label="زبون" tone="success" />
+            <V3Text selectable variant="subtitle" numberOfLines={1}>{displayName}</V3Text>
+            <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>{user.phone || "-"}</V3Text>
+          </View>
         </View>
-        <Text selectable style={styles.name}>{user.fullName || user.name || "زبون"}</Text>
-        <Text selectable style={styles.phone}>{user.phone || "-"}</Text>
-      </MobileCard>
+      </V3Card>
 
       <View style={styles.actionGrid}>
-        <PressableScale
-          accessibilityLabel="المحفظة"
-          onPress={navigateToWallet}
-          style={styles.actionTile}
-          pressedStyle={styles.pressed}
-        >
-          <Text selectable={false} style={styles.actionGlyph}>₪</Text>
-          <Text selectable style={styles.actionText}>المحفظة</Text>
-        </PressableScale>
-        <PressableScale
-          accessibilityLabel="الدعم"
-          onPress={navigateToSupport}
-          style={styles.actionTile}
-          pressedStyle={styles.pressed}
-        >
-          <Text selectable={false} style={styles.actionGlyph}>?</Text>
-          <Text selectable style={styles.actionText}>الدعم</Text>
-        </PressableScale>
+        <V3Card tone="raised" compact onPress={navigateToWallet} accessibilityLabel="المحفظة" style={styles.actionTile}>
+          <V3Badge label="₪" tone="blue" />
+          <V3Text variant="label">المحفظة</V3Text>
+          <V3Text variant="caption" tone="muted">الرصيد والمدفوعات</V3Text>
+        </V3Card>
+        <V3Card tone="raised" compact onPress={navigateToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
+          <V3Badge label="?" tone="primary" />
+          <V3Text variant="label">الدعم</V3Text>
+          <V3Text variant="caption" tone="muted">تذاكر ومساعدة</V3Text>
+        </V3Card>
       </View>
 
-      <MobileCard tone="glass">
-        <SectionHeader title="تفاصيل الحساب" subtitle="معلومات أساسية دون أي بيانات حساسة." />
-        <InfoRow label="المدينة" value={user.city || selectedCity || "-"} accent />
-        <InfoRow label="العمر" value={user.age ? String(user.age) : "-"} />
-        <InfoRow label="نوع الحساب" value="زبون" />
-      </MobileCard>
+      <V3Card tone="raised">
+        <V3SectionHeader
+          title="تفاصيل الحساب"
+          subtitle="معلومات أساسية دون أي بيانات حساسة."
+        />
+        <View style={styles.infoRow}>
+          <V3Text variant="caption" tone="muted">المدينة</V3Text>
+          <V3Badge label={user.city || selectedCity || "-"} tone="blue" />
+        </View>
+        <View style={styles.infoRow}>
+          <V3Text variant="caption" tone="muted">العمر</V3Text>
+          <V3Text selectable variant="caption" tone="soft">{user.age ? String(user.age) : "-"}</V3Text>
+        </View>
+        <View style={styles.infoRow}>
+          <V3Text variant="caption" tone="muted">نوع الحساب</V3Text>
+          <V3Text variant="caption" tone="soft">زبون</V3Text>
+        </View>
+      </V3Card>
 
-      <MobileButton title="تسجيل الخروج" variant="danger" onPress={logout} />
-    </ScreenContainer>
+      <V3Button title="تسجيل الخروج" variant="danger" onPress={logout} />
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  profileCard: { gap: 7, borderColor: depth.violetLine, boxShadow: shadows.glow },
-  profileTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
-  avatar: { width: 48, height: 48, borderRadius: radii.lg, backgroundColor: colors.primary, alignItems: "center", justifyContent: "center", boxShadow: shadows.glow },
-  avatarText: { color: colors.black, fontWeight: "900", fontSize: 18 },
-  name: { color: colors.text, fontWeight: "900", fontSize: 21, textAlign: "right", writingDirection: "rtl" },
-  phone: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12 },
-  actionGrid: { flexDirection: "row-reverse", gap: spacing.sm },
+  profileCard: {
+    gap: v3Spacing.md
+  },
+  profileTop: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.md
+  },
+  avatar: {
+    width: 62,
+    height: 62,
+    borderRadius: v3Radius.xl,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: v3Alpha.purpleWash,
+    borderWidth: 1,
+    borderColor: v3Colors.borderStrong
+  },
+  avatarText: {
+    color: v3Colors.purpleLight
+  },
+  profileCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xs
+  },
+  actionGrid: {
+    flexDirection: "row-reverse",
+    gap: v3Spacing.sm
+  },
   actionTile: {
     flex: 1,
-    minHeight: 78,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: depth.hairline,
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    padding: spacing.md,
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    boxShadow: shadows.soft
+    minHeight: 112
   },
-  pressed: { opacity: 0.9 },
-  actionGlyph: { color: colors.primary, fontSize: 18, fontWeight: "900" },
-  actionText: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl" }
+  infoRow: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    padding: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft
+  }
 });

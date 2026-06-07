@@ -508,15 +508,6 @@ for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "Goo
 }
 
 for (const [label, file, tokens] of [
-  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "actionGrid", "logout"]]
-]) {
-  const fileSource = fs.readFileSync(file, "utf8");
-  for (const token of tokens) {
-    if (!fileSource.includes(token)) throw new Error(`v2 ${label} token is missing: ${token}`);
-  }
-}
-
-for (const [label, file, tokens] of [
   ["My Rides", "src/screens/customer/MyRidesScreen.js", ["useCustomerRides", "V3Screen", "V3Card", "V3Badge", "V3Button", "continueRide(ride)", "goToRequest", "ratingLabel"]],
   ["Wallet", "src/screens/customer/WalletScreen.js", ["useCustomerWallet", "V3Screen", "V3Card", "V3Badge", "V3Button", "onPress={load}", "money(wallet?.balanceIls ?? wallet?.balance)"]],
   ["Customer Support", "src/screens/customer/SupportScreen.js", ["useSupportTickets", "V3Screen", "V3Input", "V3Button", "issueTypes.map", "setType(item.value)", "onPress={submit}", "disabled={!message.trim()}"]],
@@ -530,6 +521,23 @@ for (const [label, file, tokens] of [
   if (fileSource.includes("../../utils/mobileTheme")) throw new Error(`${label} must not import old mobileTheme after M0-D2`);
   for (const token of tokens) {
     if (!fileSource.includes(token)) throw new Error(`M0-D2 ${label} token is missing: ${token}`);
+  }
+}
+
+for (const [label, file, tokens] of [
+  ["Login", "src/screens/auth/LoginScreen.js", ["useCustomerLogin", "V3Screen", "V3Card", "V3Input", "V3Button", "setIdentifier", "setPassword", "onPress={submit}", "goToRegister", "goToDevDriverLogin"]],
+  ["Register", "src/screens/auth/RegisterScreen.js", ["useRegisterCustomer", "V3Screen", "V3Card", "V3Input", "V3Button", "update(\"fullName\"", "update(\"phone\"", "update(\"password\"", "goToLogin"]],
+  ["OTP", "src/screens/auth/OtpScreen.js", ["useOtpVerification", "V3Screen", "V3Card", "V3Input", "V3Button", "pendingPhone", "setCode", "onPress={submit}"]],
+  ["Account", "src/screens/customer/AccountScreen.js", ["useLogout", "V3Screen", "V3Card", "V3Badge", "V3Button", "navigateToWallet", "navigateToSupport", "onPress={logout}"]],
+  ["Dev Driver Login", "src/screens/driver/DevDriverLoginScreen.js", ["useDevDriverLogin", "V3Screen", "V3Card", "V3Input", "V3Button", "setDriverId", "setPhone", "goToCustomerLogin", "disabled={!driverId && !phone}"]]
+]) {
+  const fileSource = fs.readFileSync(file, "utf8");
+  if (!fileSource.includes("../../components/v3/ui")) throw new Error(`${label} must use V3 UI primitives`);
+  if (!fileSource.includes("../../theme/v3")) throw new Error(`${label} must use V3 theme tokens`);
+  if (fileSource.includes("../../components/ui")) throw new Error(`${label} must not import old UI components after M0-D3`);
+  if (fileSource.includes("../../utils/mobileTheme")) throw new Error(`${label} must not import old mobileTheme after M0-D3`);
+  for (const token of tokens) {
+    if (!fileSource.includes(token)) throw new Error(`M0-D3 ${label} token is missing: ${token}`);
   }
 }
 

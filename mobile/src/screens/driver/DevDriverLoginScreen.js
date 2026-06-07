@@ -1,31 +1,67 @@
-import { StyleSheet, Text } from "react-native";
-import { BrandMark, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3Text } from "../../components/v3/ui";
 import { useDevDriverLogin } from "../../hooks/useDevDriverLogin";
-import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function DevDriverLoginScreen() {
   const { drivers, driverId, setDriverId, phone, setPhone, error, submit, goToCustomerLogin } = useDevDriverLogin();
 
   return (
-    <ScreenContainer showHeader={false}>
-      <MobileCard tone="glass" style={styles.hero}>
-        <BrandMark />
-        <MobileBadge label="مدخل تجريبي" tone="warning" />
-        <Text selectable style={styles.title}>مدخل الكابتن</Text>
-        <Text selectable style={styles.subtitle}>هذا المدخل للتطوير فقط، ولا يفعّل طلبات الانضمام قبل موافقة الإدارة.</Text>
-        <MobileInput label="Driver ID" value={driverId} onChangeText={setDriverId} placeholder={drivers[0]?.id || "driver_..."} />
-        <MobileInput label="رقم الهاتف" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title="دخول لوحة الكابتن" onPress={submit} disabled={!driverId && !phone} />
-        <MobileButton title="رجوع إلى دخول الزبون" compact variant="secondary" onPress={goToCustomerLogin} />
-      </MobileCard>
-    </ScreenContainer>
+    <V3Screen>
+      <V3Card tone="blue" contentStyle={styles.hero}>
+        <View style={styles.headerRow}>
+          <View style={styles.devMark}>
+            <V3Text variant="label" tone="blue" align="center">DEV</V3Text>
+          </View>
+          <V3Badge label="مدخل تجريبي" tone="warning" />
+        </View>
+
+        <V3Text variant="title" numberOfLines={2}>مدخل الكابتن</V3Text>
+        <V3Text tone="muted" numberOfLines={4}>
+          هذا المدخل للتطوير فقط، ولا يفعّل طلبات الانضمام قبل موافقة الإدارة.
+        </V3Text>
+
+        <V3Input
+          label="معرف الكابتن"
+          value={driverId}
+          onChangeText={setDriverId}
+          placeholder={drivers[0]?.id || "driver_..."}
+        />
+        <V3Input
+          label="رقم الهاتف"
+          value={phone}
+          onChangeText={setPhone}
+          keyboardType="phone-pad"
+        />
+        {error ? <V3Text selectable tone="danger">{error}</V3Text> : null}
+
+        <V3Button title="دخول لوحة الكابتن" onPress={submit} disabled={!driverId && !phone} />
+        <V3Button title="رجوع إلى دخول الزبون" size="sm" variant="secondary" onPress={goToCustomerLogin} />
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: "flex-end", borderColor: depth.violetLine, boxShadow: shadows.glow },
-  title: { color: colors.text, fontSize: 21, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.muted, lineHeight: 20, textAlign: "right", marginBottom: spacing.xs, fontSize: 12 },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" }
+  hero: {
+    alignItems: "flex-end",
+    gap: v3Spacing.md
+  },
+  headerRow: {
+    alignSelf: "stretch",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm
+  },
+  devMark: {
+    width: 56,
+    height: 42,
+    borderRadius: v3Radius.lg,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: v3Alpha.blueWash,
+    borderWidth: 1,
+    borderColor: v3Colors.borderBlue
+  }
 });
