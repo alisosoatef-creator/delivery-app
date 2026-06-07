@@ -417,17 +417,67 @@ for (const token of ["PressableScale", "beam", "variant === \"accent\"", "presse
 }
 
 const appNavigator = fs.readFileSync("src/navigation/AppNavigator.js", "utf8");
-for (const token of ["PressableScale", "nav.dock", "tabDotActive", "useSafeAreaInsets", "insets.bottom", "layout.bottomNavHeight"]) {
-  if (!appNavigator.includes(token)) throw new Error(`bottom navigation is missing: ${token}`);
+if (!appNavigator.includes("../components/v3/ui")) {
+  throw new Error("AppNavigator must use V3 UI primitives");
 }
-for (const token of ["numberOfLines={1}", "ellipsizeMode=\"tail\"", "flexBasis: 0", "minWidth: 58", "writingDirection: \"rtl\""]) {
-  if (!appNavigator.includes(token)) throw new Error(`stable bottom navigation is missing: ${token}`);
+if (!appNavigator.includes("../theme/v3")) {
+  throw new Error("AppNavigator must use V3 theme tokens");
 }
-for (const forbidden of ["tabMark", "minWidth: 0", "\"01\"", "\"02\"", "\"03\"", "\"04\"", "\"05\"", "\"06\"", "[\"wallet\", \"محفظة\"]", "[\"support\", \"دعم\"]"]) {
+if (appNavigator.includes("../components/ui")) {
+  throw new Error("AppNavigator must not import old UI components after M0-D10");
+}
+if (appNavigator.includes("../utils/mobileTheme")) {
+  throw new Error("AppNavigator must not import old mobileTheme after M0-D10");
+}
+for (const token of [
+  "useMobileApp",
+  "useSafeAreaInsets",
+  "useCustomerActiveRide",
+  "useCustomerRideRealtime",
+  "I18nManager.allowRTL(true)",
+  "state.restoreStatus === \"loading\"",
+  "state.activeArea",
+  "state.role === \"customer\"",
+  "state.role === \"driver\"",
+  "showConnectionBanner",
+  "dispatch({ type: \"navigate\", area, screen })",
+  "V3Text",
+  "v3Colors",
+  "v3Spacing",
+  "v3Layout.bottomNavHeight",
+  "bottomNavShell",
+  "bottomNavDock",
+  "tabActive",
+  "tabIndicatorActive",
+  "numberOfLines={1}",
+  "ellipsizeMode=\"tail\"",
+  "flexBasis: 0",
+  "writingDirection: \"rtl\"",
+  "home: CustomerHomeScreen",
+  "request: RequestRideScreen",
+  "\"ride-status\": CustomerRideStatusScreen",
+  "rides: MyRidesScreen",
+  "wallet: WalletScreen",
+  "support: SupportScreen",
+  "account: AccountScreen",
+  "home: DriverHomeScreen",
+  "available: AvailableRidesScreen",
+  "current: CurrentRideScreen",
+  "earnings: DriverEarningsScreen",
+  "support: DriverSupportScreen",
+  "\"dev-login\": DevDriverLoginScreen",
+  "[\"home\",",
+  "[\"request\",",
+  "[\"rides\",",
+  "[\"account\",",
+  "[\"available\",",
+  "[\"current\",",
+  "[\"earnings\","
+]) {
+  if (!appNavigator.includes(token)) throw new Error(`M0-D10 AppNavigator token is missing: ${token}`);
+}
+for (const forbidden of ["tabMark", "\"01\"", "\"02\"", "\"03\"", "\"04\"", "\"05\"", "\"06\"", "[\"wallet\", \"محفظة\"]", "[\"support\", \"دعم\"]", "ScrollView", "horizontal"]) {
   if (appNavigator.includes(forbidden)) throw new Error(`bottom navigation regression found: ${forbidden}`);
-}
-if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) {
-  throw new Error("Bottom navigation should not rely on horizontal scrolling");
 }
 
 const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");

@@ -1,6 +1,6 @@
-import { I18nManager, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, I18nManager, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { LoadingState, PressableScale } from "../components/ui";
+import { V3Card, V3Text } from "../components/v3/ui";
 import { LoginScreen } from "../screens/auth/LoginScreen";
 import { OtpScreen } from "../screens/auth/OtpScreen";
 import { RegisterScreen } from "../screens/auth/RegisterScreen";
@@ -20,7 +20,7 @@ import { DriverEarningsScreen } from "../screens/driver/DriverEarningsScreen";
 import { DriverHomeScreen } from "../screens/driver/DriverHomeScreen";
 import { DriverSupportScreen } from "../screens/driver/DriverSupportScreen";
 import { useMobileApp } from "../store/mobileStore";
-import { colors, layout, nav, radii, shadows, spacing } from "../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Layout, v3Radius, v3Shadows, v3Spacing } from "../theme/v3";
 
 I18nManager.allowRTL(true);
 
@@ -70,19 +70,23 @@ function AppTabs({ area }) {
   const tabs = area === "driver" ? driverTabs : customerTabs;
 
   return (
-    <View style={[styles.tabsShell, { bottom: Math.max(spacing.sm, insets.bottom + spacing.xs) }]}>
-      <View style={styles.tabs}>
+    <View style={[styles.bottomNavShell, { bottom: Math.max(v3Spacing.sm, insets.bottom + v3Spacing.xs) }]}>
+      <View style={styles.bottomNavDock}>
         {tabs.map(([screen, label]) => {
           const active = state.activeScreen === screen;
           return (
-            <PressableScale
+            <Pressable
               key={screen}
+              accessibilityRole="button"
               accessibilityLabel={label}
               onPress={() => dispatch({ type: "navigate", area, screen })}
-              style={[styles.tab, active && styles.tabActive]}
-              pressedStyle={styles.tabPressed}
+              style={({ pressed }) => [
+                styles.tab,
+                active && styles.tabActive,
+                pressed && styles.tabPressed
+              ]}
             >
-              <View style={[styles.tabDot, active && styles.tabDotActive]} />
+              <View style={[styles.tabIndicator, active && styles.tabIndicatorActive]} />
               <Text
                 selectable={false}
                 numberOfLines={1}
@@ -91,7 +95,7 @@ function AppTabs({ area }) {
               >
                 {label}
               </Text>
-            </PressableScale>
+            </Pressable>
           );
         })}
       </View>
@@ -131,65 +135,114 @@ export function AppNavigator() {
   if (state.restoreStatus === "loading") {
     return (
       <View style={styles.restore}>
-        <LoadingState message="جاري استعادة الجلسة..." />
+        <V3Card tone="default" contentStyle={styles.restoreCard}>
+          <ActivityIndicator color={v3Colors.purpleLight} size="small" />
+          <V3Text variant="label" tone="soft" align="center">جاري استعادة الجلسة...</V3Text>
+        </V3Card>
       </View>
     );
   }
   return (
     <View style={styles.root}>
-      {state.toast ? <Text selectable style={styles.toast}>{state.toast}</Text> : null}
-      {state.connectionMessage ? <Text selectable style={styles.banner}>{state.connectionMessage}</Text> : null}
-      {showConnectionBanner ? <Text selectable style={styles.banner}>التحديث المباشر غير متاح الآن، يمكنك التحديث يدويًا.</Text> : null}
+      {state.toast ? (
+        <View style={styles.toast}>
+          <V3Text selectable variant="caption" tone="soft" align="center">{state.toast}</V3Text>
+        </View>
+      ) : null}
+      {state.connectionMessage ? (
+        <View style={styles.banner}>
+          <V3Text selectable variant="caption" tone="danger" align="center">{state.connectionMessage}</V3Text>
+        </View>
+      ) : null}
+      {showConnectionBanner ? (
+        <View style={styles.banner}>
+          <V3Text selectable variant="caption" tone="warning" align="center">
+            التحديث المباشر غير متاح الآن، يمكنك التحديث يدويا.
+          </V3Text>
+        </View>
+      ) : null}
       {area === "driver" ? <DriverNavigator /> : state.role === "customer" || area === "customer" ? <CustomerNavigator /> : <AuthNavigator />}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
-  restore: { flex: 1, backgroundColor: colors.background, justifyContent: "center", padding: spacing.lg },
-  shell: { flex: 1 },
-  tabsShell: {
-    position: "absolute",
-    left: spacing.md,
-    right: spacing.md,
-    minHeight: layout.bottomNavHeight,
-    borderRadius: radii.pill,
-    backgroundColor: nav.dock,
-    borderWidth: 1,
-    borderColor: nav.dockBorder,
-    padding: 5,
-    boxShadow: shadows.lift
+  root: {
+    flex: 1,
+    backgroundColor: v3Colors.background
   },
-  tabs: {
+  restore: {
+    flex: 1,
+    backgroundColor: v3Colors.background,
+    justifyContent: "center",
+    padding: v3Spacing.lg
+  },
+  restoreCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: v3Spacing.sm,
+    minHeight: 132
+  },
+  shell: {
+    flex: 1,
+    backgroundColor: v3Colors.background
+  },
+  bottomNavShell: {
+    position: "absolute",
+    left: v3Spacing.md,
+    right: v3Spacing.md,
+    minHeight: v3Layout.bottomNavHeight,
+    borderRadius: v3Radius.pill,
+    borderWidth: 1,
+    borderColor: v3Colors.borderStrong,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: 6,
+    boxShadow: v3Shadows.card
+  },
+  bottomNavDock: {
+    minHeight: v3Layout.bottomNavHeight - 12,
+    borderRadius: v3Radius.pill,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Colors.surface,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.xs
+    gap: v3Spacing.xs
   },
   tab: {
     flex: 1,
     flexBasis: 0,
     flexShrink: 1,
     minWidth: 58,
-    minHeight: 46,
-    borderRadius: radii.pill,
+    minHeight: 48,
+    borderRadius: v3Radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: spacing.xs
+    gap: v3Spacing.xxs,
+    paddingHorizontal: v3Spacing.xs
   },
-  tabActive: { backgroundColor: nav.active },
-  tabPressed: { opacity: 0.9 },
-  tabDot: {
+  tabActive: {
+    backgroundColor: v3Alpha.purpleWash
+  },
+  tabPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.985 }]
+  },
+  tabIndicator: {
     width: 5,
     height: 5,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(255, 255, 255, 0.16)"
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.textFaint
   },
-  tabDotActive: { width: 22, height: 5, backgroundColor: nav.activeLine, boxShadow: shadows.glow },
+  tabIndicatorActive: {
+    width: 24,
+    height: 5,
+    backgroundColor: v3Colors.purpleLight,
+    boxShadow: v3Shadows.purple
+  },
   tabLabel: {
-    color: colors.muted,
+    color: v3Colors.textMuted,
     fontSize: 11,
     lineHeight: 14,
     fontWeight: "800",
@@ -198,19 +251,19 @@ const styles = StyleSheet.create({
     includeFontPadding: false,
     alignSelf: "stretch"
   },
-  tabLabelActive: { color: colors.text },
+  tabLabelActive: {
+    color: v3Colors.text
+  },
   toast: {
-    color: colors.text,
-    backgroundColor: "rgba(154, 105, 255, 0.16)",
-    padding: spacing.sm,
-    textAlign: "center",
-    fontWeight: "800"
+    backgroundColor: v3Alpha.purpleWash,
+    borderBottomWidth: 1,
+    borderBottomColor: v3Colors.borderStrong,
+    padding: v3Spacing.sm
   },
   banner: {
-    color: colors.text,
-    backgroundColor: "rgba(255, 100, 117, 0.15)",
-    padding: spacing.sm,
-    textAlign: "center",
-    fontWeight: "800"
+    backgroundColor: "rgba(255, 97, 116, 0.11)",
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 97, 116, 0.26)",
+    padding: v3Spacing.sm
   }
 });
