@@ -1,10 +1,34 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useDriverCurrentRide } from "../../hooks/useDriverCurrentRide";
 import { useDriverLiveTracking } from "../../hooks/useDriverLiveTracking";
 import { km, money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+
+function DetailLine({ label, value, tone = "soft" }) {
+  return (
+    <View style={styles.detailLine}>
+      <V3Text variant="caption" tone="muted">{label}</V3Text>
+      <V3Text selectable variant="label" tone={tone} numberOfLines={1} style={styles.detailValue}>{value}</V3Text>
+    </View>
+  );
+}
+
+function RoutePoint({ label, value, end = false }) {
+  return (
+    <View style={styles.routePoint}>
+      <View style={styles.routeMarkerColumn}>
+        <View style={[styles.routeDot, end && styles.routeDotEnd]} />
+        {!end ? <View style={styles.routeStroke} /> : null}
+      </View>
+      <View style={styles.routeCopy}>
+        <V3Text variant="caption" tone={end ? "accent" : "blue"}>{label}</V3Text>
+        <V3Text selectable variant="label" tone="primary" numberOfLines={1}>{value || "-"}</V3Text>
+      </View>
+    </View>
+  );
+}
 
 export function CurrentRideScreen() {
   const {
@@ -35,114 +59,282 @@ export function CurrentRideScreen() {
     stopTracking
   } = useDriverLiveTracking({ currentRide, session, setSocketStatus, clearRideError: clearError });
   const displayError = error || trackingError;
+  const socketLive = socketStatus === "connected";
+  const trackingToneName = trackingTone(trackingStatus);
+  const trackingBadgeTone = trackingToneName === "info" ? "blue" : trackingToneName;
 
   return (
-    <ScreenContainer showHeader={false} compact>
-      {displayError ? <Text selectable style={styles.error}>{displayError}</Text> : null}
-      {!currentRide ? <EmptyState title="لا توجد رحلة نشطة" message="اقبل رحلة من شاشة الطلبات." actionTitle="عرض الطلبات" onAction={goToAvailable} /> : null}
+    <V3Screen contentStyle={styles.driverRideShell}>
+      <V3SectionHeader
+        meta="الرحلة الجارية"
+        title="رحلتي الحالية"
+        subtitle="تابع المسار، حالة الرحلة، وموقعك المباشر من شاشة واحدة."
+      />
+
+      {displayError ? (
+        <V3Card tone="quiet" style={styles.errorPanel}>
+          <V3Text selectable variant="caption" tone="danger">{displayError}</V3Text>
+        </V3Card>
+      ) : null}
+
+      {!currentRide ? (
+        <V3Card tone="accent" contentStyle={styles.emptyPanel}>
+          <V3Badge label="لا توجد رحلة" tone="primary" />
+          <V3Text variant="subtitle" tone="primary">لا توجد رحلة نشطة</V3Text>
+          <V3Text variant="caption" tone="muted" align="center" style={styles.centerCopy}>
+            اقبل رحلة من شاشة الطلبات لتظهر تفاصيلها هنا.
+          </V3Text>
+          <V3Button title="عرض الطلبات" variant="primary" onPress={goToAvailable} />
+        </V3Card>
+      ) : null}
+
       {currentRide ? (
         <>
-          <MobileCard tone="command" style={styles.statusCommand}>
-            <View>
-              <Text selectable style={styles.title}>رحلتي الحالية</Text>
-              <Text selectable style={styles.subtitle}>{statusLabel(currentRide.status)}</Text>
-            </View>
-            <View style={styles.commandMeta}>
-              <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-              <Text selectable style={styles.commandPrice}>{money(currentRide.price || currentRide.fareIls)}</Text>
-            </View>
-          </MobileCard>
           <View style={styles.mapStage}>
-            <MobileRideMap pickup={pickupPoint} destination={destinationPoint} driverLocation={driverLocation} userLocation={driverLocation} rideStatus={currentRide.status} height={270} />
+            <MobileRideMap
+              pickup={pickupPoint}
+              destination={destinationPoint}
+              driverLocation={driverLocation}
+              userLocation={driverLocation}
+              rideStatus={currentRide.status}
+              height={290}
+            />
           </View>
-          {socketStatus !== "connected" ? <Text selectable style={styles.mapNotice}>التحديث المباشر غير متاح مؤقتًا، ويمكنك المتابعة يدويًا.</Text> : null}
-          <MobileCard tone="glass" style={styles.routeCard}>
-            <View style={styles.routeHeader}>
-              <MobileBadge label={statusLabel(currentRide.status)} tone={completed ? "success" : "info"} />
-              <Text selectable style={styles.cardTitle}>مسار الرحلة</Text>
-            </View>
-            <View style={styles.routePoints}>
-              <View style={styles.routePoint}>
-                <Text selectable style={styles.pointLabel}>نقطة الانطلاق</Text>
-                <Text selectable style={styles.pointValue} numberOfLines={1}>{currentRide.pickup || "-"}</Text>
-              </View>
-              <View style={styles.routePoint}>
-                <Text selectable style={styles.pointLabel}>الوجهة</Text>
-                <Text selectable style={styles.pointValue} numberOfLines={1}>{currentRide.destination || "-"}</Text>
-              </View>
-            </View>
-          </MobileCard>
 
-          <MobileCard tone="flat">
-            <StatusTimeline status={currentRide.status} />
-            <InfoRow label="الزبون" value={currentRide.customerName || "-"} accent />
-            <InfoRow label="الهاتف" value={currentRide.customerPhone || "-"} />
-            <InfoRow label="السعر" value={money(currentRide.price || currentRide.fareIls)} />
-            <InfoRow label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
-            <InfoRow label="الدفع" value={paymentLabel(currentRide.paymentMethod)} />
-          </MobileCard>
+          <V3Card tone="accent" style={styles.statusPanel} contentStyle={styles.statusContent}>
+            <View style={styles.rowBetween}>
+              <View style={styles.badgeRow}>
+                <V3Badge label={socketLive ? "مباشر" : "يدوي"} tone={socketLive ? "success" : "warning"} />
+                <V3Badge label={statusLabel(currentRide.status)} tone={completed ? "success" : "blue"} />
+              </View>
+              <View style={styles.statusCopy}>
+                <V3Text variant="caption" tone="muted">حالة الرحلة</V3Text>
+                <V3Text variant="title" tone="primary" numberOfLines={2}>{statusLabel(currentRide.status)}</V3Text>
+              </View>
+            </View>
+            <View style={styles.priceStrip}>
+              <V3Text variant="caption" tone="muted">قيمة الرحلة</V3Text>
+              <V3Text selectable variant="subtitle" tone="success">{money(currentRide.price || currentRide.fareIls)}</V3Text>
+            </View>
+          </V3Card>
+
+          {!socketLive ? (
+            <V3Card tone="quiet" contentStyle={styles.noticePanel}>
+              <V3Text selectable variant="caption" tone="warning">
+                التحديث المباشر غير متاح مؤقتا، ويمكنك المتابعة يدويا.
+              </V3Text>
+            </V3Card>
+          ) : null}
+
+          <V3Card tone="default" style={styles.routePanel} contentStyle={styles.routeContent}>
+            <View style={styles.rowBetween}>
+              <V3Badge label={km(currentRide.routeDistanceKm || currentRide.distanceKm)} tone="blue" />
+              <View style={styles.statusCopy}>
+                <V3Text variant="caption" tone="muted">مسار الرحلة</V3Text>
+                <V3Text variant="subtitle" tone="primary">نقاط الالتقاط والوصول</V3Text>
+              </View>
+            </View>
+            <RoutePoint label="نقطة الانطلاق" value={currentRide.pickup} />
+            <RoutePoint label="الوجهة" value={currentRide.destination} end />
+          </V3Card>
+
+          <V3Card tone="quiet" contentStyle={styles.detailsPanel}>
+            <V3SectionHeader title="معلومات الرحلة" subtitle="بيانات الزبون والدفع الحالية." />
+            <DetailLine label="الزبون" value={currentRide.customerName || "-"} tone="primary" />
+            <DetailLine label="الهاتف" value={currentRide.customerPhone || "-"} />
+            <DetailLine label="السعر" value={money(currentRide.price || currentRide.fareIls)} tone="success" />
+            <DetailLine label="المسافة" value={km(currentRide.routeDistanceKm || currentRide.distanceKm)} />
+            <DetailLine label="الدفع" value={paymentLabel(currentRide.paymentMethod)} />
+          </V3Card>
+
           {!completed ? (
-            <MobileCard tone="flat">
-              <View style={styles.trackingHeader}>
-                <Text selectable style={styles.cardTitle}>التتبع</Text>
-                <View style={styles.trackingPills}>
-                  <MobileBadge label={trackingLabel(trackingStatus)} tone={trackingTone(trackingStatus)} />
+            <V3Card tone="blue" style={styles.trackingPanel} contentStyle={styles.trackingContent}>
+              <View style={styles.rowBetween}>
+                <V3Badge label={trackingLabel(trackingStatus)} tone={trackingBadgeTone} />
+                <View style={styles.statusCopy}>
+                  <V3Text variant="caption" tone="muted">التتبع المباشر</V3Text>
+                  <V3Text variant="subtitle" tone="primary">موقع الكابتن</V3Text>
                 </View>
               </View>
-              {driverLocationTime ? <Text selectable style={styles.muted}>آخر تحديث للموقع: {driverLocationTime}</Text> : null}
+              {driverLocationTime ? (
+                <V3Text selectable variant="caption" tone="muted">
+                  آخر تحديث للموقع: {driverLocationTime}
+                </V3Text>
+              ) : (
+                <V3Text variant="caption" tone="muted">فعّل موقعك المباشر عند بدء التحرك.</V3Text>
+              )}
               <View style={styles.trackingActions}>
-                <MobileButton title="تفعيل موقعي المباشر" compact variant="secondary" onPress={startTracking} disabled={trackingStatus === "requesting" || trackingStatus === "active"} />
-                <MobileButton title="إيقاف التتبع" compact variant="danger" onPress={() => stopTracking(true)} disabled={trackingStatus !== "active"} />
+                <V3Button
+                  title="تفعيل موقعي المباشر"
+                  variant="secondary"
+                  size="sm"
+                  disabled={trackingStatus === "requesting" || trackingStatus === "active"}
+                  onPress={startTracking}
+                />
+                <V3Button
+                  title="إيقاف التتبع"
+                  variant="danger"
+                  size="sm"
+                  disabled={trackingStatus !== "active"}
+                  onPress={() => stopTracking(true)}
+                />
               </View>
-            </MobileCard>
+            </V3Card>
           ) : (
-            <MobileCard tone="hero" style={styles.completedCard}>
-              <Text selectable style={styles.cardTitle}>تم إنهاء الرحلة</Text>
-              <Text selectable style={styles.muted}>تم حفظ الرحلة ضمن سجل الكابتن. يمكنك العودة للطلبات لاستقبال رحلة جديدة.</Text>
-              <MobileButton title="عرض الطلبات" compact variant="secondary" onPress={goToAvailable} />
-            </MobileCard>
+            <V3Card tone="blue" contentStyle={styles.completedPanel}>
+              <V3Badge label="مكتملة" tone="success" />
+              <V3Text variant="subtitle" tone="primary">تم إنهاء الرحلة</V3Text>
+              <V3Text selectable variant="caption" tone="muted">
+                تم حفظ الرحلة ضمن سجل الكابتن. يمكنك العودة للطلبات لاستقبال رحلة جديدة.
+              </V3Text>
+              <V3Button title="عرض الطلبات" variant="secondary" size="sm" onPress={goToAvailable} />
+            </V3Card>
           )}
+
           {action ? (
-            <MobileCard tone="hero" style={styles.nextActionCard}>
-              <Text selectable style={styles.nextActionHint}>الخطوة التالية</Text>
-              <MobileButton title={action[1]} variant="accent" onPress={() => update(action[0], { onCompleted: () => stopTracking(false) })} />
-            </MobileCard>
+            <V3Card tone="accent" style={styles.nextActionPanel} contentStyle={styles.nextActionContent}>
+              <V3Text variant="caption" tone="muted">الخطوة التالية</V3Text>
+              <V3Button title={action[1]} variant="primary" onPress={() => update(action[0], { onCompleted: () => stopTracking(false) })} />
+            </V3Card>
           ) : null}
         </>
       ) : null}
-      <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
-    </ScreenContainer>
+
+      <V3Button title="تحديث" variant="secondary" size="sm" onPress={load} />
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  statusCommand: {
+  driverRideShell: {
+    gap: v3Spacing.lg
+  },
+  errorPanel: {
+    borderColor: "rgba(255, 97, 116, 0.32)"
+  },
+  emptyPanel: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: v3Spacing.sm,
+    minHeight: 220
+  },
+  centerCopy: {
+    maxWidth: 280
+  },
+  mapStage: {
+    borderRadius: v3Radius.xl,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: v3Colors.borderStrong,
+    backgroundColor: v3Colors.backgroundDeep
+  },
+  statusPanel: {
+    borderColor: v3Colors.borderStrong
+  },
+  statusContent: {
+    gap: v3Spacing.md
+  },
+  rowBetween: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    borderColor: depth.greenLine
+    gap: v3Spacing.md
   },
-  commandMeta: { alignItems: "flex-start", gap: spacing.xs },
-  commandPrice: { color: colors.green, fontSize: 22, fontWeight: "900", textAlign: "left" },
-  title: { color: colors.text, fontSize: 24, fontWeight: "900", textAlign: "right" },
-  subtitle: { color: colors.primary, fontSize: 13, textAlign: "right", marginTop: 2 },
-  cardTitle: { color: colors.text, fontSize: 14.5, fontWeight: "900", textAlign: "right" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700" },
-  mapNotice: { color: colors.muted, textAlign: "right", fontSize: 12, fontWeight: "800", marginTop: -spacing.xs },
-  muted: { color: colors.muted, lineHeight: 21, textAlign: "right", fontWeight: "600" },
-  mapStage: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.violetLine, boxShadow: shadows.glow },
-  routeCard: { gap: spacing.xs, backgroundColor: "rgba(255, 255, 255, 0.052)", borderColor: depth.violetLine },
-  routeHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  routePoints: { gap: spacing.xs },
-  routePoint: { paddingVertical: spacing.xs, paddingHorizontal: spacing.xs, borderTopWidth: 1, borderTopColor: depth.hairline, borderRadius: radii.sm },
-  pointLabel: { color: colors.primary, textAlign: "right", fontSize: 12, fontWeight: "900" },
-  pointValue: { color: colors.text, textAlign: "right", fontSize: 14, fontWeight: "800", marginTop: 2 },
-  trackingHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between" },
-  trackingPills: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  trackingActions: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  nextActionCard: { gap: spacing.xs, borderColor: depth.amberLine, boxShadow: shadows.accentGlow, backgroundColor: "rgba(243, 184, 106, 0.07)" },
-  nextActionHint: { color: colors.muted, textAlign: "right", fontWeight: "900", fontSize: 12 },
-  completedCard: { gap: spacing.sm, borderColor: "rgba(68, 227, 157, 0.24)", backgroundColor: "rgba(68, 227, 157, 0.06)" }
+  badgeRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  statusCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  priceStrip: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: v3Spacing.sm
+  },
+  noticePanel: {
+    gap: v3Spacing.xs
+  },
+  routePanel: {
+    borderColor: v3Colors.borderBlue
+  },
+  routeContent: {
+    gap: v3Spacing.md
+  },
+  routePoint: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: v3Spacing.sm
+  },
+  routeMarkerColumn: {
+    width: 18,
+    alignItems: "center",
+    paddingTop: 3
+  },
+  routeDot: {
+    width: 10,
+    height: 10,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.electricBlue
+  },
+  routeDotEnd: {
+    backgroundColor: v3Colors.purpleLight
+  },
+  routeStroke: {
+    width: 2,
+    height: 38,
+    backgroundColor: v3Colors.borderStrong
+  },
+  routeCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  detailsPanel: {
+    gap: v3Spacing.sm
+  },
+  detailLine: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: v3Colors.border,
+    paddingTop: v3Spacing.sm
+  },
+  detailValue: {
+    flex: 1
+  },
+  trackingPanel: {
+    borderColor: v3Colors.borderBlue
+  },
+  trackingContent: {
+    gap: v3Spacing.md
+  },
+  trackingActions: {
+    flexDirection: "row-reverse",
+    gap: v3Spacing.sm,
+    flexWrap: "wrap"
+  },
+  completedPanel: {
+    gap: v3Spacing.sm
+  },
+  nextActionPanel: {
+    borderColor: v3Colors.borderStrong
+  },
+  nextActionContent: {
+    gap: v3Spacing.sm
+  }
 });

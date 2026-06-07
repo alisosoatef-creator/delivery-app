@@ -649,8 +649,57 @@ const driverCurrentFlow = [
   fs.readFileSync("src/hooks/useDriverCurrentRide.js", "utf8"),
   fs.readFileSync("src/hooks/useDriverLiveTracking.js", "utf8")
 ].join("\n");
-for (const token of ["statusCommand", "mapStage", "nextActionCard", "trackingLabel", "StatusTimeline", "height={270}"]) {
-  if (!driverCurrent.includes(token)) throw new Error(`v2 current ride is missing: ${token}`);
+if (!driverCurrent.includes("../../components/v3/ui")) {
+  throw new Error("CurrentRideScreen must use V3 UI primitives");
+}
+if (!driverCurrent.includes("../../theme/v3")) {
+  throw new Error("CurrentRideScreen must use V3 theme tokens");
+}
+if (driverCurrent.includes("../../components/ui")) {
+  throw new Error("CurrentRideScreen must not import old UI components after M0-D9");
+}
+if (driverCurrent.includes("../../utils/mobileTheme")) {
+  throw new Error("CurrentRideScreen must not import old mobileTheme after M0-D9");
+}
+for (const token of [
+  "useDriverCurrentRide",
+  "useDriverLiveTracking",
+  "MobileRideMap",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3SectionHeader",
+  "V3Text",
+  "currentRide",
+  "action",
+  "completed",
+  "socketStatus",
+  "pickupPoint",
+  "destinationPoint",
+  "driverLocation",
+  "driverLocationTime",
+  "trackingStatus",
+  "trackingLabel",
+  "trackingTone",
+  "startTracking",
+  "stopTracking",
+  "goToAvailable",
+  "paymentLabel",
+  "statusLabel",
+  "onPress={load}",
+  "onPress={goToAvailable}",
+  "onPress={startTracking}",
+  "stopTracking(true)",
+  "update(action[0], { onCompleted: () => stopTracking(false) })",
+  "driverRideShell",
+  "mapStage",
+  "statusPanel",
+  "routePanel",
+  "trackingPanel",
+  "nextActionPanel"
+]) {
+  if (!driverCurrent.includes(token)) throw new Error(`M0-D9 Current Ride token is missing: ${token}`);
 }
 for (const token of [
   "accepted: [\"driver_arriving\"",
