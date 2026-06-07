@@ -1,62 +1,136 @@
-import { StyleSheet, Text, View } from "react-native";
-import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useCustomerWallet } from "../../hooks/useCustomerWallet";
 import { money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function WalletScreen() {
-  const { wallet, status } = useCustomerWallet();
+  const { wallet, status, error, load } = useCustomerWallet();
+  const transactions = wallet?.transactions || [];
 
   return (
-    <ScreenContainer title="المحفظة" subtitle="رصيد واضح وعمليات الدفع داخل التطبيق." compact>
-      {status === "loading" ? <LoadingState message="جاري تحميل المحفظة..." /> : null}
+    <V3Screen>
+      <V3SectionHeader
+        meta="المحفظة"
+        title="رصيدك وعمليات الدفع"
+        subtitle="متابعة هادئة للرصيد والمدفوعات داخل واصل."
+        actionLabel="تحديث"
+        onAction={load}
+      />
 
-      <MobileCard tone="command" style={styles.balanceOverview}>
+      {status === "loading" ? (
+        <V3Card tone="quiet" compact>
+          <V3Text tone="muted">جاري تحميل المحفظة...</V3Text>
+        </V3Card>
+      ) : null}
+
+      {error ? (
+        <V3Card tone="quiet" compact style={styles.errorCard}>
+          <V3Text selectable tone="danger">{error}</V3Text>
+        </V3Card>
+      ) : null}
+
+      <V3Card tone="accent" contentStyle={styles.balanceContent}>
         <View style={styles.balanceHeader}>
-          <MobileBadge label="دفع تجريبي" tone="info" />
-          <Text selectable style={styles.label}>الرصيد المتاح</Text>
+          <V3Badge label="دفع تجريبي" tone="primary" />
+          <V3Text variant="label" tone="muted">الرصيد المتاح</V3Text>
         </View>
-        <Text selectable style={styles.balance}>{money(wallet?.balanceIls ?? wallet?.balance)}</Text>
-        <View style={styles.walletRails}>
-          <Text selectable style={styles.walletRail}>نقدا</Text>
-          <Text selectable style={styles.walletRail}>بطاقة تجريبية</Text>
-          <Text selectable style={styles.walletRail}>محفظة</Text>
-        </View>
-        <Text selectable style={styles.caption}>الدفع الإلكتروني تجريبي الآن، ولا يتم حفظ بيانات بطاقة حساسة.</Text>
-      </MobileCard>
 
-      <MobileCard tone="glass" style={styles.transactionsCard}>
-        <SectionHeader title="آخر العمليات" subtitle="تظهر المدفوعات والاستردادات هنا عند توفرها." />
-        {!wallet?.transactions?.length ? <EmptyState title="لا توجد عمليات" message="ستظهر عمليات الدفع أو الاسترداد هنا عند توفرها." /> : null}
-        {wallet?.transactions?.map((item) => (
+        <V3Text selectable variant="title" style={styles.balance}>
+          {money(wallet?.balanceIls ?? wallet?.balance)}
+        </V3Text>
+
+        <View style={styles.walletRails}>
+          <V3Badge label="نقدا" tone="dark" />
+          <V3Badge label="بطاقة تجريبية" tone="blue" />
+          <V3Badge label="محفظة" tone="primary" />
+        </View>
+
+        <V3Text tone="muted">
+          الدفع الإلكتروني تجريبي الآن، ولا يتم حفظ بيانات بطاقة حساسة.
+        </V3Text>
+
+        <V3Button
+          title={status === "loading" ? "جاري التحديث" : "تحديث المحفظة"}
+          variant="secondary"
+          loading={status === "loading"}
+          onPress={load}
+        />
+      </V3Card>
+
+      <V3Card tone="raised">
+        <V3SectionHeader
+          title="آخر العمليات"
+          subtitle="تظهر المدفوعات والاستردادات هنا عند توفرها."
+        />
+
+        {!transactions.length ? (
+          <View style={styles.emptyState}>
+            <V3Text variant="subtitle">لا توجد عمليات</V3Text>
+            <V3Text tone="muted">ستظهر عمليات الدفع أو الاسترداد هنا عند توفرها.</V3Text>
+          </View>
+        ) : null}
+
+        {transactions.map((item) => (
           <View key={item.id} style={styles.transaction}>
-            <InfoRow label={item.type || "عملية"} value={money(item.amount)} accent />
+            <View style={styles.transactionCopy}>
+              <V3Text variant="label" numberOfLines={1}>{item.type || "عملية"}</V3Text>
+              <V3Text variant="caption" tone="muted">تم تسجيلها في المحفظة</V3Text>
+            </View>
+            <V3Badge label={money(item.amount)} tone="blue" />
           </View>
         ))}
-      </MobileCard>
-    </ScreenContainer>
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  balanceOverview: { gap: spacing.sm, borderColor: depth.violetLine, boxShadow: shadows.glow },
-  balanceHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  label: { color: colors.muted, textAlign: "right", fontSize: 13, fontWeight: "800", writingDirection: "rtl" },
-  balance: { color: colors.text, fontSize: 40, fontWeight: "900", textAlign: "right" },
-  walletRails: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  walletRail: {
-    color: colors.textSoft,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-    borderWidth: 1,
-    borderColor: depth.hairline,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-    fontWeight: "900",
-    fontSize: 11.5,
-    overflow: "hidden"
+  balanceContent: {
+    gap: v3Spacing.md
   },
-  caption: { color: colors.muted, textAlign: "right", lineHeight: 20, fontWeight: "700", fontSize: 12.5, writingDirection: "rtl" },
-  transactionsCard: { gap: spacing.xs },
-  transaction: { borderTopWidth: 1, borderTopColor: depth.hairline, paddingVertical: spacing.xs }
+  balanceHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  balance: {
+    fontSize: 42,
+    lineHeight: 48,
+    color: v3Colors.white,
+    fontVariant: ["tabular-nums"]
+  },
+  walletRails: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  errorCard: {
+    borderColor: "rgba(255, 97, 116, 0.42)"
+  },
+  emptyState: {
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft,
+    padding: v3Spacing.md,
+    gap: v3Spacing.xs,
+    alignItems: "flex-end"
+  },
+  transaction: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    paddingTop: v3Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: v3Colors.border
+  },
+  transactionCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  }
 });

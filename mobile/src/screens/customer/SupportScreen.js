@@ -1,53 +1,133 @@
-import { StyleSheet, Text, View } from "react-native";
-import { ChoiceChip, EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useSupportTickets } from "../../hooks/useSupportTickets";
-import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function SupportScreen() {
   const { type, setType, message, setMessage, tickets, loading, error, success, issueTypes, submit, statusTone, statusLabel } = useSupportTickets({ role: "customer" });
 
   return (
-    <ScreenContainer eyebrow="مركز المساعدة" title="الدعم" subtitle="اختر نوع المشكلة ثم أرسل تفاصيل مختصرة وواضحة.">
-      <MobileCard tone="command" style={styles.formCard}>
-        <SectionHeader title="كيف نساعدك؟" subtitle="قسم الطلب ليسهل المتابعة من لوحة الإدارة." />
+    <V3Screen>
+      <V3SectionHeader
+        meta="مركز المساعدة"
+        title="كيف نساعدك؟"
+        subtitle="اختر نوع المشكلة وأرسل تفاصيل مختصرة ليتمكن الفريق من المتابعة."
+      />
+
+      <V3Card tone="accent" contentStyle={styles.formCard}>
+        <V3SectionHeader
+          title="تذكرة جديدة"
+          subtitle="قسّم الطلب بوضوح لتصل المعلومة بسرعة."
+        />
+
         <View style={styles.chips}>
           {issueTypes.map((item) => (
-            <ChoiceChip key={item.value} label={item.label} selected={type === item.value} onPress={() => setType(item.value)} />
+            <V3Button
+              key={item.value}
+              title={item.label}
+              size="sm"
+              fullWidth={false}
+              variant={type === item.value ? "primary" : "ghost"}
+              onPress={() => setType(item.value)}
+              style={styles.chipButton}
+            />
           ))}
         </View>
-        <MobileInput label="رسالتك" value={message} onChangeText={setMessage} placeholder="اكتب تفاصيل المشكلة" multiline style={styles.messageInput} />
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        {success ? <Text selectable style={styles.success}>{success}</Text> : null}
-        <MobileButton title="إرسال تذكرة" onPress={submit} disabled={!message.trim()} />
-      </MobileCard>
 
-      <MobileCard tone="glass">
-        <SectionHeader title="تذاكري السابقة" subtitle="متابعة حالة طلبات الدعم من هنا." />
-        {loading ? <LoadingState message="جاري تحميل التذاكر..." /> : null}
-        {!loading && !tickets.length ? <EmptyState title="لا توجد تذاكر بعد" message="عند إرسال أول تذكرة ستظهر هنا." /> : null}
+        <V3Input
+          label="رسالتك"
+          value={message}
+          onChangeText={setMessage}
+          placeholder="اكتب تفاصيل المشكلة"
+          multiline
+          style={styles.messageInput}
+        />
+
+        {error ? <V3Text selectable tone="danger">{error}</V3Text> : null}
+        {success ? <V3Text selectable tone="success">{success}</V3Text> : null}
+
+        <V3Button title="إرسال تذكرة" onPress={submit} disabled={!message.trim()} />
+      </V3Card>
+
+      <V3Card tone="raised">
+        <V3SectionHeader
+          title="تذاكري السابقة"
+          subtitle="متابعة حالة طلبات الدعم من هنا."
+        />
+
+        {loading ? <V3Text tone="muted">جاري تحميل التذاكر...</V3Text> : null}
+
+        {!loading && !tickets.length ? (
+          <View style={styles.emptyState}>
+            <V3Badge label="لا توجد تذاكر" tone="blue" />
+            <V3Text variant="subtitle">لا توجد تذاكر بعد</V3Text>
+            <V3Text tone="muted">عند إرسال أول تذكرة ستظهر هنا.</V3Text>
+          </View>
+        ) : null}
+
         {!loading && tickets.map((ticket) => (
           <View key={ticket.id} style={styles.ticket}>
             <View style={styles.ticketHeader}>
-              <MobileBadge label={statusLabel(ticket.status)} tone={statusTone(ticket.status)} />
-              <Text selectable style={styles.ticketTitle}>{ticket.type || "طلب دعم"}</Text>
+              <V3Badge label={statusLabel(ticket.status)} tone={statusTone(ticket.status)} />
+              <V3Text variant="label" numberOfLines={1}>{ticket.type || "طلب دعم"}</V3Text>
             </View>
-            <Text selectable style={styles.ticketMessage} numberOfLines={2}>{ticket.message}</Text>
-            <InfoRow label="الحالة" value={statusLabel(ticket.status)} />
+            <V3Text selectable tone="muted" numberOfLines={2}>{ticket.message}</V3Text>
+            <View style={styles.ticketMeta}>
+              <V3Text variant="caption" tone="faint">الحالة</V3Text>
+              <V3Text variant="caption" tone="soft">{statusLabel(ticket.status)}</V3Text>
+            </View>
           </View>
         ))}
-      </MobileCard>
-    </ScreenContainer>
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.sm, borderColor: depth.violetLine },
-  chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
-  success: { color: colors.green, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
-  messageInput: { minHeight: 96 },
-  ticket: { padding: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: depth.hairline, backgroundColor: "rgba(255,255,255,0.04)", gap: spacing.xs },
-  ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  ticketMessage: { color: colors.muted, lineHeight: 22, textAlign: "right", writingDirection: "rtl" }
+  formCard: {
+    gap: v3Spacing.md
+  },
+  chips: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  chipButton: {
+    minWidth: 118,
+    flexGrow: 1
+  },
+  messageInput: {
+    minHeight: 116
+  },
+  emptyState: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xs,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft,
+    padding: v3Spacing.md
+  },
+  ticket: {
+    gap: v3Spacing.xs,
+    padding: v3Spacing.md,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft
+  },
+  ticketHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  ticketMeta: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm,
+    paddingTop: v3Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: v3Colors.border
+  }
 });

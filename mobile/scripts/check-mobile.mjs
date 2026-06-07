@@ -508,16 +508,28 @@ for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "Goo
 }
 
 for (const [label, file, tokens] of [
-  ["My Rides", "src/screens/customer/MyRidesScreen.js", ["tone={isActiveRide(ride) ? \"hero\" : \"glass\"}", "ratingLabel", "metaRow"]],
-  ["Wallet", "src/screens/customer/WalletScreen.js", ["balanceOverview", "walletRails", "transactionsCard"]],
-  ["Customer Support", "src/screens/customer/SupportScreen.js", ["formCard", "tone=\"command\"", "ChoiceChip"]],
-  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "actionGrid", "logout"]],
-  ["Driver Earnings", "src/screens/driver/DriverEarningsScreen.js", ["tone=\"command\"", "total", "StatCard"]],
-  ["Driver Support", "src/screens/driver/DriverSupportScreen.js", ["tone=\"command\"", "ChoiceChip", "messageInput"]]
+  ["Account", "src/screens/customer/AccountScreen.js", ["profileCard", "actionGrid", "logout"]]
 ]) {
   const fileSource = fs.readFileSync(file, "utf8");
   for (const token of tokens) {
     if (!fileSource.includes(token)) throw new Error(`v2 ${label} token is missing: ${token}`);
+  }
+}
+
+for (const [label, file, tokens] of [
+  ["My Rides", "src/screens/customer/MyRidesScreen.js", ["useCustomerRides", "V3Screen", "V3Card", "V3Badge", "V3Button", "continueRide(ride)", "goToRequest", "ratingLabel"]],
+  ["Wallet", "src/screens/customer/WalletScreen.js", ["useCustomerWallet", "V3Screen", "V3Card", "V3Badge", "V3Button", "onPress={load}", "money(wallet?.balanceIls ?? wallet?.balance)"]],
+  ["Customer Support", "src/screens/customer/SupportScreen.js", ["useSupportTickets", "V3Screen", "V3Input", "V3Button", "issueTypes.map", "setType(item.value)", "onPress={submit}", "disabled={!message.trim()}"]],
+  ["Driver Earnings", "src/screens/driver/DriverEarningsScreen.js", ["V3Screen", "V3Card", "V3Badge", "V3SectionHeader", "money(totalEarnings)", "completedRides"]],
+  ["Driver Support", "src/screens/driver/DriverSupportScreen.js", ["useSupportTickets", "V3Screen", "V3Input", "V3Button", "issueTypes.map", "setType(item.value)", "onPress={submit}", "disabled={!message.trim()}"]]
+]) {
+  const fileSource = fs.readFileSync(file, "utf8");
+  if (!fileSource.includes("../../components/v3/ui")) throw new Error(`${label} must use V3 UI primitives`);
+  if (!fileSource.includes("../../theme/v3")) throw new Error(`${label} must use V3 theme tokens`);
+  if (fileSource.includes("../../components/ui")) throw new Error(`${label} must not import old UI components after M0-D2`);
+  if (fileSource.includes("../../utils/mobileTheme")) throw new Error(`${label} must not import old mobileTheme after M0-D2`);
+  for (const token of tokens) {
+    if (!fileSource.includes(token)) throw new Error(`M0-D2 ${label} token is missing: ${token}`);
   }
 }
 

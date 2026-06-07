@@ -1,58 +1,141 @@
-import { StyleSheet, Text, View } from "react-native";
-import { ChoiceChip, EmptyState, InfoRow, LoadingState, MobileBadge, MobileButton, MobileCard, MobileInput, ScreenContainer, SectionHeader } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useSupportTickets } from "../../hooks/useSupportTickets";
-import { colors, depth, radii, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function DriverSupportScreen() {
   const { type, setType, message, setMessage, tickets, loading, error, success, issueTypes, submit, statusTone, statusLabel } = useSupportTickets({ role: "driver" });
 
   return (
-    <ScreenContainer eyebrow="دعم الكابتن" title="مركز المساعدة" subtitle="أرسل المشكلة وسيتابعها فريق الإدارة.">
-      <MobileCard tone="command" style={styles.formCard}>
+    <V3Screen>
+      <V3SectionHeader
+        meta="دعم الكابتن"
+        title="مركز المساعدة"
+        subtitle="أرسل المشكلة بوضوح وسيتابعها فريق الإدارة."
+      />
+
+      <V3Card tone="blue" contentStyle={styles.formCard}>
         <View style={styles.formHeader}>
-          <MobileBadge label="مخصص للكباتن" tone="info" />
-          <Text selectable style={styles.formTitle}>ما الذي تحتاجه؟</Text>
+          <V3Badge label="مخصص للكباتن" tone="blue" />
+          <V3Text variant="subtitle">ما الذي تحتاجه؟</V3Text>
         </View>
+
         <View style={styles.chips}>
           {issueTypes.map((item) => (
-            <ChoiceChip key={item.value} label={item.label} selected={type === item.value} onPress={() => setType(item.value)} />
+            <V3Button
+              key={item.value}
+              title={item.label}
+              size="sm"
+              fullWidth={false}
+              variant={type === item.value ? "primary" : "ghost"}
+              onPress={() => setType(item.value)}
+              style={styles.chipButton}
+            />
           ))}
         </View>
-        <MobileInput label="رسالة الدعم" value={message} onChangeText={setMessage} placeholder="اكتب التفاصيل باختصار ووضوح" multiline style={styles.messageInput} />
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        {success ? <Text selectable style={styles.success}>{success}</Text> : null}
-        <MobileButton title="إرسال الطلب" onPress={submit} disabled={!message.trim()} />
-      </MobileCard>
 
-      <MobileCard tone="glass">
-        <SectionHeader title="تذاكري السابقة" subtitle="متابعة مختصرة لطلبات الدعم الخاصة بك." />
-        {loading ? <LoadingState message="جاري تحميل التذاكر..." /> : null}
-        {!loading && tickets.length === 0 ? <EmptyState title="لا توجد تذاكر دعم" message="عند إرسال طلب جديد سيظهر هنا." /> : null}
+        <V3Input
+          label="رسالة الدعم"
+          value={message}
+          onChangeText={setMessage}
+          placeholder="اكتب التفاصيل باختصار ووضوح"
+          multiline
+          style={styles.messageInput}
+        />
+
+        {error ? <V3Text selectable tone="danger">{error}</V3Text> : null}
+        {success ? <V3Text selectable tone="success">{success}</V3Text> : null}
+
+        <V3Button title="إرسال الطلب" onPress={submit} disabled={!message.trim()} />
+      </V3Card>
+
+      <V3Card tone="raised">
+        <V3SectionHeader
+          title="تذاكري السابقة"
+          subtitle="متابعة مختصرة لطلبات الدعم الخاصة بك."
+        />
+
+        {loading ? <V3Text tone="muted">جاري تحميل التذاكر...</V3Text> : null}
+
+        {!loading && tickets.length === 0 ? (
+          <View style={styles.emptyState}>
+            <V3Badge label="لا توجد تذاكر" tone="blue" />
+            <V3Text variant="subtitle">لا توجد تذاكر دعم</V3Text>
+            <V3Text tone="muted">عند إرسال طلب جديد سيظهر هنا.</V3Text>
+          </View>
+        ) : null}
+
         {!loading && tickets.map((ticket) => (
           <View key={ticket.id} style={styles.ticket}>
             <View style={styles.ticketHeader}>
-              <MobileBadge label={statusLabel(ticket.status)} tone={statusTone(ticket.status)} />
-              <Text selectable style={styles.ticketTitle}>{ticket.type || "طلب دعم"}</Text>
+              <V3Badge label={statusLabel(ticket.status)} tone={statusTone(ticket.status)} />
+              <V3Text variant="label" numberOfLines={1}>{ticket.type || "طلب دعم"}</V3Text>
             </View>
-            <Text selectable style={styles.ticketMessage} numberOfLines={2}>{ticket.message}</Text>
-            <InfoRow label="التاريخ" value={ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("ar") : "-"} />
+            <V3Text selectable tone="muted" numberOfLines={2}>{ticket.message}</V3Text>
+            <View style={styles.ticketMeta}>
+              <V3Text variant="caption" tone="faint">التاريخ</V3Text>
+              <V3Text variant="caption" tone="soft">
+                {ticket.createdAt ? new Date(ticket.createdAt).toLocaleDateString("ar") : "-"}
+              </V3Text>
+            </View>
           </View>
         ))}
-      </MobileCard>
-    </ScreenContainer>
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  formCard: { gap: spacing.sm, borderColor: depth.greenLine },
-  formHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  formTitle: { color: colors.text, fontWeight: "900", textAlign: "right", fontSize: 15, writingDirection: "rtl" },
-  chips: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
-  success: { color: colors.green, textAlign: "right", fontWeight: "800", writingDirection: "rtl" },
-  messageInput: { minHeight: 96 },
-  ticket: { padding: spacing.sm, borderRadius: radii.lg, borderWidth: 1, borderColor: depth.hairline, backgroundColor: "rgba(255,255,255,0.04)", gap: spacing.xs },
-  ticketHeader: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  ticketTitle: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  ticketMessage: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12, writingDirection: "rtl" }
+  formCard: {
+    gap: v3Spacing.md
+  },
+  formHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm
+  },
+  chips: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  chipButton: {
+    minWidth: 118,
+    flexGrow: 1
+  },
+  messageInput: {
+    minHeight: 116
+  },
+  emptyState: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xs,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft,
+    padding: v3Spacing.md
+  },
+  ticket: {
+    gap: v3Spacing.xs,
+    padding: v3Spacing.md,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft
+  },
+  ticketHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  ticketMeta: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm,
+    paddingTop: v3Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: v3Colors.border
+  }
 });
