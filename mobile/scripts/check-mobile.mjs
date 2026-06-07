@@ -27,6 +27,8 @@ const required = [
   "src/hooks/useRideRequestFlow.js",
   "src/hooks/useDriverAvailability.js",
   "src/hooks/useAvailableDriverRides.js",
+  "src/hooks/useDriverCurrentRide.js",
+  "src/hooks/useDriverLiveTracking.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -193,6 +195,31 @@ for (const token of [
   if (availableRidesSource.includes(token)) throw new Error(`AvailableRidesScreen still owns extracted rides queue logic: ${token}`);
 }
 
+const currentRideSource = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
+if (!currentRideSource.includes("useDriverCurrentRide")) throw new Error("CurrentRideScreen must use useDriverCurrentRide");
+if (!currentRideSource.includes("useDriverLiveTracking")) throw new Error("CurrentRideScreen must use useDriverLiveTracking");
+for (const token of [
+  "fetchDriverRides",
+  "updateDriverRideStatus",
+  "startDriverLocationWatch",
+  "connectMobileSocket",
+  "emitDriverLocation",
+  "emitDriverLocationUnavailable",
+  "joinRideRoom",
+  "subscribeToDriverEvents",
+  "useMobileApp",
+  "apiErrorMessage",
+  "connectionMessageFor",
+  "useRef",
+  "watchRef",
+  "nextActions",
+  "visibleStatuses",
+  "ridePoint",
+  "timeLabel"
+]) {
+  if (currentRideSource.includes(token)) throw new Error(`CurrentRideScreen still owns extracted current ride/tracking logic: ${token}`);
+}
+
 for (const token of [
   "EXPO_PUBLIC_API_BASE_URL",
   "http://10.0.2.2:3001/api",
@@ -344,6 +371,11 @@ for (const token of ["tone=\"glass\"", "useAvailableDriverRides", "paymentLabel"
 }
 
 const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
+const driverCurrentFlow = [
+  driverCurrent,
+  fs.readFileSync("src/hooks/useDriverCurrentRide.js", "utf8"),
+  fs.readFileSync("src/hooks/useDriverLiveTracking.js", "utf8")
+].join("\n");
 for (const token of ["statusCommand", "mapStage", "nextActionCard", "trackingLabel", "StatusTimeline", "height={270}"]) {
   if (!driverCurrent.includes(token)) throw new Error(`v2 current ride is missing: ${token}`);
 }
@@ -353,7 +385,7 @@ for (const token of [
   "arrived: [\"in_progress\"",
   "in_progress: [\"completed\""
 ]) {
-  if (!driverCurrent.includes(token)) throw new Error(`Driver status sequence is missing: ${token}`);
+  if (!driverCurrentFlow.includes(token)) throw new Error(`Driver status sequence is missing: ${token}`);
 }
 
 const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
