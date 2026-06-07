@@ -1,53 +1,194 @@
-import { StyleSheet, Text, View } from "react-native";
-import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
+import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useAvailableDriverRides } from "../../hooks/useAvailableDriverRides";
 import { km, money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function AvailableRidesScreen() {
   const { rides, status, socketStatus, error, dispatchMessage, load, accept, paymentLabel, statusLabel } = useAvailableDriverRides();
+  const liveConnected = socketStatus === "connected";
+  const loading = status === "loading";
 
   return (
-    <ScreenContainer title="طلبات الرحلات" subtitle={socketStatus === "connected" ? "الطلبات الجديدة تظهر مباشرة." : "حدث الطلبات يدويا عند الحاجة."} compact>
-      <View style={styles.statusLine}>
-        <MobileBadge label={socketStatus === "connected" ? "مباشر" : "يدوي"} tone={socketStatus === "connected" ? "success" : "warning"} />
-        <MobileButton title="تحديث" compact variant="secondary" onPress={load} />
-      </View>
-      {status === "loading" ? <LoadingState message="جاري تحميل الطلبات المتاحة..." /> : null}
-      {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-      {status !== "loading" && !rides.length ? (
-        <EmptyState title="لا توجد طلبات الآن" message={dispatchMessage || "عند طلب رحلة من زبون ستظهر هنا."} actionTitle="تحديث" onAction={load} />
+    <V3Screen contentStyle={styles.requestQueue}>
+      <V3SectionHeader
+        meta="طلبات الكابتن"
+        title="الطلبات المتاحة"
+        subtitle={liveConnected ? "الطلبات الجديدة تظهر مباشرة عند توفرها." : "حدث قائمة الطلبات يدويا عند الحاجة."}
+        actionLabel="تحديث"
+        onAction={load}
+      />
+
+      <V3Card tone={liveConnected ? "blue" : "raised"} contentStyle={styles.statusPanel}>
+        <View style={styles.rowBetween}>
+          <V3Badge label={liveConnected ? "مباشر" : "يدوي"} tone={liveConnected ? "success" : "warning"} />
+          <View style={styles.statusCopy}>
+            <V3Text variant="label" tone="primary">قائمة الطلبات</V3Text>
+            <V3Text variant="caption" tone="muted">
+              {rides.length ? `${rides.length} طلب متاح الآن` : "بانتظار طلب مناسب لحالتك الحالية."}
+            </V3Text>
+          </View>
+        </View>
+        <V3Button title={loading ? "جاري التحديث..." : "تحديث الطلبات"} variant="secondary" size="sm" loading={loading} onPress={load} />
+      </V3Card>
+
+      {error ? (
+        <V3Card tone="quiet" style={styles.errorCard}>
+          <V3Text selectable variant="caption" tone="danger">{error}</V3Text>
+        </V3Card>
       ) : null}
+
+      {status === "loading" ? (
+        <V3Card tone="quiet" contentStyle={styles.loadingCard}>
+          <ActivityIndicator color={v3Colors.purpleLight} size="small" />
+          <V3Text variant="label" tone="soft" align="center">جاري تحميل الطلبات المتاحة...</V3Text>
+        </V3Card>
+      ) : null}
+
+      {status !== "loading" && !rides.length ? (
+        <V3Card tone="accent" contentStyle={styles.emptyCard}>
+          <V3Badge label="لا توجد طلبات" tone="primary" />
+          <V3Text variant="subtitle" tone="primary">لا توجد طلبات الآن</V3Text>
+          <V3Text variant="caption" tone="muted" align="center" style={styles.centerCopy}>
+            {dispatchMessage || "عند طلب رحلة من زبون ستظهر هنا."}
+          </V3Text>
+          <V3Button title="تحديث" variant="primary" size="sm" onPress={load} />
+        </V3Card>
+      ) : null}
+
       {rides.map((ride) => (
-        <MobileCard key={ride.id} tone="glass" style={styles.request}>
+        <V3Card key={ride.id} tone="default" style={styles.requestCard} contentStyle={styles.requestContent}>
           <View style={styles.requestHeader}>
-            <View style={styles.route}>
-              <Text selectable style={styles.destination}>{ride.destination || "وجهة جديدة"}</Text>
-              <Text selectable numberOfLines={1} style={styles.path}>من {ride.pickup || "-"} إلى {ride.destination || "-"}</Text>
+            <V3Badge label={statusLabel(ride.status || "searching")} tone="warning" />
+            <View style={styles.routeCopy}>
+              <V3Text selectable variant="subtitle" tone="primary" numberOfLines={2}>
+                {ride.destination || "وجهة جديدة"}
+              </V3Text>
+              <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>
+                من {ride.pickup || "-"} إلى {ride.destination || "-"}
+              </V3Text>
             </View>
-            <MobileBadge label={statusLabel(ride.status || "searching")} tone="warning" />
           </View>
-          <View style={styles.details}>
-            <Text selectable style={styles.detail}>{ride.city || ride.cityId || "المدينة"}</Text>
-            <Text selectable style={styles.detail}>{km(ride.routeDistanceKm || ride.distanceKm)}</Text>
-            <Text selectable style={styles.detail}>{money(ride.price || ride.fareIls)}</Text>
-            <Text selectable style={styles.detail}>{paymentLabel(ride.paymentMethod)}</Text>
+
+          <View style={styles.routeLine}>
+            <View style={styles.routeRail}>
+              <View style={styles.routePin} />
+              <View style={styles.routeStroke} />
+              <View style={[styles.routePin, styles.routePinEnd]} />
+            </View>
+            <View style={styles.routeStops}>
+              <V3Text selectable variant="label" tone="soft" numberOfLines={1}>{ride.pickup || "-"}</V3Text>
+              <V3Text selectable variant="label" tone="primary" numberOfLines={1}>{ride.destination || "-"}</V3Text>
+            </View>
           </View>
-          <MobileButton title="قبول الرحلة" variant="accent" onPress={() => accept(ride.id)} />
-        </MobileCard>
+
+          <View style={styles.detailBadges}>
+            <V3Badge label={ride.city || ride.cityId || "المدينة"} tone="neutral" />
+            <V3Badge label={km(ride.routeDistanceKm || ride.distanceKm)} tone="blue" />
+            <V3Badge label={money(ride.price || ride.fareIls)} tone="primary" />
+            <V3Badge label={paymentLabel(ride.paymentMethod)} tone="neutral" />
+          </View>
+
+          <V3Button title="قبول الرحلة" variant="primary" onPress={() => accept(ride.id)} />
+        </V3Card>
       ))}
-    </ScreenContainer>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  statusLine: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  request: { gap: spacing.sm, backgroundColor: "rgba(255, 255, 255, 0.058)", borderColor: depth.violetLine, boxShadow: shadows.glow },
-  requestHeader: { flexDirection: "row-reverse", alignItems: "flex-start", justifyContent: "space-between", gap: spacing.sm },
-  route: { flex: 1, alignItems: "flex-end", gap: 3, minWidth: 0 },
-  destination: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
-  path: { color: colors.muted, fontSize: 12, textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
-  details: { flexDirection: "row-reverse", gap: spacing.xs, flexWrap: "wrap" },
-  detail: { color: colors.textSoft, fontSize: 11.5, fontWeight: "800", paddingHorizontal: spacing.sm, paddingVertical: 5, borderRadius: radii.pill, backgroundColor: "rgba(0, 0, 0, 0.16)", borderWidth: 1, borderColor: depth.hairline, overflow: "hidden" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "700", writingDirection: "rtl" }
+  requestQueue: {
+    gap: v3Spacing.lg
+  },
+  statusPanel: {
+    gap: v3Spacing.md
+  },
+  rowBetween: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.md
+  },
+  statusCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  errorCard: {
+    borderColor: "rgba(255, 97, 116, 0.32)"
+  },
+  loadingCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: v3Spacing.sm,
+    minHeight: 118
+  },
+  emptyCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: v3Spacing.sm,
+    minHeight: 210
+  },
+  centerCopy: {
+    maxWidth: 280
+  },
+  requestCard: {
+    borderColor: v3Colors.borderStrong
+  },
+  requestContent: {
+    gap: v3Spacing.md
+  },
+  requestHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: v3Spacing.md
+  },
+  routeCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  routeLine: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: v3Spacing.sm
+  },
+  routeRail: {
+    width: 18,
+    alignItems: "center"
+  },
+  routePin: {
+    width: 9,
+    height: 9,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.electricBlue
+  },
+  routePinEnd: {
+    backgroundColor: v3Colors.purpleLight
+  },
+  routeStroke: {
+    width: 2,
+    height: 30,
+    backgroundColor: v3Colors.borderStrong
+  },
+  routeStops: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.sm
+  },
+  detailBadges: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs,
+    justifyContent: "flex-start"
+  }
 });

@@ -602,8 +602,45 @@ for (const token of [
 }
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
-for (const token of ["tone=\"glass\"", "useAvailableDriverRides", "paymentLabel", "statusLabel"]) {
-  if (!availableRides.includes(token)) throw new Error(`available rides flow is missing: ${token}`);
+if (!availableRides.includes("../../components/v3/ui")) {
+  throw new Error("AvailableRidesScreen must use V3 UI primitives");
+}
+if (!availableRides.includes("../../theme/v3")) {
+  throw new Error("AvailableRidesScreen must use V3 theme tokens");
+}
+if (availableRides.includes("../../components/ui")) {
+  throw new Error("AvailableRidesScreen must not import old UI components after M0-D8");
+}
+if (availableRides.includes("../../utils/mobileTheme")) {
+  throw new Error("AvailableRidesScreen must not import old mobileTheme after M0-D8");
+}
+for (const token of [
+  "useAvailableDriverRides",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3SectionHeader",
+  "V3Text",
+  "rides",
+  "status",
+  "socketStatus",
+  "error",
+  "dispatchMessage",
+  "load",
+  "accept",
+  "paymentLabel",
+  "statusLabel",
+  "status === \"loading\"",
+  "!rides.length",
+  "onPress={load}",
+  "accept(ride.id)",
+  "requestQueue",
+  "requestCard",
+  "routeLine",
+  "detailBadges"
+]) {
+  if (!availableRides.includes(token)) throw new Error(`M0-D8 Available Rides token is missing: ${token}`);
 }
 
 const driverCurrent = fs.readFileSync("src/screens/driver/CurrentRideScreen.js", "utf8");
