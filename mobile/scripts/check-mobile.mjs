@@ -71,6 +71,7 @@ const required = [
   "src/utils/errorUtils.js",
   "src/utils/startupDiagnostics.js",
   "src/utils/rideStatus.js",
+  "src/utils/formatters.js",
   "src/utils/mobileTheme.js",
   "src/utils/westBankCities.js",
   "docs/mobile-qa-notes.md",
@@ -312,6 +313,23 @@ for (const token of [
 }
 
 const theme = fs.readFileSync("src/utils/mobileTheme.js", "utf8");
+const formatters = fs.readFileSync("src/utils/formatters.js", "utf8");
+for (const token of ["export function money", "export function km"]) {
+  if (!formatters.includes(token)) throw new Error(`formatter helper is missing: ${token}`);
+  if (theme.includes(token)) throw new Error(`functional formatter must not remain in mobileTheme: ${token}`);
+}
+for (const file of sourceFiles) {
+  const fileSource = fs.readFileSync(file, "utf8");
+  if (file !== "src/utils/mobileTheme.js" && fileSource.includes("../../utils/mobileTheme") && /\b(money|km)\b/.test(fileSource.split("../../utils/mobileTheme")[0].split("\n").pop() || "")) {
+    throw new Error(`${file} imports formatter helpers from mobileTheme`);
+  }
+  if (fileSource.includes("from \"../../utils/mobileTheme\"") && fileSource.match(/import\s+\{[^}]*\b(money|km)\b[^}]*\}\s+from "\.\.\/\.\.\/utils\/mobileTheme"/)) {
+    throw new Error(`${file} imports formatter helpers from mobileTheme`);
+  }
+  if (fileSource.includes("from \"../utils/mobileTheme\"") && fileSource.match(/import\s+\{[^}]*\b(money|km)\b[^}]*\}\s+from "\.\.\/utils\/mobileTheme"/)) {
+    throw new Error(`${file} imports formatter helpers from mobileTheme`);
+  }
+}
 for (const token of [
   "background: \"#040308\"",
   "primary: \"#a682ff\"",

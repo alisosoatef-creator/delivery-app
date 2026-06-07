@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, InfoRow, LoadingState, MobileBadge, MobileCard, ScreenContainer, SectionHeader } from "../../components/ui";
 import { useCustomerWallet } from "../../hooks/useCustomerWallet";
-import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function WalletScreen() {
   const { wallet, status } = useCustomerWallet();

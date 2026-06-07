@@ -3,7 +3,8 @@ import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { EmptyState, InfoRow, MobileBadge, MobileButton, MobileCard, ScreenContainer, StatusTimeline } from "../../components/ui";
 import { useCustomerRideTracking } from "../../hooks/useCustomerRideTracking";
 import { useRideRating } from "../../hooks/useRideRating";
-import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { km, money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function CustomerRideStatusScreen() {
   const {

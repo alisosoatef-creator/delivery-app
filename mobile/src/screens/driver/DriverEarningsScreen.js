@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, InfoRow, MobileBadge, MobileCard, ScreenContainer, SectionHeader, StatCard } from "../../components/ui";
-import { colors, depth, money, shadows, spacing } from "../../utils/mobileTheme";
+import { money } from "../../utils/formatters";
+import { colors, depth, shadows, spacing } from "../../utils/mobileTheme";
 
 export function DriverEarningsScreen() {
   const todayEarnings = 0;

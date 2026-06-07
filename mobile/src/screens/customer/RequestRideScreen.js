@@ -2,7 +2,8 @@ import { StyleSheet, Text, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { BrandMark, ChoiceChip, InfoRow, MobileBadge, MobileButton, MobileCard, MobileInput, PressableScale, ScreenContainer, SectionHeader } from "../../components/ui";
 import { useRideRequestFlow } from "../../hooks/useRideRequestFlow";
-import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { km, money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function RequestRideScreen() {
   const {

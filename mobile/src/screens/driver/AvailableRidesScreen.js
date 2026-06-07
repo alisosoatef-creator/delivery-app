@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
 import { useAvailableDriverRides } from "../../hooks/useAvailableDriverRides";
-import { colors, depth, km, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { km, money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function AvailableRidesScreen() {
   const { rides, status, socketStatus, error, dispatchMessage, load, accept, paymentLabel, statusLabel } = useAvailableDriverRides();

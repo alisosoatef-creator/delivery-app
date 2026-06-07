@@ -3,7 +3,8 @@ import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
 import { useCustomerActiveRide } from "../../hooks/useCustomerActiveRide";
 import { useMobileApp } from "../../store/mobileStore";
-import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
 
 function acceptedDriverName(ride) {

@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
 import { useDriverAvailability } from "../../hooks/useDriverAvailability";
-import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function DriverHomeScreen() {
   const {

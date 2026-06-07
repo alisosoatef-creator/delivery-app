@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 import { EmptyState, LoadingState, MobileBadge, MobileButton, MobileCard, ScreenContainer } from "../../components/ui";
 import { useCustomerRides } from "../../hooks/useCustomerRides";
-import { colors, depth, money, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { money } from "../../utils/formatters";
+import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 
 export function MyRidesScreen() {
   const { rides, status, error, load, continueRide, goToRequest, isActiveRide, paymentLabel, ratingLabel, statusLabel } = useCustomerRides();
