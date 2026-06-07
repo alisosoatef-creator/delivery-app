@@ -1,8 +1,8 @@
-import { StyleSheet, Text, View } from "react-native";
-import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
+import { StyleSheet, View } from "react-native";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useDriverAvailability } from "../../hooks/useDriverAvailability";
 import { money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function DriverHomeScreen() {
   const {
@@ -22,121 +22,240 @@ export function DriverHomeScreen() {
     goToSupport
   } = useDriverAvailability();
 
-  return (
-    <ScreenContainer showHeader={false} variant="driver" compact>
-      <MobileCard tone="command" style={styles.cockpit}>
-        <View style={styles.cockpitTop}>
-          <BrandMark compact title="وصل كابتن" />
-          <MobileBadge label={available ? "متاح" : "غير متاح"} tone={available ? "success" : "warning"} />
-        </View>
-        <View style={styles.identity}>
-          <Text selectable style={styles.role}>لوحة التشغيل</Text>
-          <Text selectable style={styles.name}>{driver.fullName || currentUser.fullName || "كابتن وصل"}</Text>
-          <Text selectable style={styles.vehicle}>{driver.vehicleType || driver.vehicle || "مركبة"} · {driver.vehiclePlate || driver.plate || "بدون لوحة"}</Text>
-        </View>
-        <View style={styles.availabilityStrip}>
-          <View style={styles.availabilityCopy}>
-            <Text selectable style={styles.sectionTitle}>استقبال الطلبات</Text>
-            <Text selectable style={styles.helper}>{available ? "القناة مفتوحة للطلبات المناسبة." : "الطلبات الجديدة متوقفة مؤقتا."}</Text>
-          </View>
-          <PressableScale
-            accessibilityRole="switch"
-            accessibilityLabel="تبديل حالة توفر الكابتن"
-            disabled={status === "saving"}
-            onPress={toggleAvailability}
-            style={[styles.toggle, available && styles.toggleOn, status === "saving" && styles.toggleSaving]}
-          >
-            <View style={[styles.toggleKnob, available && styles.toggleKnobOn]} />
-          </PressableScale>
-        </View>
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-      </MobileCard>
+  const isSaving = status === "saving";
+  const driverName = driver.fullName || currentUser.fullName || "كابتن واصل";
+  const vehicleLabel = `${driver.vehicleType || driver.vehicle || "مركبة"} - ${driver.vehiclePlate || driver.plate || "بدون لوحة"}`;
+  const availabilityLabel = available ? "متاح" : "غير متاح";
+  const availabilityCopy = available ? "القناة مفتوحة لاستقبال الطلبات المناسبة." : "الطلبات الجديدة متوقفة مؤقتا.";
+  const socketLabel = socketStatus === "connected" ? "متصل" : "يدوي";
+  const rideRoute = currentRide ? `${currentRide.pickup || "-"} ← ${currentRide.destination || "-"}` : "";
 
-      <View style={styles.stats}>
-        <StatCard label="طلبات متاحة" value={String(availableCount)} hint={available ? "جاهز" : "متوقف"} tone={available ? "green" : "warning"} />
-        <StatCard label="اليوم" value={money(0)} hint="أرباح تجريبية" />
+  return (
+    <V3Screen contentStyle={styles.screen}>
+      <V3SectionHeader
+        meta="لوحة الكابتن"
+        title={`أهلا ${driverName}`}
+        subtitle="تحكم بحالة التوفر وتابع الطلبات النشطة من مكان واحد."
+      />
+
+      <V3Card tone={available ? "blue" : "raised"} style={styles.availabilityPanel} contentStyle={styles.availabilityContent}>
+        <View style={styles.rowBetween}>
+          <V3Badge label={availabilityLabel} tone={available ? "success" : "warning"} />
+          <View style={styles.identity}>
+            <V3Text variant="caption" tone="muted">حالة التشغيل</V3Text>
+            <V3Text variant="title" tone="primary" numberOfLines={2}>{available ? "جاهز للطلبات" : "خارج الخدمة"}</V3Text>
+            <V3Text variant="caption" tone="soft" numberOfLines={2}>{vehicleLabel}</V3Text>
+          </View>
+        </View>
+
+        <View style={styles.availabilityStatus}>
+          <View style={[styles.statusDot, available ? styles.statusDotOnline : styles.statusDotOffline]} />
+          <View style={styles.statusCopy}>
+            <V3Text variant="label" tone={available ? "success" : "warning"}>{available ? "استقبال الطلبات يعمل" : "استقبال الطلبات متوقف"}</V3Text>
+            <V3Text variant="caption" tone="muted" numberOfLines={2}>{availabilityCopy}</V3Text>
+          </View>
+        </View>
+
+        <V3Button
+          title={isSaving ? "جاري التحديث..." : available ? "إيقاف استقبال الطلبات" : "تشغيل استقبال الطلبات"}
+          variant={available ? "secondary" : "primary"}
+          loading={status === "saving"}
+          disabled={status === "saving"}
+          onPress={toggleAvailability}
+        />
+
+        {error ? <V3Text selectable variant="caption" tone="danger">{error}</V3Text> : null}
+      </V3Card>
+
+      <View style={styles.captainStats}>
+        <V3Card compact tone="quiet" style={styles.statCard}>
+          <V3Text variant="caption" tone="muted">طلبات متاحة</V3Text>
+          <V3Text variant="subtitle" tone={available ? "blue" : "muted"}>{String(availableCount)}</V3Text>
+          <V3Text variant="caption" tone={available ? "success" : "warning"}>{available ? "جاهز" : "متوقف"}</V3Text>
+        </V3Card>
+
+        <V3Card compact tone="quiet" style={styles.statCard}>
+          <V3Text variant="caption" tone="muted">اليوم</V3Text>
+          <V3Text variant="subtitle" tone="primary">{money(0)}</V3Text>
+          <V3Text variant="caption" tone="muted">أرباح تجريبية</V3Text>
+        </V3Card>
+
+        <V3Card compact tone="quiet" style={styles.statCard}>
+          <V3Text variant="caption" tone="muted">التحديث المباشر</V3Text>
+          <V3Text variant="subtitle" tone={socketStatus === "connected" ? "success" : "warning"}>{socketLabel}</V3Text>
+          <V3Text variant="caption" tone="muted">حالة الاتصال</V3Text>
+        </V3Card>
       </View>
 
       {currentRide ? (
-        <MobileCard tone="hero" style={styles.currentRideCard}>
+        <V3Card tone="accent" contentStyle={styles.currentRideCard}>
           <View style={styles.rowBetween}>
-            <MobileBadge label={currentRide.status || "-"} tone="info" />
-            <Text selectable style={styles.sectionTitle}>رحلتي الحالية</Text>
+            <V3Badge label={currentRide.status || "-"} tone="blue" />
+            <View style={styles.identity}>
+              <V3Text variant="caption" tone="muted">الرحلة الحالية</V3Text>
+              <V3Text variant="subtitle" tone="primary">تابع الطلب النشط</V3Text>
+            </View>
           </View>
-          <InfoRow label="المسار" value={`${currentRide.pickup || "-"} ← ${currentRide.destination || "-"}`} accent />
-          <MobileButton title="فتح الرحلة" compact variant="accent" onPress={goToCurrent} />
-        </MobileCard>
+          <View style={styles.routeLine}>
+            <View style={styles.routeRail}>
+              <View style={styles.routePin} />
+              <View style={styles.routeStroke} />
+              <View style={[styles.routePin, styles.routePinEnd]} />
+            </View>
+            <V3Text variant="caption" tone="soft" numberOfLines={2} style={styles.routeText}>{rideRoute}</V3Text>
+          </View>
+          <V3Button title="فتح الرحلة" size="sm" variant="secondary" onPress={goToCurrent} />
+        </V3Card>
       ) : null}
 
+      <V3SectionHeader title="اختصارات العمل" subtitle="كل إجراء يفتح نفس مسارات الكابتن الحالية." />
+
       <View style={styles.actionGrid}>
-        <MobileCard tone="action" compact onPress={goToAvailable} style={styles.actionTile}>
-          <Text selectable style={styles.actionNumber}>{availableCount}</Text>
-          <Text selectable style={styles.actionLabel}>الطلبات</Text>
-        </MobileCard>
-        <MobileCard tone="flat" compact onPress={goToCurrent} style={styles.actionTile}>
-          <Text selectable style={styles.actionNumber}>↗</Text>
-          <Text selectable style={styles.actionLabel}>رحلتي</Text>
-        </MobileCard>
-        <MobileCard tone="flat" compact onPress={goToEarnings} style={styles.actionTile}>
-          <Text selectable style={styles.actionNumber}>₪</Text>
-          <Text selectable style={styles.actionLabel}>الأرباح</Text>
-        </MobileCard>
-        <MobileCard tone="flat" compact onPress={goToSupport} style={styles.actionTile}>
-          <Text selectable style={styles.actionNumber}>?</Text>
-          <Text selectable style={styles.actionLabel}>الدعم</Text>
-        </MobileCard>
+        <V3Card compact tone="accent" onPress={goToAvailable} accessibilityLabel="الطلبات المتاحة" style={styles.actionTile}>
+          <V3Text variant="subtitle" tone="accent">{String(availableCount)}</V3Text>
+          <V3Text variant="label" tone="primary">الطلبات</V3Text>
+          <V3Text variant="caption" tone="muted">طلبات قريبة</V3Text>
+        </V3Card>
+
+        <V3Card compact tone="quiet" onPress={goToCurrent} accessibilityLabel="رحلتي الحالية" style={styles.actionTile}>
+          <V3Text variant="subtitle" tone="blue">{currentRide ? "نشطة" : "-"}</V3Text>
+          <V3Text variant="label" tone="primary">رحلتي</V3Text>
+          <V3Text variant="caption" tone="muted">تفاصيل مباشرة</V3Text>
+        </V3Card>
+
+        <V3Card compact tone="quiet" onPress={goToEarnings} accessibilityLabel="الأرباح" style={styles.actionTile}>
+          <V3Text variant="subtitle" tone="accent">{money(0)}</V3Text>
+          <V3Text variant="label" tone="primary">الأرباح</V3Text>
+          <V3Text variant="caption" tone="muted">ملخص اليوم</V3Text>
+        </V3Card>
+
+        <V3Card compact tone="quiet" onPress={goToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
+          <V3Text variant="subtitle" tone="blue">24/7</V3Text>
+          <V3Text variant="label" tone="primary">الدعم</V3Text>
+          <V3Text variant="caption" tone="muted">مساعدة الكابتن</V3Text>
+        </V3Card>
       </View>
 
-      <MobileCard tone="glass">
-        <InfoRow label="التحديث المباشر" value={socketStatus === "connected" ? "متصل" : "يدوي"} />
-        <MobileButton title="خروج" compact variant="danger" onPress={logout} />
-      </MobileCard>
-    </ScreenContainer>
+      <V3Card tone="default" contentStyle={styles.sessionCard}>
+        <View style={styles.rowBetween}>
+          <V3Badge label={socketLabel} tone={socketStatus === "connected" ? "success" : "warning"} />
+          <View style={styles.identity}>
+            <V3Text variant="label" tone="primary">جلسة الكابتن</V3Text>
+            <V3Text variant="caption" tone="muted">الخروج ينهي الجلسة المحلية ويفصل الاتصال.</V3Text>
+          </View>
+        </View>
+        <V3Button title="خروج" variant="danger" size="sm" onPress={logout} />
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  cockpit: { gap: spacing.md, paddingVertical: spacing.lg, borderColor: depth.greenLine },
-  cockpitTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  identity: { alignItems: "flex-end", gap: 3 },
-  role: { color: colors.green, fontSize: 13, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  name: { color: colors.text, fontWeight: "900", fontSize: 27, textAlign: "right", writingDirection: "rtl" },
-  vehicle: { color: colors.muted, textAlign: "right", fontWeight: "800", fontSize: 12, writingDirection: "rtl" },
-  availabilityStrip: {
+  screen: {
+    gap: v3Spacing.lg
+  },
+  availabilityPanel: {
+    borderColor: v3Colors.borderBlue
+  },
+  availabilityContent: {
+    gap: v3Spacing.md
+  },
+  rowBetween: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: depth.hairline,
-    backgroundColor: "rgba(0, 0, 0, 0.16)"
+    gap: v3Spacing.md
   },
-  availabilityCopy: { flex: 1, alignItems: "flex-end", gap: 3 },
-  stats: { flexDirection: "row-reverse", gap: spacing.sm },
-  sectionTitle: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  helper: { color: colors.muted, textAlign: "right", lineHeight: 19, fontWeight: "700", fontSize: 12, writingDirection: "rtl" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", fontSize: 12, writingDirection: "rtl" },
-  toggle: {
-    width: 60,
-    height: 34,
-    borderRadius: radii.pill,
-    padding: 4,
-    alignItems: "flex-start",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.075)",
-    borderWidth: 1,
-    borderColor: depth.hairline
+  identity: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
   },
-  toggleOn: { alignItems: "flex-end", backgroundColor: "rgba(66, 231, 157, 0.16)", borderColor: "rgba(66, 231, 157, 0.4)", boxShadow: shadows.glow },
-  toggleSaving: { opacity: 0.6 },
-  toggleKnob: { width: 24, height: 24, borderRadius: radii.pill, backgroundColor: colors.muted },
-  toggleKnobOn: { backgroundColor: colors.green },
-  currentRideCard: { gap: spacing.xs },
-  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  actionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.sm },
-  actionTile: { width: "47.5%", minHeight: 96, justifyContent: "space-between" },
-  actionNumber: { color: colors.primary, fontSize: 23, fontWeight: "900", textAlign: "right" },
-  actionLabel: { color: colors.text, fontSize: 14, fontWeight: "900", textAlign: "right", writingDirection: "rtl" }
+  availabilityStatus: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft,
+    padding: v3Spacing.sm
+  },
+  statusDot: {
+    width: 46,
+    height: 46,
+    borderRadius: v3Radius.pill,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteWash
+  },
+  statusDotOnline: {
+    backgroundColor: "rgba(69, 224, 164, 0.2)",
+    borderColor: "rgba(69, 224, 164, 0.44)"
+  },
+  statusDotOffline: {
+    backgroundColor: "rgba(248, 199, 109, 0.14)",
+    borderColor: "rgba(248, 199, 109, 0.38)"
+  },
+  statusCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  captainStats: {
+    flexDirection: "row-reverse",
+    gap: v3Spacing.sm
+  },
+  statCard: {
+    flex: 1,
+    minWidth: 0
+  },
+  currentRideCard: {
+    gap: v3Spacing.md
+  },
+  routeLine: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: v3Spacing.sm
+  },
+  routeRail: {
+    width: 18,
+    alignItems: "center"
+  },
+  routePin: {
+    width: 9,
+    height: 9,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.electricBlue
+  },
+  routePinEnd: {
+    backgroundColor: v3Colors.purpleLight
+  },
+  routeStroke: {
+    width: 2,
+    height: 30,
+    backgroundColor: v3Colors.borderStrong
+  },
+  routeText: {
+    flex: 1
+  },
+  actionGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.sm
+  },
+  actionTile: {
+    width: "47.5%",
+    minHeight: 116
+  },
+  sessionCard: {
+    gap: v3Spacing.md
+  }
 });

@@ -552,8 +552,53 @@ if (rideStatus.indexOf("MobileRideMap") > rideStatus.indexOf("statusPanel")) {
 }
 
 const driverHome = fs.readFileSync("src/screens/driver/DriverHomeScreen.js", "utf8");
-for (const token of ["cockpit", "availabilityStrip", "actionGrid", "PressableScale", "useDriverAvailability"]) {
-  if (!driverHome.includes(token)) throw new Error(`v2 driver cockpit is missing: ${token}`);
+if (!driverHome.includes("../../components/v3/ui")) {
+  throw new Error("DriverHomeScreen must use V3 UI primitives");
+}
+if (!driverHome.includes("../../theme/v3")) {
+  throw new Error("DriverHomeScreen must use V3 theme tokens");
+}
+if (driverHome.includes("../../components/ui")) {
+  throw new Error("DriverHomeScreen must not import old UI components after M0-D7");
+}
+if (driverHome.includes("../../utils/mobileTheme")) {
+  throw new Error("DriverHomeScreen must not import old mobileTheme after M0-D7");
+}
+for (const token of [
+  "useDriverAvailability",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3SectionHeader",
+  "V3Text",
+  "driver",
+  "currentUser",
+  "available",
+  "status",
+  "error",
+  "availableCount",
+  "currentRide",
+  "socketStatus",
+  "toggleAvailability",
+  "logout",
+  "goToAvailable",
+  "goToCurrent",
+  "goToEarnings",
+  "goToSupport",
+  "status === \"saving\"",
+  "onPress={toggleAvailability}",
+  "onPress={logout}",
+  "onPress={goToAvailable}",
+  "onPress={goToCurrent}",
+  "onPress={goToEarnings}",
+  "onPress={goToSupport}",
+  "money(0)",
+  "availabilityPanel",
+  "actionGrid",
+  "captainStats"
+]) {
+  if (!driverHome.includes(token)) throw new Error(`M0-D7 Driver Home token is missing: ${token}`);
 }
 
 const availableRides = fs.readFileSync("src/screens/driver/AvailableRidesScreen.js", "utf8");
