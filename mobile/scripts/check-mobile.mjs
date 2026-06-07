@@ -465,11 +465,44 @@ for (const token of [
 }
 
 const requestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
-for (const token of ["mapDeck", "composer", "summarySticky", "PressableScale", "height={246}", "mapPulse", "SectionHeader"]) {
-  if (!requestRide.includes(token)) throw new Error(`v2 request ride is missing: ${token}`);
+if (!requestRide.includes("../../components/v3/ui")) throw new Error("RequestRideScreen must use V3 UI primitives");
+if (!requestRide.includes("../../theme/v3")) throw new Error("RequestRideScreen must use V3 theme tokens");
+if (requestRide.includes("../../components/ui")) throw new Error("RequestRideScreen must not import old UI components after M0-D5");
+if (requestRide.includes("../../utils/mobileTheme")) throw new Error("RequestRideScreen must not import old mobileTheme after M0-D5");
+for (const token of [
+  "useRideRequestFlow",
+  "MobileRideMap",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3Input",
+  "V3SectionHeader",
+  "V3Text",
+  "pickup",
+  "destination",
+  "destinationQuery",
+  "suggestions.map",
+  "chooseDestination(place)",
+  "quote",
+  "paymentMethod",
+  "paymentMethods.map",
+  "setPaymentMethod(method.value)",
+  "cityChoices.map",
+  "useCityFallback(city.value)",
+  "useGpsLocation",
+  "searchDestination",
+  "submitRide",
+  "status === \"location\"",
+  "status === \"quote\"",
+  "status === \"create\"",
+  "height={260}",
+  "bottomPanel"
+]) {
+  if (!requestRide.includes(token)) throw new Error(`M0-D5 Request Ride token is missing: ${token}`);
 }
-if (requestRide.indexOf("MobileRideMap") > requestRide.indexOf("composer")) {
-  throw new Error("Request Ride must stay map-first before the journey composer");
+if (requestRide.indexOf("MobileRideMap") > requestRide.indexOf("bottomPanel")) {
+  throw new Error("Request Ride must stay map-first before the request bottom panel");
 }
 
 const rideStatus = fs.readFileSync("src/screens/customer/CustomerRideStatusScreen.js", "utf8");

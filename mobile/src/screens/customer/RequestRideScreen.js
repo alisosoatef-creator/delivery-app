@@ -1,9 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { BrandMark, ChoiceChip, InfoRow, MobileBadge, MobileButton, MobileCard, MobileInput, PressableScale, ScreenContainer, SectionHeader } from "../../components/ui";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useRideRequestFlow } from "../../hooks/useRideRequestFlow";
 import { km, money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 export function RequestRideScreen() {
   const {
@@ -27,118 +27,273 @@ export function RequestRideScreen() {
   } = useRideRequestFlow();
 
   return (
-    <ScreenContainer showHeader={false} compact>
-      <View style={styles.commandHeader}>
-        <BrandMark compact />
-        <View style={styles.headerCopy}>
-          <Text selectable style={styles.eyebrow}>مشوار جديد</Text>
-          <Text selectable style={styles.title}>ابن الرحلة من الخريطة</Text>
-        </View>
-      </View>
+    <V3Screen>
+      <V3SectionHeader
+        meta="مشوار جديد"
+        title="ابن الرحلة من الخريطة"
+        subtitle="حدد نقطة الانطلاق والوجهة ثم راجع السعر قبل تأكيد الطلب."
+      />
 
-      <View style={styles.mapDeck}>
-        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={246} />
-        <View style={styles.mapPulse} />
+      <V3Card tone="raised" style={styles.mapDeck} contentStyle={styles.mapContent}>
+        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={260} />
         <View pointerEvents="none" style={styles.mapStatus}>
-          <MobileBadge label={destination ? "الوجهة محددة" : "حدد الوجهة"} tone={destination ? "success" : "info"} />
+          <V3Badge label={destination ? "الوجهة محددة" : "حدد الوجهة"} tone={destination ? "success" : "primary"} />
         </View>
-      </View>
+      </V3Card>
 
-      <MobileCard tone="command" style={styles.composer}>
-        <SectionHeader title="تفاصيل الرحلة" subtitle="نقطة الانطلاق والوجهة والسعر في مسار واحد واضح." />
-        <View style={styles.composerTop}>
-          <View style={styles.stepBlock}>
-            <Text selectable style={styles.stepNumber}>01</Text>
-            <Text selectable style={styles.stepLabel}>نقطة الانطلاق</Text>
+      <V3Card tone="accent" style={styles.bottomPanel} contentStyle={styles.panelContent}>
+        <View style={styles.panelHeader}>
+          <View style={styles.panelCopy}>
+            <V3Text variant="subtitle">تفاصيل الرحلة</V3Text>
+            <V3Text variant="caption" tone="muted">مسار واضح، سعر متوقع، وطريقة دفع قبل التأكيد.</V3Text>
           </View>
-          <MobileButton title={status === "location" ? "جاري..." : "موقعي"} compact variant="secondary" onPress={useGpsLocation} loading={status === "location"} />
+          <V3Button
+            title={status === "location" ? "جاري..." : "موقعي"}
+            size="sm"
+            fullWidth={false}
+            variant="secondary"
+            onPress={useGpsLocation}
+            loading={status === "location"}
+          />
         </View>
+
+        <View style={styles.routeBox}>
+          <View style={styles.routeLine} />
+          <View style={styles.routePoint}>
+            <V3Badge label="من" tone="blue" />
+            <View style={styles.routeCopy}>
+              <V3Text variant="caption" tone="muted">نقطة الانطلاق</V3Text>
+              <V3Text selectable numberOfLines={2}>{pickup?.label || "-"}</V3Text>
+            </View>
+          </View>
+          <View style={styles.routePoint}>
+            <V3Badge label="إلى" tone={destination ? "success" : "primary"} />
+            <View style={styles.routeCopy}>
+              <V3Text variant="caption" tone="muted">الوجهة</V3Text>
+              <V3Input
+                value={destinationQuery}
+                onChangeText={searchDestination}
+                placeholder="إلى أين تريد الذهاب؟"
+                style={styles.destinationInput}
+              />
+            </View>
+          </View>
+        </View>
+
         <View style={styles.cityRail}>
           {cityChoices.map((city) => (
-            <ChoiceChip key={city.value} label={city.label} selected={cityId === city.value} onPress={() => useCityFallback(city.value)} />
+            <V3Button
+              key={city.value}
+              title={city.label}
+              size="sm"
+              fullWidth={false}
+              variant={cityId === city.value ? "primary" : "ghost"}
+              onPress={() => useCityFallback(city.value)}
+              style={styles.choiceButton}
+            />
           ))}
         </View>
-        <InfoRow label="من" value={pickup?.label || "-"} accent />
 
-        <View style={styles.stepBlockWide}>
-          <Text selectable style={styles.stepNumber}>02</Text>
-          <Text selectable style={styles.stepLabel}>الوجهة</Text>
-        </View>
-        <MobileInput value={destinationQuery} onChangeText={searchDestination} placeholder="إلى أين تريد الذهاب؟" />
-        {status === "quote" ? <Text selectable style={styles.muted}>نحسب السعر والمسافة الآن...</Text> : null}
-        {suggestions.map((place) => (
-          <PressableScale key={`${place.city}-${place.label}`} onPress={() => chooseDestination(place)} style={styles.suggestion} pressedStyle={styles.pressed}>
-            <View style={styles.suggestionCopy}>
-              <Text selectable numberOfLines={1} style={styles.suggestionTitle}>{place.label}</Text>
-              <Text selectable numberOfLines={1} style={styles.suggestionMeta}>{place.category || "مكان"} · {place.city}</Text>
-            </View>
-            <Text selectable={false} style={styles.suggestionArrow}>↗</Text>
-          </PressableScale>
-        ))}
-      </MobileCard>
+        {status === "quote" ? <V3Text tone="muted">نحسب السعر والمسافة الآن...</V3Text> : null}
 
-      <MobileCard tone="action" style={styles.summarySticky}>
-        <View style={styles.summaryHeader}>
-          <View>
-            <Text selectable style={styles.stepNumber}>03</Text>
-            <Text selectable style={styles.stepLabel}>تأكيد الطلب</Text>
+        {suggestions.length ? (
+          <View style={styles.suggestions}>
+            {suggestions.map((place) => (
+              <V3Card
+                key={`${place.city}-${place.label}`}
+                tone="quiet"
+                compact
+                onPress={() => chooseDestination(place)}
+                accessibilityLabel={place.label}
+                style={styles.suggestion}
+                contentStyle={styles.suggestionContent}
+              >
+                <View style={styles.suggestionCopy}>
+                  <V3Text selectable variant="label" numberOfLines={1}>{place.label}</V3Text>
+                  <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>{place.category || "مكان"} · {place.city}</V3Text>
+                </View>
+                <V3Badge label="اختيار" tone="blue" />
+              </V3Card>
+            ))}
           </View>
-          <Text selectable style={styles.price}>{quote ? money(quote.fareIls) : "--"}</Text>
+        ) : null}
+
+        <V3Card tone="raised" compact contentStyle={styles.quoteCard}>
+          <View style={styles.quoteHeader}>
+            <View style={styles.quoteCopy}>
+              <V3Text variant="caption" tone="muted">السعر المتوقع</V3Text>
+              <V3Text selectable variant="title" style={styles.price}>{quote ? money(quote.fareIls) : "--"}</V3Text>
+            </View>
+            <V3Badge label={quote ? km(quote.distanceKm) : "المسافة"} tone="dark" />
+          </View>
+          <View style={styles.metrics}>
+            <V3Badge label={destination?.label || "اختر الوجهة"} tone="primary" />
+            <V3Badge label={quote?.etaMinutes ? `${quote.etaMinutes} دقيقة` : "الوقت"} tone="blue" />
+          </View>
+        </V3Card>
+
+        <View style={styles.paymentSection}>
+          <V3Text variant="label">طريقة الدفع</V3Text>
+          <View style={styles.paymentRail}>
+            {paymentMethods.map((method) => (
+              <V3Button
+                key={method.value}
+                title={method.label}
+                size="sm"
+                fullWidth={false}
+                variant={paymentMethod === method.value ? "primary" : "secondary"}
+                onPress={() => setPaymentMethod(method.value)}
+                style={styles.paymentButton}
+              />
+            ))}
+          </View>
         </View>
-        <View style={styles.metrics}>
-          <Text selectable numberOfLines={1} style={styles.metric}>{destination?.label || "اختر الوجهة"}</Text>
-          <Text selectable style={styles.metric}>{quote ? km(quote.distanceKm) : "المسافة"}</Text>
-          <Text selectable style={styles.metric}>{quote?.etaMinutes ? `${quote.etaMinutes} دقيقة` : "الوقت"}</Text>
-        </View>
-        <View style={styles.cityRail}>
-          {paymentMethods.map((method) => (
-            <ChoiceChip key={method.value} label={method.label} selected={paymentMethod === method.value} onPress={() => setPaymentMethod(method.value)} />
-          ))}
-        </View>
-        {error ? <Text selectable style={styles.error}>{error}</Text> : null}
-        <MobileButton title={status === "create" ? "جاري الطلب..." : "طلب الرحلة الآن"} variant="accent" onPress={submitRide} loading={status === "create"} />
-      </MobileCard>
-    </ScreenContainer>
+
+        {error ? (
+          <V3Card tone="quiet" compact style={styles.errorCard}>
+            <V3Text selectable tone="danger">{error}</V3Text>
+          </V3Card>
+        ) : null}
+
+        <V3Button
+          title={status === "create" ? "جاري الطلب..." : "طلب الرحلة الآن"}
+          onPress={submitRide}
+          loading={status === "create"}
+        />
+      </V3Card>
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  commandHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  headerCopy: { flex: 1, alignItems: "flex-end" },
-  eyebrow: { color: colors.primary, fontSize: 12, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  title: { color: colors.text, fontSize: 22, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  mapDeck: { borderRadius: radii.xxl, overflow: "hidden", borderWidth: 1, borderColor: depth.violetLine, boxShadow: shadows.glow },
-  mapPulse: { position: "absolute", right: 18, top: 18, width: 9, height: 9, borderRadius: radii.pill, backgroundColor: colors.primary, boxShadow: "0 0 20px rgba(166, 130, 255, 0.66)" },
-  mapStatus: { position: "absolute", left: spacing.sm, top: spacing.sm },
-  composer: { gap: spacing.sm },
-  composerTop: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  stepBlock: { alignItems: "flex-end" },
-  stepBlockWide: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, justifyContent: "flex-start" },
-  stepNumber: { color: colors.primary, fontSize: 11, fontWeight: "900", textAlign: "right" },
-  stepLabel: { color: colors.text, fontSize: 15, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  cityRail: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  suggestion: {
+  mapDeck: {
+    borderColor: v3Colors.borderStrong
+  },
+  mapContent: {
+    padding: 0,
+    overflow: "hidden"
+  },
+  mapStatus: {
+    position: "absolute",
+    top: v3Spacing.sm,
+    left: v3Spacing.sm
+  },
+  bottomPanel: {
+    borderTopLeftRadius: v3Radius.screen,
+    borderTopRightRadius: v3Radius.screen,
+    borderColor: v3Colors.borderStrong
+  },
+  panelContent: {
+    gap: v3Spacing.md
+  },
+  panelHeader: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderWidth: 1,
-    borderColor: depth.hairline
+    gap: v3Spacing.sm
   },
-  suggestionCopy: { flex: 1, alignItems: "flex-end", minWidth: 0 },
-  pressed: { opacity: 0.9 },
-  suggestionTitle: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
-  suggestionMeta: { color: colors.muted, textAlign: "right", marginTop: 2, fontSize: 12, writingDirection: "rtl", alignSelf: "stretch" },
-  suggestionArrow: { color: colors.primary, fontSize: 16, fontWeight: "900" },
-  summarySticky: { gap: spacing.sm },
-  summaryHeader: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  price: { color: colors.text, fontSize: 30, fontWeight: "900", textAlign: "right" },
-  metrics: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.xs },
-  metric: { color: colors.textSoft, backgroundColor: "rgba(0, 0, 0, 0.16)", paddingHorizontal: spacing.sm, paddingVertical: 6, borderRadius: radii.pill, fontSize: 12, fontWeight: "800", overflow: "hidden", maxWidth: "100%" },
-  muted: { color: colors.muted, textAlign: "right", fontWeight: "700", writingDirection: "rtl" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", writingDirection: "rtl" }
+  panelCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  routeBox: {
+    gap: v3Spacing.sm,
+    borderRadius: v3Radius.xl,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: v3Spacing.md
+  },
+  routeLine: {
+    position: "absolute",
+    right: 32,
+    top: 48,
+    bottom: 48,
+    width: 1,
+    backgroundColor: v3Colors.borderStrong
+  },
+  routePoint: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: v3Spacing.sm
+  },
+  routeCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xs
+  },
+  destinationInput: {
+    alignSelf: "stretch"
+  },
+  cityRail: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  choiceButton: {
+    minWidth: 98,
+    flexGrow: 1
+  },
+  suggestions: {
+    gap: v3Spacing.xs
+  },
+  suggestion: {
+    borderColor: v3Colors.borderBlue
+  },
+  suggestionContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm
+  },
+  suggestionCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  quoteCard: {
+    borderColor: v3Colors.border
+  },
+  quoteHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: v3Spacing.sm
+  },
+  quoteCopy: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  price: {
+    color: v3Colors.white,
+    fontSize: 34,
+    lineHeight: 40,
+    fontVariant: ["tabular-nums"]
+  },
+  metrics: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  paymentSection: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xs
+  },
+  paymentRail: {
+    alignSelf: "stretch",
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  paymentButton: {
+    flexGrow: 1,
+    minWidth: 104
+  },
+  errorCard: {
+    borderColor: "rgba(255, 97, 116, 0.42)"
+  }
 });
