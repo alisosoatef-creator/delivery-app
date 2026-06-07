@@ -22,6 +22,7 @@ const required = [
   "src/hooks/useOtpVerification.js",
   "src/hooks/useLogout.js",
   "src/hooks/useDevDriverLogin.js",
+  "src/hooks/useRideRequestFlow.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -109,6 +110,23 @@ for (const [file, hookName, forbiddenTokens] of authSessionExtraction) {
   for (const token of forbiddenTokens) {
     if (fileSource.includes(token)) throw new Error(`${file} still owns extracted auth/session logic: ${token}`);
   }
+}
+
+const requestRideSource = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
+if (!requestRideSource.includes("useRideRequestFlow")) throw new Error("RequestRideScreen must use useRideRequestFlow");
+for (const token of [
+  "requestCurrentLocation",
+  "searchPlaces",
+  "quoteRide",
+  "createRide",
+  "useMobileApp",
+  "pointFromCity",
+  "pointFromPlace",
+  "safeDistanceKm",
+  "cityOptions",
+  "paymentLabel"
+]) {
+  if (requestRideSource.includes(token)) throw new Error(`RequestRideScreen still owns extracted ride request logic: ${token}`);
 }
 
 for (const token of [
