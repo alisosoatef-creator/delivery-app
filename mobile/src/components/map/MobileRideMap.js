@@ -1,65 +1,6 @@
-import { useMemo } from "react";
-import { StyleSheet, Text, UIManager, View } from "react-native";
-import { normalizeCoordinate, safeDistanceKm } from "../../utils/locationUtils";
+import { StyleSheet, Text, View } from "react-native";
+import { useMobileRideMapLogic } from "../../hooks/useMobileRideMapLogic";
 import { colors, depth, map, radii, shadows, spacing } from "../../utils/mobileTheme";
-import { devLogStartup } from "../../utils/startupDiagnostics";
-
-let MapView = null;
-let Marker = null;
-let Polyline = null;
-let Callout = null;
-let mapLoadAttempted = false;
-
-function loadNativeMap() {
-  if (mapLoadAttempted) return Boolean(MapView && Marker && Polyline);
-  mapLoadAttempted = true;
-  try {
-    const hasNativeMap = Boolean(
-      UIManager.getViewManagerConfig?.("AIRMap") ||
-        UIManager.getViewManagerConfig?.("AIRGoogleMap")
-    );
-    if (!hasNativeMap) {
-      devLogStartup("map component skipped", { reason: "native-map-view-unavailable" });
-      return false;
-    }
-    const Maps = require("react-native-maps");
-    MapView = Maps.default || Maps;
-    Marker = Maps.Marker;
-    Polyline = Maps.Polyline;
-    Callout = Maps.Callout;
-    devLogStartup("map component loaded");
-  } catch (error) {
-    MapView = null;
-    Marker = null;
-    Polyline = null;
-    Callout = null;
-    devLogStartup("map component skipped", { reason: error?.message || "react-native-maps unavailable" });
-  }
-  return Boolean(MapView && Marker && Polyline);
-}
-
-function cleanPoint(point) {
-  return normalizeCoordinate(point);
-}
-
-function regionFor(points) {
-  const valid = points.map(cleanPoint).filter(Boolean);
-  if (!valid.length) {
-    return { latitude: 32.2211, longitude: 35.2544, latitudeDelta: 0.08, longitudeDelta: 0.08 };
-  }
-
-  const avgLat = valid.reduce((sum, point) => sum + point.lat, 0) / valid.length;
-  const avgLng = valid.reduce((sum, point) => sum + point.lng, 0) / valid.length;
-  const maxLatDelta = Math.max(...valid.map((point) => Math.abs(point.lat - avgLat)), 0.02) * 3;
-  const maxLngDelta = Math.max(...valid.map((point) => Math.abs(point.lng - avgLng)), 0.02) * 3;
-
-  return {
-    latitude: avgLat,
-    longitude: avgLng,
-    latitudeDelta: Math.max(maxLatDelta, 0.04),
-    longitudeDelta: Math.max(maxLngDelta, 0.04)
-  };
-}
 
 function markerTitle(type) {
   if (type === "pickup") return "نقطة الانطلاق";
@@ -93,7 +34,7 @@ function CustomMarker({ type }) {
   );
 }
 
-function MapPoint({ type, point }) {
+function MapPoint({ type, point, Marker, Callout }) {
   if (!point || !Marker) return null;
   const spec = markerSpec(type);
   const coordinate = { latitude: point.lat, longitude: point.lng };
@@ -135,35 +76,27 @@ function FallbackMap({ points, distanceKm, distanceLabel, height, title = "مع�
 }
 
 export function MobileRideMap({ pickup, destination, driverLocation, userLocation, rideStatus = "searching", height = 300 }) {
-  const points = useMemo(
-    () => ({
-      pickup: cleanPoint(pickup),
-      destination: cleanPoint(destination),
-      driver: cleanPoint(driverLocation),
-      user: cleanPoint(userLocation)
-    }),
-    [pickup, destination, driverLocation, userLocation]
-  );
+  const {
+    points,
+    driverToPickup,
+    waitingForDriverLocation,
+    routePoints,
+    distanceKm,
+    distanceLabel,
+    initialRegion,
+    hasAnyPoint,
+    getNativeMapRuntime
+  } = useMobileRideMapLogic({ pickup, destination, driverLocation, userLocation, rideStatus });
 
-  const accepted = ["accepted", "driver_arriving", "arrived", "in_progress", "completed"].includes(rideStatus);
-  const driverToPickup = accepted && points.driver && points.pickup;
-  const waitingForDriverLocation = accepted && points.pickup && !points.driver;
-  const routePoints = driverToPickup
-    ? [points.driver, points.pickup]
-    : points.pickup && points.destination
-      ? [points.pickup, points.destination]
-      : [];
-  const distanceKm = driverToPickup ? safeDistanceKm(points.driver, points.pickup) : safeDistanceKm(points.pickup, points.destination);
-  const distanceLabel = driverToPickup ? "المسافة إلى الزبون" : "مسافة الرحلة";
-  const initialRegion = regionFor([points.pickup, points.destination, points.driver, points.user]);
-
-  if (!points.pickup && !points.destination && !points.driver && !points.user) {
+  if (!hasAnyPoint) {
     return <FallbackMap points={points} distanceKm={0} distanceLabel={distanceLabel} height={height} title="الخريطة غير جاهزة بعد" />;
   }
 
-  if (!loadNativeMap()) {
+  const nativeMap = getNativeMapRuntime();
+  if (!nativeMap.available) {
     return <FallbackMap points={points} distanceKm={distanceKm} distanceLabel={distanceLabel} height={height} title="معاينة الخريطة غير متاحة في هذه البيئة" />;
   }
+  const { MapView, Marker, Polyline, Callout } = nativeMap;
 
   return (
     <View style={[styles.wrapper, { height }]}>
@@ -178,10 +111,10 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
             lineJoin="round"
           />
         ) : null}
-        <MapPoint type="pickup" point={points.pickup} />
-        <MapPoint type="destination" point={points.destination} />
-        <MapPoint type="driver" point={points.driver} />
-        <MapPoint type="user" point={points.user} />
+        <MapPoint type="pickup" point={points.pickup} Marker={Marker} Callout={Callout} />
+        <MapPoint type="destination" point={points.destination} Marker={Marker} Callout={Callout} />
+        <MapPoint type="driver" point={points.driver} Marker={Marker} Callout={Callout} />
+        <MapPoint type="user" point={points.user} Marker={Marker} Callout={Callout} />
       </MapView>
       <View pointerEvents="none" style={styles.legend}>
         {points.pickup ? <Text selectable={false} style={styles.legendText}>الانطلاق</Text> : null}

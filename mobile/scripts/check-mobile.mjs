@@ -32,6 +32,7 @@ const required = [
   "src/hooks/useCustomerRides.js",
   "src/hooks/useCustomerWallet.js",
   "src/hooks/useSupportTickets.js",
+  "src/hooks/useMobileRideMapLogic.js",
   "src/store/mobileStore.js",
   "src/navigation/AppNavigator.js",
   "src/screens/auth/LoginScreen.js",
@@ -432,7 +433,23 @@ for (const token of [
 }
 
 const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
-for (const token of ["normalizeCoordinate", "safeDistanceKm", "markerSpec", "CustomMarker", "MapPoint", "Polyline", "routePoints.length === 2", "lineCap=\"round\"", "locationHint", "mapShade", "FallbackMap", "map.frame", "map.overlay"]) {
+const mobileRideMapLogic = fs.readFileSync("src/hooks/useMobileRideMapLogic.js", "utf8");
+if (!mobileRideMap.includes("useMobileRideMapLogic")) throw new Error("MobileRideMap must use useMobileRideMapLogic");
+for (const token of [
+  "UIManager",
+  "normalizeCoordinate",
+  "safeDistanceKm",
+  "devLogStartup",
+  "loadNativeMap",
+  "regionFor",
+  "cleanPoint"
+]) {
+  if (mobileRideMap.includes(token)) throw new Error(`MobileRideMap still owns extracted map runtime logic: ${token}`);
+}
+for (const token of ["normalizeCoordinate", "safeDistanceKm", "UIManager", "devLogStartup", "native-map-view-unavailable", "regionFor", "loadNativeMap"]) {
+  if (!mobileRideMapLogic.includes(token)) throw new Error(`map runtime hook is missing: ${token}`);
+}
+for (const token of ["markerSpec", "CustomMarker", "MapPoint", "Polyline", "routePoints.length === 2", "lineCap=\"round\"", "locationHint", "mapShade", "FallbackMap", "map.frame", "map.overlay"]) {
   if (!mobileRideMap.includes(token)) throw new Error(`Mobile map feature is missing: ${token}`);
 }
 
