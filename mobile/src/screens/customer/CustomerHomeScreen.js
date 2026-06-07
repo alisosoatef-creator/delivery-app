@@ -1,11 +1,11 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { MobileRideMap } from "../../components/map/MobileRideMap";
-import { BrandMark, InfoRow, MobileBadge, MobileButton, MobileCard, PressableScale, ScreenContainer, StatCard } from "../../components/ui";
+import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useCustomerActiveRide } from "../../hooks/useCustomerActiveRide";
 import { useMobileApp } from "../../store/mobileStore";
 import { money } from "../../utils/formatters";
-import { colors, depth, radii, shadows, spacing } from "../../utils/mobileTheme";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
+import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
 function acceptedDriverName(ride) {
   const visible = ["accepted", "driver_arriving", "arrived", "in_progress"].includes(ride?.status);
@@ -30,163 +30,208 @@ export function CustomerHomeScreen() {
   const previewDestination = activeRide ? ridePoint(activeRide, "destination") : state.destination;
 
   const shortcuts = [
-    ["المحفظة", "wallet", "الدفع والرصيد"],
-    ["الدعم", "support", "مساعدة منظمة"],
-    ["الحساب", "account", "بياناتك"],
-    ["السجل", "rides", "كل الرحلات"]
+    ["المحفظة", "wallet", "الدفع والرصيد", "₪"],
+    ["الدعم", "support", "مساعدة منظمة", "?"],
+    ["الحساب", "account", "بياناتك", "ح"],
+    ["السجل", "rides", "كل الرحلات", "ر"]
   ];
 
   return (
-    <ScreenContainer showHeader={false} compact>
+    <V3Screen>
       <View style={styles.topBar}>
-        <BrandMark compact />
-        <MobileBadge label={activeRide ? "رحلة نشطة" : "جاهز"} tone={activeRide ? "warning" : "success"} />
+        <View style={styles.greetingBlock}>
+          <V3Text variant="caption" tone="blue">مرحبا {firstName}</V3Text>
+          <V3Text variant="title" numberOfLines={2}>أين وجهتك اليوم؟</V3Text>
+        </View>
+        <V3Badge label={activeRide ? "رحلة نشطة" : "جاهز"} tone={activeRide ? "warning" : "success"} />
       </View>
 
-      <MobileCard tone="map" style={styles.mapHero}>
+      <V3Card tone="raised" style={styles.mapHero} contentStyle={styles.mapContent}>
         <MobileRideMap
           pickup={previewPickup}
           destination={previewDestination}
           userLocation={state.currentLocation}
           driverLocation={state.driverLocation}
           rideStatus={activeRide?.status || "searching"}
-          height={188}
+          height={206}
         />
         <View pointerEvents="none" style={styles.mapCaption}>
-          <Text selectable={false} style={styles.mapCaptionText}>{activeRide ? statusLabel(activeRide.status) : "خريطة مشوارك"}</Text>
+          <V3Text variant="caption" tone="soft" numberOfLines={1}>
+            {activeRide ? statusLabel(activeRide.status) : "خريطة مشوارك"}
+          </V3Text>
         </View>
-      </MobileCard>
+      </V3Card>
 
-      <MobileCard tone="command" style={styles.heroSystem}>
-        <View style={styles.heroCopy}>
-          <Text selectable style={styles.greeting}>أهلا {firstName}</Text>
-          <Text selectable style={styles.title}>إلى أين اليوم؟</Text>
-          <Text selectable style={styles.subtitle}>ابدأ من الخريطة، اختر الوجهة، وشاهد السعر قبل تأكيد الطلب.</Text>
+      <V3Card tone="accent" contentStyle={styles.rideStarter}>
+        <V3SectionHeader
+          meta="طلب سريع"
+          title="ابدأ من الخريطة"
+          subtitle="اختر الوجهة وشاهد السعر قبل تأكيد الطلب."
+        />
+        <View style={styles.primaryRideCta}>
+          <V3Button title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+          <V3Button
+            title="تحديث الحالة"
+            size="sm"
+            variant="secondary"
+            onPress={refreshActiveRide}
+            loading={state.activeRideStatus === "loading"}
+          />
         </View>
-        <PressableScale
-          accessibilityLabel="اختيار الوجهة"
-          onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })}
-          style={styles.searchBar}
-          pressedStyle={styles.quickPressed}
-        >
-          <Text selectable={false} style={styles.searchHint}>اكتب وجهتك أو اختر من الخريطة</Text>
-          <View style={styles.searchGlyph}><Text selectable={false} style={styles.searchGlyphText}>↗</Text></View>
-        </PressableScale>
-        <View style={styles.heroActions}>
-          <MobileButton title="طلب رحلة" variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
-          <MobileButton title="تحديث الحالة" variant="secondary" compact onPress={refreshActiveRide} />
-        </View>
-      </MobileCard>
+      </V3Card>
 
       {activeRide ? (
-        <MobileCard tone="hero" style={styles.activeRideCard}>
+        <V3Card tone="blue" style={styles.activeRideCard} contentStyle={styles.activeRideContent}>
           <View style={styles.rowBetween}>
-            <MobileBadge label={statusLabel(activeRide.status)} tone="warning" />
-            <Text selectable style={styles.cardTitle}>متابعة المشوار</Text>
+            <V3Badge label={statusLabel(activeRide.status)} tone="warning" />
+            <V3Text variant="subtitle">متابعة المشوار</V3Text>
           </View>
-          <InfoRow label="المسار" value={`${activeRide.pickup || "-"} ← ${activeRide.destination || "-"}`} accent />
+          <View style={styles.routeCard}>
+            <V3Text variant="caption" tone="muted">المسار</V3Text>
+            <V3Text selectable numberOfLines={2}>
+              {`${activeRide.pickup || "-"} إلى ${activeRide.destination || "-"}`}
+            </V3Text>
+          </View>
           <View style={styles.activeFooter}>
-            <Text selectable style={styles.activePrice}>{money(activeRide.price || activeRide.fareIls)}</Text>
-            {driverName ? <Text selectable style={styles.muted}>الكابتن: {driverName}</Text> : <Text selectable style={styles.muted}>بانتظار قبول كابتن</Text>}
+            <V3Badge label={money(activeRide.price || activeRide.fareIls)} tone="dark" />
+            {driverName ? (
+              <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>الكابتن: {driverName}</V3Text>
+            ) : (
+              <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>بانتظار قبول كابتن</V3Text>
+            )}
           </View>
-          <MobileButton title="فتح التتبع" compact variant="accent" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
-        </MobileCard>
+          <V3Button title="فتح التتبع" size="sm" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "ride-status" })} />
+        </V3Card>
       ) : null}
 
-      <View style={styles.statDeck}>
-        <StatCard label="الجاهزية" value="فورية" hint="طلب وتتبع" tone="blue" />
-        <StatCard label="الدفع" value="مرن" hint="نقدا أو تجريبي" />
-      </View>
+      <V3Card tone="raised">
+        <V3SectionHeader
+          title="اختصارات"
+          subtitle="الوصول السريع لأهم مساحات حسابك."
+        />
+        <View style={styles.quickActionGrid}>
+          {shortcuts.map(([label, screen, hint, mark]) => (
+            <V3Card
+              key={screen}
+              tone="quiet"
+              compact
+              onPress={() => dispatch({ type: "navigate", area: "customer", screen })}
+              accessibilityLabel={label}
+              style={styles.quickAction}
+              contentStyle={styles.quickActionContent}
+            >
+              <V3Badge label={mark} tone="primary" />
+              <View style={styles.quickCopy}>
+                <V3Text variant="label" numberOfLines={1}>{label}</V3Text>
+                <V3Text variant="caption" tone="muted" numberOfLines={2}>{hint}</V3Text>
+              </View>
+            </V3Card>
+          ))}
+        </View>
+      </V3Card>
 
-      <View style={styles.quickActionGrid}>
-        {shortcuts.map(([label, screen, hint]) => (
-          <PressableScale
-            key={screen}
-            accessibilityLabel={label}
-            onPress={() => dispatch({ type: "navigate", area: "customer", screen })}
-            style={styles.quickAction}
-            pressedStyle={styles.quickPressed}
-          >
-            <Text selectable={false} style={styles.quickMark}>{label.slice(0, 1)}</Text>
-            <View style={styles.quickCopy}>
-              <Text selectable numberOfLines={1} ellipsizeMode="tail" style={styles.quickLabel}>{label}</Text>
-              <Text selectable numberOfLines={2} ellipsizeMode="tail" style={styles.quickHint}>{hint}</Text>
-            </View>
-          </PressableScale>
-        ))}
-      </View>
-
-      {state.activeRideStatus === "loading" ? <Text selectable style={styles.muted}>جاري فحص الرحلة النشطة...</Text> : null}
-      {state.activeRideError ? <Text selectable style={styles.error}>{state.activeRideError}</Text> : null}
-    </ScreenContainer>
+      {state.activeRideStatus === "loading" ? (
+        <V3Card tone="quiet" compact>
+          <V3Text tone="muted">جاري فحص الرحلة النشطة...</V3Text>
+        </V3Card>
+      ) : null}
+      {state.activeRideError ? (
+        <V3Card tone="quiet" compact style={styles.errorCard}>
+          <V3Text selectable tone="danger">{state.activeRideError}</V3Text>
+        </V3Card>
+      ) : null}
+    </V3Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  topBar: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  mapHero: { padding: 0, borderRadius: radii.xxl, borderColor: depth.violetLine },
+  topBar: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: v3Spacing.md
+  },
+  greetingBlock: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xs
+  },
+  mapHero: {
+    borderColor: v3Colors.borderStrong
+  },
+  mapContent: {
+    padding: 0,
+    overflow: "hidden"
+  },
   mapCaption: {
     position: "absolute",
-    top: spacing.sm,
-    right: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(4, 3, 8, 0.72)",
+    top: v3Spacing.sm,
+    right: v3Spacing.sm,
+    minHeight: 30,
+    paddingHorizontal: v3Spacing.sm,
+    borderRadius: v3Radius.pill,
     borderWidth: 1,
-    borderColor: depth.glassLine
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.blackScrim,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  mapCaptionText: { color: colors.text, fontSize: 11, fontWeight: "900", writingDirection: "rtl" },
-  heroSystem: { gap: spacing.md, borderColor: depth.violetLine },
-  heroCopy: { alignItems: "flex-end", gap: 4 },
-  greeting: { color: colors.primary, fontSize: 14, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  title: { color: colors.text, fontSize: 31, lineHeight: 37, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  subtitle: { color: colors.textSoft, fontSize: 13.5, lineHeight: 21, textAlign: "right", writingDirection: "rtl" },
-  searchBar: {
-    minHeight: 56,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: depth.violetLine,
-    backgroundColor: "rgba(255, 255, 255, 0.07)",
-    paddingHorizontal: spacing.md,
+  rideStarter: {
+    gap: v3Spacing.md
+  },
+  primaryRideCta: {
+    gap: v3Spacing.sm
+  },
+  activeRideCard: {
+    borderColor: v3Colors.borderBlue
+  },
+  activeRideContent: {
+    gap: v3Spacing.md
+  },
+  rowBetween: {
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: spacing.sm
+    gap: v3Spacing.sm
   },
-  searchHint: { color: colors.text, fontWeight: "900", textAlign: "right", writingDirection: "rtl", flex: 1 },
-  searchGlyph: { width: 32, height: 32, borderRadius: radii.pill, alignItems: "center", justifyContent: "center", backgroundColor: colors.primary },
-  searchGlyphText: { color: colors.black, fontWeight: "900", fontSize: 16 },
-  heroActions: { flexDirection: "row-reverse", alignItems: "center", gap: spacing.xs, flexWrap: "wrap" },
-  activeRideCard: { gap: spacing.xs, borderColor: depth.violetLine },
-  rowBetween: { flexDirection: "row-reverse", alignItems: "center", justifyContent: "space-between", gap: spacing.sm },
-  cardTitle: { color: colors.text, fontSize: 16, fontWeight: "900", textAlign: "right", writingDirection: "rtl" },
-  activeFooter: { flexDirection: "row-reverse", justifyContent: "space-between", alignItems: "center", gap: spacing.sm },
-  activePrice: { color: colors.primary, fontSize: 21, fontWeight: "900" },
-  statDeck: { flexDirection: "row-reverse", gap: spacing.sm },
-  quickActionGrid: { flexDirection: "row-reverse", flexWrap: "wrap", gap: spacing.sm },
+  routeCard: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xs,
+    borderRadius: v3Radius.lg,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: v3Alpha.whiteSoft,
+    padding: v3Spacing.md
+  },
+  activeFooter: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  quickActionGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: v3Spacing.sm
+  },
   quickAction: {
-    width: "47.5%",
     flexBasis: "47.5%",
     flexGrow: 1,
-    flexShrink: 1,
-    minWidth: 132,
-    maxWidth: "48.5%",
-    minHeight: 88,
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    backgroundColor: "rgba(255, 255, 255, 0.055)",
-    borderWidth: 1,
-    borderColor: depth.hairline,
-    boxShadow: shadows.soft
+    minWidth: 132
   },
-  quickPressed: { opacity: 0.9 },
-  quickMark: { color: colors.primary, fontSize: 18, fontWeight: "900" },
-  quickCopy: { alignItems: "flex-end", gap: 2, alignSelf: "stretch", minWidth: 0 },
-  quickLabel: { color: colors.text, fontSize: 14.5, lineHeight: 18, fontWeight: "900", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
-  quickHint: { color: colors.muted, fontSize: 11.5, lineHeight: 16, fontWeight: "700", textAlign: "right", writingDirection: "rtl", alignSelf: "stretch" },
-  muted: { color: colors.muted, textAlign: "right", fontWeight: "700", writingDirection: "rtl" },
-  error: { color: colors.red, textAlign: "right", fontWeight: "800", writingDirection: "rtl" }
+  quickActionContent: {
+    minHeight: 92,
+    alignItems: "flex-end",
+    justifyContent: "space-between"
+  },
+  quickCopy: {
+    alignSelf: "stretch",
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs,
+    minWidth: 0
+  },
+  errorCard: {
+    borderColor: "rgba(255, 97, 116, 0.42)"
+  }
 });

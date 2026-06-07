@@ -431,11 +431,37 @@ if (appNavigator.includes("ScrollView") || appNavigator.includes("horizontal")) 
 }
 
 const customerHome = fs.readFileSync("src/screens/customer/CustomerHomeScreen.js", "utf8");
-for (const token of ["MobileRideMap", "mapHero", "heroSystem", "searchBar", "quickActionGrid", "activeRideCard", "heroActions"]) {
-  if (!customerHome.includes(token)) throw new Error(`v2 customer home is missing: ${token}`);
-}
-for (const token of ["flexBasis: \"47.5%\"", "minWidth: 132", "maxWidth: \"48.5%\"", "numberOfLines={1}", "numberOfLines={2}", "alignSelf: \"stretch\""]) {
-  if (!customerHome.includes(token)) throw new Error(`stable quick actions are missing: ${token}`);
+if (!customerHome.includes("../../components/v3/ui")) throw new Error("CustomerHomeScreen must use V3 UI primitives");
+if (!customerHome.includes("../../theme/v3")) throw new Error("CustomerHomeScreen must use V3 theme tokens");
+if (customerHome.includes("../../components/ui")) throw new Error("CustomerHomeScreen must not import old UI components after M0-D4");
+if (customerHome.includes("../../utils/mobileTheme")) throw new Error("CustomerHomeScreen must not import old mobileTheme after M0-D4");
+for (const token of [
+  "useCustomerActiveRide",
+  "useMobileApp",
+  "MobileRideMap",
+  "V3Screen",
+  "V3Card",
+  "V3Button",
+  "V3Badge",
+  "V3SectionHeader",
+  "V3Text",
+  "activeRide = isActiveRide(state.currentRide)",
+  "refreshActiveRide",
+  "previewPickup",
+  "previewDestination",
+  "driverLocation={state.driverLocation}",
+  "screen: \"request\"",
+  "screen: \"ride-status\"",
+  "\"wallet\"",
+  "\"support\"",
+  "\"account\"",
+  "\"rides\"",
+  "statusLabel(activeRide.status)",
+  "money(activeRide.price || activeRide.fareIls)",
+  "quickActionGrid",
+  "activeRideCard"
+]) {
+  if (!customerHome.includes(token)) throw new Error(`M0-D4 CustomerHome token is missing: ${token}`);
 }
 
 const requestRide = fs.readFileSync("src/screens/customer/RequestRideScreen.js", "utf8");
