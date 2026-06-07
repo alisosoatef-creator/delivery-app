@@ -763,6 +763,8 @@ for (const token of [
 const mobileRideMap = fs.readFileSync("src/components/map/MobileRideMap.js", "utf8");
 const mobileRideMapLogic = fs.readFileSync("src/hooks/useMobileRideMapLogic.js", "utf8");
 if (!mobileRideMap.includes("useMobileRideMapLogic")) throw new Error("MobileRideMap must use useMobileRideMapLogic");
+if (!mobileRideMap.includes("../../theme/v3")) throw new Error("MobileRideMap must use V3 theme tokens");
+if (mobileRideMap.includes("../../utils/mobileTheme")) throw new Error("MobileRideMap must not import old mobileTheme after M0-D11");
 for (const token of [
   "UIManager",
   "normalizeCoordinate",
@@ -777,8 +779,26 @@ for (const token of [
 for (const token of ["normalizeCoordinate", "safeDistanceKm", "UIManager", "devLogStartup", "native-map-view-unavailable", "regionFor", "loadNativeMap"]) {
   if (!mobileRideMapLogic.includes(token)) throw new Error(`map runtime hook is missing: ${token}`);
 }
-for (const token of ["markerSpec", "CustomMarker", "MapPoint", "Polyline", "routePoints.length === 2", "lineCap=\"round\"", "locationHint", "mapShade", "FallbackMap", "map.frame", "map.overlay"]) {
-  if (!mobileRideMap.includes(token)) throw new Error(`Mobile map feature is missing: ${token}`);
+for (const token of [
+  "markerSpec",
+  "CustomMarker",
+  "MapPoint",
+  "Polyline",
+  "routePoints.length === 2",
+  "lineCap=\"round\"",
+  "locationHint",
+  "mapShade",
+  "FallbackMap",
+  "v3MapFrame",
+  "v3MapOverlay",
+  "markerBadge",
+  "mapChrome",
+  "fallbackGrid",
+  "distanceBadge",
+  "legendText",
+  "strokeColor={driverToPickup ? v3Colors.success : v3Colors.purpleLight}"
+]) {
+  if (!mobileRideMap.includes(token)) throw new Error(`M0-D11 Mobile map feature is missing: ${token}`);
 }
 
 for (const forbiddenMapToken of ["googleMapsApiKey", "maps.googleapis.com", "GoogleMaps"]) {

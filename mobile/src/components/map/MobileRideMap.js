@@ -1,6 +1,9 @@
 import { StyleSheet, Text, View } from "react-native";
 import { useMobileRideMapLogic } from "../../hooks/useMobileRideMapLogic";
-import { colors, depth, map, radii, shadows, spacing } from "../../utils/mobileTheme";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
+
+const v3MapFrame = v3Colors.backgroundDeep;
+const v3MapOverlay = "rgba(5, 5, 9, 0.78)";
 
 function markerTitle(type) {
   if (type === "pickup") return "نقطة الانطلاق";
@@ -10,24 +13,30 @@ function markerTitle(type) {
 }
 
 function mapPinColor(type) {
-  if (type === "driver") return colors.green;
-  if (type === "destination") return colors.red;
-  if (type === "user") return colors.blue;
-  return colors.primary;
+  if (type === "driver") return v3Colors.success;
+  if (type === "destination") return v3Colors.danger;
+  if (type === "user") return v3Colors.electricBlue;
+  return v3Colors.purpleLight;
 }
 
 function markerSpec(type) {
-  if (type === "driver") return { label: "ك", title: "الكابتن", color: colors.green, halo: "rgba(66, 231, 156, 0.18)" };
-  if (type === "destination") return { label: "و", title: "الوجهة", color: colors.red, halo: "rgba(255, 111, 124, 0.18)" };
-  if (type === "user") return { label: "م", title: "موقعي", color: colors.blue, halo: "rgba(117, 167, 255, 0.18)" };
-  return { label: "ا", title: "الانطلاق", color: colors.primary, halo: "rgba(166, 130, 255, 0.18)" };
+  if (type === "driver") {
+    return { label: "ك", title: "الكابتن", color: v3Colors.success, halo: "rgba(69, 224, 164, 0.2)" };
+  }
+  if (type === "destination") {
+    return { label: "و", title: "الوجهة", color: v3Colors.danger, halo: "rgba(255, 97, 116, 0.2)" };
+  }
+  if (type === "user") {
+    return { label: "م", title: "موقعي", color: v3Colors.electricBlue, halo: "rgba(34, 211, 238, 0.2)" };
+  }
+  return { label: "ا", title: "الانطلاق", color: v3Colors.purpleLight, halo: "rgba(196, 181, 253, 0.22)" };
 }
 
 function CustomMarker({ type }) {
   const spec = markerSpec(type);
   return (
     <View style={[styles.markerHalo, { backgroundColor: spec.halo }]}>
-      <View style={[styles.markerPin, { backgroundColor: spec.color }]}>
+      <View style={[styles.markerBadge, { backgroundColor: spec.color }]}>
         <Text selectable={false} style={styles.markerText}>{spec.label}</Text>
       </View>
     </View>
@@ -55,11 +64,15 @@ function MapPoint({ type, point, Marker, Callout }) {
 function FallbackMap({ points, distanceKm, distanceLabel, height, title = "معاينة الخريطة" }) {
   return (
     <View style={[styles.fallback, { minHeight: height }]}>
-      <View style={styles.fallbackGrid} />
-      <View style={styles.routeLine} />
-      <View style={styles.pinA} />
-      <View style={styles.pinB} />
-      {points.driver ? <View style={styles.driverPin} /> : null}
+      <View pointerEvents="none" style={styles.fallbackGrid}>
+        <View style={styles.fallbackGridLine} />
+        <View style={[styles.fallbackGridLine, styles.fallbackGridLineAlt]} />
+        <View style={[styles.fallbackGridLine, styles.fallbackGridLineLow]} />
+      </View>
+      <View pointerEvents="none" style={styles.routeLine} />
+      <View pointerEvents="none" style={styles.pinA} />
+      <View pointerEvents="none" style={styles.pinB} />
+      {points.driver ? <View pointerEvents="none" style={styles.driverPin} /> : null}
       <View style={styles.fallbackCopy}>
         <Text selectable style={styles.fallbackTitle}>{title}</Text>
         <Text selectable style={styles.fallbackText}>من: {points.pickup?.label || "-"}</Text>
@@ -67,10 +80,11 @@ function FallbackMap({ points, distanceKm, distanceLabel, height, title = "مع�
         {points.driver ? <Text selectable style={styles.fallbackText}>موقع الكابتن متاح</Text> : null}
       </View>
       {distanceKm ? (
-        <Text selectable style={styles.badge}>
+        <Text selectable style={styles.distanceBadge}>
           {distanceLabel}: {distanceKm} كم
         </Text>
       ) : null}
+      <View pointerEvents="none" style={styles.mapChrome} />
     </View>
   );
 }
@@ -100,13 +114,12 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 
   return (
     <View style={[styles.wrapper, { height }]}>
-      <View pointerEvents="none" style={styles.mapShade} />
       <MapView style={StyleSheet.absoluteFillObject} initialRegion={initialRegion} region={initialRegion}>
         {routePoints.length === 2 ? (
           <Polyline
             coordinates={routePoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
-            strokeColor={driverToPickup ? colors.green : colors.primary}
-            strokeWidth={4}
+            strokeColor={driverToPickup ? v3Colors.success : v3Colors.purpleLight}
+            strokeWidth={5}
             lineCap="round"
             lineJoin="round"
           />
@@ -116,13 +129,14 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
         <MapPoint type="driver" point={points.driver} Marker={Marker} Callout={Callout} />
         <MapPoint type="user" point={points.user} Marker={Marker} Callout={Callout} />
       </MapView>
+      <View pointerEvents="none" style={styles.mapShade} />
       <View pointerEvents="none" style={styles.legend}>
         {points.pickup ? <Text selectable={false} style={styles.legendText}>الانطلاق</Text> : null}
         {points.destination ? <Text selectable={false} style={styles.legendText}>الوجهة</Text> : null}
         {points.driver ? <Text selectable={false} style={styles.legendText}>الكابتن</Text> : null}
       </View>
       {distanceKm ? (
-        <Text selectable style={styles.badge}>
+        <Text selectable style={styles.distanceBadge}>
           {distanceLabel}: {distanceKm} كم
         </Text>
       ) : null}
@@ -135,130 +149,151 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 const styles = StyleSheet.create({
   wrapper: {
     overflow: "hidden",
-    borderRadius: radii.xl,
+    borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: depth.violetLine,
-    backgroundColor: map.frame,
-    boxShadow: shadows.lift
+    borderColor: v3Colors.borderStrong,
+    backgroundColor: v3MapFrame,
+    boxShadow: v3Shadows.card
   },
   mapShade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(2, 5, 8, 0.08)",
-    zIndex: 1
+    backgroundColor: "rgba(2, 2, 5, 0.14)"
   },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: radii.lg,
+    borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.12)"
+    borderColor: "rgba(255, 255, 255, 0.13)"
   },
-  badge: {
+  distanceBadge: {
     position: "absolute",
-    left: spacing.sm,
-    bottom: spacing.sm,
-    color: colors.black,
-    backgroundColor: "rgba(154, 105, 255, 0.94)",
-    borderRadius: 999,
+    left: v3Spacing.sm,
+    bottom: v3Spacing.sm,
+    color: v3Colors.white,
+    backgroundColor: "rgba(139, 92, 246, 0.92)",
+    borderRadius: v3Radius.pill,
     overflow: "hidden",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: v3Spacing.md,
+    paddingVertical: v3Spacing.xs,
     fontWeight: "900",
-    fontSize: 12
+    fontSize: 12,
+    textAlign: "center",
+    writingDirection: "rtl"
   },
   legend: {
     position: "absolute",
-    right: spacing.sm,
-    bottom: spacing.sm,
+    right: v3Spacing.sm,
+    bottom: v3Spacing.sm,
     flexDirection: "row-reverse",
-    gap: spacing.xs,
+    gap: v3Spacing.xs,
     maxWidth: "54%",
     flexWrap: "wrap"
   },
   legendText: {
-    color: colors.text,
-    backgroundColor: map.overlay,
-    borderRadius: radii.pill,
+    color: v3Colors.text,
+    backgroundColor: v3MapOverlay,
+    borderRadius: v3Radius.pill,
     overflow: "hidden",
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: v3Spacing.sm,
     paddingVertical: 5,
     fontSize: 9.5,
-    fontWeight: "800"
+    fontWeight: "900",
+    writingDirection: "rtl"
   },
   markerHalo: {
-    width: 36,
-    height: 36,
-    borderRadius: 999,
+    width: 40,
+    height: 40,
+    borderRadius: v3Radius.pill,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)"
   },
-  markerPin: {
-    width: 25,
-    height: 25,
-    borderRadius: 999,
+  markerBadge: {
+    width: 27,
+    height: 27,
+    borderRadius: v3Radius.pill,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "rgba(2, 5, 8, 0.92)",
-    boxShadow: shadows.soft
+    borderColor: v3Colors.backgroundDeep,
+    boxShadow: v3Shadows.soft
   },
   markerText: {
-    color: colors.black,
+    color: v3Colors.black,
     fontSize: 12,
-    fontWeight: "900"
+    fontWeight: "900",
+    textAlign: "center"
   },
   callout: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
-    borderRadius: radii.pill,
-    backgroundColor: map.frame,
+    paddingHorizontal: v3Spacing.sm,
+    paddingVertical: 6,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3MapOverlay,
     borderWidth: 1,
-    borderColor: depth.violetLine
+    borderColor: v3Colors.borderStrong
   },
   calloutText: {
-    color: colors.text,
+    color: v3Colors.text,
     fontSize: 11,
-    fontWeight: "800"
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
   },
   locationHint: {
     position: "absolute",
-    right: spacing.sm,
-    top: spacing.sm,
+    right: v3Spacing.sm,
+    top: v3Spacing.sm,
     maxWidth: "76%",
-    color: colors.text,
-    backgroundColor: map.overlay,
-    borderRadius: radii.pill,
+    color: v3Colors.text,
+    backgroundColor: v3MapOverlay,
+    borderRadius: v3Radius.pill,
     overflow: "hidden",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    fontWeight: "800",
+    paddingHorizontal: v3Spacing.sm,
+    paddingVertical: v3Spacing.xs,
+    fontWeight: "900",
     fontSize: 11,
-    textAlign: "right"
+    textAlign: "right",
+    writingDirection: "rtl"
   },
   fallback: {
-    gap: spacing.sm,
+    gap: v3Spacing.sm,
     justifyContent: "flex-end",
-    borderRadius: radii.xl,
+    borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: depth.violetLine,
-    backgroundColor: map.frame,
-    padding: spacing.md,
+    borderColor: v3Colors.borderStrong,
+    backgroundColor: v3MapFrame,
+    padding: v3Spacing.md,
     overflow: "hidden",
-    boxShadow: shadows.soft
+    boxShadow: v3Shadows.card
   },
   fallbackGrid: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: v3Alpha.blueWash
+  },
+  fallbackGridLine: {
     position: "absolute",
-    top: 0,
-    right: 0,
-    left: 0,
-    bottom: 0,
-    backgroundColor: "rgba(154, 105, 255, 0.055)"
+    right: "-12%",
+    top: "30%",
+    width: "124%",
+    height: 1,
+    backgroundColor: "rgba(255, 255, 255, 0.08)",
+    transform: [{ rotate: "-18deg" }]
+  },
+  fallbackGridLineAlt: {
+    top: "50%",
+    backgroundColor: "rgba(139, 92, 246, 0.16)"
+  },
+  fallbackGridLineLow: {
+    top: "70%",
+    backgroundColor: "rgba(34, 211, 238, 0.11)"
   },
   routeLine: {
     position: "absolute",
     width: "76%",
     height: 5,
-    borderRadius: 999,
-    backgroundColor: map.route,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.purpleLight,
     top: "44%",
     left: "12%",
     transform: [{ rotate: "-16deg" }]
@@ -267,33 +302,52 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: 16,
     height: 16,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.purpleLight,
     top: "39%",
-    right: "18%"
+    right: "18%",
+    borderWidth: 2,
+    borderColor: v3Colors.backgroundDeep
   },
   pinB: {
     position: "absolute",
     width: 16,
     height: 16,
-    borderRadius: 999,
-    backgroundColor: colors.red,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.danger,
     top: "49%",
-    left: "18%"
+    left: "18%",
+    borderWidth: 2,
+    borderColor: v3Colors.backgroundDeep
   },
   driverPin: {
     position: "absolute",
     width: 18,
     height: 18,
-    borderRadius: 999,
-    backgroundColor: map.driver,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.success,
     top: "28%",
-    right: "42%"
+    right: "42%",
+    borderWidth: 2,
+    borderColor: v3Colors.backgroundDeep
   },
   fallbackCopy: {
-    gap: spacing.xs,
-    maxWidth: "78%"
+    gap: v3Spacing.xs,
+    maxWidth: "78%",
+    alignItems: "flex-end"
   },
-  fallbackTitle: { color: colors.text, fontWeight: "900", fontSize: 16, textAlign: "right" },
-  fallbackText: { color: colors.muted, textAlign: "right", fontWeight: "700", fontSize: 12 }
+  fallbackTitle: {
+    color: v3Colors.text,
+    fontWeight: "900",
+    fontSize: 16,
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  fallbackText: {
+    color: v3Colors.textMuted,
+    textAlign: "right",
+    fontWeight: "800",
+    fontSize: 12,
+    writingDirection: "rtl"
+  }
 });
