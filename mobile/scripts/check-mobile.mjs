@@ -374,7 +374,7 @@ const v3ThemeSource = [
   fs.readFileSync("src/theme/v3/shadows.js", "utf8"),
   fs.readFileSync("src/theme/v3/index.js", "utf8")
 ].join("\n");
-for (const token of ["v3Colors", "v3Spacing", "v3Radius", "v3Typography", "v3Shadows", "v3Theme", "#050509", "#8b5cf6", "#22d3ee"]) {
+for (const token of ["v3Colors", "v3Spacing", "v3Radius", "v3Typography", "v3Shadows", "v3Theme", "#030306", "#8b5cf6", "#22d3ee"]) {
   if (!v3ThemeSource.includes(token)) throw new Error(`V3 theme token is missing: ${token}`);
 }
 const v3UiSource = collectJsFiles("src/components/v3").map((file) => fs.readFileSync(file, "utf8")).join("\n");
@@ -546,7 +546,7 @@ for (const token of [
   "status === \"location\"",
   "status === \"quote\"",
   "status === \"create\"",
-  "height={260}",
+  "height={286}",
   "bottomPanel"
 ]) {
   if (!requestRide.includes(token)) throw new Error(`M0-D5 Request Ride token is missing: ${token}`);

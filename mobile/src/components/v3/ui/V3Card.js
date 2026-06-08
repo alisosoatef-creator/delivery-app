@@ -12,24 +12,24 @@ export function V3Card({ children, tone = "default", compact = false, onPress, s
         onPress={onPress}
         style={({ pressed }) => [cardStyle, pressed && styles.pressed]}
       >
-        <View style={[styles.inner, contentStyle]}>{children}</View>
+        <View style={[styles.inner, compact && styles.compactInner, contentStyle]}>{children}</View>
       </Pressable>
     );
   }
 
   return (
     <View style={cardStyle}>
-      <View style={[styles.inner, contentStyle]}>{children}</View>
+      <View style={[styles.inner, compact && styles.compactInner, contentStyle]}>{children}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: v3Radius.xl,
+    borderRadius: v3Radius.lg,
     borderWidth: 1,
     overflow: "hidden",
-    boxShadow: v3Shadows.card
+    boxShadow: v3Shadows.soft
   },
   default: {
     backgroundColor: v3Colors.surface,
@@ -40,19 +40,19 @@ const styles = StyleSheet.create({
     borderColor: v3Colors.border
   },
   accent: {
-    backgroundColor: v3Alpha.purpleSoft,
-    borderColor: v3Colors.borderStrong
+    backgroundColor: v3Colors.surface,
+    borderColor: v3Colors.border
   },
   blue: {
-    backgroundColor: v3Alpha.blueWash,
-    borderColor: v3Colors.borderBlue
+    backgroundColor: v3Colors.surface,
+    borderColor: v3Colors.border
   },
   quiet: {
     backgroundColor: v3Alpha.whiteSoft,
     borderColor: v3Colors.border
   },
   compact: {
-    borderRadius: v3Radius.lg
+    borderRadius: v3Radius.md
   },
   pressed: {
     opacity: 0.9,
@@ -61,5 +61,9 @@ const styles = StyleSheet.create({
   inner: {
     gap: v3Spacing.sm,
     padding: v3Spacing.md
+  },
+  compactInner: {
+    gap: v3Spacing.xs,
+    padding: v3Spacing.sm
   }
 });

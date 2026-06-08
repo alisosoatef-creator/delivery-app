@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
   },
   action: {
     borderBottomWidth: 1,
-    borderBottomColor: v3Colors.borderStrong,
+    borderBottomColor: v3Colors.borderBlue,
     paddingBottom: 2
   }
 });

@@ -52,19 +52,19 @@ const styles = StyleSheet.create({
   },
   shell: {
     minHeight: v3Layout.controlHeight,
-    borderRadius: v3Radius.lg,
+    borderRadius: v3Radius.md,
     borderWidth: 1,
     borderColor: v3Colors.border,
     backgroundColor: v3Colors.input,
     flexDirection: "row-reverse",
     alignItems: "center",
-    paddingHorizontal: v3Spacing.md,
+    paddingHorizontal: v3Spacing.sm,
     gap: v3Spacing.xs
   },
   focused: {
-    borderColor: v3Colors.borderStrong,
+    borderColor: v3Colors.borderBlue,
     backgroundColor: v3Colors.inputFocused,
-    boxShadow: v3Shadows.purple
+    boxShadow: v3Shadows.soft
   },
   error: {
     borderColor: "rgba(255, 97, 116, 0.48)",
@@ -72,21 +72,21 @@ const styles = StyleSheet.create({
   },
   multilineShell: {
     alignItems: "flex-start",
-    minHeight: 116,
+    minHeight: 104,
     paddingTop: v3Spacing.sm
   },
   input: {
     flex: 1,
     minWidth: 0,
     color: v3Colors.text,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13.5,
+    lineHeight: 20,
     fontWeight: "700",
     writingDirection: "rtl",
     paddingVertical: 0
   },
   multilineInput: {
-    minHeight: 92,
+    minHeight: 82,
     paddingTop: 0
   },
   slot: {

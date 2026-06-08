@@ -85,7 +85,7 @@ export function SupportScreen() {
 
 const styles = StyleSheet.create({
   formCard: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   chips: {
     flexDirection: "row-reverse",
@@ -97,7 +97,7 @@ const styles = StyleSheet.create({
     flexGrow: 1
   },
   messageInput: {
-    minHeight: 116
+    minHeight: 96
   },
   emptyState: {
     alignItems: "flex-end",
@@ -106,11 +106,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: v3Colors.border,
     backgroundColor: v3Alpha.whiteSoft,
-    padding: v3Spacing.md
+    padding: v3Spacing.sm
   },
   ticket: {
     gap: v3Spacing.xs,
-    padding: v3Spacing.md,
+    padding: v3Spacing.sm,
     borderRadius: v3Radius.lg,
     borderWidth: 1,
     borderColor: v3Colors.border,

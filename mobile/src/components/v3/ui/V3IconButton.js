@@ -43,8 +43,8 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: v3Alpha.purpleWash,
-    borderColor: v3Colors.borderStrong,
-    boxShadow: v3Shadows.purple
+    borderColor: v3Colors.border,
+    boxShadow: v3Shadows.soft
   },
   blue: {
     backgroundColor: v3Alpha.blueWash,

@@ -52,7 +52,7 @@ export function RegisterScreen() {
 
 const styles = StyleSheet.create({
   form: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   formTop: {
     flexDirection: "row-reverse",

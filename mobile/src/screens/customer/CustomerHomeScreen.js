@@ -5,7 +5,7 @@ import { useCustomerActiveRide } from "../../hooks/useCustomerActiveRide";
 import { useMobileApp } from "../../store/mobileStore";
 import { money } from "../../utils/formatters";
 import { isActiveRide, statusLabel } from "../../utils/rideStatus";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 function acceptedDriverName(ride) {
   const visible = ["accepted", "driver_arriving", "arrived", "in_progress"].includes(ride?.status);
@@ -30,21 +30,48 @@ export function CustomerHomeScreen() {
   const previewDestination = activeRide ? ridePoint(activeRide, "destination") : state.destination;
 
   const shortcuts = [
-    ["المحفظة", "wallet", "الدفع والرصيد", "₪"],
-    ["الدعم", "support", "مساعدة منظمة", "?"],
-    ["الحساب", "account", "بياناتك", "ح"],
-    ["السجل", "rides", "كل الرحلات", "ر"]
+    ["المحفظة", "wallet", "الدفع والرصيد", "محفظة"],
+    ["الدعم", "support", "مساعدة منظمة", "دعم"],
+    ["الحساب", "account", "بياناتك", "حساب"],
+    ["السجل", "rides", "كل الرحلات", "رحلات"]
   ];
 
   return (
-    <V3Screen>
-      <View style={styles.topBar}>
-        <View style={styles.greetingBlock}>
-          <V3Text variant="caption" tone="blue">مرحبا {firstName}</V3Text>
-          <V3Text variant="title" numberOfLines={2}>أين وجهتك اليوم؟</V3Text>
+    <V3Screen contentStyle={styles.screen}>
+      <View style={styles.appHeader}>
+        <View style={styles.brandLockup}>
+          <View style={styles.brandMark}>
+            <V3Text variant="subtitle" align="center" style={styles.brandGlyph}>W</V3Text>
+          </View>
+          <View style={styles.brandCopy}>
+            <V3Text variant="caption" tone="muted">تطبيق الزبون</V3Text>
+            <V3Text variant="subtitle" numberOfLines={1}>واصل</V3Text>
+          </View>
         </View>
         <V3Badge label={activeRide ? "رحلة نشطة" : "جاهز"} tone={activeRide ? "warning" : "success"} />
       </View>
+
+      <View style={styles.heroCopy}>
+        <V3Text variant="caption" tone="blue">مرحبا {firstName}</V3Text>
+        <V3Text variant="title" numberOfLines={2}>أين وجهتك اليوم؟</V3Text>
+      </View>
+
+      <V3Card
+        tone="quiet"
+        compact
+        onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })}
+        accessibilityLabel="طلب رحلة"
+        style={styles.searchCard}
+        contentStyle={styles.searchContent}
+      >
+        <View style={styles.searchIcon}>
+          <V3Text variant="caption" align="center" tone="accent">بحث</V3Text>
+        </View>
+        <View style={styles.searchCopy}>
+          <V3Text variant="label" numberOfLines={1}>إلى أين تريد الذهاب؟</V3Text>
+          <V3Text variant="caption" tone="muted" numberOfLines={1}>اختر الوجهة وشاهد السعر قبل الطلب</V3Text>
+        </View>
+      </V3Card>
 
       <V3Card tone="raised" style={styles.mapHero} contentStyle={styles.mapContent}>
         <MobileRideMap
@@ -53,7 +80,7 @@ export function CustomerHomeScreen() {
           userLocation={state.currentLocation}
           driverLocation={state.driverLocation}
           rideStatus={activeRide?.status || "searching"}
-          height={206}
+          height={184}
         />
         <View pointerEvents="none" style={styles.mapCaption}>
           <V3Text variant="caption" tone="soft" numberOfLines={1}>
@@ -62,21 +89,28 @@ export function CustomerHomeScreen() {
         </View>
       </V3Card>
 
-      <V3Card tone="accent" contentStyle={styles.rideStarter}>
-        <V3SectionHeader
-          meta="طلب سريع"
-          title="ابدأ من الخريطة"
-          subtitle="اختر الوجهة وشاهد السعر قبل تأكيد الطلب."
+      <View style={styles.rideStarter}>
+        <V3Button title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
+        <V3Button
+          title="تحديث"
+          size="sm"
+          fullWidth={false}
+          variant="secondary"
+          onPress={refreshActiveRide}
+          loading={state.activeRideStatus === "loading"}
+          style={styles.refreshButton}
         />
-        <View style={styles.primaryRideCta}>
-          <V3Button title="طلب رحلة" onPress={() => dispatch({ type: "navigate", area: "customer", screen: "request" })} />
-          <V3Button
-            title="تحديث الحالة"
-            size="sm"
-            variant="secondary"
-            onPress={refreshActiveRide}
-            loading={state.activeRideStatus === "loading"}
-          />
+      </View>
+
+      <V3Card tone="raised" contentStyle={styles.statusStrip}>
+        <View style={styles.statusItem}>
+          <V3Text variant="caption" tone="muted">الحالة</V3Text>
+          <V3Text variant="label" tone={activeRide ? "warning" : "success"}>{activeRide ? "رحلة قيد المتابعة" : "جاهز للطلب"}</V3Text>
+        </View>
+        <View style={styles.statusDivider} />
+        <View style={styles.statusItem}>
+          <V3Text variant="caption" tone="muted">الدفع</V3Text>
+          <V3Text variant="label">نقدا / محفظة</V3Text>
         </View>
       </V3Card>
 
@@ -104,7 +138,7 @@ export function CustomerHomeScreen() {
         </V3Card>
       ) : null}
 
-      <V3Card tone="raised">
+      <V3Card tone="raised" contentStyle={styles.quickSection}>
         <V3SectionHeader
           title="اختصارات"
           subtitle="الوصول السريع لأهم مساحات حسابك."
@@ -145,20 +179,73 @@ export function CustomerHomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  topBar: {
-    flexDirection: "row-reverse",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+  screen: {
     gap: v3Spacing.md
   },
-  greetingBlock: {
+  appHeader: {
+    flexDirection: "row-reverse",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: v3Spacing.md
+  },
+  brandLockup: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm,
     flex: 1,
-    minWidth: 0,
+    minWidth: 0
+  },
+  brandMark: {
+    width: 42,
+    height: 42,
+    borderRadius: v3Radius.lg,
+    backgroundColor: v3Alpha.purpleWash,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  brandGlyph: {
+    color: v3Colors.purpleLight,
+    lineHeight: 24
+  },
+  brandCopy: {
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs,
+    minWidth: 0
+  },
+  heroCopy: {
     alignItems: "flex-end",
     gap: v3Spacing.xs
   },
+  searchCard: {
+    borderColor: v3Colors.border,
+    backgroundColor: v3Colors.surfaceRaised
+  },
+  searchContent: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: v3Spacing.sm
+  },
+  searchIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: v3Radius.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: v3Alpha.blueWash,
+    borderWidth: 1,
+    borderColor: v3Colors.border
+  },
+  searchCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
   mapHero: {
-    borderColor: v3Colors.borderStrong
+    borderColor: v3Colors.border,
+    boxShadow: v3Shadows.card
   },
   mapContent: {
     padding: 0,
@@ -178,16 +265,34 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   rideStarter: {
-    gap: v3Spacing.md
-  },
-  primaryRideCta: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
     gap: v3Spacing.sm
   },
+  refreshButton: {
+    minWidth: 108
+  },
+  statusStrip: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  statusItem: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xxs
+  },
+  statusDivider: {
+    width: 1,
+    alignSelf: "stretch",
+    backgroundColor: v3Colors.border
+  },
   activeRideCard: {
-    borderColor: v3Colors.borderBlue
+    borderColor: v3Colors.border
   },
   activeRideContent: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   rowBetween: {
     flexDirection: "row-reverse",
@@ -202,13 +307,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: v3Colors.border,
     backgroundColor: v3Alpha.whiteSoft,
-    padding: v3Spacing.md
+    padding: v3Spacing.sm
   },
   activeFooter: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     gap: v3Spacing.sm
+  },
+  quickSection: {
+    gap: v3Spacing.md
   },
   quickActionGrid: {
     flexDirection: "row-reverse",
@@ -221,7 +329,7 @@ const styles = StyleSheet.create({
     minWidth: 132
   },
   quickActionContent: {
-    minHeight: 92,
+    minHeight: 76,
     alignItems: "flex-end",
     justifyContent: "space-between"
   },

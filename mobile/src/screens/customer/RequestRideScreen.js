@@ -3,7 +3,7 @@ import { MobileRideMap } from "../../components/map/MobileRideMap";
 import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useRideRequestFlow } from "../../hooks/useRideRequestFlow";
 import { km, money } from "../../utils/formatters";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 export function RequestRideScreen() {
   const {
@@ -27,21 +27,23 @@ export function RequestRideScreen() {
   } = useRideRequestFlow();
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="مشوار جديد"
-        title="ابن الرحلة من الخريطة"
-        subtitle="حدد نقطة الانطلاق والوجهة ثم راجع السعر قبل تأكيد الطلب."
+        title="طلب رحلة"
+        subtitle="حدد نقطة الانطلاق والوجهة، ثم راجع السعر قبل تأكيد الطلب."
       />
 
       <V3Card tone="raised" style={styles.mapDeck} contentStyle={styles.mapContent}>
-        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={260} />
+        <MobileRideMap pickup={pickup} destination={destination} rideStatus="searching" height={286} />
         <View pointerEvents="none" style={styles.mapStatus}>
           <V3Badge label={destination ? "الوجهة محددة" : "حدد الوجهة"} tone={destination ? "success" : "primary"} />
         </View>
       </V3Card>
 
-      <V3Card tone="accent" style={styles.bottomPanel} contentStyle={styles.panelContent}>
+      <V3Card tone="raised" style={styles.bottomPanel} contentStyle={styles.panelContent}>
+        <View style={styles.sheetHandle} />
+
         <View style={styles.panelHeader}>
           <View style={styles.panelCopy}>
             <V3Text variant="subtitle">تفاصيل الرحلة</V3Text>
@@ -54,31 +56,60 @@ export function RequestRideScreen() {
             variant="secondary"
             onPress={useGpsLocation}
             loading={status === "location"}
+            style={styles.locationButton}
           />
         </View>
 
         <View style={styles.routeBox}>
-          <View style={styles.routeLine} />
-          <View style={styles.routePoint}>
-            <V3Badge label="من" tone="blue" />
-            <View style={styles.routeCopy}>
-              <V3Text variant="caption" tone="muted">نقطة الانطلاق</V3Text>
-              <V3Text selectable numberOfLines={2}>{pickup?.label || "-"}</V3Text>
-            </View>
+          <View style={styles.routeRail}>
+            <View style={styles.routeDotStart} />
+            <View style={styles.routeLine} />
+            <View style={styles.routeDotEnd} />
           </View>
-          <View style={styles.routePoint}>
-            <V3Badge label="إلى" tone={destination ? "success" : "primary"} />
-            <View style={styles.routeCopy}>
-              <V3Text variant="caption" tone="muted">الوجهة</V3Text>
-              <V3Input
-                value={destinationQuery}
-                onChangeText={searchDestination}
-                placeholder="إلى أين تريد الذهاب؟"
-                style={styles.destinationInput}
-              />
+          <View style={styles.routeFields}>
+            <View style={styles.routePoint}>
+              <V3Badge label="من" tone="blue" />
+              <View style={styles.routeCopy}>
+                <V3Text variant="caption" tone="muted">نقطة الانطلاق</V3Text>
+                <V3Text selectable variant="label" numberOfLines={1}>{pickup?.label || "-"}</V3Text>
+              </View>
+            </View>
+            <View style={styles.routePoint}>
+              <V3Badge label="إلى" tone={destination ? "success" : "primary"} />
+              <View style={styles.routeCopy}>
+                <V3Text variant="caption" tone="muted">الوجهة</V3Text>
+                <V3Input
+                  value={destinationQuery}
+                  onChangeText={searchDestination}
+                  placeholder="إلى أين تريد الذهاب؟"
+                  style={styles.destinationInput}
+                />
+              </View>
             </View>
           </View>
         </View>
+
+        {suggestions.length ? (
+          <View style={styles.suggestions}>
+            {suggestions.map((place) => (
+              <V3Card
+                key={`${place.city}-${place.label}`}
+                tone="quiet"
+                compact
+                onPress={() => chooseDestination(place)}
+                accessibilityLabel={place.label}
+                style={styles.suggestion}
+                contentStyle={styles.suggestionContent}
+              >
+                <View style={styles.suggestionCopy}>
+                  <V3Text selectable variant="label" numberOfLines={1}>{place.label}</V3Text>
+                  <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>{place.category || "مكان"} - {place.city}</V3Text>
+                </View>
+                <V3Badge label="اختيار" tone="blue" />
+              </V3Card>
+            ))}
+          </View>
+        ) : null}
 
         <View style={styles.cityRail}>
           {cityChoices.map((city) => (
@@ -96,41 +127,21 @@ export function RequestRideScreen() {
 
         {status === "quote" ? <V3Text tone="muted">نحسب السعر والمسافة الآن...</V3Text> : null}
 
-        {suggestions.length ? (
-          <View style={styles.suggestions}>
-            {suggestions.map((place) => (
-              <V3Card
-                key={`${place.city}-${place.label}`}
-                tone="quiet"
-                compact
-                onPress={() => chooseDestination(place)}
-                accessibilityLabel={place.label}
-                style={styles.suggestion}
-                contentStyle={styles.suggestionContent}
-              >
-                <View style={styles.suggestionCopy}>
-                  <V3Text selectable variant="label" numberOfLines={1}>{place.label}</V3Text>
-                  <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>{place.category || "مكان"} · {place.city}</V3Text>
-                </View>
-                <V3Badge label="اختيار" tone="blue" />
-              </V3Card>
-            ))}
-          </View>
-        ) : null}
+        <View style={styles.summaryGrid}>
+          <V3Card tone="quiet" compact style={styles.summaryCard} contentStyle={styles.summaryContent}>
+            <V3Text variant="caption" tone="muted">السعر المتوقع</V3Text>
+            <V3Text selectable variant="title" style={styles.price}>{quote ? money(quote.fareIls) : "--"}</V3Text>
+          </V3Card>
+          <V3Card tone="quiet" compact style={styles.summaryCard} contentStyle={styles.summaryContent}>
+            <V3Text variant="caption" tone="muted">المسافة</V3Text>
+            <V3Text selectable variant="subtitle" tone="blue">{quote ? km(quote.distanceKm) : "اختر الوجهة"}</V3Text>
+          </V3Card>
+        </View>
 
-        <V3Card tone="raised" compact contentStyle={styles.quoteCard}>
-          <View style={styles.quoteHeader}>
-            <View style={styles.quoteCopy}>
-              <V3Text variant="caption" tone="muted">السعر المتوقع</V3Text>
-              <V3Text selectable variant="title" style={styles.price}>{quote ? money(quote.fareIls) : "--"}</V3Text>
-            </View>
-            <V3Badge label={quote ? km(quote.distanceKm) : "المسافة"} tone="dark" />
-          </View>
-          <View style={styles.metrics}>
-            <V3Badge label={destination?.label || "اختر الوجهة"} tone="primary" />
-            <V3Badge label={quote?.etaMinutes ? `${quote.etaMinutes} دقيقة` : "الوقت"} tone="blue" />
-          </View>
-        </V3Card>
+        <View style={styles.metrics}>
+          <V3Badge label={destination?.label || "اختر الوجهة"} tone="primary" />
+          <V3Badge label={quote?.etaMinutes ? `${quote.etaMinutes} دقيقة` : "الوقت"} tone="blue" />
+        </View>
 
         <View style={styles.paymentSection}>
           <V3Text variant="label">طريقة الدفع</V3Text>
@@ -166,8 +177,12 @@ export function RequestRideScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.md
+  },
   mapDeck: {
-    borderColor: v3Colors.borderStrong
+    borderColor: v3Colors.border,
+    boxShadow: v3Shadows.card
   },
   mapContent: {
     padding: 0,
@@ -179,12 +194,20 @@ const styles = StyleSheet.create({
     left: v3Spacing.sm
   },
   bottomPanel: {
+    borderColor: v3Colors.border,
     borderTopLeftRadius: v3Radius.screen,
     borderTopRightRadius: v3Radius.screen,
-    borderColor: v3Colors.borderStrong
+    backgroundColor: "rgba(11, 8, 18, 0.98)"
   },
   panelContent: {
     gap: v3Spacing.md
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 54,
+    height: 4,
+    borderRadius: v3Radius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.14)"
   },
   panelHeader: {
     flexDirection: "row-reverse",
@@ -198,21 +221,45 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: v3Spacing.xxs
   },
+  locationButton: {
+    minWidth: 102
+  },
   routeBox: {
+    flexDirection: "row-reverse",
     gap: v3Spacing.sm,
     borderRadius: v3Radius.xl,
     borderWidth: 1,
     borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.blackScrim,
+    backgroundColor: v3Colors.backgroundDeep,
     padding: v3Spacing.md
   },
+  routeRail: {
+    width: 24,
+    alignItems: "center",
+    paddingTop: v3Spacing.xs
+  },
+  routeDotStart: {
+    width: 12,
+    height: 12,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.electricBlue
+  },
   routeLine: {
-    position: "absolute",
-    right: 32,
-    top: 48,
-    bottom: 48,
     width: 1,
-    backgroundColor: v3Colors.borderStrong
+    flex: 1,
+    minHeight: 54,
+    backgroundColor: v3Alpha.purpleWash
+  },
+  routeDotEnd: {
+    width: 12,
+    height: 12,
+    borderRadius: v3Radius.pill,
+    backgroundColor: v3Colors.purpleLight
+  },
+  routeFields: {
+    flex: 1,
+    minWidth: 0,
+    gap: v3Spacing.md
   },
   routePoint: {
     flexDirection: "row-reverse",
@@ -228,20 +275,11 @@ const styles = StyleSheet.create({
   destinationInput: {
     alignSelf: "stretch"
   },
-  cityRail: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
-    gap: v3Spacing.xs
-  },
-  choiceButton: {
-    minWidth: 98,
-    flexGrow: 1
-  },
   suggestions: {
     gap: v3Spacing.xs
   },
   suggestion: {
-    borderColor: v3Colors.borderBlue
+    borderColor: v3Colors.border
   },
   suggestionContent: {
     flexDirection: "row-reverse",
@@ -255,23 +293,30 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: v3Spacing.xxs
   },
-  quoteCard: {
-    borderColor: v3Colors.border
-  },
-  quoteHeader: {
+  cityRail: {
     flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: v3Spacing.xs
+  },
+  choiceButton: {
+    flexGrow: 1,
+    minWidth: 92
+  },
+  summaryGrid: {
+    flexDirection: "row-reverse",
     gap: v3Spacing.sm
   },
-  quoteCopy: {
+  summaryCard: {
+    flex: 1
+  },
+  summaryContent: {
     alignItems: "flex-end",
-    gap: v3Spacing.xxs
+    gap: v3Spacing.xs
   },
   price: {
     color: v3Colors.white,
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 34,
     fontVariant: ["tabular-nums"]
   },
   metrics: {
@@ -291,9 +336,9 @@ const styles = StyleSheet.create({
   },
   paymentButton: {
     flexGrow: 1,
-    minWidth: 104
+    minWidth: 100
   },
   errorCard: {
-    borderColor: "rgba(255, 97, 116, 0.42)"
+    borderColor: "rgba(255, 97, 116, 0.28)"
   }
 });

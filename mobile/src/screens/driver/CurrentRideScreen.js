@@ -4,7 +4,7 @@ import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "..
 import { useDriverCurrentRide } from "../../hooks/useDriverCurrentRide";
 import { useDriverLiveTracking } from "../../hooks/useDriverLiveTracking";
 import { km, money } from "../../utils/formatters";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 function DetailLine({ label, value, tone = "soft" }) {
   return (
@@ -24,7 +24,7 @@ function RoutePoint({ label, value, end = false }) {
       </View>
       <View style={styles.routeCopy}>
         <V3Text variant="caption" tone={end ? "accent" : "blue"}>{label}</V3Text>
-        <V3Text selectable variant="label" tone="primary" numberOfLines={1}>{value || "-"}</V3Text>
+        <V3Text selectable variant="label" numberOfLines={1}>{value || "-"}</V3Text>
       </View>
     </View>
   );
@@ -58,6 +58,7 @@ export function CurrentRideScreen() {
     startTracking,
     stopTracking
   } = useDriverLiveTracking({ currentRide, session, setSocketStatus, clearRideError: clearError });
+
   const displayError = error || trackingError;
   const socketLive = socketStatus === "connected";
   const trackingToneName = trackingTone(trackingStatus);
@@ -68,19 +69,19 @@ export function CurrentRideScreen() {
       <V3SectionHeader
         meta="الرحلة الجارية"
         title="رحلتي الحالية"
-        subtitle="تابع المسار، حالة الرحلة، وموقعك المباشر من شاشة واحدة."
+        subtitle="تابع المسار وحالة الرحلة وموقعك المباشر من شاشة واحدة."
       />
 
       {displayError ? (
-        <V3Card tone="quiet" style={styles.errorPanel}>
+        <V3Card tone="quiet" compact style={styles.errorPanel}>
           <V3Text selectable variant="caption" tone="danger">{displayError}</V3Text>
         </V3Card>
       ) : null}
 
       {!currentRide ? (
-        <V3Card tone="accent" contentStyle={styles.emptyPanel}>
-          <V3Badge label="لا توجد رحلة" tone="primary" />
-          <V3Text variant="subtitle" tone="primary">لا توجد رحلة نشطة</V3Text>
+        <V3Card tone="raised" contentStyle={styles.emptyPanel}>
+          <V3Badge label="لا توجد رحلة" tone="blue" />
+          <V3Text variant="subtitle">لا توجد رحلة نشطة</V3Text>
           <V3Text variant="caption" tone="muted" align="center" style={styles.centerCopy}>
             اقبل رحلة من شاشة الطلبات لتظهر تفاصيلها هنا.
           </V3Text>
@@ -99,43 +100,45 @@ export function CurrentRideScreen() {
               rideStatus={currentRide.status}
               height={290}
             />
+            <View style={styles.mapBadge}>
+              <V3Badge label={socketLive ? "مباشر" : "يدوي"} tone={socketLive ? "success" : "warning"} />
+            </View>
           </View>
 
-          <V3Card tone="accent" style={styles.statusPanel} contentStyle={styles.statusContent}>
+          <V3Card tone="raised" style={styles.statusPanel} contentStyle={styles.statusContent}>
+            <View style={styles.sheetHandle} />
             <View style={styles.rowBetween}>
               <View style={styles.badgeRow}>
-                <V3Badge label={socketLive ? "مباشر" : "يدوي"} tone={socketLive ? "success" : "warning"} />
                 <V3Badge label={statusLabel(currentRide.status)} tone={completed ? "success" : "blue"} />
+                <V3Badge label={money(currentRide.price || currentRide.fareIls)} tone="dark" />
               </View>
               <View style={styles.statusCopy}>
                 <V3Text variant="caption" tone="muted">حالة الرحلة</V3Text>
-                <V3Text variant="title" tone="primary" numberOfLines={2}>{statusLabel(currentRide.status)}</V3Text>
+                <V3Text variant="title" numberOfLines={2}>{statusLabel(currentRide.status)}</V3Text>
               </View>
-            </View>
-            <View style={styles.priceStrip}>
-              <V3Text variant="caption" tone="muted">قيمة الرحلة</V3Text>
-              <V3Text selectable variant="subtitle" tone="success">{money(currentRide.price || currentRide.fareIls)}</V3Text>
             </View>
           </V3Card>
 
           {!socketLive ? (
-            <V3Card tone="quiet" contentStyle={styles.noticePanel}>
+            <V3Card tone="quiet" compact style={styles.noticePanel}>
               <V3Text selectable variant="caption" tone="warning">
                 التحديث المباشر غير متاح مؤقتا، ويمكنك المتابعة يدويا.
               </V3Text>
             </V3Card>
           ) : null}
 
-          <V3Card tone="default" style={styles.routePanel} contentStyle={styles.routeContent}>
+          <V3Card tone="raised" style={styles.routePanel} contentStyle={styles.routeContent}>
             <View style={styles.rowBetween}>
               <V3Badge label={km(currentRide.routeDistanceKm || currentRide.distanceKm)} tone="blue" />
               <View style={styles.statusCopy}>
                 <V3Text variant="caption" tone="muted">مسار الرحلة</V3Text>
-                <V3Text variant="subtitle" tone="primary">نقاط الالتقاط والوصول</V3Text>
+                <V3Text variant="subtitle">نقاط الالتقاط والوصول</V3Text>
               </View>
             </View>
-            <RoutePoint label="نقطة الانطلاق" value={currentRide.pickup} />
-            <RoutePoint label="الوجهة" value={currentRide.destination} end />
+            <View style={styles.routeBox}>
+              <RoutePoint label="نقطة الانطلاق" value={currentRide.pickup} />
+              <RoutePoint label="الوجهة" value={currentRide.destination} end />
+            </View>
           </V3Card>
 
           <V3Card tone="quiet" contentStyle={styles.detailsPanel}>
@@ -148,12 +151,12 @@ export function CurrentRideScreen() {
           </V3Card>
 
           {!completed ? (
-            <V3Card tone="blue" style={styles.trackingPanel} contentStyle={styles.trackingContent}>
+            <V3Card tone="raised" style={styles.trackingPanel} contentStyle={styles.trackingContent}>
               <View style={styles.rowBetween}>
                 <V3Badge label={trackingLabel(trackingStatus)} tone={trackingBadgeTone} />
                 <View style={styles.statusCopy}>
                   <V3Text variant="caption" tone="muted">التتبع المباشر</V3Text>
-                  <V3Text variant="subtitle" tone="primary">موقع الكابتن</V3Text>
+                  <V3Text variant="subtitle">موقع الكابتن</V3Text>
                 </View>
               </View>
               {driverLocationTime ? (
@@ -181,9 +184,9 @@ export function CurrentRideScreen() {
               </View>
             </V3Card>
           ) : (
-            <V3Card tone="blue" contentStyle={styles.completedPanel}>
+            <V3Card tone="raised" contentStyle={styles.completedPanel}>
               <V3Badge label="مكتملة" tone="success" />
-              <V3Text variant="subtitle" tone="primary">تم إنهاء الرحلة</V3Text>
+              <V3Text variant="subtitle">تم إنهاء الرحلة</V3Text>
               <V3Text selectable variant="caption" tone="muted">
                 تم حفظ الرحلة ضمن سجل الكابتن. يمكنك العودة للطلبات لاستقبال رحلة جديدة.
               </V3Text>
@@ -192,7 +195,7 @@ export function CurrentRideScreen() {
           )}
 
           {action ? (
-            <V3Card tone="accent" style={styles.nextActionPanel} contentStyle={styles.nextActionContent}>
+            <V3Card tone="raised" style={styles.nextActionPanel} contentStyle={styles.nextActionContent}>
               <V3Text variant="caption" tone="muted">الخطوة التالية</V3Text>
               <V3Button title={action[1]} variant="primary" onPress={() => update(action[0], { onCompleted: () => stopTracking(false) })} />
             </V3Card>
@@ -207,32 +210,47 @@ export function CurrentRideScreen() {
 
 const styles = StyleSheet.create({
   driverRideShell: {
-    gap: v3Spacing.lg
+    gap: v3Spacing.sm
   },
   errorPanel: {
-    borderColor: "rgba(255, 97, 116, 0.32)"
+    borderColor: "rgba(255, 97, 116, 0.24)"
   },
   emptyPanel: {
     alignItems: "center",
     justifyContent: "center",
     gap: v3Spacing.sm,
-    minHeight: 220
+    minHeight: 180
   },
   centerCopy: {
     maxWidth: 280
   },
   mapStage: {
+    position: "relative",
     borderRadius: v3Radius.xl,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong,
-    backgroundColor: v3Colors.backgroundDeep
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: v3Colors.backgroundDeep,
+    boxShadow: v3Shadows.soft
+  },
+  mapBadge: {
+    position: "absolute",
+    top: v3Spacing.xs,
+    left: v3Spacing.xs
   },
   statusPanel: {
-    borderColor: v3Colors.borderStrong
+    marginTop: -v3Spacing.xs,
+    borderColor: "rgba(139, 92, 246, 0.22)"
   },
   statusContent: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    borderRadius: v3Radius.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.14)"
   },
   rowBetween: {
     flexDirection: "row-reverse",
@@ -252,25 +270,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     gap: v3Spacing.xxs
   },
-  priceStrip: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: v3Spacing.sm,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.blackScrim,
-    padding: v3Spacing.sm
-  },
   noticePanel: {
-    gap: v3Spacing.xs
+    borderColor: "rgba(248, 199, 109, 0.22)"
   },
   routePanel: {
-    borderColor: v3Colors.borderBlue
+    borderColor: "rgba(255, 255, 255, 0.09)"
   },
   routeContent: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
+  },
+  routeBox: {
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim,
+    padding: v3Spacing.sm,
+    gap: v3Spacing.xs
   },
   routePoint: {
     flexDirection: "row-reverse",
@@ -283,8 +296,8 @@ const styles = StyleSheet.create({
     paddingTop: 3
   },
   routeDot: {
-    width: 10,
-    height: 10,
+    width: 9,
+    height: 9,
     borderRadius: v3Radius.pill,
     backgroundColor: v3Colors.electricBlue
   },
@@ -293,8 +306,8 @@ const styles = StyleSheet.create({
   },
   routeStroke: {
     width: 2,
-    height: 38,
-    backgroundColor: v3Colors.borderStrong
+    height: 32,
+    backgroundColor: v3Alpha.purpleWash
   },
   routeCopy: {
     flex: 1,
@@ -311,17 +324,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: v3Spacing.md,
     borderTopWidth: 1,
-    borderTopColor: v3Colors.border,
+    borderTopColor: "rgba(255, 255, 255, 0.07)",
     paddingTop: v3Spacing.sm
   },
   detailValue: {
     flex: 1
   },
   trackingPanel: {
-    borderColor: v3Colors.borderBlue
+    borderColor: "rgba(34, 211, 238, 0.18)"
   },
   trackingContent: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   trackingActions: {
     flexDirection: "row-reverse",
@@ -332,7 +345,7 @@ const styles = StyleSheet.create({
     gap: v3Spacing.sm
   },
   nextActionPanel: {
-    borderColor: v3Colors.borderStrong
+    borderColor: "rgba(139, 92, 246, 0.22)"
   },
   nextActionContent: {
     gap: v3Spacing.sm

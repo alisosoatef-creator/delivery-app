@@ -13,9 +13,9 @@ export const v3Spacing = {
 export const v3Layout = {
   screenPadding: v3Spacing.lg,
   screenTopPadding: v3Spacing.md,
-  screenBottomPadding: 96,
-  controlHeight: 52,
-  compactControlHeight: 42,
-  iconButtonSize: 44,
-  bottomNavHeight: 64
+  screenBottomPadding: 112,
+  controlHeight: 46,
+  compactControlHeight: 36,
+  iconButtonSize: 38,
+  bottomNavHeight: 50
 };

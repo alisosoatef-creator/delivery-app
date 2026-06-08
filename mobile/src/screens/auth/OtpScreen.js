@@ -42,21 +42,21 @@ export function OtpScreen() {
 
 const styles = StyleSheet.create({
   card: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   codePanel: {
     alignItems: "center",
     gap: v3Spacing.sm,
-    padding: v3Spacing.lg,
-    borderRadius: v3Radius.xl,
+    padding: v3Spacing.md,
+    borderRadius: v3Radius.lg,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong,
+    borderColor: v3Colors.border,
     backgroundColor: v3Alpha.purpleSoft
   },
   code: {
     color: v3Colors.purpleLight,
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 36,
+    lineHeight: 42,
     fontVariant: ["tabular-nums"]
   }
 });

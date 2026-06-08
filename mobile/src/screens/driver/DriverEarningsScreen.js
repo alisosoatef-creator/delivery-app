@@ -8,9 +8,9 @@ export function DriverEarningsScreen() {
   const totalEarnings = 0;
   const completedRides = 0;
   const stats = [
-    { label: "أرباح اليوم", value: money(todayEarnings), hint: "تجريبي", tone: "primary" },
+    { label: "أرباح اليوم", value: money(todayEarnings), hint: "اليوم", tone: "primary" },
     { label: "رحلات مكتملة", value: String(completedRides), hint: "حتى الآن", tone: "success" },
-    { label: "قيد التحويل", value: money(0), hint: "لاحقا", tone: "blue" },
+    { label: "قيد التحويل", value: money(0), hint: "قريبا", tone: "blue" },
     { label: "متوسط الرحلة", value: money(0), hint: "تقديري", tone: "warning" }
   ];
 
@@ -22,16 +22,16 @@ export function DriverEarningsScreen() {
         subtitle="ملخص سريع لأداء اليوم والعمليات المالية."
       />
 
-      <V3Card tone="blue" contentStyle={styles.hero}>
+      <V3Card tone="raised" contentStyle={styles.hero}>
         <View style={styles.heroHeader}>
-          <V3Badge label="تجريبي" tone="warning" />
+          <V3Badge label="قيد الربط" tone="blue" />
           <V3Text variant="label" tone="muted">إجمالي الأرباح</V3Text>
         </View>
         <V3Text selectable variant="title" tone="success" style={styles.total}>
           {money(totalEarnings)}
         </V3Text>
         <V3Text tone="muted">
-          الأرقام الحالية للتجربة وسيتم ربط التسويات المالية لاحقا.
+          تظهر التسويات المالية هنا عند تفعيل الربط الكامل.
         </V3Text>
       </V3Card>
 
@@ -52,7 +52,7 @@ export function DriverEarningsScreen() {
         />
         <View style={styles.ledgerRow}>
           <V3Text variant="caption" tone="muted">طريقة الحساب</V3Text>
-          <V3Badge label="تجريبية الآن" tone="blue" />
+          <V3Badge label="قيد التفعيل" tone="blue" />
         </View>
         <View style={styles.ledgerRow}>
           <V3Text variant="caption" tone="muted">الدفع النقدي</V3Text>
@@ -70,7 +70,7 @@ export function DriverEarningsScreen() {
 
 const styles = StyleSheet.create({
   hero: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   heroHeader: {
     flexDirection: "row-reverse",
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
     gap: v3Spacing.sm
   },
   total: {
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 36,
+    lineHeight: 42,
     fontVariant: ["tabular-nums"]
   },
   statsGrid: {
@@ -114,6 +114,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: v3Colors.border,
     backgroundColor: v3Alpha.whiteSoft,
-    padding: v3Spacing.md
+    padding: v3Spacing.sm
   }
 });

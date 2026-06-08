@@ -32,12 +32,12 @@ export function AccountScreen() {
 
       <View style={styles.actionGrid}>
         <V3Card tone="raised" compact onPress={navigateToWallet} accessibilityLabel="المحفظة" style={styles.actionTile}>
-          <V3Badge label="₪" tone="blue" />
+          <V3Badge label="رصيد" tone="blue" />
           <V3Text variant="label">المحفظة</V3Text>
           <V3Text variant="caption" tone="muted">الرصيد والمدفوعات</V3Text>
         </V3Card>
         <V3Card tone="raised" compact onPress={navigateToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
-          <V3Badge label="?" tone="primary" />
+          <V3Badge label="دعم" tone="primary" />
           <V3Text variant="label">الدعم</V3Text>
           <V3Text variant="caption" tone="muted">تذاكر ومساعدة</V3Text>
         </V3Card>
@@ -69,7 +69,7 @@ export function AccountScreen() {
 
 const styles = StyleSheet.create({
   profileCard: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   profileTop: {
     flexDirection: "row-reverse",
@@ -84,7 +84,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: v3Alpha.purpleWash,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong
+    borderColor: v3Colors.border
   },
   avatarText: {
     color: v3Colors.purpleLight
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   actionTile: {
     flex: 1,
-    minHeight: 112
+    minHeight: 96
   },
   infoRow: {
     flexDirection: "row-reverse",

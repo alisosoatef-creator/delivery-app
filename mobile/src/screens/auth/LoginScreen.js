@@ -67,7 +67,7 @@ export function LoginScreen() {
 const styles = StyleSheet.create({
   hero: {
     alignItems: "flex-end",
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   brandRow: {
     alignSelf: "stretch",
@@ -84,14 +84,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: v3Alpha.purpleWash,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong
+    borderColor: v3Colors.border
   },
   brandLetter: {
     color: v3Colors.purpleLight,
     lineHeight: 34
   },
   form: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   links: {
     flexDirection: "row-reverse",

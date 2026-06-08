@@ -32,7 +32,7 @@ export function WalletScreen() {
 
       <V3Card tone="accent" contentStyle={styles.balanceContent}>
         <View style={styles.balanceHeader}>
-          <V3Badge label="دفع تجريبي" tone="primary" />
+          <V3Badge label="الرصيد" tone="primary" />
           <V3Text variant="label" tone="muted">الرصيد المتاح</V3Text>
         </View>
 
@@ -42,12 +42,12 @@ export function WalletScreen() {
 
         <View style={styles.walletRails}>
           <V3Badge label="نقدا" tone="dark" />
-          <V3Badge label="بطاقة تجريبية" tone="blue" />
+          <V3Badge label="بطاقة الدفع" tone="blue" />
           <V3Badge label="محفظة" tone="primary" />
         </View>
 
         <V3Text tone="muted">
-          الدفع الإلكتروني تجريبي الآن، ولا يتم حفظ بيانات بطاقة حساسة.
+          الدفع الإلكتروني قيد التفعيل، ولا يتم حفظ بيانات بطاقة حساسة.
         </V3Text>
 
         <V3Button
@@ -87,7 +87,7 @@ export function WalletScreen() {
 
 const styles = StyleSheet.create({
   balanceContent: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   balanceHeader: {
     flexDirection: "row-reverse",
@@ -96,8 +96,8 @@ const styles = StyleSheet.create({
     gap: v3Spacing.sm
   },
   balance: {
-    fontSize: 42,
-    lineHeight: 48,
+    fontSize: 36,
+    lineHeight: 42,
     color: v3Colors.white,
     fontVariant: ["tabular-nums"]
   },
@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: v3Colors.border,
     backgroundColor: v3Alpha.whiteSoft,
-    padding: v3Spacing.md,
+    padding: v3Spacing.sm,
     gap: v3Spacing.xs,
     alignItems: "flex-end"
   },

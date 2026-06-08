@@ -1,10 +1,10 @@
 export const v3Radius = {
-  xs: 8,
-  sm: 10,
-  md: 14,
-  lg: 18,
-  xl: 22,
-  xxl: 28,
-  screen: 32,
+  xs: 6,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 18,
+  xxl: 22,
+  screen: 24,
   pill: 999
 };

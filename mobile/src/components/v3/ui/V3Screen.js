@@ -1,6 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { v3Alpha, v3Colors, v3Layout, v3Spacing } from "../../../theme/v3";
+import { v3Colors, v3Layout, v3Spacing } from "../../../theme/v3";
 
 export function V3Screen({
   children,
@@ -13,7 +13,7 @@ export function V3Screen({
 }) {
   const insets = useSafeAreaInsets();
   const paddingTop = topInset ? Math.max(v3Spacing.lg, insets.top + v3Layout.screenTopPadding) : v3Spacing.lg;
-  const paddingBottom = bottomInset ? Math.max(v3Layout.screenBottomPadding, insets.bottom + v3Spacing.xxl) : v3Spacing.xxl;
+  const paddingBottom = bottomInset ? Math.max(v3Layout.screenBottomPadding, insets.bottom + v3Spacing.xl) : v3Spacing.xl;
   const content = [
     styles.content,
     padded && styles.padded,
@@ -25,7 +25,7 @@ export function V3Screen({
   return (
     <View style={[styles.root, style]}>
       <View pointerEvents="none" style={styles.topTrace} />
-      <View pointerEvents="none" style={styles.gridLine} />
+      <View pointerEvents="none" style={styles.hairline} />
       {scroll ? (
         <ScrollView
           style={styles.scroller}
@@ -66,17 +66,15 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     left: 0,
-    height: 118,
-    backgroundColor: v3Alpha.purpleSoft,
-    borderBottomWidth: 1,
-    borderBottomColor: v3Colors.border
+    height: 1,
+    backgroundColor: "transparent"
   },
-  gridLine: {
+  hairline: {
     position: "absolute",
-    top: 118,
+    top: 0,
     right: v3Layout.screenPadding,
     left: v3Layout.screenPadding,
     height: 1,
-    backgroundColor: v3Alpha.blueWash
+    backgroundColor: "rgba(255, 255, 255, 0.035)"
   }
 });

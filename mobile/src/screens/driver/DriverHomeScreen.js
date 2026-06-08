@@ -2,7 +2,7 @@ import { StyleSheet, View } from "react-native";
 import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useDriverAvailability } from "../../hooks/useDriverAvailability";
 import { money } from "../../utils/formatters";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 export function DriverHomeScreen() {
   const {
@@ -23,36 +23,41 @@ export function DriverHomeScreen() {
   } = useDriverAvailability();
 
   const isSaving = status === "saving";
-  const driverName = driver.fullName || currentUser.fullName || "كابتن واصل";
-  const vehicleLabel = `${driver.vehicleType || driver.vehicle || "مركبة"} - ${driver.vehiclePlate || driver.plate || "بدون لوحة"}`;
+  const driverName = driver?.fullName || currentUser?.fullName || "كابتن واصل";
+  const vehicleLabel = `${driver?.vehicleType || driver?.vehicle || "مركبة"} · ${driver?.vehiclePlate || driver?.plate || "بدون لوحة"}`;
   const availabilityLabel = available ? "متاح" : "غير متاح";
-  const availabilityCopy = available ? "القناة مفتوحة لاستقبال الطلبات المناسبة." : "الطلبات الجديدة متوقفة مؤقتا.";
-  const socketLabel = socketStatus === "connected" ? "متصل" : "يدوي";
-  const rideRoute = currentRide ? `${currentRide.pickup || "-"} ← ${currentRide.destination || "-"}` : "";
+  const socketLabel = socketStatus === "connected" ? "مباشر" : "يدوي";
+  const rideRoute = currentRide ? `${currentRide.pickup || "-"} إلى ${currentRide.destination || "-"}` : "";
 
   return (
     <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
-        meta="لوحة الكابتن"
+        meta="تطبيق الكابتن"
         title={`أهلا ${driverName}`}
-        subtitle="تحكم بحالة التوفر وتابع الطلبات النشطة من مكان واحد."
+        subtitle="إدارة التوفر والرحلات من لوحة واحدة هادئة وواضحة."
       />
 
-      <V3Card tone={available ? "blue" : "raised"} style={styles.availabilityPanel} contentStyle={styles.availabilityContent}>
-        <View style={styles.rowBetween}>
+      <V3Card tone="raised" style={styles.availabilityPanel} contentStyle={styles.heroContent}>
+        <View style={styles.heroTop}>
           <V3Badge label={availabilityLabel} tone={available ? "success" : "warning"} />
           <View style={styles.identity}>
-            <V3Text variant="caption" tone="muted">حالة التشغيل</V3Text>
-            <V3Text variant="title" tone="primary" numberOfLines={2}>{available ? "جاهز للطلبات" : "خارج الخدمة"}</V3Text>
-            <V3Text variant="caption" tone="soft" numberOfLines={2}>{vehicleLabel}</V3Text>
+            <V3Text variant="caption" tone="blue">حالة التشغيل</V3Text>
+            <V3Text variant="title" numberOfLines={2}>{available ? "جاهز للطلبات" : "خارج الخدمة"}</V3Text>
+            <V3Text selectable variant="caption" tone="muted" numberOfLines={1}>{vehicleLabel}</V3Text>
           </View>
         </View>
 
         <View style={styles.availabilityStatus}>
-          <View style={[styles.statusDot, available ? styles.statusDotOnline : styles.statusDotOffline]} />
+          <View style={[styles.statusOrb, available ? styles.statusOrbOnline : styles.statusOrbOffline]}>
+            <View style={[styles.statusDot, available ? styles.statusDotOnline : styles.statusDotOffline]} />
+          </View>
           <View style={styles.statusCopy}>
-            <V3Text variant="label" tone={available ? "success" : "warning"}>{available ? "استقبال الطلبات يعمل" : "استقبال الطلبات متوقف"}</V3Text>
-            <V3Text variant="caption" tone="muted" numberOfLines={2}>{availabilityCopy}</V3Text>
+            <V3Text variant="label" tone={available ? "success" : "warning"}>
+              {available ? "استقبال الطلبات يعمل" : "استقبال الطلبات متوقف"}
+            </V3Text>
+            <V3Text variant="caption" tone="muted" numberOfLines={2}>
+              {available ? "ستظهر الطلبات المناسبة فور توفرها." : "فعّل التوفر عندما تكون جاهزا للانطلاق."}
+            </V3Text>
           </View>
         </View>
 
@@ -71,29 +76,29 @@ export function DriverHomeScreen() {
         <V3Card compact tone="quiet" style={styles.statCard}>
           <V3Text variant="caption" tone="muted">طلبات متاحة</V3Text>
           <V3Text variant="subtitle" tone={available ? "blue" : "muted"}>{String(availableCount)}</V3Text>
-          <V3Text variant="caption" tone={available ? "success" : "warning"}>{available ? "جاهز" : "متوقف"}</V3Text>
+          <V3Text variant="caption" tone={available ? "success" : "warning"}>{available ? "نشط" : "متوقف"}</V3Text>
         </V3Card>
 
         <V3Card compact tone="quiet" style={styles.statCard}>
-          <V3Text variant="caption" tone="muted">اليوم</V3Text>
-          <V3Text variant="subtitle" tone="primary">{money(0)}</V3Text>
-          <V3Text variant="caption" tone="muted">أرباح تجريبية</V3Text>
+          <V3Text variant="caption" tone="muted">أرباح اليوم</V3Text>
+          <V3Text variant="subtitle">{money(0)}</V3Text>
+          <V3Text variant="caption" tone="muted">ملخص سريع</V3Text>
         </V3Card>
 
         <V3Card compact tone="quiet" style={styles.statCard}>
-          <V3Text variant="caption" tone="muted">التحديث المباشر</V3Text>
+          <V3Text variant="caption" tone="muted">الاتصال</V3Text>
           <V3Text variant="subtitle" tone={socketStatus === "connected" ? "success" : "warning"}>{socketLabel}</V3Text>
-          <V3Text variant="caption" tone="muted">حالة الاتصال</V3Text>
+          <V3Text variant="caption" tone="muted">تحديث الطلبات</V3Text>
         </V3Card>
       </View>
 
       {currentRide ? (
-        <V3Card tone="accent" contentStyle={styles.currentRideCard}>
+        <V3Card tone="raised" contentStyle={styles.currentRideCard}>
           <View style={styles.rowBetween}>
             <V3Badge label={currentRide.status || "-"} tone="blue" />
             <View style={styles.identity}>
               <V3Text variant="caption" tone="muted">الرحلة الحالية</V3Text>
-              <V3Text variant="subtitle" tone="primary">تابع الطلب النشط</V3Text>
+              <V3Text variant="subtitle">تابع الطلب النشط</V3Text>
             </View>
           </View>
           <View style={styles.routeLine}>
@@ -108,39 +113,39 @@ export function DriverHomeScreen() {
         </V3Card>
       ) : null}
 
-      <V3SectionHeader title="اختصارات العمل" subtitle="كل إجراء يفتح نفس مسارات الكابتن الحالية." />
+      <V3SectionHeader title="اختصارات العمل" subtitle="إجراءات سريعة بدون ازدحام." />
 
       <View style={styles.actionGrid}>
-        <V3Card compact tone="accent" onPress={goToAvailable} accessibilityLabel="الطلبات المتاحة" style={styles.actionTile}>
+        <V3Card compact tone="raised" onPress={goToAvailable} accessibilityLabel="الطلبات المتاحة" style={styles.actionTile}>
           <V3Text variant="subtitle" tone="accent">{String(availableCount)}</V3Text>
-          <V3Text variant="label" tone="primary">الطلبات</V3Text>
+          <V3Text variant="label">الطلبات</V3Text>
           <V3Text variant="caption" tone="muted">طلبات قريبة</V3Text>
         </V3Card>
 
         <V3Card compact tone="quiet" onPress={goToCurrent} accessibilityLabel="رحلتي الحالية" style={styles.actionTile}>
           <V3Text variant="subtitle" tone="blue">{currentRide ? "نشطة" : "-"}</V3Text>
-          <V3Text variant="label" tone="primary">رحلتي</V3Text>
-          <V3Text variant="caption" tone="muted">تفاصيل مباشرة</V3Text>
+          <V3Text variant="label">رحلتي</V3Text>
+          <V3Text variant="caption" tone="muted">تتبع مباشر</V3Text>
         </V3Card>
 
         <V3Card compact tone="quiet" onPress={goToEarnings} accessibilityLabel="الأرباح" style={styles.actionTile}>
           <V3Text variant="subtitle" tone="accent">{money(0)}</V3Text>
-          <V3Text variant="label" tone="primary">الأرباح</V3Text>
+          <V3Text variant="label">الأرباح</V3Text>
           <V3Text variant="caption" tone="muted">ملخص اليوم</V3Text>
         </V3Card>
 
         <V3Card compact tone="quiet" onPress={goToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
           <V3Text variant="subtitle" tone="blue">24/7</V3Text>
-          <V3Text variant="label" tone="primary">الدعم</V3Text>
+          <V3Text variant="label">الدعم</V3Text>
           <V3Text variant="caption" tone="muted">مساعدة الكابتن</V3Text>
         </V3Card>
       </View>
 
-      <V3Card tone="default" contentStyle={styles.sessionCard}>
+      <V3Card tone="quiet" contentStyle={styles.sessionCard}>
         <View style={styles.rowBetween}>
           <V3Badge label={socketLabel} tone={socketStatus === "connected" ? "success" : "warning"} />
           <View style={styles.identity}>
-            <V3Text variant="label" tone="primary">جلسة الكابتن</V3Text>
+            <V3Text variant="label">جلسة الكابتن</V3Text>
             <V3Text variant="caption" tone="muted">الخروج ينهي الجلسة المحلية ويفصل الاتصال.</V3Text>
           </View>
         </View>
@@ -152,12 +157,19 @@ export function DriverHomeScreen() {
 
 const styles = StyleSheet.create({
   screen: {
-    gap: v3Spacing.lg
+    gap: v3Spacing.sm
   },
   availabilityPanel: {
-    borderColor: v3Colors.borderBlue
+    borderColor: "rgba(139, 92, 246, 0.2)",
+    boxShadow: v3Shadows.soft
   },
-  availabilityContent: {
+  heroContent: {
+    gap: v3Spacing.sm
+  },
+  heroTop: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
     gap: v3Spacing.md
   },
   rowBetween: {
@@ -176,27 +188,38 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: v3Spacing.sm,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteSoft,
+    borderRadius: v3Radius.md,
+    backgroundColor: "rgba(255, 255, 255, 0.035)",
     padding: v3Spacing.sm
   },
-  statusDot: {
-    width: 46,
-    height: 46,
+  statusOrb: {
+    width: 48,
+    height: 48,
     borderRadius: v3Radius.pill,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteWash
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1
+  },
+  statusOrbOnline: {
+    borderColor: "rgba(69, 224, 164, 0.28)",
+    backgroundColor: "rgba(69, 224, 164, 0.09)"
+  },
+  statusOrbOffline: {
+    borderColor: "rgba(248, 199, 109, 0.28)",
+    backgroundColor: "rgba(248, 199, 109, 0.08)"
+  },
+  statusDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7
   },
   statusDotOnline: {
-    backgroundColor: "rgba(69, 224, 164, 0.2)",
-    borderColor: "rgba(69, 224, 164, 0.44)"
+    backgroundColor: v3Colors.success,
+    boxShadow: "0 0 18px rgba(69, 224, 164, 0.45)"
   },
   statusDotOffline: {
-    backgroundColor: "rgba(248, 199, 109, 0.14)",
-    borderColor: "rgba(248, 199, 109, 0.38)"
+    backgroundColor: v3Colors.warning,
+    boxShadow: "0 0 18px rgba(248, 199, 109, 0.3)"
   },
   statusCopy: {
     flex: 1,
@@ -206,22 +229,21 @@ const styles = StyleSheet.create({
   },
   captainStats: {
     flexDirection: "row-reverse",
-    gap: v3Spacing.sm
+    gap: v3Spacing.xs
   },
   statCard: {
     flex: 1,
-    minWidth: 0
+    minWidth: 0,
+    borderColor: "rgba(255, 255, 255, 0.08)"
   },
   currentRideCard: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   },
   routeLine: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: v3Spacing.sm,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
+    borderRadius: v3Radius.md,
     backgroundColor: v3Alpha.blackScrim,
     padding: v3Spacing.sm
   },
@@ -230,8 +252,8 @@ const styles = StyleSheet.create({
     alignItems: "center"
   },
   routePin: {
-    width: 9,
-    height: 9,
+    width: 8,
+    height: 8,
     borderRadius: v3Radius.pill,
     backgroundColor: v3Colors.electricBlue
   },
@@ -240,8 +262,8 @@ const styles = StyleSheet.create({
   },
   routeStroke: {
     width: 2,
-    height: 30,
-    backgroundColor: v3Colors.borderStrong
+    height: 28,
+    backgroundColor: v3Alpha.purpleWash
   },
   routeText: {
     flex: 1
@@ -253,9 +275,9 @@ const styles = StyleSheet.create({
   },
   actionTile: {
     width: "47.5%",
-    minHeight: 116
+    minHeight: 92
   },
   sessionCard: {
-    gap: v3Spacing.md
+    gap: v3Spacing.sm
   }
 });

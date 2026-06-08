@@ -74,21 +74,21 @@ const styles = StyleSheet.create({
   },
   md: {
     minHeight: v3Layout.controlHeight,
-    paddingHorizontal: v3Spacing.xl
+    paddingHorizontal: v3Spacing.lg
   },
   sm: {
     minHeight: v3Layout.compactControlHeight,
-    paddingHorizontal: v3Spacing.lg
+    paddingHorizontal: v3Spacing.md
   },
   primary: {
     backgroundColor: v3Colors.purple,
-    borderColor: "rgba(255, 255, 255, 0.18)",
+    borderColor: "rgba(255, 255, 255, 0.12)",
     boxShadow: v3Shadows.purple
   },
   secondary: {
-    backgroundColor: v3Alpha.whiteWash,
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
     borderColor: v3Colors.border,
-    boxShadow: v3Shadows.soft
+    boxShadow: v3Shadows.none
   },
   ghost: {
     backgroundColor: "transparent",
@@ -118,13 +118,13 @@ const styles = StyleSheet.create({
   lightLine: {
     position: "absolute",
     top: 0,
-    right: 18,
-    left: 18,
+    right: 22,
+    left: 22,
     height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.16)"
+    backgroundColor: "rgba(255, 255, 255, 0.08)"
   },
   lightLinePrimary: {
-    backgroundColor: "rgba(255, 255, 255, 0.32)"
+    backgroundColor: "rgba(255, 255, 255, 0.2)"
   },
   icon: {
     fontSize: 15,

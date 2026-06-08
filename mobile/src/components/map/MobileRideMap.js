@@ -3,7 +3,21 @@ import { useMobileRideMapLogic } from "../../hooks/useMobileRideMapLogic";
 import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 const v3MapFrame = v3Colors.backgroundDeep;
-const v3MapOverlay = "rgba(5, 5, 9, 0.78)";
+const v3MapOverlay = "rgba(5, 5, 9, 0.82)";
+
+const darkMapStyle = [
+  { elementType: "geometry", stylers: [{ color: "#171923" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#d7d0e8" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0a0b10" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#2a2c39" }] },
+  { featureType: "landscape", elementType: "geometry", stylers: [{ color: "#151722" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#181a25" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#242738" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#11131c" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#30344a" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#1b1d29" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#090b12" }] }
+];
 
 function markerTitle(type) {
   if (type === "pickup") return "نقطة الانطلاق";
@@ -114,12 +128,21 @@ export function MobileRideMap({ pickup, destination, driverLocation, userLocatio
 
   return (
     <View style={[styles.wrapper, { height }]}>
-      <MapView style={StyleSheet.absoluteFillObject} initialRegion={initialRegion} region={initialRegion}>
+      <MapView
+        style={StyleSheet.absoluteFillObject}
+        initialRegion={initialRegion}
+        region={initialRegion}
+        customMapStyle={darkMapStyle}
+        toolbarEnabled={false}
+        loadingEnabled
+        loadingBackgroundColor={v3MapFrame}
+        loadingIndicatorColor={v3Colors.purpleLight}
+      >
         {routePoints.length === 2 ? (
           <Polyline
             coordinates={routePoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))}
             strokeColor={driverToPickup ? v3Colors.success : v3Colors.purpleLight}
-            strokeWidth={5}
+            strokeWidth={4}
             lineCap="round"
             lineJoin="round"
           />
@@ -151,29 +174,29 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong,
+    borderColor: v3Colors.border,
     backgroundColor: v3MapFrame,
-    boxShadow: v3Shadows.card
+    boxShadow: v3Shadows.soft
   },
   mapShade: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(2, 2, 5, 0.14)"
+    backgroundColor: "rgba(2, 2, 5, 0.34)"
   },
   mapChrome: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.13)"
+    borderColor: "rgba(255, 255, 255, 0.075)"
   },
   distanceBadge: {
     position: "absolute",
     left: v3Spacing.sm,
     bottom: v3Spacing.sm,
     color: v3Colors.white,
-    backgroundColor: "rgba(139, 92, 246, 0.92)",
+    backgroundColor: "rgba(139, 92, 246, 0.82)",
     borderRadius: v3Radius.pill,
     overflow: "hidden",
-    paddingHorizontal: v3Spacing.md,
+    paddingHorizontal: v3Spacing.sm,
     paddingVertical: v3Spacing.xs,
     fontWeight: "900",
     fontSize: 12,
@@ -207,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)"
+    borderColor: "rgba(255, 255, 255, 0.075)"
   },
   markerBadge: {
     width: 27,
@@ -217,7 +240,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderWidth: 2,
     borderColor: v3Colors.backgroundDeep,
-    boxShadow: v3Shadows.soft
+    boxShadow: v3Shadows.none
   },
   markerText: {
     color: v3Colors.black,
@@ -231,7 +254,7 @@ const styles = StyleSheet.create({
     borderRadius: v3Radius.pill,
     backgroundColor: v3MapOverlay,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong
+    borderColor: v3Colors.border
   },
   calloutText: {
     color: v3Colors.text,
@@ -261,11 +284,11 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     borderRadius: v3Radius.xl,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong,
+    borderColor: v3Colors.border,
     backgroundColor: v3MapFrame,
     padding: v3Spacing.md,
     overflow: "hidden",
-    boxShadow: v3Shadows.card
+    boxShadow: v3Shadows.soft
   },
   fallbackGrid: {
     ...StyleSheet.absoluteFillObject,

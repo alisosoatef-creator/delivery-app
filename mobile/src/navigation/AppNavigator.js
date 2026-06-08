@@ -70,7 +70,7 @@ function AppTabs({ area }) {
   const tabs = area === "driver" ? driverTabs : customerTabs;
 
   return (
-    <View style={[styles.bottomNavShell, { bottom: Math.max(v3Spacing.sm, insets.bottom + v3Spacing.xs) }]}>
+    <View style={[styles.bottomNavShell, { bottom: Math.max(v3Spacing.md, insets.bottom + v3Spacing.xs) }]}>
       <View style={styles.bottomNavDock}>
         {tabs.map(([screen, label]) => {
           const active = state.activeScreen === screen;
@@ -98,6 +98,24 @@ function AppTabs({ area }) {
             </Pressable>
           );
         })}
+      </View>
+    </View>
+  );
+}
+
+function GlobalMessageLayer({ toast, connectionMessage, showConnectionBanner }) {
+  const insets = useSafeAreaInsets();
+  const message = toast
+    || (connectionMessage ? "تعذر الاتصال مؤقتا. سنحاول التحديث تلقائيا." : "")
+    || (showConnectionBanner ? "التحديث المباشر غير متاح الآن." : "");
+  const tone = toast ? "soft" : showConnectionBanner ? "warning" : "danger";
+
+  if (!message) return null;
+
+  return (
+    <View pointerEvents="none" style={[styles.messageLayer, { top: insets.top + v3Spacing.xs }]}>
+      <View style={[styles.messagePill, !toast && styles.messagePillWarning]}>
+        <V3Text selectable variant="caption" tone={tone} align="center" numberOfLines={2}>{message}</V3Text>
       </View>
     </View>
   );
@@ -144,24 +162,8 @@ export function AppNavigator() {
   }
   return (
     <View style={styles.root}>
-      {state.toast ? (
-        <View style={styles.toast}>
-          <V3Text selectable variant="caption" tone="soft" align="center">{state.toast}</V3Text>
-        </View>
-      ) : null}
-      {state.connectionMessage ? (
-        <View style={styles.banner}>
-          <V3Text selectable variant="caption" tone="danger" align="center">{state.connectionMessage}</V3Text>
-        </View>
-      ) : null}
-      {showConnectionBanner ? (
-        <View style={styles.banner}>
-          <V3Text selectable variant="caption" tone="warning" align="center">
-            التحديث المباشر غير متاح الآن، يمكنك التحديث يدويا.
-          </V3Text>
-        </View>
-      ) : null}
       {area === "driver" ? <DriverNavigator /> : state.role === "customer" || area === "customer" ? <CustomerNavigator /> : <AuthNavigator />}
+      <GlobalMessageLayer toast={state.toast} connectionMessage={state.connectionMessage} showConnectionBanner={showConnectionBanner} />
     </View>
   );
 }
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: v3Spacing.sm,
-    minHeight: 132
+    minHeight: 112
   },
   shell: {
     flex: 1,
@@ -189,22 +191,22 @@ const styles = StyleSheet.create({
   },
   bottomNavShell: {
     position: "absolute",
-    left: v3Spacing.md,
-    right: v3Spacing.md,
+    left: 28,
+    right: 28,
     minHeight: v3Layout.bottomNavHeight,
     borderRadius: v3Radius.pill,
     borderWidth: 1,
-    borderColor: v3Colors.borderStrong,
-    backgroundColor: v3Alpha.blackScrim,
-    padding: 6,
-    boxShadow: v3Shadows.card
+    borderColor: v3Colors.border,
+    backgroundColor: "rgba(8, 9, 14, 0.92)",
+    padding: 3,
+    boxShadow: v3Shadows.soft
   },
   bottomNavDock: {
-    minHeight: v3Layout.bottomNavHeight - 12,
+    minHeight: v3Layout.bottomNavHeight - 6,
     borderRadius: v3Radius.pill,
     borderWidth: 1,
     borderColor: v3Colors.border,
-    backgroundColor: v3Colors.surface,
+    backgroundColor: "rgba(12, 13, 19, 0.96)",
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "space-between",
@@ -214,8 +216,8 @@ const styles = StyleSheet.create({
     flex: 1,
     flexBasis: 0,
     flexShrink: 1,
-    minWidth: 58,
-    minHeight: 48,
+    minWidth: 48,
+    minHeight: 38,
     borderRadius: v3Radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -223,7 +225,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: v3Spacing.xs
   },
   tabActive: {
-    backgroundColor: v3Alpha.purpleWash
+    backgroundColor: "rgba(139, 92, 246, 0.18)"
   },
   tabPressed: {
     opacity: 0.9,
@@ -236,15 +238,15 @@ const styles = StyleSheet.create({
     backgroundColor: v3Colors.textFaint
   },
   tabIndicatorActive: {
-    width: 24,
-    height: 5,
+    width: 20,
+    height: 4,
     backgroundColor: v3Colors.purpleLight,
-    boxShadow: v3Shadows.purple
+    boxShadow: v3Shadows.soft
   },
   tabLabel: {
     color: v3Colors.textMuted,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     textAlign: "center",
     writingDirection: "rtl",
@@ -254,16 +256,25 @@ const styles = StyleSheet.create({
   tabLabelActive: {
     color: v3Colors.text
   },
-  toast: {
-    backgroundColor: v3Alpha.purpleWash,
-    borderBottomWidth: 1,
-    borderBottomColor: v3Colors.borderStrong,
-    padding: v3Spacing.sm
+  messageLayer: {
+    position: "absolute",
+    right: v3Spacing.lg,
+    left: v3Spacing.lg,
+    zIndex: 30,
+    alignItems: "center"
   },
-  banner: {
-    backgroundColor: "rgba(255, 97, 116, 0.11)",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 97, 116, 0.26)",
-    padding: v3Spacing.sm
+  messagePill: {
+    maxWidth: 320,
+    borderRadius: v3Radius.pill,
+    borderWidth: 1,
+    borderColor: v3Colors.border,
+    backgroundColor: "rgba(13, 14, 20, 0.94)",
+    paddingVertical: v3Spacing.xs,
+    paddingHorizontal: v3Spacing.md,
+    boxShadow: v3Shadows.soft
+  },
+  messagePillWarning: {
+    borderColor: "rgba(255, 97, 116, 0.22)",
+    backgroundColor: "rgba(23, 12, 18, 0.9)"
   }
 });
