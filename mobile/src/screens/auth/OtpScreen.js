@@ -7,20 +7,18 @@ export function OtpScreen() {
   const { pendingPhone, code, setCode, status, error, submit } = useOtpVerification();
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="تأكيد الحساب"
         title="أدخل رمز التفعيل"
-        subtitle={`رمز التفعيل للرقم ${pendingPhone || "-"}.`}
+        subtitle={`أرسلنا رمز التفعيل للرقم ${pendingPhone || "-"}.`}
       />
 
-      <V3Card tone="accent" contentStyle={styles.card}>
+      <V3Card tone="raised" contentStyle={styles.card}>
         <View style={styles.codePanel}>
-          <V3Badge label="OTP تجريبي" tone="warning" />
+          <V3Badge label="رمز تجريبي" tone="warning" />
           <V3Text selectable variant="title" align="center" style={styles.code}>1234</V3Text>
-          <V3Text tone="muted" align="center">
-            هذا الرمز للتطوير فقط وسيستبدل لاحقا بخدمة OTP حقيقية.
-          </V3Text>
+          <V3Text tone="muted" align="center">استخدم الرمز أعلاه لإكمال التفعيل في بيئة التطوير.</V3Text>
         </View>
 
         <V3Input
@@ -41,6 +39,9 @@ export function OtpScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
   card: {
     gap: v3Spacing.sm
   },
@@ -48,10 +49,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: v3Spacing.sm,
     padding: v3Spacing.md,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.purpleSoft
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim
   },
   code: {
     color: v3Colors.purpleLight,

@@ -2,27 +2,21 @@ import { StyleSheet, View } from "react-native";
 import { V3Badge, V3Button, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useCustomerWallet } from "../../hooks/useCustomerWallet";
 import { money } from "../../utils/formatters";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 export function WalletScreen() {
   const { wallet, status, error, load } = useCustomerWallet();
   const transactions = wallet?.transactions || [];
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="المحفظة"
-        title="رصيدك وعمليات الدفع"
-        subtitle="متابعة هادئة للرصيد والمدفوعات داخل واصل."
+        title="رصيدك ومدفوعاتك"
+        subtitle="متابعة هادئة للرصيد وطرق الدفع داخل واصل."
         actionLabel="تحديث"
         onAction={load}
       />
-
-      {status === "loading" ? (
-        <V3Card tone="quiet" compact>
-          <V3Text tone="muted">جاري تحميل المحفظة...</V3Text>
-        </V3Card>
-      ) : null}
 
       {error ? (
         <V3Card tone="quiet" compact style={styles.errorCard}>
@@ -30,9 +24,9 @@ export function WalletScreen() {
         </V3Card>
       ) : null}
 
-      <V3Card tone="accent" contentStyle={styles.balanceContent}>
+      <V3Card tone="raised" style={styles.balanceShell} contentStyle={styles.balanceContent}>
         <View style={styles.balanceHeader}>
-          <V3Badge label="الرصيد" tone="primary" />
+          <V3Badge label={status === "loading" ? "تحديث" : "الرصيد"} tone="primary" />
           <V3Text variant="label" tone="muted">الرصيد المتاح</V3Text>
         </View>
 
@@ -46,9 +40,7 @@ export function WalletScreen() {
           <V3Badge label="محفظة" tone="primary" />
         </View>
 
-        <V3Text tone="muted">
-          الدفع الإلكتروني قيد التفعيل، ولا يتم حفظ بيانات بطاقة حساسة.
-        </V3Text>
+        <V3Text tone="muted" numberOfLines={2}>الدفع الإلكتروني قيد التفعيل، ولا يتم حفظ بيانات بطاقة حساسة.</V3Text>
 
         <V3Button
           title={status === "loading" ? "جاري التحديث" : "تحديث المحفظة"}
@@ -58,15 +50,13 @@ export function WalletScreen() {
         />
       </V3Card>
 
-      <V3Card tone="raised">
-        <V3SectionHeader
-          title="آخر العمليات"
-          subtitle="تظهر المدفوعات والاستردادات هنا عند توفرها."
-        />
+      <V3Card tone="raised" contentStyle={styles.ledger}>
+        <V3SectionHeader title="آخر العمليات" subtitle="المدفوعات والاستردادات تظهر هنا عند توفرها." />
 
         {!transactions.length ? (
           <View style={styles.emptyState}>
-            <V3Text variant="subtitle">لا توجد عمليات</V3Text>
+            <V3Badge label="لا توجد عمليات" tone="blue" />
+            <V3Text variant="subtitle">لا توجد عمليات بعد</V3Text>
             <V3Text tone="muted">ستظهر عمليات الدفع أو الاسترداد هنا عند توفرها.</V3Text>
           </View>
         ) : null}
@@ -86,6 +76,13 @@ export function WalletScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
+  balanceShell: {
+    borderColor: "rgba(139, 92, 246, 0.2)",
+    boxShadow: v3Shadows.soft
+  },
   balanceContent: {
     gap: v3Spacing.sm
   },
@@ -107,13 +104,14 @@ const styles = StyleSheet.create({
     gap: v3Spacing.xs
   },
   errorCard: {
-    borderColor: "rgba(255, 97, 116, 0.42)"
+    borderColor: "rgba(255, 97, 116, 0.24)"
+  },
+  ledger: {
+    gap: v3Spacing.sm
   },
   emptyState: {
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteSoft,
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim,
     padding: v3Spacing.sm,
     gap: v3Spacing.xs,
     alignItems: "flex-end"
@@ -125,7 +123,7 @@ const styles = StyleSheet.create({
     gap: v3Spacing.sm,
     paddingTop: v3Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: v3Colors.border
+    borderTopColor: "rgba(255, 255, 255, 0.07)"
   },
   transactionCopy: {
     flex: 1,

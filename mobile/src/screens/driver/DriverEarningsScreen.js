@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
 import { V3Badge, V3Card, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { money } from "../../utils/formatters";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 export function DriverEarningsScreen() {
   const todayEarnings = 0;
@@ -15,14 +15,14 @@ export function DriverEarningsScreen() {
   ];
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="محفظة الكابتن"
         title="الأرباح"
         subtitle="ملخص سريع لأداء اليوم والعمليات المالية."
       />
 
-      <V3Card tone="raised" contentStyle={styles.hero}>
+      <V3Card tone="raised" style={styles.heroShell} contentStyle={styles.hero}>
         <View style={styles.heroHeader}>
           <V3Badge label="قيد الربط" tone="blue" />
           <V3Text variant="label" tone="muted">إجمالي الأرباح</V3Text>
@@ -30,9 +30,7 @@ export function DriverEarningsScreen() {
         <V3Text selectable variant="title" tone="success" style={styles.total}>
           {money(totalEarnings)}
         </V3Text>
-        <V3Text tone="muted">
-          تظهر التسويات المالية هنا عند تفعيل الربط الكامل.
-        </V3Text>
+        <V3Text tone="muted" numberOfLines={2}>تظهر التسويات المالية هنا عند تفعيل الربط الكامل.</V3Text>
       </V3Card>
 
       <View style={styles.statsGrid}>
@@ -45,11 +43,8 @@ export function DriverEarningsScreen() {
         ))}
       </View>
 
-      <V3Card tone="raised">
-        <V3SectionHeader
-          title="سجل العمليات"
-          subtitle="آخر عمليات المحفظة والتسويات عند توفرها."
-        />
+      <V3Card tone="raised" contentStyle={styles.ledger}>
+        <V3SectionHeader title="سجل العمليات" subtitle="آخر عمليات المحفظة والتسويات عند توفرها." />
         <View style={styles.ledgerRow}>
           <V3Text variant="caption" tone="muted">طريقة الحساب</V3Text>
           <V3Badge label="قيد التفعيل" tone="blue" />
@@ -69,6 +64,13 @@ export function DriverEarningsScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
+  heroShell: {
+    borderColor: "rgba(69, 224, 164, 0.16)",
+    boxShadow: v3Shadows.soft
+  },
   hero: {
     gap: v3Spacing.sm
   },
@@ -96,24 +98,23 @@ const styles = StyleSheet.create({
   statValue: {
     fontVariant: ["tabular-nums"]
   },
+  ledger: {
+    gap: v3Spacing.sm
+  },
   ledgerRow: {
     flexDirection: "row-reverse",
     justifyContent: "space-between",
     alignItems: "center",
     gap: v3Spacing.sm,
     padding: v3Spacing.sm,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteSoft
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim
   },
   emptyState: {
     alignItems: "flex-end",
     gap: v3Spacing.xs,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteSoft,
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim,
     padding: v3Spacing.sm
   }
 });

@@ -8,14 +8,14 @@ export function AccountScreen() {
   const displayName = user.fullName || user.name || "زبون";
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="الملف الشخصي"
         title="حسابي"
         subtitle="بيانات الدخول وخيارات الحساب بشكل مختصر."
       />
 
-      <V3Card tone="accent" contentStyle={styles.profileCard}>
+      <V3Card tone="raised" style={styles.profileShell} contentStyle={styles.profileCard}>
         <View style={styles.profileTop}>
           <View style={styles.avatar}>
             <V3Text variant="subtitle" align="center" style={styles.avatarText}>
@@ -31,19 +31,19 @@ export function AccountScreen() {
       </V3Card>
 
       <View style={styles.actionGrid}>
-        <V3Card tone="raised" compact onPress={navigateToWallet} accessibilityLabel="المحفظة" style={styles.actionTile}>
+        <V3Card tone="quiet" compact onPress={navigateToWallet} accessibilityLabel="المحفظة" style={styles.actionTile}>
           <V3Badge label="رصيد" tone="blue" />
           <V3Text variant="label">المحفظة</V3Text>
           <V3Text variant="caption" tone="muted">الرصيد والمدفوعات</V3Text>
         </V3Card>
-        <V3Card tone="raised" compact onPress={navigateToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
+        <V3Card tone="quiet" compact onPress={navigateToSupport} accessibilityLabel="الدعم" style={styles.actionTile}>
           <V3Badge label="دعم" tone="primary" />
           <V3Text variant="label">الدعم</V3Text>
           <V3Text variant="caption" tone="muted">تذاكر ومساعدة</V3Text>
         </V3Card>
       </View>
 
-      <V3Card tone="raised">
+      <V3Card tone="raised" contentStyle={styles.detailsCard}>
         <V3SectionHeader
           title="تفاصيل الحساب"
           subtitle="معلومات أساسية دون أي بيانات حساسة."
@@ -68,6 +68,12 @@ export function AccountScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
+  profileShell: {
+    borderColor: "rgba(139, 92, 246, 0.2)"
+  },
   profileCard: {
     gap: v3Spacing.sm
   },
@@ -77,14 +83,14 @@ const styles = StyleSheet.create({
     gap: v3Spacing.md
   },
   avatar: {
-    width: 62,
-    height: 62,
-    borderRadius: v3Radius.xl,
+    width: 58,
+    height: 58,
+    borderRadius: v3Radius.lg,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: v3Alpha.purpleWash,
     borderWidth: 1,
-    borderColor: v3Colors.border
+    borderColor: "rgba(139, 92, 246, 0.22)"
   },
   avatarText: {
     color: v3Colors.purpleLight
@@ -101,7 +107,10 @@ const styles = StyleSheet.create({
   },
   actionTile: {
     flex: 1,
-    minHeight: 96
+    minHeight: 92
+  },
+  detailsCard: {
+    gap: v3Spacing.sm
   },
   infoRow: {
     flexDirection: "row-reverse",
@@ -109,9 +118,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: v3Spacing.sm,
     padding: v3Spacing.sm,
-    borderRadius: v3Radius.lg,
-    borderWidth: 1,
-    borderColor: v3Colors.border,
-    backgroundColor: v3Alpha.whiteSoft
+    borderRadius: v3Radius.md,
+    backgroundColor: v3Alpha.blackScrim
   }
 });

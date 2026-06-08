@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3Text } from "../../components/v3/ui";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useDevDriverLogin } from "../../hooks/useDevDriverLogin";
 import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
 
@@ -7,19 +7,22 @@ export function DevDriverLoginScreen() {
   const { drivers, driverId, setDriverId, phone, setPhone, error, submit, goToCustomerLogin } = useDevDriverLogin();
 
   return (
-    <V3Screen>
-      <V3Card tone="blue" contentStyle={styles.hero}>
+    <V3Screen contentStyle={styles.screen}>
+      <V3SectionHeader
+        meta="مدخل تجريبي"
+        title="دخول الكابتن"
+        subtitle="استخدم معرف الكابتن أو رقم الهاتف للدخول إلى لوحة الكابتن."
+        actionLabel="دخول الزبون"
+        onAction={goToCustomerLogin}
+      />
+
+      <V3Card tone="raised" contentStyle={styles.hero}>
         <View style={styles.headerRow}>
           <View style={styles.devMark}>
-            <V3Text variant="label" tone="blue" align="center">DEV</V3Text>
+            <V3Text variant="label" tone="blue" align="center">اختبار</V3Text>
           </View>
-          <V3Badge label="مدخل تجريبي" tone="warning" />
+          <V3Badge label="بيئة تطوير" tone="warning" />
         </View>
-
-        <V3Text variant="title" numberOfLines={2}>مدخل الكابتن</V3Text>
-        <V3Text tone="muted" numberOfLines={4}>
-          هذا المدخل للتطوير فقط، ولا يفعّل طلبات الانضمام قبل موافقة الإدارة.
-        </V3Text>
 
         <V3Input
           label="معرف الكابتن"
@@ -43,6 +46,9 @@ export function DevDriverLoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
   hero: {
     alignItems: "flex-end",
     gap: v3Spacing.md
@@ -55,9 +61,9 @@ const styles = StyleSheet.create({
     gap: v3Spacing.sm
   },
   devMark: {
-    width: 56,
+    width: 62,
     height: 42,
-    borderRadius: v3Radius.lg,
+    borderRadius: v3Radius.md,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: v3Alpha.blueWash,

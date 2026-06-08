@@ -1,7 +1,7 @@
 import { StyleSheet, View } from "react-native";
-import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3Text } from "../../components/v3/ui";
+import { V3Badge, V3Button, V3Card, V3Input, V3Screen, V3SectionHeader, V3Text } from "../../components/v3/ui";
 import { useCustomerLogin } from "../../hooks/useCustomerLogin";
-import { v3Alpha, v3Colors, v3Radius, v3Spacing } from "../../theme/v3";
+import { v3Alpha, v3Colors, v3Radius, v3Shadows, v3Spacing } from "../../theme/v3";
 
 export function LoginScreen() {
   const {
@@ -18,22 +18,23 @@ export function LoginScreen() {
   } = useCustomerLogin();
 
   return (
-    <V3Screen>
-      <V3Card tone="accent" contentStyle={styles.hero}>
+    <V3Screen contentStyle={styles.screen}>
+      <V3Card tone="raised" style={styles.heroCard} contentStyle={styles.hero}>
         <View style={styles.brandRow}>
           <View style={styles.brandMark}>
             <V3Text variant="title" align="center" style={styles.brandLetter}>W</V3Text>
           </View>
-          <V3Badge label="تطبيق الزبون" tone="blue" />
+          <View style={styles.brandCopy}>
+            <V3Badge label="تطبيق الزبون" tone="blue" />
+            <V3Text variant="title" numberOfLines={1}>واصل</V3Text>
+          </View>
         </View>
-        <V3Text variant="title" numberOfLines={2}>مشوارك التالي يبدأ بواجهة أوضح.</V3Text>
-        <V3Text tone="muted" numberOfLines={3}>
-          دخول سريع، طلب واضح، وتتبع مباشر للكابتن.
-        </V3Text>
+        <V3Text variant="subtitle" numberOfLines={2}>ادخل لحسابك وابدأ مشوارك بهدوء.</V3Text>
+        <V3Text tone="muted" numberOfLines={2}>طلب واضح، خريطة مباشرة، وتفاصيل رحلة مرتبة.</V3Text>
       </V3Card>
 
       <V3Card tone="raised" contentStyle={styles.form}>
-        <V3Text variant="subtitle">تسجيل الدخول</V3Text>
+        <V3SectionHeader title="تسجيل الدخول" subtitle="استخدم رقم الهاتف أو الاسم وكلمة السر." />
         <V3Input
           label="الاسم أو رقم الهاتف"
           value={identifier}
@@ -45,7 +46,7 @@ export function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          placeholder="••••••••"
+          placeholder="********"
         />
         {error ? <V3Text selectable tone="danger">{error}</V3Text> : null}
         <V3Button
@@ -56,7 +57,7 @@ export function LoginScreen() {
         <View style={styles.links}>
           <V3Button title="حساب جديد" size="sm" fullWidth={false} variant="secondary" onPress={goToRegister} />
           {isDev ? (
-            <V3Button title="كابتن تجريبي" size="sm" fullWidth={false} variant="ghost" onPress={goToDevDriverLogin} />
+            <V3Button title="دخول كابتن تجريبي" size="sm" fullWidth={false} variant="ghost" onPress={goToDevDriverLogin} />
           ) : null}
         </View>
       </V3Card>
@@ -65,6 +66,13 @@ export function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
+  heroCard: {
+    borderColor: "rgba(139, 92, 246, 0.18)",
+    boxShadow: v3Shadows.soft
+  },
   hero: {
     alignItems: "flex-end",
     gap: v3Spacing.sm
@@ -76,15 +84,21 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: v3Spacing.sm
   },
+  brandCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: v3Spacing.xs
+  },
   brandMark: {
-    width: 58,
-    height: 58,
-    borderRadius: v3Radius.xl,
+    width: 54,
+    height: 54,
+    borderRadius: v3Radius.lg,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: v3Alpha.purpleWash,
     borderWidth: 1,
-    borderColor: v3Colors.border
+    borderColor: "rgba(139, 92, 246, 0.22)"
   },
   brandLetter: {
     color: v3Colors.purpleLight,

@@ -7,16 +7,16 @@ export function RegisterScreen() {
   const { form, update, status, error, submit, goToLogin } = useRegisterCustomer();
 
   return (
-    <V3Screen>
+    <V3Screen contentStyle={styles.screen}>
       <V3SectionHeader
         meta="حساب جديد"
         title="انضم إلى واصل"
-        subtitle="بيانات أساسية ثم تفعيل سريع برمز OTP التجريبي."
+        subtitle="بيانات أساسية ثم تأكيد سريع برمز التفعيل."
         actionLabel="لدي حساب"
         onAction={goToLogin}
       />
 
-      <V3Card tone="accent" contentStyle={styles.form}>
+      <V3Card tone="raised" contentStyle={styles.form}>
         <View style={styles.formTop}>
           <V3Badge label="تفعيل سريع" tone="blue" />
           <V3Text variant="subtitle">بيانات الزبون</V3Text>
@@ -51,6 +51,9 @@ export function RegisterScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    gap: v3Spacing.sm
+  },
   form: {
     gap: v3Spacing.sm
   },

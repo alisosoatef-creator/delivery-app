@@ -406,6 +406,14 @@ for (const token of ["logoGlow", "signal", "title || brand.appName", "logoCompac
   if (!brandMark.includes(token)) throw new Error(`brand mark is missing: ${token}`);
 }
 
+const errorBoundary = fs.readFileSync("src/components/ErrorBoundary.js", "utf8");
+for (const token of ["V3Screen", "V3Card", "V3Button", "V3Badge", "./v3/ui", "../theme/v3", "clearMobileSession", "disconnectMobileSocket"]) {
+  if (!errorBoundary.includes(token)) throw new Error(`ErrorBoundary V3 shell is missing: ${token}`);
+}
+for (const forbidden of ["../utils/mobileTheme", "MobileButton", "تفاصيل DEV"]) {
+  if (errorBoundary.includes(forbidden)) throw new Error(`ErrorBoundary must not use old visual shell: ${forbidden}`);
+}
+
 const mobileCard = fs.readFileSync("src/components/ui/MobileCard.js", "utf8");
 for (const token of ["tone === \"action\"", "tone === \"glass\"", "tone === \"command\"", "tone === \"map\"", "PressableScale"]) {
   if (!mobileCard.includes(token)) throw new Error(`v2 card system is missing: ${token}`);
