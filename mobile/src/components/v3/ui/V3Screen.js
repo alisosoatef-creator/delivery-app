@@ -30,6 +30,7 @@ export function V3Screen({
         <ScrollView
           style={styles.scroller}
           contentInsetAdjustmentBehavior="automatic"
+          keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
           contentContainerStyle={content}
@@ -53,6 +54,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
+    flexGrow: 1,
     gap: v3Spacing.md
   },
   flexContent: {
