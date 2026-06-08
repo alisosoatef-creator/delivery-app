@@ -32,7 +32,7 @@
 - If driver location is available, confirm nearby requests are listed before farther requests; if not, confirm same-city fallback still works.
 
 ## Driver Online Status Sync QA
-- Sign in as an approved captain on web and mobile and confirm both read `drivers.onlineStatus` as the availability source.
+- Sign in as an approved captain on the web driver workflow and confirm it reads `drivers.onlineStatus` as the availability source.
 - Switch the captain online and confirm Admin Drivers shows the captain as available after realtime/refetch.
 - Switch the captain offline and confirm Available Rides returns no requests with `driver_offline`.
 - Suspend a captain and confirm the captain is forced offline and cannot switch online from the driver endpoint.

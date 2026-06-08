@@ -37,10 +37,6 @@ OpenStreetMap tiles and OSRM public demo are development conveniences, not produ
 - Add Redis adapter if the backend needs multiple instances.
 - Add authenticated Socket.IO rooms before public launch.
 
-## Mobile Stores Later
-- Package the product as mobile apps after the web workflows stabilize.
-- Prepare privacy policy, terms, support contact, and app review assets before store submission.
-
 ## Pre-Deployment Gate
 Before choosing paid services or hosting:
 - Finish `docs/production-readiness.md`.

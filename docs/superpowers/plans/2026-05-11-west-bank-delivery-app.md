@@ -60,6 +60,8 @@
 
 ### Task 7: Expo Mobile App
 
+> Historical note: this work described the old app under `mobile/`, which has since been removed. A future mobile app should be planned separately instead of reusing these deleted files or commands.
+
 - [x] Create a real Expo app in `mobile/`.
 - [x] Remove the nested Git repository created by the Expo template.
 - [x] Add Expo Router routes in `mobile/app/`.

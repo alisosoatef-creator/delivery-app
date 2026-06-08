@@ -39,21 +39,6 @@ npm.cmd run dev
 
 Vite runs on `http://127.0.0.1:5173` and proxies `/api` and `/socket.io` to the backend.
 
-## Run Mobile Foundation
-The Expo app lives in `mobile/` and shares the same Backend APIs.
-
-```powershell
-npm.cmd run mobile:install
-npm.cmd run mobile:start
-npm.cmd run mobile:check
-```
-
-Mobile API URL notes:
-- Expo Web/local desktop can use `http://127.0.0.1:3001/api`.
-- Android emulator usually needs `http://10.0.2.2:3001/api`.
-- A physical phone needs your computer LAN IP on the same Wi-Fi, for example `http://192.168.1.20:3001/api`.
-- Configure this with `EXPO_PUBLIC_API_BASE_URL`; do not put secrets in `EXPO_PUBLIC_*`.
-
 ## Database
 - Default SQLite path: `backend/dev.sqlite`.
 - Init/seed are automatic when the backend starts.

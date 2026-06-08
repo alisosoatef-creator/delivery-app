@@ -10,7 +10,6 @@ dist/
 backend/.env
 backend/.env.*
 !backend/.env.example
-!mobile/.env.example
 *.log
 logs/
 backend/*.sqlite

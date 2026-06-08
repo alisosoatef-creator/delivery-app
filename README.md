@@ -32,17 +32,6 @@ npm.cmd run api:check
 npm.cmd run verify
 ```
 
-## Mobile Foundation
-The Expo / React Native foundation lives in `mobile/`.
-
-```powershell
-npm.cmd run mobile:install
-npm.cmd run mobile:start
-npm.cmd run mobile:check
-```
-
-Set `EXPO_PUBLIC_API_BASE_URL` for mobile devices when needed. Android emulator usually uses `http://10.0.2.2:3001/api`; a real phone needs the computer LAN IP.
-
 ## Local Documentation
 - Local development guide: `docs/local-development.md`
 - QA checklist: `docs/qa-checklist.md`
