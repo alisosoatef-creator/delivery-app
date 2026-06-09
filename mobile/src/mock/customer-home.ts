@@ -6,7 +6,7 @@ export const customerHomeMock = {
   subtitle: "رحلتك القادمة تبدأ من الخريطة",
   nearbyDrivers: "8",
   eta: "3 د",
-  suggestedFare: "25 ر.س",
+  suggestedFare: "25 شيكل",
   pickup: "موقعك الحالي",
   destinationHint: "إلى أين وجهتك اليوم؟",
   savedPlaces: [
@@ -21,20 +21,12 @@ export const customerHomeMock = {
       icon: Briefcase
     }
   ],
-  tripOptions: [
-    {
-      label: "وصل عادي",
-      meta: "3 دقائق",
-      price: "25 ر.س",
-      active: true
-    },
-    {
-      label: "وصل بلس",
-      meta: "5 دقائق",
-      price: "34 ر.س",
-      active: false
-    }
-  ],
+  service: {
+    label: "خدمة واصل",
+    meta: "طلب واحد يصل لأقرب كابتن مناسب",
+    eta: "3 دقائق",
+    price: "25 شيكل"
+  },
   navItems: [
     {
       label: "الرئيسية",

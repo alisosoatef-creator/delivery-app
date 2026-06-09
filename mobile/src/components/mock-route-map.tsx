@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { MapPin, Navigation } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, gradients, radii, spacing } from "@/design/tokens";
+import { colors, gradients, mapStyle, radii, shadows, spacing } from "@/design/tokens";
 import { customerHomeMock } from "@/mock/customer-home";
 
 const roads = [
@@ -18,7 +18,7 @@ const roads = [
 export function MockRouteMap() {
   return (
     <View testID="mock-route-map" style={styles.mapShell}>
-      <LinearGradient colors={["#101A2D", "#07101F"]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={mapStyle.background} style={StyleSheet.absoluteFill} />
       <View style={styles.gridLayer}>
         {roads.map((road, index) => (
           <View
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderStrong,
     backgroundColor: colors.graphite,
-    boxShadow: "0 18px 48px rgba(0, 0, 0, 0.42)"
+    boxShadow: shadows.floating
   },
   gridLayer: {
     position: "absolute",
@@ -87,14 +87,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     height: 2,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(92, 126, 255, 0.42)"
+    backgroundColor: mapStyle.road
   },
   routeSegment: {
     position: "absolute",
     height: 4,
     borderRadius: radii.pill,
-    backgroundColor: colors.cyan,
-    boxShadow: "0 0 16px rgba(0, 229, 255, 0.78)"
+    backgroundColor: mapStyle.route,
+    boxShadow: shadows.glowCyan
   },
   routeSegmentOne: {
     top: 154,
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.36)",
     borderRadius: radii.pill,
-    backgroundColor: "rgba(13, 19, 32, 0.82)"
+    backgroundColor: mapStyle.markerSurface
   },
   originMarker: {
     top: 158,

@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
 import { MockRouteMap } from "@/components/mock-route-map";
+import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { customerHomeMock } from "@/mock/customer-home";
 
@@ -27,16 +28,11 @@ type RideStage = "idle" | "searching" | "captain" | "active" | "completed";
 export function CustomerHomeScreen() {
   const insets = useSafeAreaInsets();
   const [selectedPlace, setSelectedPlace] = useState<string | null>(null);
-  const [selectedTrip, setSelectedTrip] = useState<string>(customerHomeMock.tripOptions[0].label);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rideStage, setRideStage] = useState<RideStage>("idle");
   const [rating, setRating] = useState<number | null>(null);
-
-  const selectedTripOption =
-    customerHomeMock.tripOptions.find((option) => option.label === selectedTrip) ??
-    customerHomeMock.tripOptions[0];
 
   function resetRide() {
     setRideStage("idle");
@@ -69,24 +65,21 @@ export function CustomerHomeScreen() {
             </View>
           </View>
           <View style={styles.stageActions}>
-            <Pressable
-              accessibilityRole="button"
+            <PremiumButton
               accessibilityLabel="إلغاء البحث"
-              style={styles.secondaryButton}
+              label="إلغاء البحث"
               onPress={resetRide}
+              style={styles.secondaryButton}
+              variant="secondary"
             >
               <XCircle color={colors.textMuted} size={16} />
-              <Text style={styles.secondaryButtonText}>إلغاء البحث</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
+            </PremiumButton>
+            <PremiumButton
               accessibilityLabel="عرض الكابتن التجريبي"
-              style={styles.stagePrimaryButton}
+              label="عرض الكابتن"
               onPress={() => setRideStage("captain")}
-            >
-              <LinearGradient pointerEvents="none" colors={gradients.primary} style={StyleSheet.absoluteFill} />
-              <Text style={styles.stagePrimaryText}>عرض الكابتن</Text>
-            </Pressable>
+              style={styles.stagePrimaryButton}
+            />
           </View>
         </GlassCard>
       );
@@ -116,7 +109,7 @@ export function CustomerHomeScreen() {
             </View>
             <View style={styles.miniMetric}>
               <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{selectedTripOption.price}</Text>
+              <Text style={styles.metricValue}>{customerHomeMock.service.price}</Text>
               <Text style={styles.metricLabel}>السعر</Text>
             </View>
           </View>
@@ -127,15 +120,12 @@ export function CustomerHomeScreen() {
             <Pressable accessibilityRole="button" accessibilityLabel="رسالة للكابتن" style={styles.iconAction}>
               <MessageCircle color={colors.textSoft} size={18} />
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
+            <PremiumButton
               accessibilityLabel="بدء الرحلة التجريبية"
-              style={styles.stagePrimaryButton}
+              label="بدء الرحلة"
               onPress={() => setRideStage("active")}
-            >
-              <LinearGradient pointerEvents="none" colors={gradients.primary} style={StyleSheet.absoluteFill} />
-              <Text style={styles.stagePrimaryText}>بدء الرحلة</Text>
-            </Pressable>
+              style={styles.stagePrimaryButton}
+            />
           </View>
         </GlassCard>
       );
@@ -167,15 +157,12 @@ export function CustomerHomeScreen() {
               <Text style={styles.metricLabel}>الوقت المتبقي</Text>
             </View>
           </View>
-          <Pressable
-            accessibilityRole="button"
+          <PremiumButton
             accessibilityLabel="إنهاء الرحلة"
-            style={styles.stagePrimaryButton}
+            label="إنهاء الرحلة"
             onPress={() => setRideStage("completed")}
-          >
-            <LinearGradient pointerEvents="none" colors={gradients.primary} style={StyleSheet.absoluteFill} />
-            <Text style={styles.stagePrimaryText}>إنهاء الرحلة</Text>
-          </Pressable>
+            style={styles.stagePrimaryButton}
+          />
         </GlassCard>
       );
     }
@@ -205,9 +192,13 @@ export function CustomerHomeScreen() {
           ))}
         </View>
         {rating ? <Text style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text> : null}
-        <Pressable accessibilityRole="button" accessibilityLabel="رحلة جديدة" style={styles.secondaryButton} onPress={resetRide}>
-          <Text style={styles.secondaryButtonText}>رحلة جديدة</Text>
-        </Pressable>
+        <PremiumButton
+          accessibilityLabel="رحلة جديدة"
+          label="رحلة جديدة"
+          onPress={resetRide}
+          style={styles.secondaryButton}
+          variant="secondary"
+        />
       </GlassCard>
     );
   }
@@ -361,71 +352,45 @@ export function CustomerHomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text selectable style={styles.sectionTitle}>
-            اختر نوع الرحلة
+            تفاصيل الطلب
           </Text>
         </View>
 
-        <View style={styles.tripOptions}>
-          {customerHomeMock.tripOptions.map((option) => {
-            const isActive = option.label === selectedTrip;
+        <GlassCard style={styles.tripCard}>
+          <View style={styles.tripPricePill}>
+            <Text style={styles.tripPrice}>{customerHomeMock.service.price}</Text>
+          </View>
+          <View style={styles.tripCopy}>
+            <Text style={styles.tripLabel}>{customerHomeMock.service.label}</Text>
+            <Text style={styles.tripMeta}>{customerHomeMock.service.meta}</Text>
+            <Text style={styles.tripMeta}>{customerHomeMock.service.eta}</Text>
+          </View>
+        </GlassCard>
 
-            return (
-            <Pressable
-              key={option.label}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
-              accessibilityLabel={`اختيار ${option.label}`}
-              onPress={() => {
-                setSelectedTrip(option.label);
-                resetRide();
-              }}
-            >
-              {({ pressed }) => (
-                <GlassCard
-                  style={[
-                    styles.tripCard,
-                    isActive ? styles.tripCardActive : null,
-                    pressed ? styles.pressed : null
-                  ]}
-                >
-                  <View style={styles.tripPricePill}>
-                    <Text style={styles.tripPrice}>{option.price}</Text>
-                  </View>
-                  <View style={styles.tripCopy}>
-                    <Text style={styles.tripLabel}>{option.label}</Text>
-                    <Text style={styles.tripMeta}>{option.meta}</Text>
-                  </View>
-                </GlassCard>
-              )}
-            </Pressable>
-            );
-          })}
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
+        <PremiumButton
           accessibilityLabel="طلب رحلة"
-          style={({ pressed }) => [styles.primaryButton, pressed ? styles.primaryButtonPressed : null]}
+          label="اطلب رحلة"
+          style={styles.primaryButton}
           onPress={() => {
             setRequestStatus("تم إرسال طلبك التجريبي");
             setRideStage("searching");
             setRating(null);
             setNotice(null);
           }}
-        >
-          <LinearGradient pointerEvents="none" colors={gradients.primary} style={StyleSheet.absoluteFill} />
-          <Text style={styles.primaryButtonText}>
-            اطلب رحلة
-          </Text>
-        </Pressable>
+        />
 
         {renderRideStagePanel()}
 
         <GlassCard style={styles.feedbackCard}>
           <Text style={styles.feedbackText}>
             {requestStatus ??
-              `الرحلة المحددة: ${selectedTripOption.label} • ${selectedTripOption.price}`}
+              `الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
           </Text>
+          {requestStatus ? (
+            <Text style={styles.feedbackMeta}>
+              {`الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
+            </Text>
+          ) : null}
           {selectedPlace ? (
             <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedPlace}`}</Text>
           ) : null}
@@ -665,18 +630,12 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "600"
   },
-  tripOptions: {
-    gap: spacing.sm
-  },
   tripCard: {
     minHeight: 68,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: spacing.md
-  },
-  tripCardActive: {
-    borderColor: "rgba(0, 229, 255, 0.52)"
   },
   selectableCardActive: {
     borderColor: "rgba(0, 229, 255, 0.46)",
@@ -715,22 +674,7 @@ const styles = StyleSheet.create({
   },
   primaryButton: {
     height: 56,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.24)"
-  },
-  primaryButtonPressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }]
-  },
-  primaryButtonText: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
+    borderRadius: radii.sm
   },
   bottomNav: {
     position: "absolute",
@@ -865,27 +809,10 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: "rgba(255, 255, 255, 0.04)"
   },
-  secondaryButtonText: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "800"
-  },
   stagePrimaryButton: {
     minHeight: 48,
     flex: 1,
-    overflow: "hidden",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.24)"
-  },
-  stagePrimaryText: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
+    borderRadius: radii.sm
   },
   captainRow: {
     flexDirection: "row-reverse",

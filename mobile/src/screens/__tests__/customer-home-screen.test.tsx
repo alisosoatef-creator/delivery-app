@@ -23,6 +23,11 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("المنزل")).toBeTruthy();
     expect(screen.getByText("العمل")).toBeTruthy();
     expect(screen.getByText("سائقون قريبون")).toBeTruthy();
+    expect(screen.getByText("خدمة واصل")).toBeTruthy();
+    expect(screen.getAllByText("25 شيكل")).toHaveLength(2);
+    expect(screen.queryByText("وصل عادي")).toBeNull();
+    expect(screen.queryByText("وصل بلس")).toBeNull();
+    expect(screen.queryByText("25 ر.س")).toBeNull();
     expect(screen.getByTestId("mock-route-map")).toBeTruthy();
     expect(screen.getByTestId("floating-bottom-nav")).toBeTruthy();
   });
@@ -39,14 +44,12 @@ describe("CustomerHomeScreen", () => {
       </SafeAreaProvider>
     );
 
-    await fireEvent.press(screen.getByLabelText("اختيار وصل بلس"));
-    expect(screen.getByText("الرحلة المحددة: وصل بلس • 34 ر.س")).toBeTruthy();
-
     await fireEvent.press(screen.getByLabelText("اختيار المنزل"));
     expect(screen.getAllByText("الوجهة المختارة: المنزل")).toHaveLength(2);
 
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     expect(screen.getByText("تم إرسال طلبك التجريبي")).toBeTruthy();
+    expect(screen.getByText("الطلب المحدد: خدمة واصل • 25 شيكل")).toBeTruthy();
 
     await fireEvent.press(screen.getByText("رحلاتي"));
     expect(screen.getByText("التبويب النشط: رحلاتي")).toBeTruthy();
