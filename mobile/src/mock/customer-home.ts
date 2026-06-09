@@ -13,6 +13,19 @@ export const customerHomeMock = {
   tripDistance: "2.4 كم",
   defaultPaymentMethod: "كاش عند الاستلام",
   paymentMethods: ["كاش عند الاستلام", "فيزا"] as const,
+  matchingCaptains: "3 كباتن يطابقون الطلب",
+  captain: {
+    name: "أحمد محمد",
+    initials: "أ",
+    rating: "4.9",
+    phone: "+970 59 555 1234",
+    carModel: "تويوتا كامري 2022",
+    carColor: "أبيض",
+    plate: "1234",
+    arrivalEta: "3 د",
+    locationLabel: "قريب من رفيديا",
+    status: "الكابتن في الطريق إليك"
+  },
   savedPlaces: [
     {
       label: "المنزل",

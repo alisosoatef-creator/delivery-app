@@ -96,6 +96,54 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("تقييمك: 5 نجوم")).toBeTruthy();
   });
 
+  it("shows a premium captain search radar with trip summary and cancel action", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByTestId("captain-search-radar")).toBeTruthy();
+    expect(screen.getByText("ملخص البحث")).toBeTruthy();
+    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("3 كباتن يطابقون الطلب")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إلغاء البحث"));
+
+    expect(screen.getByText("تم إلغاء البحث عن كابتن")).toBeTruthy();
+    expect(screen.queryByText("جاري البحث عن كابتن")).toBeNull();
+  });
+
+  it("shows a premium accepted captain card with mock contact actions", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("عرض الكابتن التجريبي"));
+
+    expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
+    expect(screen.getByText("تم قبول طلبك")).toBeTruthy();
+    expect(screen.getByText("الكابتن في الطريق إليك")).toBeTruthy();
+    expect(screen.getByText("أحمد محمد")).toBeTruthy();
+    expect(screen.getByText("تويوتا كامري 2022")).toBeTruthy();
+    expect(screen.getByText("أبيض • لوحة 1234")).toBeTruthy();
+    expect(screen.getByText("+970 59 555 1234")).toBeTruthy();
+    expect(screen.getByText("قريب من رفيديا")).toBeTruthy();
+    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+
+    await fireEvent.press(screen.getByLabelText("اتصال بالكابتن"));
+    expect(screen.getByText("زر الاتصال mock فقط الآن")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("رسالة للكابتن"));
+    expect(screen.getByText("زر الرسالة mock فقط الآن")).toBeTruthy();
+  });
+
   it("keeps the floating nav interactive", async () => {
     const screen = await renderCustomerHome();
 

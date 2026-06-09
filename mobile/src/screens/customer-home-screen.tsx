@@ -76,6 +76,11 @@ export function CustomerHomeScreen() {
     setShowConfirmation(false);
   }
 
+  function cancelSearch() {
+    resetRide();
+    setNotice("تم إلغاء البحث عن كابتن");
+  }
+
   function renderTripConfirmation() {
     if (!showConfirmation || !selectedDestination) {
       return null;
@@ -138,18 +143,38 @@ export function CustomerHomeScreen() {
               ) : null}
             </View>
           </View>
-          <View style={styles.searchRings}>
+          <View testID="captain-search-radar" style={styles.searchRings}>
             <View style={[styles.ring, styles.ringLarge]} />
             <View style={[styles.ring, styles.ringMedium]} />
+            <View style={styles.radarScan} />
+            <View style={[styles.radarDot, styles.radarDotOne]} />
+            <View style={[styles.radarDot, styles.radarDotTwo]} />
             <View style={styles.searchCore}>
               <Car color={colors.text} size={20} />
             </View>
+            <View style={styles.radarMetaPill}>
+              <Text style={styles.radarMetaText}>{customerHomeMock.matchingCaptains}</Text>
+            </View>
           </View>
+          {selectedDestination ? (
+            <View style={styles.stageSummary}>
+              <Text selectable style={styles.stageSummaryTitle}>
+                ملخص البحث
+              </Text>
+              <View style={styles.confirmationRows}>
+                <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+                <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
+                <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
+                <InfoRow label="السعر" value={selectedDestination.price} />
+                <InfoRow label="طريقة الدفع" value={paymentMethod} />
+              </View>
+            </View>
+          ) : null}
           <View style={styles.stageActions}>
             <PremiumButton
               accessibilityLabel="إلغاء البحث"
               label="إلغاء البحث"
-              onPress={resetRide}
+              onPress={cancelSearch}
               style={styles.secondaryButton}
               variant="secondary"
             >
@@ -167,38 +192,83 @@ export function CustomerHomeScreen() {
     }
 
     if (rideStage === "captain") {
+      const captain = customerHomeMock.captain;
+
       return (
-        <GlassCard style={styles.stageCard}>
+        <GlassCard testID="accepted-captain-card" style={styles.acceptedCaptainCard} variant="strong">
+          <View style={styles.acceptedHeader}>
+            <View style={styles.acceptedBadge}>
+              <CheckCircle color={colors.cyan} size={18} />
+              <Text selectable style={styles.acceptedBadgeText}>
+                تم قبول طلبك
+              </Text>
+            </View>
+            <Text selectable style={styles.acceptedStatus}>
+              {captain.status}
+            </Text>
+          </View>
+
           <View style={styles.captainRow}>
             <View style={styles.captainAvatar}>
-              <Text style={styles.captainInitial}>أ</Text>
+              <Text style={styles.captainInitial}>{captain.initials}</Text>
             </View>
             <View style={styles.stageCopy}>
-              <Text style={styles.stageTitle}>أحمد محمد</Text>
-              <Text style={styles.stageMeta}>تويوتا كامري • أبيض • 1234</Text>
+              <Text selectable style={styles.stageTitle}>
+                {captain.name}
+              </Text>
+              <Text selectable style={styles.stageMeta}>
+                {captain.carModel}
+              </Text>
+              <Text selectable style={styles.stageMeta}>
+                {`${captain.carColor} • لوحة ${captain.plate}`}
+              </Text>
             </View>
             <View style={styles.ratingPill}>
               <Star color={colors.warning} fill={colors.warning} size={14} />
-              <Text style={styles.ratingText}>4.9</Text>
+              <Text style={styles.ratingText}>{captain.rating}</Text>
             </View>
           </View>
+
           <View style={styles.captainStats}>
             <View style={styles.miniMetric}>
               <Clock color={colors.cyan} size={16} />
-              <Text style={styles.metricValue}>3 د</Text>
+              <Text style={styles.metricValue}>{captain.arrivalEta}</Text>
               <Text style={styles.metricLabel}>وصول</Text>
             </View>
             <View style={styles.miniMetric}>
+              <MapPin color={colors.cyan} size={16} />
+              <Text style={styles.metricValue}>{captain.locationLabel}</Text>
+              <Text style={styles.metricLabel}>موقع الكابتن</Text>
+            </View>
+            <View style={styles.miniMetric}>
               <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{customerHomeMock.service.price}</Text>
+              <Text style={styles.metricValue}>{selectedDestination?.price ?? customerHomeMock.service.price}</Text>
               <Text style={styles.metricLabel}>السعر</Text>
             </View>
           </View>
+
+          <View style={styles.captainDetailsGrid}>
+            <InfoRow label="رقم الكابتن" value={captain.phone} />
+            <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+            {selectedDestination ? <InfoRow label="منطقة الوجهة" value={selectedDestination.area} /> : null}
+            {selectedDestination ? <InfoRow label="تفصيل الوجهة" value={destinationDetail} /> : null}
+          </View>
+
           <View style={styles.stageActions}>
-            <Pressable accessibilityRole="button" accessibilityLabel="اتصال بالكابتن" style={styles.iconAction}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="اتصال بالكابتن"
+              onPress={() => setNotice("زر الاتصال mock فقط الآن")}
+              style={styles.iconAction}
+            >
               <Phone color={colors.textSoft} size={18} />
             </Pressable>
-            <Pressable accessibilityRole="button" accessibilityLabel="رسالة للكابتن" style={styles.iconAction}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="رسالة للكابتن"
+              onPress={() => setNotice("زر الرسالة mock فقط الآن")}
+              style={styles.iconAction}
+            >
               <MessageCircle color={colors.textSoft} size={18} />
             </Pressable>
             <PremiumButton
@@ -1048,7 +1118,7 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   searchRings: {
-    height: 128,
+    height: 156,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -1074,6 +1144,62 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: "rgba(0, 229, 255, 0.18)"
   },
+  radarScan: {
+    position: "absolute",
+    width: 74,
+    height: 2,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.62)",
+    transform: [{ rotate: "-32deg" }],
+    boxShadow: "0 0 18px rgba(0, 229, 255, 0.54)"
+  },
+  radarDot: {
+    position: "absolute",
+    width: 8,
+    height: 8,
+    borderRadius: radii.pill,
+    backgroundColor: colors.cyan,
+    boxShadow: "0 0 12px rgba(0, 229, 255, 0.7)"
+  },
+  radarDotOne: {
+    top: 42,
+    right: 82
+  },
+  radarDotTwo: {
+    left: 92,
+    bottom: 45,
+    backgroundColor: colors.violetSoft
+  },
+  radarMetaPill: {
+    position: "absolute",
+    bottom: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  radarMetaText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  stageSummary: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  stageSummaryTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
   stageActions: {
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -1095,6 +1221,42 @@ const styles = StyleSheet.create({
     minHeight: 48,
     flex: 1,
     borderRadius: radii.sm
+  },
+  acceptedCaptainCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.32)"
+  },
+  acceptedHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  acceptedBadge: {
+    minHeight: 36,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.32)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  acceptedBadgeText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  acceptedStatus: {
+    ...rtlText,
+    flex: 1,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
   },
   captainRow: {
     flexDirection: "row-reverse",
@@ -1134,6 +1296,14 @@ const styles = StyleSheet.create({
   captainStats: {
     flexDirection: "row-reverse",
     gap: spacing.sm
+  },
+  captainDetailsGrid: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
   },
   miniMetric: {
     flex: 1,
