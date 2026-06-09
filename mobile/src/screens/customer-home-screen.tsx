@@ -14,7 +14,7 @@ import {
   XCircle
 } from "lucide-react-native";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
@@ -24,20 +24,96 @@ import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { customerHomeMock } from "@/mock/customer-home";
 
 type RideStage = "idle" | "searching" | "captain" | "active" | "completed";
+type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
+type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
 
 export function CustomerHomeScreen() {
   const insets = useSafeAreaInsets();
-  const [selectedPlace, setSelectedPlace] = useState<string | null>(null);
+  const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rideStage, setRideStage] = useState<RideStage>("idle");
   const [rating, setRating] = useState<number | null>(null);
+  const [destinationDetail, setDestinationDetail] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   function resetRide() {
     setRideStage("idle");
     setRequestStatus(null);
     setRating(null);
+    setShowConfirmation(false);
+  }
+
+  function selectDestination(place: DestinationPlace) {
+    setSelectedDestination(place);
+    setDestinationDetail(place.detail);
+    setShowConfirmation(false);
+    setRequestStatus(null);
+    setNotice(null);
+    resetRide();
+  }
+
+  function requestTrip() {
+    if (!selectedDestination) {
+      setNotice("اختر وجهتك قبل تأكيد الطلب");
+      setShowConfirmation(false);
+      return;
+    }
+
+    setNotice(null);
+    setRequestStatus(null);
+    setRideStage("idle");
+    setShowConfirmation(true);
+  }
+
+  function confirmTrip() {
+    setRequestStatus("تم تأكيد طلبك التجريبي");
+    setRideStage("searching");
+    setRating(null);
+    setNotice(null);
+    setShowConfirmation(false);
+  }
+
+  function renderTripConfirmation() {
+    if (!showConfirmation || !selectedDestination) {
+      return null;
+    }
+
+    return (
+      <GlassCard style={styles.confirmationCard} variant="strong">
+        <View style={styles.stageHeader}>
+          <View style={styles.stagePulse}>
+            <ShieldCheck color={colors.cyan} size={22} />
+          </View>
+          <View style={styles.stageCopy}>
+            <Text selectable style={styles.stageTitle}>
+              تأكيد الطلب
+            </Text>
+            <Text selectable style={styles.stageMeta}>
+              راجع تفاصيل الرحلة قبل إرسالها للكباتن القريبين
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.confirmationRows}>
+          <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+          <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
+          <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
+          <InfoRow label="المسافة" value={selectedDestination.distance} />
+          <InfoRow label="السعر التقديري" value={selectedDestination.price} />
+          <InfoRow label="طريقة الدفع" value={paymentMethod} />
+        </View>
+
+        <PremiumButton
+          accessibilityLabel="تأكيد الطلب"
+          label="تأكيد الطلب"
+          onPress={confirmTrip}
+          style={styles.stagePrimaryButton}
+        />
+      </GlassCard>
+    );
   }
 
   function renderRideStagePanel() {
@@ -55,6 +131,11 @@ export function CustomerHomeScreen() {
             <View style={styles.stageCopy}>
               <Text style={styles.stageTitle}>جاري البحث عن كابتن</Text>
               <Text style={styles.stageMeta}>نبحث عن أقرب كابتن يناسب رحلتك الآن</Text>
+              {selectedDestination ? (
+                <Text style={styles.stageMeta}>
+                  {`${customerHomeMock.pickup} ← ${selectedDestination.area} • ${destinationDetail}`}
+                </Text>
+              ) : null}
             </View>
           </View>
           <View style={styles.searchRings}>
@@ -276,10 +357,13 @@ export function CustomerHomeScreen() {
                 <MapPin color={colors.cyan} size={18} />
               </View>
               <View style={styles.searchCopy}>
-                <Text style={styles.searchLabel}>{customerHomeMock.pickup}</Text>
+                <Text style={styles.searchLabel}>{customerHomeMock.pickupDetail}</Text>
                 <Text style={styles.searchValue}>
-                  {selectedPlace ? `الوجهة المختارة: ${selectedPlace}` : customerHomeMock.destinationHint}
+                  {selectedDestination
+                    ? `الوجهة المختارة: ${selectedDestination.label}`
+                    : customerHomeMock.destinationHint}
                 </Text>
+                {selectedDestination ? <Text style={styles.searchLabel}>{selectedDestination.area}</Text> : null}
               </View>
               <ChevronLeft color={colors.textMuted} size={20} />
             </GlassCard>
@@ -322,17 +406,13 @@ export function CustomerHomeScreen() {
                 key={place.label}
                 accessibilityRole="button"
                 accessibilityLabel={`اختيار ${place.label}`}
-          onPress={() => {
-            setSelectedPlace(place.label);
-                  resetRide();
-                  setNotice(null);
-                }}
+                onPress={() => selectDestination(place)}
               >
                 {({ pressed }) => (
                   <GlassCard
                     style={[
                       styles.placeCard,
-                      selectedPlace === place.label ? styles.selectableCardActive : null,
+                      selectedDestination?.label === place.label ? styles.selectableCardActive : null,
                       pressed ? styles.pressed : null
                     ]}
                   >
@@ -341,6 +421,7 @@ export function CustomerHomeScreen() {
                     </View>
                     <View style={styles.placeCopy}>
                       <Text style={styles.placeLabel}>{place.label}</Text>
+                      <Text style={styles.placeDetail}>{place.area}</Text>
                       <Text style={styles.placeDetail}>{place.detail}</Text>
                     </View>
                   </GlassCard>
@@ -350,6 +431,68 @@ export function CustomerHomeScreen() {
           })}
         </View>
 
+        {selectedDestination ? (
+          <GlassCard style={styles.destinationCard} variant="strong">
+            <View style={styles.destinationHeader}>
+              <View style={styles.destinationPin}>
+                <MapPin color={colors.cyan} size={18} />
+              </View>
+              <View style={styles.destinationCopy}>
+                <Text selectable style={styles.destinationTitle}>
+                  {selectedDestination.area}
+                </Text>
+                <Text selectable style={styles.destinationMeta}>
+                  {selectedDestination.label}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.detailField}>
+              <Text selectable style={styles.detailLabel}>
+                تفصيل الوجهة
+              </Text>
+              <TextInput
+                accessibilityLabel="تفصيل الوجهة"
+                onChangeText={setDestinationDetail}
+                placeholder="اكتب تفصيل الوجهة"
+                placeholderTextColor={colors.textMuted}
+                style={styles.detailInput}
+                value={destinationDetail}
+              />
+            </View>
+
+            <View style={styles.paymentGroup}>
+              <Text selectable style={styles.detailLabel}>
+                طريقة الدفع
+              </Text>
+              <View style={styles.paymentOptions}>
+                {customerHomeMock.paymentMethods.map((method) => (
+                  <Pressable
+                    key={method}
+                    accessibilityLabel={method}
+                    accessibilityRole="button"
+                    onPress={() => setPaymentMethod(method)}
+                    style={({ pressed }) => [
+                      styles.paymentOption,
+                      paymentMethod === method ? styles.paymentOptionActive : null,
+                      pressed ? styles.pressed : null
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.paymentOptionText,
+                        paymentMethod === method ? styles.paymentOptionTextActive : null
+                      ]}
+                    >
+                      {method}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </GlassCard>
+        ) : null}
+
         <View style={styles.sectionHeader}>
           <Text selectable style={styles.sectionTitle}>
             تفاصيل الطلب
@@ -358,12 +501,14 @@ export function CustomerHomeScreen() {
 
         <GlassCard style={styles.tripCard}>
           <View style={styles.tripPricePill}>
-            <Text style={styles.tripPrice}>{customerHomeMock.service.price}</Text>
+            <Text style={styles.tripPrice}>{selectedDestination?.price ?? customerHomeMock.service.price}</Text>
           </View>
           <View style={styles.tripCopy}>
             <Text style={styles.tripLabel}>{customerHomeMock.service.label}</Text>
             <Text style={styles.tripMeta}>{customerHomeMock.service.meta}</Text>
-            <Text style={styles.tripMeta}>{customerHomeMock.service.eta}</Text>
+            <Text style={styles.tripMeta}>
+              {selectedDestination ? `${selectedDestination.distance} • ${customerHomeMock.service.eta}` : customerHomeMock.service.eta}
+            </Text>
           </View>
         </GlassCard>
 
@@ -371,13 +516,10 @@ export function CustomerHomeScreen() {
           accessibilityLabel="طلب رحلة"
           label="اطلب رحلة"
           style={styles.primaryButton}
-          onPress={() => {
-            setRequestStatus("تم إرسال طلبك التجريبي");
-            setRideStage("searching");
-            setRating(null);
-            setNotice(null);
-          }}
+          onPress={requestTrip}
         />
+
+        {renderTripConfirmation()}
 
         {renderRideStagePanel()}
 
@@ -388,11 +530,14 @@ export function CustomerHomeScreen() {
           </Text>
           {requestStatus ? (
             <Text style={styles.feedbackMeta}>
-              {`الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
+              {`الطلب المحدد: ${customerHomeMock.service.label} • ${selectedDestination?.price ?? customerHomeMock.service.price}`}
             </Text>
           ) : null}
-          {selectedPlace ? (
-            <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedPlace}`}</Text>
+          {selectedDestination ? (
+            <>
+              <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
+              <Text style={styles.feedbackMeta}>{`${customerHomeMock.pickup} ← ${selectedDestination.area}`}</Text>
+            </>
           ) : null}
         </GlassCard>
       </ScrollView>
@@ -433,6 +578,19 @@ export function CustomerHomeScreen() {
       <View pointerEvents="none" style={[styles.activeNavToast, { bottom: insets.bottom + 92 }]}>
         <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
       </View>
+    </View>
+  );
+}
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <Text selectable style={styles.infoValue}>
+        {value}
+      </Text>
+      <Text selectable style={styles.infoLabel}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -675,6 +833,130 @@ const styles = StyleSheet.create({
   primaryButton: {
     height: 56,
     borderRadius: radii.sm
+  },
+  destinationCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.26)"
+  },
+  destinationHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  destinationPin: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  destinationCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  destinationTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  destinationMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "700"
+  },
+  detailField: {
+    gap: spacing.xs
+  },
+  detailLabel: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  detailInput: {
+    ...rtlText,
+    minHeight: 52,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "800",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  paymentGroup: {
+    gap: spacing.xs
+  },
+  paymentOptions: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  paymentOption: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  paymentOptionActive: {
+    borderColor: "rgba(0, 229, 255, 0.46)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  paymentOptionText: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  paymentOptionTextActive: {
+    color: colors.text
+  },
+  confirmationCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.3)"
+  },
+  confirmationRows: {
+    gap: spacing.xs
+  },
+  infoRow: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  infoLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  infoValue: {
+    ...rtlText,
+    flex: 1,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   bottomNav: {
     position: "absolute",

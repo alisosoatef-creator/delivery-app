@@ -7,18 +7,44 @@ export const customerHomeMock = {
   nearbyDrivers: "8",
   eta: "3 د",
   suggestedFare: "25 شيكل",
-  pickup: "موقعك الحالي",
+  pickup: "زواتا",
+  pickupDetail: "موقعك الحالي - زواتا",
   destinationHint: "إلى أين وجهتك اليوم؟",
+  tripDistance: "2.4 كم",
+  defaultPaymentMethod: "كاش عند الاستلام",
+  paymentMethods: ["كاش عند الاستلام", "فيزا"] as const,
   savedPlaces: [
     {
       label: "المنزل",
-      detail: "شارع النخيل، الرياض",
+      area: "زواتا",
+      detail: "زواتا - قرب الشارع الرئيسي",
+      distance: "0.0 كم",
+      price: "25 شيكل",
       icon: Home
     },
     {
-      label: "العمل",
-      detail: "طريق الملك فهد",
+      label: "مطعم شورما عكيفك",
+      area: "نابلس - رفيديا",
+      detail: "مطعم شورما عكيفك",
+      distance: "2.4 كم",
+      price: "25 شيكل",
+      icon: MapPin
+    },
+    {
+      label: "جامعة النجاح",
+      area: "نابلس - الحرم الجديد",
+      detail: "بوابة الجامعة الرئيسية",
+      distance: "3.1 كم",
+      price: "31 شيكل",
       icon: Briefcase
+    },
+    {
+      label: "الدوار",
+      area: "نابلس - وسط البلد",
+      detail: "منطقة الدوار",
+      distance: "2.8 كم",
+      price: "28 شيكل",
+      icon: MapPin
     }
   ],
   service: {
