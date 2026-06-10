@@ -16,7 +16,7 @@ import {
   XCircle
 } from "lucide-react-native";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useReducer, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -25,8 +25,8 @@ import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { customerHomeMock } from "@/mock/customer-home";
+import { createInitialCustomerTripFlow, customerTripFlowReducer } from "@/state/mock-trip-flow";
 
-type RideStage = "idle" | "searching" | "captain" | "active" | "completed";
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
 
@@ -34,25 +34,23 @@ export function CustomerHomeScreen() {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
+  const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-  const [rideStage, setRideStage] = useState<RideStage>("idle");
   const [rating, setRating] = useState<number | null>(null);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
-  const [showConfirmation, setShowConfirmation] = useState(false);
+  const { showConfirmation, stage: rideStage } = tripFlow;
 
   function resetRide() {
-    setRideStage("idle");
+    dispatchTripFlow({ type: "reset" });
     setRequestStatus(null);
     setRating(null);
-    setShowConfirmation(false);
   }
 
   function selectDestination(place: DestinationPlace) {
     setSelectedDestination(place);
     setDestinationDetail(place.detail);
-    setShowConfirmation(false);
     setRequestStatus(null);
     setNotice(null);
     resetRide();
@@ -61,22 +59,20 @@ export function CustomerHomeScreen() {
   function requestTrip() {
     if (!selectedDestination) {
       setNotice("اختر وجهتك قبل تأكيد الطلب");
-      setShowConfirmation(false);
+      dispatchTripFlow({ type: "reset" });
       return;
     }
 
     setNotice(null);
     setRequestStatus(null);
-    setRideStage("idle");
-    setShowConfirmation(true);
+    dispatchTripFlow({ type: "review-request" });
   }
 
   function confirmTrip() {
     setRequestStatus("تم تأكيد طلبك التجريبي");
-    setRideStage("searching");
+    dispatchTripFlow({ type: "confirm-request" });
     setRating(null);
     setNotice(null);
-    setShowConfirmation(false);
   }
 
   function cancelSearch() {
@@ -186,7 +182,7 @@ export function CustomerHomeScreen() {
             <PremiumButton
               accessibilityLabel="عرض الكابتن التجريبي"
               label="عرض الكابتن"
-              onPress={() => setRideStage("captain")}
+              onPress={() => dispatchTripFlow({ type: "assign-captain" })}
               style={styles.stagePrimaryButton}
             />
           </View>
@@ -277,7 +273,7 @@ export function CustomerHomeScreen() {
             <PremiumButton
               accessibilityLabel="بدء الرحلة التجريبية"
               label="بدء الرحلة"
-              onPress={() => setRideStage("active")}
+              onPress={() => dispatchTripFlow({ type: "start-trip" })}
               style={styles.stagePrimaryButton}
             />
           </View>
@@ -314,7 +310,7 @@ export function CustomerHomeScreen() {
           <PremiumButton
             accessibilityLabel="إنهاء الرحلة"
             label="إنهاء الرحلة"
-            onPress={() => setRideStage("completed")}
+            onPress={() => dispatchTripFlow({ type: "complete-trip" })}
             style={styles.stagePrimaryButton}
           />
         </GlassCard>

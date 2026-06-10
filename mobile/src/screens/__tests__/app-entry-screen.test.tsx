@@ -2,6 +2,8 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { MockAppProvider } from "@/state/mock-app-context";
+
 import { AppEntryScreen } from "../app-entry-screen";
 
 async function renderAppEntryScreen() {
@@ -12,7 +14,9 @@ async function renderAppEntryScreen() {
         insets: { top: 48, right: 0, bottom: 34, left: 0 }
       }}
     >
-      <AppEntryScreen />
+      <MockAppProvider>
+        <AppEntryScreen />
+      </MockAppProvider>
     </SafeAreaProvider>
   );
 }

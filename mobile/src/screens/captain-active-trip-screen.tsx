@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { CheckCircle, Clock, MapPin, MessageCircle, Navigation, Phone, User, Wallet } from "lucide-react-native";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useMemo, useReducer, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -10,8 +10,7 @@ import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
-
-type CaptainTripStep = "pickup" | "arrived" | "driving" | "completed";
+import { captainTripFlowReducer, createInitialCaptainTripFlow } from "@/state/mock-trip-flow";
 
 type CaptainActiveTripScreenProps = {
   onBackToRequests: () => void;
@@ -20,8 +19,9 @@ type CaptainActiveTripScreenProps = {
 
 export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainActiveTripScreenProps) {
   const insets = useSafeAreaInsets();
-  const [tripStep, setTripStep] = useState<CaptainTripStep>("pickup");
+  const [tripFlow, dispatchTripFlow] = useReducer(captainTripFlowReducer, createInitialCaptainTripFlow());
   const [notice, setNotice] = useState<string | null>(null);
+  const { step: tripStep } = tripFlow;
 
   const stepCopy = useMemo(() => {
     if (tripStep === "arrived") {
@@ -30,7 +30,7 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
         meta: "العميل جاهز، ابدأ الرحلة عند الصعود",
         buttonLabel: "ابدأ الرحلة الآن",
         accessibilityLabel: "بدء الرحلة التجريبية",
-        nextStep: "driving" as const
+        nextAction: { type: "start-trip" as const }
       };
     }
 
@@ -40,7 +40,7 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
         meta: "تابع المسار إلى الوجهة النهائية",
         buttonLabel: "إنهاء الرحلة",
         accessibilityLabel: "إنهاء الرحلة التجريبية",
-        nextStep: "completed" as const
+        nextAction: { type: "complete-trip" as const }
       };
     }
 
@@ -49,13 +49,13 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
       meta: "اتجه إلى نقطة الانطلاق واستعد لتأكيد الوصول",
       buttonLabel: "وصلت للعميل",
       accessibilityLabel: "تأكيد الوصول للعميل",
-      nextStep: "arrived" as const
+      nextAction: { type: "arrive-to-customer" as const }
     };
   }, [tripStep]);
 
   function handlePrimaryAction() {
     setNotice(null);
-    setTripStep(stepCopy.nextStep);
+    dispatchTripFlow(stepCopy.nextAction);
   }
 
   return (
