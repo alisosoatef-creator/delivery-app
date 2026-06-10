@@ -151,4 +151,31 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByText("التبويب النشط: رحلاتي")).toBeTruthy();
   });
+
+  it("switches customer tabs into trips, search, and profile mock surfaces", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.getByText("رحلة حالية")).toBeTruthy();
+    expect(screen.getByText("كابتن في الطريق")).toBeTruthy();
+    expect(screen.getByText("زواتا ← نابلس - رفيديا")).toBeTruthy();
+    expect(screen.getByText("أحمد محمد")).toBeTruthy();
+    expect(screen.getByText("رحلات سابقة")).toBeTruthy();
+    expect(screen.getByText("جامعة النجاح")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("البحث"));
+
+    expect(screen.getByText("بحث سريع")).toBeTruthy();
+    expect(screen.getByText("الأماكن القريبة في نابلس جاهزة كتجربة mock")).toBeTruthy();
+    expect(screen.getByTestId("mock-route-map")).toBeTruthy();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+
+    expect(screen.getByText("حساب العميل")).toBeTruthy();
+    expect(screen.getByText("علي محمد")).toBeTruthy();
+    expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
+    expect(screen.getByText("نابلس")).toBeTruthy();
+    expect(screen.getByText("كاش عند الاستلام")).toBeTruthy();
+  });
 });

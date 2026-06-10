@@ -32,6 +32,9 @@ describe("WelcomeScreen", () => {
     expect(screen.getByText("واصل")).toBeTruthy();
     expect(screen.getByText("واصل وجهتك بسهولة وثقة")).toBeTruthy();
     expect(screen.getByText("تجربة تنقل ذكية وآمنة مصممة من أجلك")).toBeTruthy();
+    expect(screen.getByText("اختر نوع الحساب")).toBeTruthy();
+    expect(screen.getByText("تطبيق العميل")).toBeTruthy();
+    expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
     expect(screen.getByText("تسجيل الدخول")).toBeTruthy();
     expect(screen.getByText("إنشاء حساب جديد")).toBeTruthy();
     expect(screen.getByText("الدخول ككابتن")).toBeTruthy();

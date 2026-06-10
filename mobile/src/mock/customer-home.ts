@@ -66,6 +66,49 @@ export const customerHomeMock = {
     eta: "3 دقائق",
     price: "25 شيكل"
   },
+  searchTab: {
+    title: "بحث سريع",
+    subtitle: "اختر وجهة محفوظة أو ابدأ من الخريطة",
+    hint: "الأماكن القريبة في نابلس جاهزة كتجربة mock"
+  },
+  trips: {
+    title: "رحلاتي",
+    activeTitle: "رحلة حالية",
+    activeStatus: "كابتن في الطريق",
+    current: {
+      route: "زواتا ← نابلس - رفيديا",
+      captain: "أحمد محمد",
+      price: "25 شيكل",
+      time: "اليوم 10:24",
+      payment: "كاش عند الاستلام"
+    },
+    historyTitle: "رحلات سابقة",
+    history: [
+      {
+        id: "trip-001",
+        destination: "جامعة النجاح",
+        date: "أمس",
+        price: "31 شيكل",
+        status: "مكتملة"
+      },
+      {
+        id: "trip-002",
+        destination: "نابلس - وسط البلد",
+        date: "الأحد",
+        price: "28 شيكل",
+        status: "مكتملة"
+      }
+    ]
+  },
+  profile: {
+    title: "حساب العميل",
+    name: "علي محمد",
+    phone: "+970 59 000 4321",
+    city: "نابلس",
+    homeArea: "زواتا",
+    defaultPayment: "كاش عند الاستلام",
+    rating: "4.9"
+  },
   navItems: [
     {
       label: "الرئيسية",

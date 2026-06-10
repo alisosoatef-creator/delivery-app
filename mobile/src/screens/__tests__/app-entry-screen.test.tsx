@@ -54,12 +54,21 @@ describe("AppEntryScreen", () => {
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
   });
 
-  it("keeps captain entry as a mock notice for the next phase", async () => {
+  it("enters the captain dashboard through the captain mock auth flow", async () => {
     const screen = await renderAppEntryScreen();
 
     await fireEvent.press(screen.getByLabelText("الدخول ككابتن"));
 
-    expect(screen.getByText("واجهة الكابتن التجريبية ستكون في المرحلة القادمة")).toBeTruthy();
-    expect(screen.getByText("واصل وجهتك بسهولة وثقة")).toBeTruthy();
+    expect(screen.getByText("دخول الكابتن")).toBeTruthy();
+    expect(screen.queryByText("أهلًا كابتن أحمد")).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "05995551212");
+    await fireEvent.changeText(screen.getByLabelText("رقم المركبة"), "12-345-67");
+    await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
+    await fireEvent.press(screen.getByLabelText("دخول الكابتن التجريبي"));
+
+    expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
+    expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
+    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
   });
 });

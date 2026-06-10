@@ -102,6 +102,41 @@ export function WelcomeScreen({
           </View>
         </GlassCard>
 
+        <GlassCard variant="subtle" style={styles.roleCard}>
+          <Text selectable style={styles.roleTitle}>
+            اختر نوع الحساب
+          </Text>
+          <View style={styles.roleGrid}>
+            <View style={styles.roleTile}>
+              <View style={styles.roleIcon}>
+                <User color={colors.cyan} size={18} />
+              </View>
+              <View style={styles.roleCopy}>
+                <Text selectable style={styles.roleName}>
+                  تطبيق العميل
+                </Text>
+                <Text selectable style={styles.roleMeta}>
+                  اطلب رحلتك من الخريطة
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.roleTile}>
+              <View style={styles.roleIcon}>
+                <Car color={colors.violetSoft} size={18} />
+              </View>
+              <View style={styles.roleCopy}>
+                <Text selectable style={styles.roleName}>
+                  تطبيق الكابتن
+                </Text>
+                <Text selectable style={styles.roleMeta}>
+                  استقبل الطلبات وتابع الأرباح
+                </Text>
+              </View>
+            </View>
+          </View>
+        </GlassCard>
+
         <View style={styles.actions}>
           <PremiumButton
             accessibilityLabel="تسجيل الدخول"
@@ -298,6 +333,56 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm
+  },
+  roleCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg
+  },
+  roleTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  roleGrid: {
+    gap: spacing.sm
+  },
+  roleTile: {
+    minHeight: 66,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  roleIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  roleCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  roleName: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  roleMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
   },
   actionButton: {
     minHeight: 56,

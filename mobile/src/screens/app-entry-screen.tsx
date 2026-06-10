@@ -1,17 +1,26 @@
 import { useState } from "react";
 
+import { CaptainAuthScreen } from "@/screens/captain-auth-screen";
+import { CaptainHomeScreen } from "@/screens/captain-home-screen";
 import { CustomerAuthScreen } from "@/screens/customer-auth-screen";
 import { CustomerHomeScreen } from "@/screens/customer-home-screen";
 import { WelcomeScreen } from "@/screens/welcome-screen";
 
-type EntryMode = "welcome" | "login" | "register" | "customer";
+type EntryMode = "welcome" | "login" | "register" | "customer" | "captain-auth" | "captain";
 
 export function AppEntryScreen() {
   const [entryMode, setEntryMode] = useState<EntryMode>("welcome");
-  const [captainNotice, setCaptainNotice] = useState<string | null>(null);
 
   if (entryMode === "customer") {
     return <CustomerHomeScreen />;
+  }
+
+  if (entryMode === "captain") {
+    return <CaptainHomeScreen />;
+  }
+
+  if (entryMode === "captain-auth") {
+    return <CaptainAuthScreen onBack={() => setEntryMode("welcome")} onSubmit={() => setEntryMode("captain")} />;
   }
 
   if (entryMode === "login" || entryMode === "register") {
@@ -26,8 +35,7 @@ export function AppEntryScreen() {
 
   return (
     <WelcomeScreen
-      captainNotice={captainNotice}
-      onCaptainEntry={() => setCaptainNotice("واجهة الكابتن التجريبية ستكون في المرحلة القادمة")}
+      onCaptainEntry={() => setEntryMode("captain-auth")}
       onCustomerLogin={() => setEntryMode("login")}
       onCustomerRegister={() => setEntryMode("register")}
     />

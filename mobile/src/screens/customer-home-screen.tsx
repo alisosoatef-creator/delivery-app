@@ -5,14 +5,17 @@ import {
   CheckCircle,
   ChevronLeft,
   Clock,
+  CreditCard,
   MapPin,
   MessageCircle,
   Phone,
   ShieldCheck,
   Sparkles,
   Star,
+  User,
   XCircle
 } from "lucide-react-native";
+import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -407,14 +410,30 @@ export function CustomerHomeScreen() {
 
         <View style={styles.heroCopy}>
           <Text selectable style={styles.greeting}>
-            {customerHomeMock.greeting}
+            {activeNav === "رحلاتي"
+              ? customerHomeMock.trips.title
+              : activeNav === "حسابي"
+                ? "ملف العميل"
+                : customerHomeMock.greeting}
           </Text>
           <Text selectable style={styles.subtitle}>
-            {customerHomeMock.subtitle}
+            {activeNav === "رحلاتي"
+              ? "تابع رحلتك الحالية وسجل رحلاتك السابقة"
+              : activeNav === "حسابي"
+                ? "بياناتك الأساسية وتجربة الدفع mock"
+                : customerHomeMock.subtitle}
           </Text>
         </View>
 
-        <MockRouteMap />
+        {activeNav === "رحلاتي" ? (
+          <CustomerTripsTab />
+        ) : activeNav === "حسابي" ? (
+          <CustomerProfileTab />
+        ) : (
+          <>
+            {activeNav === "البحث" ? <CustomerSearchTabIntro /> : null}
+
+            <MockRouteMap />
 
         <Pressable
           accessibilityRole="button"
@@ -610,6 +629,8 @@ export function CustomerHomeScreen() {
             </>
           ) : null}
         </GlassCard>
+          </>
+        )}
       </ScrollView>
 
       <GlassCard
@@ -627,10 +648,14 @@ export function CustomerHomeScreen() {
           return (
             <Pressable
               key={item.label}
+              accessibilityLabel={`فتح تبويب ${item.label}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: activeNav === item.label }}
               hitSlop={8}
-              onPress={() => setActiveNav(item.label)}
+              onPress={() => {
+                setNotice(null);
+                setActiveNav(item.label);
+              }}
               style={({ pressed }) => [
                 styles.navItem,
                 activeNav === item.label ? styles.navItemActive : null,
@@ -661,6 +686,136 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <Text selectable style={styles.infoLabel}>
         {label}
       </Text>
+    </View>
+  );
+}
+
+function CustomerSearchTabIntro() {
+  return (
+    <GlassCard style={styles.tabIntroCard} variant="strong">
+      <View style={styles.tabHeader}>
+        <View style={styles.tabIcon}>
+          <MapPin color={colors.cyan} size={22} />
+        </View>
+        <View style={styles.tabCopy}>
+          <Text selectable style={styles.tabTitle}>
+            {customerHomeMock.searchTab.title}
+          </Text>
+          <Text selectable style={styles.tabMeta}>
+            {customerHomeMock.searchTab.subtitle}
+          </Text>
+          <Text selectable style={styles.tabMeta}>
+            {customerHomeMock.searchTab.hint}
+          </Text>
+        </View>
+      </View>
+    </GlassCard>
+  );
+}
+
+function CustomerTripsTab() {
+  const trips = customerHomeMock.trips;
+
+  return (
+    <View style={styles.tabStack}>
+      <GlassCard style={styles.tripOverviewCard} variant="strong">
+        <View style={styles.tabHeader}>
+          <View style={styles.tabIcon}>
+            <Car color={colors.cyan} size={22} />
+          </View>
+          <View style={styles.tabCopy}>
+            <Text selectable style={styles.tabTitle}>
+              {trips.activeTitle}
+            </Text>
+            <Text selectable style={styles.tabMeta}>
+              {trips.activeStatus}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.tripTimelineBox}>
+          <InfoRow label="المسار" value={trips.current.route} />
+          <InfoRow label="الكابتن" value={trips.current.captain} />
+          <InfoRow label="السعر" value={trips.current.price} />
+          <InfoRow label="الدفع" value={trips.current.payment} />
+          <InfoRow label="الوقت" value={trips.current.time} />
+        </View>
+      </GlassCard>
+
+      <View style={styles.sectionHeader}>
+        <Text selectable style={styles.sectionTitle}>
+          {trips.historyTitle}
+        </Text>
+      </View>
+
+      <View style={styles.historyList}>
+        {trips.history.map((trip) => (
+          <View key={trip.id} style={styles.historyRow}>
+            <View style={styles.historyStatus}>
+              <CheckCircle color={colors.success} size={16} />
+              <Text selectable style={styles.historyStatusText}>
+                {trip.status}
+              </Text>
+            </View>
+            <View style={styles.historyCopy}>
+              <Text selectable style={styles.historyTitle}>
+                {trip.destination}
+              </Text>
+              <Text selectable style={styles.historyMeta}>
+                {`${trip.date} • ${trip.price}`}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function CustomerProfileTab() {
+  const profile = customerHomeMock.profile;
+
+  return (
+    <GlassCard style={styles.profileCard} variant="strong">
+      <View style={styles.profileHeader}>
+        <View style={styles.profileAvatar}>
+          <User color={colors.text} size={24} />
+        </View>
+        <View style={styles.profileCopy}>
+          <Text selectable style={styles.profileTitle}>
+            {profile.title}
+          </Text>
+          <Text selectable style={styles.profileName}>
+            {profile.name}
+          </Text>
+          <Text selectable style={styles.profileMeta}>
+            {profile.city}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.profileRows}>
+        <ProfileRow icon={<Phone color={colors.cyan} size={16} />} label="رقم الجوال" value={profile.phone} />
+        <ProfileRow icon={<MapPin color={colors.success} size={16} />} label="المنطقة" value={profile.homeArea} />
+        <ProfileRow icon={<CreditCard color={colors.violetSoft} size={16} />} label="طريقة الدفع" value={profile.defaultPayment} />
+        <ProfileRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="تقييمك" value={profile.rating} />
+      </View>
+    </GlassCard>
+  );
+}
+
+function ProfileRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
+  return (
+    <View style={styles.profileRow}>
+      {icon}
+      <View style={styles.profileRowCopy}>
+        <Text selectable style={styles.profileRowLabel}>
+          {label}
+        </Text>
+        <Text selectable style={styles.profileRowValue}>
+          {value}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -1371,6 +1526,181 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     gap: spacing.sm,
     paddingVertical: spacing.xs
+  },
+  tabStack: {
+    gap: spacing.md
+  },
+  tabIntroCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.28)"
+  },
+  tabHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  tabIcon: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.32)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  tabCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  tabTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  tabMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  tripOverviewCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.32)"
+  },
+  tripTimelineBox: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  historyList: {
+    gap: spacing.sm
+  },
+  historyRow: {
+    minHeight: 72,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  historyStatus: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(51, 231, 168, 0.12)"
+  },
+  historyStatusText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  historyCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  historyTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  historyMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  profileCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(139, 92, 246, 0.32)"
+  },
+  profileHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  profileAvatar: {
+    width: 58,
+    height: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(199, 183, 255, 0.32)",
+    backgroundColor: "rgba(139, 92, 246, 0.18)"
+  },
+  profileCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  profileTitle: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  profileName: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  profileMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  profileRows: {
+    gap: spacing.xs
+  },
+  profileRow: {
+    minHeight: 46,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  profileRowCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  profileRowLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  profileRowValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   activeNavToast: {
     position: "absolute",
