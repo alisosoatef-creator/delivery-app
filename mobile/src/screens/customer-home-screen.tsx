@@ -27,7 +27,12 @@ import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 import { useMockRideRequests } from "@/state/mock-app-context";
-import { createInitialCustomerTripFlow, customerTripFlowReducer } from "@/state/mock-trip-flow";
+import {
+  createInitialCustomerTripFlow,
+  customerTripFlowReducer,
+  type CaptainTripStep,
+  type CustomerTripStage
+} from "@/state/mock-trip-flow";
 
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
@@ -36,18 +41,75 @@ type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
 };
 
+type CustomerTripsLiveRide = {
+  activeStatus: string;
+  captain: string;
+  destinationDetail: string;
+  payment: string;
+  price: string;
+  route: string;
+  time: string;
+};
+
+const LIVE_CUSTOMER_REQUEST_ID = "request-live-customer";
+
+function mapAcceptedTripStepToCustomerStage(step: CaptainTripStep | null): CustomerTripStage {
+  if (step === "driving") {
+    return "active";
+  }
+
+  if (step === "completed") {
+    return "completed";
+  }
+
+  return "captain";
+}
+
+function mapAcceptedTripStepToTripsStatus(step: CaptainTripStep | null): string {
+  if (step === "completed") {
+    return "تم الوصول";
+  }
+
+  if (step === "driving") {
+    return "العميل في الطريق";
+  }
+
+  if (step === "arrived") {
+    return "الكابتن وصل إليك";
+  }
+
+  return customerHomeMock.captain.status;
+}
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
-  const [, dispatchRideRequests] = useMockRideRequests();
+  const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rating, setRating] = useState<number | null>(null);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
   const { showConfirmation, stage: rideStage } = tripFlow;
+  const acceptedCustomerRequest =
+    rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID ? rideRequests.acceptedRequest : null;
+  const effectiveRideStage =
+    acceptedCustomerRequest && rideStage !== "idle"
+      ? mapAcceptedTripStepToCustomerStage(rideRequests.acceptedTripStep)
+      : rideStage;
+  const liveCustomerTrip: CustomerTripsLiveRide | null = acceptedCustomerRequest
+    ? {
+        activeStatus: mapAcceptedTripStepToTripsStatus(rideRequests.acceptedTripStep),
+        captain: customerHomeMock.captain.name,
+        destinationDetail: acceptedCustomerRequest.destinationDetail,
+        payment: acceptedCustomerRequest.paymentMethod,
+        price: acceptedCustomerRequest.price,
+        route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
+        time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن",
+      }
+    : null;
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -87,7 +149,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       destinationDetail,
       distance: selectedDestination.distance,
       etaToPickup: customerHomeMock.captain.arrivalEta,
-      id: "request-live-customer",
+      id: LIVE_CUSTOMER_REQUEST_ID,
       paymentMethod,
       pickup: customerHomeMock.pickup,
       price: selectedDestination.price,
@@ -146,11 +208,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function renderRideStagePanel() {
-    if (rideStage === "idle") {
+    if (effectiveRideStage === "idle") {
       return null;
     }
 
-    if (rideStage === "searching") {
+    if (effectiveRideStage === "searching") {
       return (
         <GlassCard style={styles.stageCard}>
           <View style={styles.stageHeader}>
@@ -215,7 +277,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       );
     }
 
-    if (rideStage === "captain") {
+    if (effectiveRideStage === "captain") {
       const captain = customerHomeMock.captain;
 
       return (
@@ -306,7 +368,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       );
     }
 
-    if (rideStage === "active") {
+    if (effectiveRideStage === "active") {
       return (
         <GlassCard style={styles.stageCard}>
           <View style={styles.stageHeader}>
@@ -447,7 +509,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </View>
 
         {activeNav === "رحلاتي" ? (
-          <CustomerTripsTab />
+          <CustomerTripsTab liveTrip={liveCustomerTrip} />
         ) : activeNav === "حسابي" ? (
           <CustomerProfileTab />
         ) : (
@@ -745,8 +807,10 @@ function CustomerSearchTabIntro() {
   );
 }
 
-function CustomerTripsTab() {
+function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null }) {
   const trips = customerHomeMock.trips;
+  const currentTrip = liveTrip ?? trips.current;
+  const activeStatus = liveTrip?.activeStatus ?? trips.activeStatus;
 
   return (
     <View style={styles.tabStack}>
@@ -760,17 +824,18 @@ function CustomerTripsTab() {
               {trips.activeTitle}
             </Text>
             <Text selectable style={styles.tabMeta}>
-              {trips.activeStatus}
+              {activeStatus}
             </Text>
           </View>
         </View>
 
         <View style={styles.tripTimelineBox}>
-          <InfoRow label="المسار" value={trips.current.route} />
-          <InfoRow label="الكابتن" value={trips.current.captain} />
-          <InfoRow label="السعر" value={trips.current.price} />
-          <InfoRow label="الدفع" value={trips.current.payment} />
-          <InfoRow label="الوقت" value={trips.current.time} />
+          <InfoRow label="المسار" value={currentTrip.route} />
+          {liveTrip ? <InfoRow label="تفصيل الوجهة" value={liveTrip.destinationDetail} /> : null}
+          <InfoRow label="الكابتن" value={currentTrip.captain} />
+          <InfoRow label="السعر" value={currentTrip.price} />
+          <InfoRow label="الدفع" value={currentTrip.payment} />
+          <InfoRow label="الوقت" value={currentTrip.time} />
         </View>
       </GlassCard>
 

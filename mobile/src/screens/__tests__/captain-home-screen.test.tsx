@@ -1,8 +1,9 @@
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
+import { Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { MockAppProvider } from "@/state/mock-app-context";
+import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CaptainHomeScreen } from "../captain-home-screen";
 
@@ -16,6 +17,30 @@ async function renderCaptainHome() {
     >
       <MockAppProvider>
         <CaptainHomeScreen />
+      </MockAppProvider>
+    </SafeAreaProvider>
+  );
+}
+
+async function renderCaptainHomeWithSharedStepProbe() {
+  function SharedStepProbe() {
+    const [rideRequests] = useMockRideRequests();
+
+    return <Text>{`shared step: ${rideRequests.acceptedTripStep ?? "none"}`}</Text>;
+  }
+
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 48, right: 0, bottom: 34, left: 0 }
+      }}
+    >
+      <MockAppProvider>
+        <View>
+          <CaptainHomeScreen />
+          <SharedStepProbe />
+        </View>
       </MockAppProvider>
     </SafeAreaProvider>
   );
@@ -76,6 +101,24 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+  });
+
+  it("publishes captain trip progress to the shared mock state", async () => {
+    const screen = await renderCaptainHomeWithSharedStepProbe();
+
+    expect(screen.getByText("shared step: none")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    expect(screen.getByText("shared step: pickup")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    expect(screen.getByText("shared step: arrived")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    expect(screen.getByText("shared step: driving")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    expect(screen.getByText("shared step: completed")).toBeTruthy();
   });
 
   it("switches between captain bottom nav mock tabs", async () => {

@@ -1,8 +1,9 @@
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { MockAppProvider } from "@/state/mock-app-context";
+import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CustomerHomeScreen } from "../customer-home-screen";
 
@@ -16,6 +17,63 @@ async function renderCustomerHome() {
     >
       <MockAppProvider>
         <CustomerHomeScreen />
+      </MockAppProvider>
+    </SafeAreaProvider>
+  );
+}
+
+async function renderCustomerHomeWithCaptainAcceptanceProbe() {
+  function CaptainAcceptanceProbe() {
+    const [, dispatchRideRequests] = useMockRideRequests();
+
+    return (
+      <>
+        <Pressable
+          accessibilityLabel="قبول طلب العميل من الكابتن"
+          onPress={() => dispatchRideRequests({ requestId: "request-live-customer", type: "accept-request" })}
+        >
+          <Text>قبول طلب العميل من الكابتن</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="بدء الرحلة من الكابتن"
+          onPress={() =>
+            dispatchRideRequests({
+              requestId: "request-live-customer",
+              step: "driving",
+              type: "update-accepted-trip-step",
+            })
+          }
+        >
+          <Text>بدء الرحلة من الكابتن</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="إنهاء الرحلة من الكابتن"
+          onPress={() =>
+            dispatchRideRequests({
+              requestId: "request-live-customer",
+              step: "completed",
+              type: "update-accepted-trip-step",
+            })
+          }
+        >
+          <Text>إنهاء الرحلة من الكابتن</Text>
+        </Pressable>
+      </>
+    );
+  }
+
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 48, right: 0, bottom: 34, left: 0 }
+      }}
+    >
+      <MockAppProvider>
+        <View>
+          <CustomerHomeScreen />
+          <CaptainAcceptanceProbe />
+        </View>
       </MockAppProvider>
     </SafeAreaProvider>
   );
@@ -146,6 +204,61 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("رسالة للكابتن"));
     expect(screen.getByText("زر الرسالة mock فقط الآن")).toBeTruthy();
+  });
+
+  it("reflects captain acceptance automatically from the shared mock state", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByText("جاري البحث عن كابتن")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+
+    expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
+    expect(screen.getByText("تم قبول طلبك")).toBeTruthy();
+    expect(screen.queryByText("جاري البحث عن كابتن")).toBeNull();
+  });
+
+  it("reflects captain trip progress automatically from the shared mock state", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+
+    expect(screen.getByText("تم قبول طلبك")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+
+    expect(screen.getByText("الرحلة الحالية")).toBeTruthy();
+    expect(screen.queryByText("تم قبول طلبك")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));
+
+    expect(screen.getByText("تم الوصول")).toBeTruthy();
+    expect(screen.queryByText("الرحلة الحالية")).toBeNull();
+  });
+
+  it("shows the live accepted ride inside the customer trips tab", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.getByText("العميل في الطريق")).toBeTruthy();
+    expect(screen.getByText("مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
+    expect(screen.getByText("فيزا")).toBeTruthy();
   });
 
   it("keeps the floating nav interactive", async () => {

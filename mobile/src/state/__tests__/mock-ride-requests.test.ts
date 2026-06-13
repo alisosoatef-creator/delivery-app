@@ -48,4 +48,22 @@ describe("mock ride requests state", () => {
     expect(state.availableRequests.some((availableRequest) => availableRequest.id === request.id)).toBe(false);
     expect(state.acceptedRequest).toEqual(request);
   });
+
+  it("tracks the shared progress step for the accepted request", () => {
+    let state = createInitialMockRideRequests();
+    const request = createRequest();
+
+    state = mockRideRequestsReducer(state, { request, type: "submit-customer-request" });
+    state = mockRideRequestsReducer(state, { requestId: request.id, type: "accept-request" });
+
+    expect(state.acceptedTripStep).toBe("pickup");
+
+    state = mockRideRequestsReducer(state, {
+      requestId: request.id,
+      step: "driving",
+      type: "update-accepted-trip-step",
+    });
+
+    expect(state.acceptedTripStep).toBe("driving");
+  });
 });

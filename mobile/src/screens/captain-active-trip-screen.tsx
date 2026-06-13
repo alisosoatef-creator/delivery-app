@@ -10,7 +10,12 @@ import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
-import { captainTripFlowReducer, createInitialCaptainTripFlow } from "@/state/mock-trip-flow";
+import { useMockRideRequests } from "@/state/mock-app-context";
+import {
+  captainTripFlowReducer,
+  createInitialCaptainTripFlow,
+  type CaptainTripStep
+} from "@/state/mock-trip-flow";
 
 type CaptainActiveTripScreenProps = {
   onBackToRequests: () => void;
@@ -20,6 +25,7 @@ type CaptainActiveTripScreenProps = {
 export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainActiveTripScreenProps) {
   const insets = useSafeAreaInsets();
   const [tripFlow, dispatchTripFlow] = useReducer(captainTripFlowReducer, createInitialCaptainTripFlow());
+  const [, dispatchRideRequests] = useMockRideRequests();
   const [notice, setNotice] = useState<string | null>(null);
   const { step: tripStep } = tripFlow;
 
@@ -30,7 +36,8 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
         meta: "العميل جاهز، ابدأ الرحلة عند الصعود",
         buttonLabel: "ابدأ الرحلة الآن",
         accessibilityLabel: "بدء الرحلة التجريبية",
-        nextAction: { type: "start-trip" as const }
+        nextAction: { type: "start-trip" as const },
+        nextStep: "driving" as CaptainTripStep
       };
     }
 
@@ -40,7 +47,8 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
         meta: "تابع المسار إلى الوجهة النهائية",
         buttonLabel: "إنهاء الرحلة",
         accessibilityLabel: "إنهاء الرحلة التجريبية",
-        nextAction: { type: "complete-trip" as const }
+        nextAction: { type: "complete-trip" as const },
+        nextStep: "completed" as CaptainTripStep
       };
     }
 
@@ -49,13 +57,19 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
       meta: "اتجه إلى نقطة الانطلاق واستعد لتأكيد الوصول",
       buttonLabel: "وصلت للعميل",
       accessibilityLabel: "تأكيد الوصول للعميل",
-      nextAction: { type: "arrive-to-customer" as const }
+      nextAction: { type: "arrive-to-customer" as const },
+      nextStep: "arrived" as CaptainTripStep
     };
   }, [tripStep]);
 
   function handlePrimaryAction() {
     setNotice(null);
     dispatchTripFlow(stepCopy.nextAction);
+    dispatchRideRequests({
+      requestId: request.id,
+      step: stepCopy.nextStep,
+      type: "update-accepted-trip-step",
+    });
   }
 
   return (
