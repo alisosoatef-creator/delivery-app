@@ -10,6 +10,7 @@ import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import { CaptainActiveTripScreen } from "@/screens/captain-active-trip-screen";
+import { useMockRideRequests } from "@/state/mock-app-context";
 
 const captainTabs = [
   { key: "home", label: "الرئيسية", icon: Home },
@@ -26,7 +27,8 @@ export function CaptainHomeScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<CaptainAvailableRequest | null>(null);
   const [activeTab, setActiveTab] = useState<CaptainTab>("home");
-  const request = captainHomeMock.availableRequests[0];
+  const [rideRequests, dispatchRideRequests] = useMockRideRequests();
+  const request = rideRequests.availableRequests[0];
 
   if (activeRequest) {
     return (
@@ -132,60 +134,72 @@ export function CaptainHomeScreen() {
               </Text>
             </View>
 
-            <GlassCard style={styles.requestCard} variant="strong">
-              <View style={styles.requestTop}>
-                <View style={styles.customerAvatar}>
-                  <User color={colors.text} size={20} />
+            {request ? (
+              <GlassCard style={styles.requestCard} variant="strong">
+                <View style={styles.requestTop}>
+                  <View style={styles.customerAvatar}>
+                    <User color={colors.text} size={20} />
+                  </View>
+                  <View style={styles.requestCopy}>
+                    <Text selectable style={styles.requestTitle}>
+                      {request.customerName}
+                    </Text>
+                    <Text selectable style={styles.requestMeta}>
+                      {request.customerPhone}
+                    </Text>
+                  </View>
+                  <View style={styles.pricePill}>
+                    <Text selectable style={styles.priceText}>
+                      {request.price}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.requestCopy}>
-                  <Text selectable style={styles.requestTitle}>
-                    {request.customerName}
-                  </Text>
-                  <Text selectable style={styles.requestMeta}>
-                    {request.customerPhone}
-                  </Text>
+
+                <View style={styles.routeBox}>
+                  <RouteRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
+                  <RouteRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
+                  <RouteRow icon={<Car color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
+                  <RouteRow icon={<Clock color={colors.warning} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
                 </View>
-                <View style={styles.pricePill}>
-                  <Text selectable style={styles.priceText}>
-                    {request.price}
-                  </Text>
+
+                <View style={styles.requestMetaGrid}>
+                  <MiniInfo label="المسافة" value={request.distance} />
+                  <MiniInfo label="الدفع" value={request.paymentMethod} />
                 </View>
-              </View>
 
-              <View style={styles.routeBox}>
-                <RouteRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
-                <RouteRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
-                <RouteRow icon={<Car color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
-                <RouteRow icon={<Clock color={colors.warning} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
-              </View>
-
-              <View style={styles.requestMetaGrid}>
-                <MiniInfo label="المسافة" value={request.distance} />
-                <MiniInfo label="الدفع" value={request.paymentMethod} />
-              </View>
-
-              <View style={styles.actionsRow}>
-                <Pressable
-                  accessibilityLabel="اتصال بالعميل"
-                  accessibilityRole="button"
-                  onPress={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
-                  style={styles.iconAction}
-                >
-                  <Phone color={colors.textSoft} size={18} />
-                </Pressable>
-                <PremiumButton
-                  accessibilityLabel="قبول الطلب التجريبي"
-                  label="قبول الطلب"
-                  onPress={() => {
-                    setNotice(null);
-                    setActiveRequest(request);
-                  }}
-                  style={styles.acceptButton}
-                >
-                  <CheckCircle color={colors.text} size={18} />
-                </PremiumButton>
-              </View>
-            </GlassCard>
+                <View style={styles.actionsRow}>
+                  <Pressable
+                    accessibilityLabel="اتصال بالعميل"
+                    accessibilityRole="button"
+                    onPress={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
+                    style={styles.iconAction}
+                  >
+                    <Phone color={colors.textSoft} size={18} />
+                  </Pressable>
+                  <PremiumButton
+                    accessibilityLabel="قبول الطلب التجريبي"
+                    label="قبول الطلب"
+                    onPress={() => {
+                      setNotice(null);
+                      dispatchRideRequests({ requestId: request.id, type: "accept-request" });
+                      setActiveRequest(request);
+                    }}
+                    style={styles.acceptButton}
+                  >
+                    <CheckCircle color={colors.text} size={18} />
+                  </PremiumButton>
+                </View>
+              </GlassCard>
+            ) : (
+              <GlassCard style={styles.requestCard} variant="subtle">
+                <Text selectable style={styles.sectionTitle}>
+                  لا توجد طلبات متاحة الآن
+                </Text>
+                <Text selectable style={styles.sectionMeta}>
+                  ستظهر طلبات العملاء هنا عند تأكيدها من التطبيق
+                </Text>
+              </GlassCard>
+            )}
           </>
         )}
       </ScrollView>

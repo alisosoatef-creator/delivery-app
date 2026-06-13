@@ -19,7 +19,8 @@ export type MockSessionAction =
   | { type: "open-customer-register" }
   | { type: "complete-customer-auth" }
   | { type: "open-captain-auth" }
-  | { type: "complete-captain-auth" };
+  | { type: "complete-captain-auth" }
+  | { type: "preview-captain-home" };
 
 export function createInitialMockSession(): MockAppSession {
   return {
@@ -56,6 +57,11 @@ export function mockSessionReducer(_state: MockAppSession, action: MockSessionAc
         entryMode: "captain-auth",
       };
     case "complete-captain-auth":
+      return {
+        activeRole: "captain",
+        entryMode: "captain-home",
+      };
+    case "preview-captain-home":
       return {
         activeRole: "captain",
         entryMode: "captain-home",

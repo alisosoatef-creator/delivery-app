@@ -2,6 +2,8 @@ import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { MockAppProvider } from "@/state/mock-app-context";
+
 import { CustomerHomeScreen } from "../customer-home-screen";
 
 async function renderCustomerHome() {
@@ -12,7 +14,9 @@ async function renderCustomerHome() {
         insets: { top: 48, right: 0, bottom: 34, left: 0 }
       }}
     >
-      <CustomerHomeScreen />
+      <MockAppProvider>
+        <CustomerHomeScreen />
+      </MockAppProvider>
     </SafeAreaProvider>
   );
 }

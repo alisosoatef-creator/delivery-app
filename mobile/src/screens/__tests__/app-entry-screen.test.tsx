@@ -75,4 +75,28 @@ describe("AppEntryScreen", () => {
     expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
   });
+
+  it("previews the confirmed customer request inside the captain dashboard mock", async () => {
+    const screen = await renderAppEntryScreen();
+
+    await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
+    await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599123456");
+    await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
+    await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByText("تم تأكيد طلبك التجريبي")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("معاينة الطلب عند الكابتن"));
+
+    expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
+    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByText("علي محمد")).toBeTruthy();
+    expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
+    expect(screen.getByText("مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
+  });
 });

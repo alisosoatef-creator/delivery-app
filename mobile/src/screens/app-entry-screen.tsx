@@ -10,7 +10,7 @@ export function AppEntryScreen() {
   const { entryMode } = session;
 
   if (entryMode === "customer-home") {
-    return <CustomerHomeScreen />;
+    return <CustomerHomeScreen onPreviewCaptainRequests={() => dispatch({ type: "preview-captain-home" })} />;
   }
 
   if (entryMode === "captain-home") {

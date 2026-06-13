@@ -24,17 +24,24 @@ import { GlassCard } from "@/components/glass-card";
 import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
+import { useMockRideRequests } from "@/state/mock-app-context";
 import { createInitialCustomerTripFlow, customerTripFlowReducer } from "@/state/mock-trip-flow";
 
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
 
-export function CustomerHomeScreen() {
+type CustomerHomeScreenProps = {
+  onPreviewCaptainRequests?: () => void;
+};
+
+export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
+  const [, dispatchRideRequests] = useMockRideRequests();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rating, setRating] = useState<number | null>(null);
@@ -69,6 +76,24 @@ export function CustomerHomeScreen() {
   }
 
   function confirmTrip() {
+    if (!selectedDestination) {
+      return;
+    }
+
+    const request: CaptainAvailableRequest = {
+      customerName: customerHomeMock.profile.name,
+      customerPhone: customerHomeMock.profile.phone,
+      destinationArea: selectedDestination.area,
+      destinationDetail,
+      distance: selectedDestination.distance,
+      etaToPickup: customerHomeMock.captain.arrivalEta,
+      id: "request-live-customer",
+      paymentMethod,
+      pickup: customerHomeMock.pickup,
+      price: selectedDestination.price,
+    };
+
+    dispatchRideRequests({ request, type: "submit-customer-request" });
     setRequestStatus("تم تأكيد طلبك التجريبي");
     dispatchTripFlow({ type: "confirm-request" });
     setRating(null);
@@ -623,6 +648,17 @@ export function CustomerHomeScreen() {
               <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
               <Text style={styles.feedbackMeta}>{`${customerHomeMock.pickup} ← ${selectedDestination.area}`}</Text>
             </>
+          ) : null}
+          {requestStatus && onPreviewCaptainRequests ? (
+            <PremiumButton
+              accessibilityLabel="معاينة الطلب عند الكابتن"
+              label="معاينة الطلب عند الكابتن"
+              onPress={onPreviewCaptainRequests}
+              style={styles.previewCaptainButton}
+              variant="secondary"
+            >
+              <Car color={colors.textSoft} size={16} />
+            </PremiumButton>
           ) : null}
         </GlassCard>
           </>
@@ -1230,6 +1266,12 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "700"
+  },
+  previewCaptainButton: {
+    alignSelf: "stretch",
+    minHeight: 44,
+    marginTop: spacing.xs,
+    borderRadius: radii.sm
   },
   stageCard: {
     gap: spacing.md,

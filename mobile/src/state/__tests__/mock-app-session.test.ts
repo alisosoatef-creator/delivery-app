@@ -24,6 +24,15 @@ describe("mock app session state", () => {
     expect(state).toEqual({ activeRole: "captain", entryMode: "captain-home" });
   });
 
+  it("opens the captain home directly for mock preview flows", () => {
+    let state = createInitialMockSession();
+
+    state = mockSessionReducer(state, { type: "complete-customer-auth" });
+    state = mockSessionReducer(state, { type: "preview-captain-home" });
+
+    expect(state).toEqual({ activeRole: "captain", entryMode: "captain-home" });
+  });
+
   it("keeps the register path separate from login before entering customer app", () => {
     let state = createInitialMockSession();
 

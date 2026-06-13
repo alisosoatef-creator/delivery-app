@@ -1,3 +1,16 @@
+export type CaptainAvailableRequest = {
+  customerName: string;
+  customerPhone: string;
+  destinationArea: string;
+  destinationDetail: string;
+  distance: string;
+  etaToPickup: string;
+  id: string;
+  paymentMethod: string;
+  pickup: string;
+  price: string;
+};
+
 export const captainHomeMock = {
   captainName: "أحمد",
   appLabel: "تطبيق الكابتن",
@@ -44,5 +57,3 @@ export const captainHomeMock = {
     }
   ]
 } as const;
-
-export type CaptainAvailableRequest = (typeof captainHomeMock.availableRequests)[number];
