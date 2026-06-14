@@ -45,6 +45,7 @@ type CustomerTripsLiveRide = {
   activeStatus: string;
   captain: string;
   destinationDetail: string;
+  isCompleted: boolean;
   payment: string;
   price: string;
   route: string;
@@ -90,6 +91,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [rating, setRating] = useState<number | null>(null);
+  const [completionNote, setCompletionNote] = useState<string>("");
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
   const { showConfirmation, stage: rideStage } = tripFlow;
@@ -104,6 +106,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         activeStatus: mapAcceptedTripStepToTripsStatus(rideRequests.acceptedTripStep),
         captain: customerHomeMock.captain.name,
         destinationDetail: acceptedCustomerRequest.destinationDetail,
+        isCompleted: rideRequests.acceptedTripStep === "completed",
         payment: acceptedCustomerRequest.paymentMethod,
         price: acceptedCustomerRequest.price,
         route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
@@ -115,6 +118,16 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     dispatchTripFlow({ type: "reset" });
     setRequestStatus(null);
     setRating(null);
+    setCompletionNote("");
+  }
+
+  function startNewTrip() {
+    dispatchRideRequests({ type: "reset-requests" });
+    resetRide();
+    setSelectedDestination(null);
+    setDestinationDetail("");
+    setPaymentMethod(customerHomeMock.defaultPaymentMethod);
+    setNotice(null);
   }
 
   function selectDestination(place: DestinationPlace) {
@@ -429,10 +442,27 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           ))}
         </View>
         {rating ? <Text style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text> : null}
+        <View style={styles.detailField}>
+          <Text selectable style={styles.detailLabel}>
+            ملاحظة الرحلة
+          </Text>
+          <TextInput
+            accessibilityLabel="ملاحظة الرحلة"
+            multiline
+            onChangeText={setCompletionNote}
+            placeholder="اكتب ملاحظة اختيارية"
+            placeholderTextColor={colors.textMuted}
+            style={[styles.detailInput, styles.completionNoteInput]}
+            value={completionNote}
+          />
+        </View>
+        {completionNote.trim() ? (
+          <Text style={styles.feedbackText}>{`ملاحظتك: ${completionNote.trim()}`}</Text>
+        ) : null}
         <PremiumButton
           accessibilityLabel="رحلة جديدة"
           label="رحلة جديدة"
-          onPress={resetRide}
+          onPress={startNewTrip}
           style={styles.secondaryButton}
           variant="secondary"
         />
@@ -811,6 +841,18 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
   const trips = customerHomeMock.trips;
   const currentTrip = liveTrip ?? trips.current;
   const activeStatus = liveTrip?.activeStatus ?? trips.activeStatus;
+  const historyTrips = liveTrip?.isCompleted
+    ? [
+        {
+          id: "live-completed-trip",
+          date: "الآن",
+          destination: liveTrip.destinationDetail,
+          price: liveTrip.price,
+          status: "مكتملة",
+        },
+        ...trips.history,
+      ]
+    : trips.history;
 
   return (
     <View style={styles.tabStack}>
@@ -846,7 +888,7 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
       </View>
 
       <View style={styles.historyList}>
-        {trips.history.map((trip) => (
+        {historyTrips.map((trip) => (
           <View key={trip.id} style={styles.historyRow}>
             <View style={styles.historyStatus}>
               <CheckCircle color={colors.success} size={16} />
@@ -1215,6 +1257,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  completionNoteInput: {
+    minHeight: 82,
+    textAlignVertical: "top"
   },
   paymentGroup: {
     gap: spacing.xs

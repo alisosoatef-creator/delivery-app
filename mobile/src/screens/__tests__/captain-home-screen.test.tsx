@@ -121,6 +121,38 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("shared step: completed")).toBeTruthy();
   });
 
+  it("clears the completed accepted trip when captain returns to requests", async () => {
+    const screen = await renderCaptainHomeWithSharedStepProbe();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+
+    expect(screen.getByText("shared step: completed")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
+
+    expect(screen.getByText("shared step: none")).toBeTruthy();
+    expect(screen.getByText("لا توجد طلبات متاحة الآن")).toBeTruthy();
+  });
+
+  it("shows the completed accepted trip inside captain earnings", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
+
+    expect(screen.getByText("رحلات مكتملة من التطبيق")).toBeTruthy();
+    expect(screen.getByText("علي محمد")).toBeTruthy();
+    expect(screen.getByText("مطعم شورما عكيفك")).toBeTruthy();
+    expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("switches between captain bottom nav mock tabs", async () => {
     const screen = await renderCaptainHome();
 

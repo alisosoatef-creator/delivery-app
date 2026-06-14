@@ -35,6 +35,7 @@ export function CaptainHomeScreen() {
       <CaptainActiveTripScreen
         request={activeRequest}
         onBackToRequests={() => {
+          dispatchRideRequests({ type: "clear-accepted-request" });
           setActiveRequest(null);
           setNotice(null);
           setActiveTab("requests");
@@ -114,7 +115,10 @@ export function CaptainHomeScreen() {
         ) : null}
 
         {activeTab === "earnings" ? (
-          <CaptainEarningsTab onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)} />
+          <CaptainEarningsTab
+            completedRequests={rideRequests.completedRequests}
+            onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
+          />
         ) : activeTab === "profile" ? (
           <CaptainProfileTab />
         ) : (
@@ -288,7 +292,13 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
   );
 }
 
-function CaptainEarningsTab({ onWithdraw }: { onWithdraw: () => void }) {
+function CaptainEarningsTab({
+  completedRequests,
+  onWithdraw
+}: {
+  completedRequests: CaptainAvailableRequest[];
+  onWithdraw: () => void;
+}) {
   const earnings = captainHomeMock.earnings;
 
   return (
@@ -320,6 +330,34 @@ function CaptainEarningsTab({ onWithdraw }: { onWithdraw: () => void }) {
         <MiniInfo label={earnings.lastPayoutLabel} value={earnings.lastPayout} />
         <MiniInfo label="التقييم" value={captainHomeMock.metrics.rating} />
       </View>
+
+      {completedRequests.length > 0 ? (
+        <View style={styles.completedEarningsBox}>
+          <Text selectable style={styles.weeklyTitle}>
+            رحلات مكتملة من التطبيق
+          </Text>
+          {completedRequests.map((completedRequest) => (
+            <View key={completedRequest.id} style={styles.completedEarningRow}>
+              <View style={styles.completedEarningPrice}>
+                <Text selectable style={styles.completedEarningPriceText}>
+                  {completedRequest.price}
+                </Text>
+                <Text selectable style={styles.completedEarningMeta}>
+                  أجرة الرحلة
+                </Text>
+              </View>
+              <View style={styles.completedEarningCopy}>
+                <Text selectable style={styles.completedEarningTitle}>
+                  {completedRequest.customerName}
+                </Text>
+                <Text selectable style={styles.completedEarningMeta}>
+                  {completedRequest.destinationDetail}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.weeklyBox}>
         <Text selectable style={styles.weeklyTitle}>
@@ -767,6 +805,52 @@ const styles = StyleSheet.create({
   earningsGrid: {
     flexDirection: "row-reverse",
     gap: spacing.sm
+  },
+  completedEarningsBox: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.24)",
+    backgroundColor: "rgba(139, 92, 246, 0.08)"
+  },
+  completedEarningRow: {
+    minHeight: 64,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  completedEarningCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  completedEarningTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  completedEarningMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  completedEarningPrice: {
+    minWidth: 82,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  completedEarningPriceText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
   },
   weeklyBox: {
     gap: spacing.sm,

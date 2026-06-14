@@ -18,6 +18,7 @@ describe("mock ride requests state", () => {
 
     expect(state.availableRequests).toEqual(captainHomeMock.availableRequests);
     expect(state.acceptedRequest).toBeNull();
+    expect(state.completedRequests).toEqual([]);
   });
 
   it("adds a customer request at the top and replaces duplicate ids", () => {
@@ -65,5 +66,24 @@ describe("mock ride requests state", () => {
     });
 
     expect(state.acceptedTripStep).toBe("driving");
+  });
+
+  it("clears the accepted request without reseeding available requests", () => {
+    let state = createInitialMockRideRequests();
+    const request = createRequest();
+
+    state = mockRideRequestsReducer(state, { request, type: "submit-customer-request" });
+    state = mockRideRequestsReducer(state, { requestId: request.id, type: "accept-request" });
+    state = mockRideRequestsReducer(state, {
+      requestId: request.id,
+      step: "completed",
+      type: "update-accepted-trip-step",
+    });
+    state = mockRideRequestsReducer(state, { type: "clear-accepted-request" });
+
+    expect(state.acceptedRequest).toBeNull();
+    expect(state.acceptedTripStep).toBeNull();
+    expect(state.availableRequests.some((availableRequest) => availableRequest.id === request.id)).toBe(false);
+    expect(state.completedRequests[0]).toEqual(request);
   });
 });

@@ -261,6 +261,47 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("فيزا")).toBeTruthy();
   });
 
+  it("adds the completed live ride to the customer trips history", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("الآن • 25 شيكل")).toBeTruthy();
+  });
+
+  it("collects completion feedback and clears the shared ride for a new trip", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));
+
+    await fireEvent.press(screen.getByLabelText("تقييم 5 نجوم"));
+    await fireEvent.changeText(screen.getByLabelText("ملاحظة الرحلة"), "الكابتن ممتاز");
+
+    expect(screen.getByText("تقييمك: 5 نجوم")).toBeTruthy();
+    expect(screen.getByText("ملاحظتك: الكابتن ممتاز")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("رحلة جديدة"));
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.queryByText("الآن • 25 شيكل")).toBeNull();
+    expect(screen.queryByText("مطعم شورما عكيفك - الباب الرئيسي")).toBeNull();
+  });
+
   it("keeps the floating nav interactive", async () => {
     const screen = await renderCustomerHome();
 
