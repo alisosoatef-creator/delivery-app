@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Car, CheckCircle, ClipboardList, Clock, Home, MapPin, Phone, Power, Route, Star, User, Wallet } from "lucide-react-native";
+import { Car, CheckCircle, ClipboardList, Clock, Home, MapPin, Phone, Power, Route, Star, User, Wallet, XCircle } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -10,7 +10,11 @@ import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
-import { getLatestMockRealtimeEvent, getRecentMockRealtimeEvents } from "@/realtime/mock-realtime";
+import {
+  getLatestMockRealtimeEvent,
+  getMockRealtimeConnectionSummary,
+  getRecentMockRealtimeEvents
+} from "@/realtime/mock-realtime";
 import { CaptainActiveTripScreen } from "@/screens/captain-active-trip-screen";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import type { CustomerRideFeedback } from "@/state/mock-ride-requests";
@@ -34,6 +38,7 @@ export function CaptainHomeScreen() {
   const request = rideRequests.availableRequests[0];
   const captainRatingDisplay = createCaptainRatingDisplay(rideRequests.customerFeedback);
   const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "captain");
+  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(rideRequests.realtime, "captain");
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "captain", 4);
 
   if (activeRequest) {
@@ -120,7 +125,9 @@ export function CaptainHomeScreen() {
           </GlassCard>
         ) : null}
 
-        {latestRealtimeEvent ? <RealtimeStatusCard event={latestRealtimeEvent} /> : null}
+        {latestRealtimeEvent ? (
+          <RealtimeStatusCard event={latestRealtimeEvent} summary={realtimeConnectionSummary} />
+        ) : null}
         <RealtimeActivityFeed events={recentRealtimeEvents} />
 
         {activeTab === "earnings" ? (
@@ -173,6 +180,7 @@ export function CaptainHomeScreen() {
                   <RouteRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
                   <RouteRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
                   <RouteRow icon={<Car color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
+                  <RouteRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="نوع الرحلة" value={request.serviceLabel} />
                   <RouteRow icon={<Clock color={colors.warning} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
                 </View>
 
@@ -189,6 +197,20 @@ export function CaptainHomeScreen() {
                     style={styles.iconAction}
                   >
                     <Phone color={colors.textSoft} size={18} />
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel="رفض الطلب التجريبي"
+                    accessibilityRole="button"
+                    onPress={() => {
+                      dispatchRideRequests({ requestId: request.id, type: "decline-request" });
+                      setNotice("تم رفض الطلب التجريبي");
+                    }}
+                    style={({ pressed }) => [styles.declineButton, pressed ? styles.pressed : null]}
+                  >
+                    <XCircle color={colors.textSoft} size={17} />
+                    <Text selectable style={styles.declineButtonText}>
+                      رفض
+                    </Text>
                   </Pressable>
                   <PremiumButton
                     accessibilityLabel="قبول الطلب التجريبي"
@@ -756,6 +778,24 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 52,
     borderRadius: radii.sm
+  },
+  declineButton: {
+    minHeight: 52,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  declineButtonText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   pressed: {
     opacity: 0.76,

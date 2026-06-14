@@ -154,6 +154,7 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
             <TripInfoRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
             <TripInfoRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
             <TripInfoRow icon={<Navigation color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
+            <TripInfoRow icon={<Wallet color={colors.cyan} size={16} />} label="نوع الرحلة" value={request.serviceLabel} />
             <TripInfoRow icon={<Wallet color={colors.warning} size={16} />} label="الدفع" value={request.paymentMethod} />
           </View>
 

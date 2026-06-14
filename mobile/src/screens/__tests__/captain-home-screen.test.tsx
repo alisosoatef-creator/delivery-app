@@ -114,6 +114,19 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("غير متصل")).toBeTruthy();
   });
 
+  it("lets the captain decline an available request", async () => {
+    const screen = await renderCaptainHome();
+
+    expect(screen.getByText("علي محمد")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("رفض الطلب التجريبي"));
+
+    expect(screen.getByText("تم رفض الطلب التجريبي")).toBeTruthy();
+    expect(screen.getByText("لا توجد طلبات متاحة الآن")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن اعتذر عن الطلب").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("علي محمد")).toBeNull();
+  });
+
   it("moves an accepted request into the active captain trip mock flow", async () => {
     const screen = await renderCaptainHome();
 

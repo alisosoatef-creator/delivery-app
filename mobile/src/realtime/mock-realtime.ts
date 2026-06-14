@@ -4,6 +4,7 @@ export type MockRealtimeConnectionStatus = "connected" | "offline" | "syncing";
 
 export type MockRealtimeEventKind =
   | "captain-arrived"
+  | "captain-request-declined"
   | "captain-request-accepted"
   | "customer-feedback-submitted"
   | "customer-request-created"
@@ -24,6 +25,13 @@ export type MockRealtimeEvent = {
 export type MockRealtimeState = {
   connectionStatus: MockRealtimeConnectionStatus;
   events: MockRealtimeEvent[];
+};
+
+export type MockRealtimeConnectionSummary = {
+  detail: string;
+  eventCount: number;
+  label: string;
+  tone: MockRealtimeConnectionStatus;
 };
 
 export type MockRealtimeEventInput = Omit<MockRealtimeEvent, "id" | "sequence" | "status">;
@@ -68,4 +76,60 @@ export function getRecentMockRealtimeEvents(
   return realtime.events
     .filter((event) => event.audience === "both" || event.audience === audience)
     .slice(0, limit);
+}
+
+export function updateMockRealtimeConnectionStatus(
+  realtime: MockRealtimeState,
+  connectionStatus: MockRealtimeConnectionStatus
+): MockRealtimeState {
+  return {
+    ...realtime,
+    connectionStatus,
+  };
+}
+
+export function getMockRealtimeConnectionSummary(
+  realtime: MockRealtimeState,
+  audience: MockRealtimeAudience
+): MockRealtimeConnectionSummary {
+  const visibleEvents = getRecentMockRealtimeEvents(realtime, audience, realtime.events.length);
+  const latestEvent = visibleEvents[0] ?? null;
+
+  return {
+    detail: getMockRealtimeConnectionDetail(realtime.connectionStatus, latestEvent?.sequence ?? null),
+    eventCount: visibleEvents.length,
+    label: getMockRealtimeConnectionLabel(realtime.connectionStatus),
+    tone: realtime.connectionStatus,
+  };
+}
+
+function getMockRealtimeConnectionLabel(status: MockRealtimeConnectionStatus): string {
+  switch (status) {
+    case "connected":
+      return "متصل مباشر";
+    case "offline":
+      return "غير متصل مؤقتًا";
+    case "syncing":
+      return "مزامنة مباشرة";
+    default: {
+      const exhaustiveStatus: never = status;
+      return exhaustiveStatus;
+    }
+  }
+}
+
+function getMockRealtimeConnectionDetail(status: MockRealtimeConnectionStatus, latestSequence: number | null): string {
+  if (!latestSequence) {
+    return status === "offline" ? "لا يوجد تحديث محفوظ" : "بانتظار أول تحديث";
+  }
+
+  if (status === "offline") {
+    return `آخر تحديث محفوظ #${latestSequence}`;
+  }
+
+  if (status === "syncing") {
+    return `جاري مزامنة التحديث #${latestSequence}`;
+  }
+
+  return `آخر تحديث #${latestSequence}`;
 }

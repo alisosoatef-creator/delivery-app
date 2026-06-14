@@ -13,6 +13,29 @@ export const customerHomeMock = {
   tripDistance: "2.4 كم",
   defaultPaymentMethod: "كاش عند الاستلام",
   paymentMethods: ["كاش عند الاستلام", "فيزا"] as const,
+  rideOptions: [
+    {
+      label: "خدمة واصل",
+      meta: "أقرب كابتن مناسب لرحلتك",
+      eta: "3 دقائق",
+      price: "25 شيكل",
+      badge: "الأسرع"
+    },
+    {
+      label: "واصل بريميوم",
+      meta: "سيارة أهدأ ومساحة أفضل",
+      eta: "4 دقائق",
+      price: "34 شيكل",
+      badge: "مميز"
+    },
+    {
+      label: "واصل عائلي",
+      meta: "مساحة أوسع لرحلة مريحة",
+      eta: "6 دقائق",
+      price: "46 شيكل",
+      badge: "واسع"
+    }
+  ] as const,
   matchingCaptains: "3 كباتن يطابقون الطلب",
   captain: {
     name: "أحمد محمد",

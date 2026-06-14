@@ -2,7 +2,9 @@ import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-ho
 import {
   appendMockRealtimeEvent,
   createInitialMockRealtimeState,
+  updateMockRealtimeConnectionStatus,
   type MockRealtimeEventInput,
+  type MockRealtimeConnectionStatus,
   type MockRealtimeState
 } from "@/realtime/mock-realtime";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
@@ -19,14 +21,17 @@ export type MockRideRequestsState = {
   availableRequests: CaptainAvailableRequest[];
   completedRequests: CaptainAvailableRequest[];
   customerFeedback: CustomerRideFeedback | null;
+  declinedRequests: CaptainAvailableRequest[];
   realtime: MockRealtimeState;
 };
 
 export type MockRideRequestsAction =
   | { request: CaptainAvailableRequest; type: "submit-customer-request" }
   | { requestId: string; type: "accept-request" }
+  | { requestId: string; type: "decline-request" }
   | { requestId: string; step: CaptainTripStep; type: "update-accepted-trip-step" }
   | { feedback: CustomerRideFeedback; type: "submit-customer-feedback" }
+  | { status: MockRealtimeConnectionStatus; type: "set-realtime-connection-status" }
   | { type: "clear-accepted-request" }
   | { type: "reset-requests" };
 
@@ -37,6 +42,7 @@ export function createInitialMockRideRequests(): MockRideRequestsState {
     availableRequests: [...captainHomeMock.availableRequests],
     completedRequests: [],
     customerFeedback: null,
+    declinedRequests: [],
     realtime: createInitialMockRealtimeState(),
   };
 }
@@ -55,6 +61,7 @@ export function mockRideRequestsReducer(
         availableRequests: [action.request, ...otherRequests],
         completedRequests: state.completedRequests,
         customerFeedback: state.customerFeedback?.requestId === action.request.id ? null : state.customerFeedback,
+        declinedRequests: state.declinedRequests.filter((request) => request.id !== action.request.id),
         realtime: appendMockRealtimeEvent(state.realtime, {
           audience: "both",
           detail: "تم إرسال طلبك للكباتن القريبين",
@@ -73,6 +80,7 @@ export function mockRideRequestsReducer(
         availableRequests: state.availableRequests.filter((request) => request.id !== action.requestId),
         completedRequests: state.completedRequests,
         customerFeedback: state.customerFeedback,
+        declinedRequests: state.declinedRequests,
         realtime: acceptedRequest
           ? appendMockRealtimeEvent(state.realtime, {
               audience: "both",
@@ -82,6 +90,29 @@ export function mockRideRequestsReducer(
               title: "تم قبول الطلب",
             })
           : state.realtime,
+      };
+    }
+    case "decline-request": {
+      const declinedRequest = state.availableRequests.find((request) => request.id === action.requestId);
+
+      if (!declinedRequest) {
+        return state;
+      }
+
+      return {
+        ...state,
+        availableRequests: state.availableRequests.filter((request) => request.id !== action.requestId),
+        declinedRequests: [
+          declinedRequest,
+          ...state.declinedRequests.filter((request) => request.id !== action.requestId),
+        ],
+        realtime: appendMockRealtimeEvent(state.realtime, {
+          audience: "both",
+          detail: "نبحث عن كابتن بديل يناسب رحلتك",
+          kind: "captain-request-declined",
+          requestId: declinedRequest.id,
+          title: "الكابتن اعتذر عن الطلب",
+        }),
       };
     }
     case "update-accepted-trip-step":
@@ -107,6 +138,11 @@ export function mockRideRequestsReducer(
           requestId: action.feedback.requestId,
           title: "تقييم جديد من العميل",
         }),
+      };
+    case "set-realtime-connection-status":
+      return {
+        ...state,
+        realtime: updateMockRealtimeConnectionStatus(state.realtime, action.status),
       };
     case "clear-accepted-request": {
       const completedRequests =

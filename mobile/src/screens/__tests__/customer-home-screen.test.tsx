@@ -51,6 +51,24 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe() {
           <Text>بدء الرحلة من الكابتن</Text>
         </Pressable>
         <Pressable
+          accessibilityLabel="وصول الكابتن للعميل"
+          onPress={() =>
+            dispatchRideRequests({
+              requestId: "request-live-customer",
+              step: "arrived",
+              type: "update-accepted-trip-step",
+            })
+          }
+        >
+          <Text>وصول الكابتن للعميل</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="رفض طلب العميل من الكابتن"
+          onPress={() => dispatchRideRequests({ requestId: "request-live-customer", type: "decline-request" })}
+        >
+          <Text>رفض طلب العميل من الكابتن</Text>
+        </Pressable>
+        <Pressable
           accessibilityLabel="إنهاء الرحلة من الكابتن"
           onPress={() =>
             dispatchRideRequests({
@@ -61,6 +79,17 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe() {
           }
         >
           <Text>إنهاء الرحلة من الكابتن</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="قطع الاتصال المباشر"
+          onPress={() =>
+            dispatchRideRequests({
+              status: "offline",
+              type: "set-realtime-connection-status",
+            })
+          }
+        >
+          <Text>قطع الاتصال المباشر</Text>
         </Pressable>
       </>
     );
@@ -140,6 +169,30 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("مباشر")).toBeTruthy();
     expect(screen.getAllByText("طلب مباشر جديد").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("تم إرسال طلبك للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("lets the customer choose a premium ride type and carries it through the live trip", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+
+    expect(screen.getByText("اختر نوع الرحلة")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("اختيار واصل بريميوم"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+
+    expect(screen.getByText("نوع الرحلة")).toBeTruthy();
+    expect(screen.getAllByText("واصل بريميوم").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("34 شيكل").length).toBeGreaterThanOrEqual(1);
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByText("الطلب المحدد: واصل بريميوم • 34 شيكل")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.getByText("34 شيكل")).toBeTruthy();
   });
 
   it("walks through the full mock customer ride flow after trip confirmation", async () => {
@@ -227,6 +280,57 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
     expect(screen.getByText("تم قبول طلبك")).toBeTruthy();
     expect(screen.queryByText("جاري البحث عن كابتن")).toBeNull();
+  });
+
+  it("shows the customer when the captain arrives at pickup", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+
+    expect(screen.getByText("الكابتن في الطريق إليك")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("وصول الكابتن للعميل"));
+
+    expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
+    expect(screen.getByText("الكابتن وصل إليك")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن وصل للعميل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("الكابتن في الطريق إليك")).toBeNull();
+  });
+
+  it("shows realtime connection health and preserves the latest synced update offline", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByText("متصل مباشر")).toBeTruthy();
+    expect(screen.getByText("آخر تحديث #1")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("قطع الاتصال المباشر"));
+
+    expect(screen.getByText("غير متصل مؤقتًا")).toBeTruthy();
+    expect(screen.getByText("آخر تحديث محفوظ #1")).toBeTruthy();
+  });
+
+  it("keeps customer search active when a captain declines and shows fallback realtime copy", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByText("جاري البحث عن كابتن")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("رفض طلب العميل من الكابتن"));
+
+    expect(screen.getByText("جاري البحث عن كابتن")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن اعتذر عن الطلب").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("نبحث عن كابتن بديل يناسب رحلتك").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("تم قبول طلبك")).toBeNull();
   });
 
   it("reflects captain trip progress automatically from the shared mock state", async () => {

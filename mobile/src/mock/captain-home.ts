@@ -9,6 +9,7 @@ export type CaptainAvailableRequest = {
   paymentMethod: string;
   pickup: string;
   price: string;
+  serviceLabel: string;
 };
 
 export const captainHomeMock = {
@@ -53,6 +54,7 @@ export const captainHomeMock = {
       distance: "2.4 كم",
       price: "25 شيكل",
       paymentMethod: "كاش عند الاستلام",
+      serviceLabel: "خدمة واصل",
       etaToPickup: "3 د"
     }
   ]

@@ -27,7 +27,11 @@ import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
-import { getLatestMockRealtimeEvent, getRecentMockRealtimeEvents } from "@/realtime/mock-realtime";
+import {
+  getLatestMockRealtimeEvent,
+  getMockRealtimeConnectionSummary,
+  getRecentMockRealtimeEvents
+} from "@/realtime/mock-realtime";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import {
   createInitialCustomerTripFlow,
@@ -38,6 +42,7 @@ import {
 
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
+type RideOption = (typeof customerHomeMock.rideOptions)[number];
 
 type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
@@ -51,6 +56,7 @@ type CustomerTripsLiveRide = {
   payment: string;
   price: string;
   route: string;
+  serviceLabel: string;
   time: string;
 };
 
@@ -84,6 +90,14 @@ function mapAcceptedTripStepToTripsStatus(step: CaptainTripStep | null): string 
   return customerHomeMock.captain.status;
 }
 
+function mapAcceptedTripStepToCaptainStatus(step: CaptainTripStep | null): string {
+  if (step === "arrived") {
+    return "الكابتن وصل إليك";
+  }
+
+  return customerHomeMock.captain.status;
+}
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
@@ -96,6 +110,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [completionNote, setCompletionNote] = useState<string>("");
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
+  const [selectedRideOption, setSelectedRideOption] = useState<RideOption>(customerHomeMock.rideOptions[0]);
   const { showConfirmation, stage: rideStage } = tripFlow;
   const acceptedCustomerRequest =
     rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID ? rideRequests.acceptedRequest : null;
@@ -112,10 +127,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         payment: acceptedCustomerRequest.paymentMethod,
         price: acceptedCustomerRequest.price,
         route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
+        serviceLabel: acceptedCustomerRequest.serviceLabel,
         time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن",
       }
     : null;
   const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "customer");
+  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(rideRequests.realtime, "customer");
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "customer", 4);
 
   function resetRide() {
@@ -131,6 +148,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setSelectedDestination(null);
     setDestinationDetail("");
     setPaymentMethod(customerHomeMock.defaultPaymentMethod);
+    setSelectedRideOption(customerHomeMock.rideOptions[0]);
     setNotice(null);
   }
 
@@ -169,7 +187,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       id: LIVE_CUSTOMER_REQUEST_ID,
       paymentMethod,
       pickup: customerHomeMock.pickup,
-      price: selectedDestination.price,
+      price: selectedRideOption.price,
+      serviceLabel: selectedRideOption.label,
     };
 
     dispatchRideRequests({ request, type: "submit-customer-request" });
@@ -224,8 +243,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
           <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
           <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
+          <InfoRow label="نوع الرحلة" value={selectedRideOption.label} />
           <InfoRow label="المسافة" value={selectedDestination.distance} />
-          <InfoRow label="السعر التقديري" value={selectedDestination.price} />
+          <InfoRow label="السعر التقديري" value={selectedRideOption.price} />
           <InfoRow label="طريقة الدفع" value={paymentMethod} />
         </View>
 
@@ -283,7 +303,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
                 <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
                 <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
-                <InfoRow label="السعر" value={selectedDestination.price} />
+                <InfoRow label="نوع الرحلة" value={selectedRideOption.label} />
+                <InfoRow label="السعر" value={selectedRideOption.price} />
                 <InfoRow label="طريقة الدفع" value={paymentMethod} />
               </View>
             </View>
@@ -322,7 +343,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               </Text>
             </View>
             <Text selectable style={styles.acceptedStatus}>
-              {captain.status}
+              {mapAcceptedTripStepToCaptainStatus(rideRequests.acceptedTripStep)}
             </Text>
           </View>
 
@@ -360,7 +381,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </View>
             <View style={styles.miniMetric}>
               <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{selectedDestination?.price ?? customerHomeMock.service.price}</Text>
+              <Text style={styles.metricValue}>{selectedRideOption.price}</Text>
               <Text style={styles.metricLabel}>السعر</Text>
             </View>
           </View>
@@ -546,7 +567,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           </GlassCard>
         ) : null}
 
-        {latestRealtimeEvent ? <RealtimeStatusCard event={latestRealtimeEvent} /> : null}
+        {latestRealtimeEvent ? (
+          <RealtimeStatusCard event={latestRealtimeEvent} summary={realtimeConnectionSummary} />
+        ) : null}
         <RealtimeActivityFeed events={recentRealtimeEvents} />
 
         <View style={styles.heroCopy}>
@@ -613,7 +636,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <GlassCard style={styles.statCard}>
             <ShieldCheck color={colors.success} size={18} />
             <Text selectable style={styles.statValue}>
-              {customerHomeMock.suggestedFare}
+              {selectedRideOption.price}
             </Text>
             <Text selectable style={styles.statLabel}>
               سعر مقترح
@@ -691,6 +714,57 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               />
             </View>
 
+            <View style={styles.rideOptionsGroup}>
+              <Text selectable style={styles.detailLabel}>
+                اختر نوع الرحلة
+              </Text>
+              <View style={styles.rideOptionsList}>
+                {customerHomeMock.rideOptions.map((option) => {
+                  const isSelected = selectedRideOption.label === option.label;
+
+                  return (
+                    <Pressable
+                      key={option.label}
+                      accessibilityLabel={`اختيار ${option.label}`}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => setSelectedRideOption(option)}
+                      style={({ pressed }) => [
+                        styles.rideOption,
+                        isSelected ? styles.rideOptionActive : null,
+                        pressed ? styles.pressed : null
+                      ]}
+                    >
+                      <View style={styles.rideOptionPriceBox}>
+                        <Text selectable style={styles.rideOptionPrice}>
+                          {option.price}
+                        </Text>
+                        <Text selectable style={styles.rideOptionEta}>
+                          {option.eta}
+                        </Text>
+                      </View>
+                      <View style={styles.rideOptionCopy}>
+                        <View style={styles.rideOptionTitleRow}>
+                          <View style={[styles.rideOptionBadge, isSelected ? styles.rideOptionBadgeActive : null]}>
+                            <Text selectable style={styles.rideOptionBadgeText}>
+                              {option.badge}
+                            </Text>
+                          </View>
+                          <Text selectable style={styles.rideOptionLabel}>
+                            {option.label}
+                          </Text>
+                        </View>
+                        <Text selectable style={styles.rideOptionMeta}>
+                          {option.meta}
+                        </Text>
+                      </View>
+                      {isSelected ? <CheckCircle color={colors.cyan} size={18} /> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+
             <View style={styles.paymentGroup}>
               <Text selectable style={styles.detailLabel}>
                 طريقة الدفع
@@ -731,13 +805,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
         <GlassCard style={styles.tripCard}>
           <View style={styles.tripPricePill}>
-            <Text style={styles.tripPrice}>{selectedDestination?.price ?? customerHomeMock.service.price}</Text>
+            <Text style={styles.tripPrice}>{selectedRideOption.price}</Text>
           </View>
           <View style={styles.tripCopy}>
-            <Text style={styles.tripLabel}>{customerHomeMock.service.label}</Text>
-            <Text style={styles.tripMeta}>{customerHomeMock.service.meta}</Text>
+            <Text style={styles.tripLabel}>{selectedRideOption.label}</Text>
+            <Text style={styles.tripMeta}>{selectedRideOption.meta}</Text>
             <Text style={styles.tripMeta}>
-              {selectedDestination ? `${selectedDestination.distance} • ${customerHomeMock.service.eta}` : customerHomeMock.service.eta}
+              {selectedDestination ? `${selectedDestination.distance} • ${selectedRideOption.eta}` : selectedRideOption.eta}
             </Text>
           </View>
         </GlassCard>
@@ -756,11 +830,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <GlassCard style={styles.feedbackCard}>
           <Text style={styles.feedbackText}>
             {requestStatus ??
-              `الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
+              `الطلب المحدد: ${selectedRideOption.label} • ${selectedRideOption.price}`}
           </Text>
           {requestStatus ? (
             <Text style={styles.feedbackMeta}>
-              {`الطلب المحدد: ${customerHomeMock.service.label} • ${selectedDestination?.price ?? customerHomeMock.service.price}`}
+              {`الطلب المحدد: ${selectedRideOption.label} • ${selectedRideOption.price}`}
             </Text>
           ) : null}
           {selectedDestination ? (
@@ -902,6 +976,7 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
         <View style={styles.tripTimelineBox}>
           <InfoRow label="المسار" value={currentTrip.route} />
           {liveTrip ? <InfoRow label="تفصيل الوجهة" value={liveTrip.destinationDetail} /> : null}
+          {liveTrip ? <InfoRow label="نوع الرحلة" value={liveTrip.serviceLabel} /> : null}
           <InfoRow label="الكابتن" value={currentTrip.captain} />
           <InfoRow label="السعر" value={currentTrip.price} />
           <InfoRow label="الدفع" value={currentTrip.payment} />
@@ -1292,6 +1367,83 @@ const styles = StyleSheet.create({
   },
   paymentGroup: {
     gap: spacing.xs
+  },
+  rideOptionsGroup: {
+    gap: spacing.xs
+  },
+  rideOptionsList: {
+    gap: spacing.xs
+  },
+  rideOption: {
+    minHeight: 72,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  rideOptionActive: {
+    borderColor: "rgba(0, 229, 255, 0.46)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  rideOptionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  rideOptionTitleRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  rideOptionLabel: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  rideOptionMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  rideOptionPriceBox: {
+    minWidth: 78,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  rideOptionPrice: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  rideOptionEta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  rideOptionBadge: {
+    minHeight: 24,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(139, 92, 246, 0.14)"
+  },
+  rideOptionBadgeActive: {
+    backgroundColor: "rgba(0, 229, 255, 0.16)"
+  },
+  rideOptionBadgeText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: 10,
+    fontWeight: "900"
   },
   paymentOptions: {
     flexDirection: "row-reverse",

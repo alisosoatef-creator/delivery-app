@@ -3,23 +3,42 @@ import { StyleSheet, Text, View } from "react-native";
 
 import { GlassCard } from "@/components/glass-card";
 import { colors, radii, spacing, typography } from "@/design/tokens";
-import type { MockRealtimeEvent } from "@/realtime/mock-realtime";
+import type { MockRealtimeConnectionSummary, MockRealtimeEvent } from "@/realtime/mock-realtime";
 
-export function RealtimeStatusCard({ event }: { event: MockRealtimeEvent }) {
+export function RealtimeStatusCard({
+  event,
+  summary,
+}: {
+  event: MockRealtimeEvent;
+  summary: MockRealtimeConnectionSummary;
+}) {
+  const connectionColor = getConnectionColor(summary.tone);
+
   return (
     <GlassCard style={styles.card} variant="subtle">
-      <View style={styles.iconWrap}>
-        <Radio color={colors.cyan} size={18} />
+      <View
+        style={[
+          styles.iconWrap,
+          {
+            backgroundColor: getConnectionBackground(summary.tone),
+            borderColor: getConnectionBorder(summary.tone),
+          },
+        ]}
+      >
+        <Radio color={connectionColor} size={18} />
       </View>
       <View style={styles.copy}>
         <View style={styles.metaRow}>
           <Text selectable style={styles.statusText}>
-            متصل real-time
+            {summary.label}
           </Text>
-          <Text selectable style={styles.liveText}>
-            مباشر
+          <Text selectable style={[styles.liveText, { color: connectionColor }]}>
+            {getConnectionPillLabel(summary.tone)}
           </Text>
         </View>
+        <Text selectable style={[styles.syncText, { color: connectionColor }]}>
+          {summary.detail}
+        </Text>
         <Text selectable style={styles.title}>
           {event.title}
         </Text>
@@ -74,6 +93,54 @@ const rtlText = {
   writingDirection: "rtl" as const
 };
 
+function getConnectionColor(tone: MockRealtimeConnectionSummary["tone"]) {
+  if (tone === "offline") {
+    return colors.warning;
+  }
+
+  if (tone === "syncing") {
+    return colors.violetSoft;
+  }
+
+  return colors.cyan;
+}
+
+function getConnectionBackground(tone: MockRealtimeConnectionSummary["tone"]) {
+  if (tone === "offline") {
+    return "rgba(255, 209, 102, 0.12)";
+  }
+
+  if (tone === "syncing") {
+    return "rgba(139, 92, 246, 0.14)";
+  }
+
+  return "rgba(0, 229, 255, 0.1)";
+}
+
+function getConnectionBorder(tone: MockRealtimeConnectionSummary["tone"]) {
+  if (tone === "offline") {
+    return "rgba(255, 209, 102, 0.28)";
+  }
+
+  if (tone === "syncing") {
+    return "rgba(139, 92, 246, 0.3)";
+  }
+
+  return "rgba(0, 229, 255, 0.26)";
+}
+
+function getConnectionPillLabel(tone: MockRealtimeConnectionSummary["tone"]) {
+  if (tone === "offline") {
+    return "محفوظ";
+  }
+
+  if (tone === "syncing") {
+    return "مزامنة";
+  }
+
+  return "مباشر";
+}
+
 const styles = StyleSheet.create({
   card: {
     minHeight: 78,
@@ -127,6 +194,11 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     fontSize: typography.compact,
     fontWeight: "700"
+  },
+  syncText: {
+    ...rtlText,
+    fontSize: typography.tiny,
+    fontWeight: "900"
   },
   feedCard: {
     gap: spacing.sm,
