@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
@@ -40,6 +40,46 @@ async function renderCaptainHomeWithSharedStepProbe() {
         <View>
           <CaptainHomeScreen />
           <SharedStepProbe />
+        </View>
+      </MockAppProvider>
+    </SafeAreaProvider>
+  );
+}
+
+async function renderCaptainHomeWithCustomerFeedbackProbe() {
+  function CustomerFeedbackProbe() {
+    const [, dispatchRideRequests] = useMockRideRequests();
+
+    return (
+      <Pressable
+        accessibilityLabel="إضافة تقييم عميل للكابتن"
+        onPress={() =>
+          dispatchRideRequests({
+            feedback: {
+              note: "الكابتن ممتاز",
+              rating: 5,
+              requestId: "request-live-customer",
+            },
+            type: "submit-customer-feedback",
+          })
+        }
+      >
+        <Text>إضافة تقييم عميل للكابتن</Text>
+      </Pressable>
+    );
+  }
+
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 48, right: 0, bottom: 34, left: 0 }
+      }}
+    >
+      <MockAppProvider>
+        <View>
+          <CaptainHomeScreen />
+          <CustomerFeedbackProbe />
         </View>
       </MockAppProvider>
     </SafeAreaProvider>
@@ -153,6 +193,20 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
   });
 
+  it("adds the completed accepted trip to captain earnings totals", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
+
+    expect(screen.getByText("645 شيكل")).toBeTruthy();
+    expect(screen.getByText("25 رحلة مكتملة")).toBeTruthy();
+  });
+
   it("switches between captain bottom nav mock tabs", async () => {
     const screen = await renderCaptainHome();
 
@@ -181,5 +235,16 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+  });
+
+  it("shows the latest customer feedback inside captain profile", async () => {
+    const screen = await renderCaptainHomeWithCustomerFeedbackProbe();
+
+    await fireEvent.press(screen.getByLabelText("إضافة تقييم عميل للكابتن"));
+    await fireEvent.press(screen.getByLabelText("فتح تبويب حسابي"));
+
+    expect(screen.getByText("آخر تقييم من العميل")).toBeTruthy();
+    expect(screen.getByText("5 نجوم")).toBeTruthy();
+    expect(screen.getByText("الكابتن ممتاز")).toBeTruthy();
   });
 });

@@ -180,6 +180,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setNotice("تم إلغاء البحث عن كابتن");
   }
 
+  function submitCustomerFeedback(nextRating: number | null, nextNote: string) {
+    if (!acceptedCustomerRequest || effectiveRideStage !== "completed" || !nextRating) {
+      return;
+    }
+
+    dispatchRideRequests({
+      feedback: {
+        note: nextNote.trim(),
+        rating: nextRating,
+        requestId: acceptedCustomerRequest.id,
+      },
+      type: "submit-customer-feedback",
+    });
+  }
+
   function renderTripConfirmation() {
     if (!showConfirmation || !selectedDestination) {
       return null;
@@ -431,7 +446,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               accessibilityRole="button"
               accessibilityLabel={`تقييم ${star} نجوم`}
               hitSlop={8}
-              onPress={() => setRating(star)}
+              onPress={() => {
+                setRating(star);
+                submitCustomerFeedback(star, completionNote);
+              }}
             >
               <Star
                 color={colors.cyan}
@@ -449,7 +467,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <TextInput
             accessibilityLabel="ملاحظة الرحلة"
             multiline
-            onChangeText={setCompletionNote}
+            onChangeText={(note) => {
+              setCompletionNote(note);
+              submitCustomerFeedback(rating, note);
+            }}
             placeholder="اكتب ملاحظة اختيارية"
             placeholderTextColor={colors.textMuted}
             style={[styles.detailInput, styles.completionNoteInput]}

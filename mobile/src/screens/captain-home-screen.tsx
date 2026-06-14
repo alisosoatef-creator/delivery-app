@@ -11,6 +11,7 @@ import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import { CaptainActiveTripScreen } from "@/screens/captain-active-trip-screen";
 import { useMockRideRequests } from "@/state/mock-app-context";
+import type { CustomerRideFeedback } from "@/state/mock-ride-requests";
 
 const captainTabs = [
   { key: "home", label: "الرئيسية", icon: Home },
@@ -120,7 +121,7 @@ export function CaptainHomeScreen() {
             onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
           />
         ) : activeTab === "profile" ? (
-          <CaptainProfileTab />
+          <CaptainProfileTab customerFeedback={rideRequests.customerFeedback} />
         ) : (
           <>
             <View style={styles.metricsRow}>
@@ -300,6 +301,7 @@ function CaptainEarningsTab({
   onWithdraw: () => void;
 }) {
   const earnings = captainHomeMock.earnings;
+  const earningsSummary = createCaptainEarningsSummary(completedRequests);
 
   return (
     <GlassCard style={styles.earningsCard} variant="strong">
@@ -319,10 +321,10 @@ function CaptainEarningsTab({
 
       <View style={styles.earningsTotalBox}>
         <Text selectable style={styles.earningsTotal}>
-          {earnings.todayTotal}
+          {earningsSummary.todayTotal}
         </Text>
         <Text selectable style={styles.earningsMeta}>
-          {earnings.completedTrips}
+          {earningsSummary.completedTrips}
         </Text>
       </View>
 
@@ -385,7 +387,22 @@ function CaptainEarningsTab({
   );
 }
 
-function CaptainProfileTab() {
+function createCaptainEarningsSummary(completedRequests: CaptainAvailableRequest[]) {
+  const baseTotal = parseDisplayNumber(captainHomeMock.earnings.todayTotal);
+  const baseTrips = parseDisplayNumber(captainHomeMock.earnings.completedTrips);
+  const completedTotal = completedRequests.reduce((total, request) => total + parseDisplayNumber(request.price), 0);
+
+  return {
+    todayTotal: `${baseTotal + completedTotal} شيكل`,
+    completedTrips: `${baseTrips + completedRequests.length} رحلة مكتملة`
+  };
+}
+
+function parseDisplayNumber(value: string) {
+  return Number(value.match(/\d+(?:\.\d+)?/)?.[0] ?? 0);
+}
+
+function CaptainProfileTab({ customerFeedback }: { customerFeedback: CustomerRideFeedback | null }) {
   const profile = captainHomeMock.profile;
 
   return (
@@ -413,6 +430,22 @@ function CaptainProfileTab() {
         <ProfileRow label="رقم اللوحة" value={profile.plate} />
         <ProfileRow label="أرباح اليوم" value={captainHomeMock.metrics.earningsToday} />
       </View>
+
+      {customerFeedback ? (
+        <View style={styles.customerFeedbackBox}>
+          <Text selectable style={styles.customerFeedbackLabel}>
+            آخر تقييم من العميل
+          </Text>
+          <Text selectable style={styles.customerFeedbackScore}>
+            {`${customerFeedback.rating} نجوم`}
+          </Text>
+          {customerFeedback.note ? (
+            <Text selectable style={styles.customerFeedbackNote}>
+              {customerFeedback.note}
+            </Text>
+          ) : null}
+        </View>
+      ) : null}
     </GlassCard>
   );
 }
@@ -942,6 +975,34 @@ const styles = StyleSheet.create({
   },
   profileRows: {
     gap: spacing.xs
+  },
+  customerFeedbackBox: {
+    alignItems: "flex-end",
+    gap: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  customerFeedbackLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  customerFeedbackScore: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  customerFeedbackNote: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
   },
   profileRow: {
     minHeight: 46,

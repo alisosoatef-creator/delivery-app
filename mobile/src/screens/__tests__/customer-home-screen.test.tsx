@@ -24,10 +24,14 @@ async function renderCustomerHome() {
 
 async function renderCustomerHomeWithCaptainAcceptanceProbe() {
   function CaptainAcceptanceProbe() {
-    const [, dispatchRideRequests] = useMockRideRequests();
+    const [rideRequests, dispatchRideRequests] = useMockRideRequests();
+    const feedback = rideRequests.customerFeedback
+      ? `${rideRequests.customerFeedback.rating}-${rideRequests.customerFeedback.note}`
+      : "none";
 
     return (
       <>
+        <Text>{`shared feedback: ${feedback}`}</Text>
         <Pressable
           accessibilityLabel="قبول طلب العميل من الكابتن"
           onPress={() => dispatchRideRequests({ requestId: "request-live-customer", type: "accept-request" })}
@@ -294,6 +298,7 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByText("تقييمك: 5 نجوم")).toBeTruthy();
     expect(screen.getByText("ملاحظتك: الكابتن ممتاز")).toBeTruthy();
+    expect(screen.getByText("shared feedback: 5-الكابتن ممتاز")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("رحلة جديدة"));
     await fireEvent.press(screen.getByText("رحلاتي"));

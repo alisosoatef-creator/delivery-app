@@ -1,17 +1,25 @@
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
 
+export type CustomerRideFeedback = {
+  note: string;
+  rating: number;
+  requestId: string;
+};
+
 export type MockRideRequestsState = {
   acceptedRequest: CaptainAvailableRequest | null;
   acceptedTripStep: CaptainTripStep | null;
   availableRequests: CaptainAvailableRequest[];
   completedRequests: CaptainAvailableRequest[];
+  customerFeedback: CustomerRideFeedback | null;
 };
 
 export type MockRideRequestsAction =
   | { request: CaptainAvailableRequest; type: "submit-customer-request" }
   | { requestId: string; type: "accept-request" }
   | { requestId: string; step: CaptainTripStep; type: "update-accepted-trip-step" }
+  | { feedback: CustomerRideFeedback; type: "submit-customer-feedback" }
   | { type: "clear-accepted-request" }
   | { type: "reset-requests" };
 
@@ -21,6 +29,7 @@ export function createInitialMockRideRequests(): MockRideRequestsState {
     acceptedTripStep: null,
     availableRequests: [...captainHomeMock.availableRequests],
     completedRequests: [],
+    customerFeedback: null,
   };
 }
 
@@ -37,6 +46,7 @@ export function mockRideRequestsReducer(
         acceptedTripStep: state.acceptedRequest?.id === action.request.id ? null : state.acceptedTripStep,
         availableRequests: [action.request, ...otherRequests],
         completedRequests: state.completedRequests,
+        customerFeedback: state.customerFeedback?.requestId === action.request.id ? null : state.customerFeedback,
       };
     }
     case "accept-request": {
@@ -47,6 +57,7 @@ export function mockRideRequestsReducer(
         acceptedTripStep: acceptedRequest ? "pickup" : state.acceptedTripStep,
         availableRequests: state.availableRequests.filter((request) => request.id !== action.requestId),
         completedRequests: state.completedRequests,
+        customerFeedback: state.customerFeedback,
       };
     }
     case "update-accepted-trip-step":
@@ -57,6 +68,11 @@ export function mockRideRequestsReducer(
       return {
         ...state,
         acceptedTripStep: action.step,
+      };
+    case "submit-customer-feedback":
+      return {
+        ...state,
+        customerFeedback: action.feedback,
       };
     case "clear-accepted-request": {
       const completedRequests =
