@@ -247,4 +247,21 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("5 نجوم")).toBeTruthy();
     expect(screen.getByText("الكابتن ممتاز")).toBeTruthy();
   });
+
+  it("updates captain rating summary from the latest customer feedback", async () => {
+    const screen = await renderCaptainHomeWithCustomerFeedbackProbe();
+
+    await fireEvent.press(screen.getByLabelText("إضافة تقييم عميل للكابتن"));
+
+    expect(screen.getByText("مباشر")).toBeTruthy();
+    expect(screen.getAllByText("تقييم جديد من العميل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("سجل التحديثات المباشرة")).toBeTruthy();
+    expect(screen.getByText("5.0")).toBeTruthy();
+    expect(screen.queryByText("4.9")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
+
+    expect(screen.getByText("5.0")).toBeTruthy();
+    expect(screen.queryByText("4.9")).toBeNull();
+  });
 });

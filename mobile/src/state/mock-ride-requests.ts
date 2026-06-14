@@ -1,4 +1,10 @@
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
+import {
+  appendMockRealtimeEvent,
+  createInitialMockRealtimeState,
+  type MockRealtimeEventInput,
+  type MockRealtimeState
+} from "@/realtime/mock-realtime";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
 
 export type CustomerRideFeedback = {
@@ -13,6 +19,7 @@ export type MockRideRequestsState = {
   availableRequests: CaptainAvailableRequest[];
   completedRequests: CaptainAvailableRequest[];
   customerFeedback: CustomerRideFeedback | null;
+  realtime: MockRealtimeState;
 };
 
 export type MockRideRequestsAction =
@@ -30,6 +37,7 @@ export function createInitialMockRideRequests(): MockRideRequestsState {
     availableRequests: [...captainHomeMock.availableRequests],
     completedRequests: [],
     customerFeedback: null,
+    realtime: createInitialMockRealtimeState(),
   };
 }
 
@@ -47,6 +55,13 @@ export function mockRideRequestsReducer(
         availableRequests: [action.request, ...otherRequests],
         completedRequests: state.completedRequests,
         customerFeedback: state.customerFeedback?.requestId === action.request.id ? null : state.customerFeedback,
+        realtime: appendMockRealtimeEvent(state.realtime, {
+          audience: "both",
+          detail: "تم إرسال طلبك للكباتن القريبين",
+          kind: "customer-request-created",
+          requestId: action.request.id,
+          title: "طلب مباشر جديد",
+        }),
       };
     }
     case "accept-request": {
@@ -58,6 +73,15 @@ export function mockRideRequestsReducer(
         availableRequests: state.availableRequests.filter((request) => request.id !== action.requestId),
         completedRequests: state.completedRequests,
         customerFeedback: state.customerFeedback,
+        realtime: acceptedRequest
+          ? appendMockRealtimeEvent(state.realtime, {
+              audience: "both",
+              detail: "الكابتن في الطريق إلى نقطة الانطلاق",
+              kind: "captain-request-accepted",
+              requestId: acceptedRequest.id,
+              title: "تم قبول الطلب",
+            })
+          : state.realtime,
       };
     }
     case "update-accepted-trip-step":
@@ -68,11 +92,21 @@ export function mockRideRequestsReducer(
       return {
         ...state,
         acceptedTripStep: action.step,
+        realtime: appendMockRealtimeEvent(state.realtime, createTripStepRealtimeEvent(action.requestId, action.step)),
       };
     case "submit-customer-feedback":
       return {
         ...state,
         customerFeedback: action.feedback,
+        realtime: appendMockRealtimeEvent(state.realtime, {
+          audience: "captain",
+          detail: action.feedback.note
+            ? `${action.feedback.rating} نجوم • ${action.feedback.note}`
+            : `${action.feedback.rating} نجوم`,
+          kind: "customer-feedback-submitted",
+          requestId: action.feedback.requestId,
+          title: "تقييم جديد من العميل",
+        }),
       };
     case "clear-accepted-request": {
       const completedRequests =
@@ -95,6 +129,47 @@ export function mockRideRequestsReducer(
     default: {
       const exhaustiveAction: never = action;
       return exhaustiveAction;
+    }
+  }
+}
+
+function createTripStepRealtimeEvent(requestId: string, step: CaptainTripStep): MockRealtimeEventInput {
+  switch (step) {
+    case "arrived":
+      return {
+        audience: "both",
+        detail: "الكابتن وصل إلى نقطة الانطلاق",
+        kind: "captain-arrived",
+        requestId,
+        title: "الكابتن وصل للعميل",
+      };
+    case "driving":
+      return {
+        audience: "both",
+        detail: "الرحلة بدأت ويتم تحديث الحالة مباشرة",
+        kind: "trip-started",
+        requestId,
+        title: "بدأت الرحلة",
+      };
+    case "completed":
+      return {
+        audience: "both",
+        detail: "تم إنهاء الرحلة وتحديث السجل",
+        kind: "trip-completed",
+        requestId,
+        title: "اكتملت الرحلة",
+      };
+    case "pickup":
+      return {
+        audience: "both",
+        detail: "الكابتن في الطريق إلى العميل",
+        kind: "captain-request-accepted",
+        requestId,
+        title: "تم قبول الطلب",
+      };
+    default: {
+      const exhaustiveStep: never = step;
+      return exhaustiveStep;
     }
   }
 }

@@ -7,8 +7,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
+import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
+import { getLatestMockRealtimeEvent, getRecentMockRealtimeEvents } from "@/realtime/mock-realtime";
 import { CaptainActiveTripScreen } from "@/screens/captain-active-trip-screen";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import type { CustomerRideFeedback } from "@/state/mock-ride-requests";
@@ -30,6 +32,9 @@ export function CaptainHomeScreen() {
   const [activeTab, setActiveTab] = useState<CaptainTab>("home");
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const request = rideRequests.availableRequests[0];
+  const captainRatingDisplay = createCaptainRatingDisplay(rideRequests.customerFeedback);
+  const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "captain");
+  const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "captain", 4);
 
   if (activeRequest) {
     return (
@@ -115,9 +120,13 @@ export function CaptainHomeScreen() {
           </GlassCard>
         ) : null}
 
+        {latestRealtimeEvent ? <RealtimeStatusCard event={latestRealtimeEvent} /> : null}
+        <RealtimeActivityFeed events={recentRealtimeEvents} />
+
         {activeTab === "earnings" ? (
           <CaptainEarningsTab
             completedRequests={rideRequests.completedRequests}
+            ratingDisplay={captainRatingDisplay}
             onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
           />
         ) : activeTab === "profile" ? (
@@ -127,7 +136,7 @@ export function CaptainHomeScreen() {
             <View style={styles.metricsRow}>
               <MetricCard icon={<Wallet color={colors.cyan} size={18} />} label="أرباح اليوم" value={captainHomeMock.metrics.earningsToday} />
               <MetricCard icon={<Route color={colors.violetSoft} size={18} />} label="رحلات اليوم" value={captainHomeMock.metrics.tripsToday} />
-              <MetricCard icon={<Star color={colors.warning} fill={colors.warning} size={18} />} label="تقييمك" value={captainHomeMock.metrics.rating} />
+              <MetricCard icon={<Star color={colors.warning} fill={colors.warning} size={18} />} label="تقييمك" value={captainRatingDisplay} />
             </View>
 
             <View style={styles.sectionHeader}>
@@ -295,9 +304,11 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
 
 function CaptainEarningsTab({
   completedRequests,
+  ratingDisplay,
   onWithdraw
 }: {
   completedRequests: CaptainAvailableRequest[];
+  ratingDisplay: string;
   onWithdraw: () => void;
 }) {
   const earnings = captainHomeMock.earnings;
@@ -330,7 +341,7 @@ function CaptainEarningsTab({
 
       <View style={styles.earningsGrid}>
         <MiniInfo label={earnings.lastPayoutLabel} value={earnings.lastPayout} />
-        <MiniInfo label="التقييم" value={captainHomeMock.metrics.rating} />
+        <MiniInfo label="التقييم" value={ratingDisplay} />
       </View>
 
       {completedRequests.length > 0 ? (
@@ -400,6 +411,10 @@ function createCaptainEarningsSummary(completedRequests: CaptainAvailableRequest
 
 function parseDisplayNumber(value: string) {
   return Number(value.match(/\d+(?:\.\d+)?/)?.[0] ?? 0);
+}
+
+function createCaptainRatingDisplay(customerFeedback: CustomerRideFeedback | null) {
+  return customerFeedback ? customerFeedback.rating.toFixed(1) : captainHomeMock.metrics.rating;
 }
 
 function CaptainProfileTab({ customerFeedback }: { customerFeedback: CustomerRideFeedback | null }) {

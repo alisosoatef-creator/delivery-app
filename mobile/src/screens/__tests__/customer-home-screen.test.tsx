@@ -137,6 +137,9 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByText("تم تأكيد طلبك التجريبي")).toBeTruthy();
     expect(screen.getByText("جاري البحث عن كابتن")).toBeTruthy();
+    expect(screen.getByText("مباشر")).toBeTruthy();
+    expect(screen.getAllByText("طلب مباشر جديد").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("تم إرسال طلبك للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
   });
 
   it("walks through the full mock customer ride flow after trip confirmation", async () => {
@@ -245,6 +248,10 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByText("تم الوصول")).toBeTruthy();
     expect(screen.queryByText("الرحلة الحالية")).toBeNull();
+    expect(screen.getByText("سجل التحديثات المباشرة")).toBeTruthy();
+    expect(screen.getAllByText("اكتملت الرحلة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("بدأت الرحلة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("تم قبول الطلب").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows the live accepted ride inside the customer trips tab", async () => {

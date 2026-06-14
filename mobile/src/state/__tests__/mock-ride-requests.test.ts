@@ -20,6 +20,8 @@ describe("mock ride requests state", () => {
     expect(state.acceptedRequest).toBeNull();
     expect(state.completedRequests).toEqual([]);
     expect(state.customerFeedback).toBeNull();
+    expect(state.realtime.connectionStatus).toBe("connected");
+    expect(state.realtime.events).toEqual([]);
   });
 
   it("adds a customer request at the top and replaces duplicate ids", () => {
@@ -30,6 +32,11 @@ describe("mock ride requests state", () => {
 
     expect(state.availableRequests[0]).toEqual(request);
     expect(state.availableRequests).toHaveLength(captainHomeMock.availableRequests.length + 1);
+    expect(state.realtime.events[0]).toMatchObject({
+      kind: "customer-request-created",
+      sequence: 1,
+      title: "طلب مباشر جديد",
+    });
 
     state = mockRideRequestsReducer(state, {
       request: createRequest({ price: "31 شيكل" }),
@@ -49,6 +56,11 @@ describe("mock ride requests state", () => {
 
     expect(state.availableRequests.some((availableRequest) => availableRequest.id === request.id)).toBe(false);
     expect(state.acceptedRequest).toEqual(request);
+    expect(state.realtime.events[0]).toMatchObject({
+      kind: "captain-request-accepted",
+      requestId: request.id,
+      title: "تم قبول الطلب",
+    });
   });
 
   it("tracks the shared progress step for the accepted request", () => {
@@ -67,6 +79,11 @@ describe("mock ride requests state", () => {
     });
 
     expect(state.acceptedTripStep).toBe("driving");
+    expect(state.realtime.events[0]).toMatchObject({
+      kind: "trip-started",
+      requestId: request.id,
+      title: "بدأت الرحلة",
+    });
   });
 
   it("clears the accepted request without reseeding available requests", () => {
@@ -112,6 +129,11 @@ describe("mock ride requests state", () => {
       note: "الكابتن ممتاز",
       rating: 5,
       requestId: request.id,
+    });
+    expect(state.realtime.events[0]).toMatchObject({
+      kind: "customer-feedback-submitted",
+      requestId: request.id,
+      title: "تقييم جديد من العميل",
     });
   });
 });

@@ -23,9 +23,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassCard } from "@/components/glass-card";
 import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
+import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
+import { getLatestMockRealtimeEvent, getRecentMockRealtimeEvents } from "@/realtime/mock-realtime";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import {
   createInitialCustomerTripFlow,
@@ -113,6 +115,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن",
       }
     : null;
+  const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "customer");
+  const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "customer", 4);
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -541,6 +545,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             <Text style={styles.feedbackText}>{notice}</Text>
           </GlassCard>
         ) : null}
+
+        {latestRealtimeEvent ? <RealtimeStatusCard event={latestRealtimeEvent} /> : null}
+        <RealtimeActivityFeed events={recentRealtimeEvents} />
 
         <View style={styles.heroCopy}>
           <Text selectable style={styles.greeting}>
