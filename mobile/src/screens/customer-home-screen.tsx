@@ -9,6 +9,7 @@ import {
   MapPin,
   MessageCircle,
   Phone,
+  Search,
   ShieldCheck,
   Sparkles,
   Star,
@@ -52,15 +53,49 @@ type CustomerTripsLiveRide = {
   activeStatus: string;
   captain: string;
   destinationDetail: string;
+  feedbackNote: string | null;
+  feedbackRating: number | null;
   isCompleted: boolean;
   payment: string;
+  paymentStatus: string;
   price: string;
+  receiptNumber: string;
   route: string;
   serviceLabel: string;
   time: string;
 };
 
 const LIVE_CUSTOMER_REQUEST_ID = "request-live-customer";
+const CUSTOMER_FEEDBACK_TAGS = ["كابتن محترف", "قيادة هادئة", "سيارة نظيفة"] as const;
+const CUSTOMER_PROFILE_WALLET = {
+  balance: "120 شيكل",
+  label: "رصيد تجريبي",
+  monthlySpend: "184 شيكل",
+  points: "8 نقاط"
+} as const;
+const CUSTOMER_PROFILE_PAYMENT_METHODS = [
+  { detail: "افتراضي للطلبات السريعة", label: "كاش عند الاستلام", status: "نشط" },
+  { detail: "تنتهي 09/28", label: "فيزا • **** 4242", status: "جاهزة" }
+] as const;
+const CUSTOMER_PROFILE_SECURITY_ITEMS = [
+  "توثيق الجوال مفعّل",
+  "مشاركة الرحلة مع جهة موثوقة",
+  "تنبيهات الدفع والرحلات مفعّلة"
+] as const;
+const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "الأقرب"] as const;
+
+type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
+
+function formatCustomerFeedbackNote(note: string, tags: string[]) {
+  const trimmedNote = note.trim();
+  const tagSummary = tags.join("، ");
+
+  if (tagSummary && trimmedNote) {
+    return `${tagSummary} • ${trimmedNote}`;
+  }
+
+  return tagSummary || trimmedNote;
+}
 
 function mapAcceptedTripStepToCustomerStage(step: CaptainTripStep | null): CustomerTripStage {
   if (step === "driving") {
@@ -135,11 +170,18 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
   const [completionNote, setCompletionNote] = useState<string>("");
+  const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
   const { showConfirmation, stage: rideStage } = tripFlow;
   const acceptedCustomerRequest =
     rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID ? rideRequests.acceptedRequest : null;
+  const liveCustomerFeedback =
+    acceptedCustomerRequest && rideRequests.customerFeedback?.requestId === acceptedCustomerRequest.id
+      ? rideRequests.customerFeedback
+      : null;
   const effectiveRideStage =
     acceptedCustomerRequest && rideStage !== "idle"
       ? mapAcceptedTripStepToCustomerStage(rideRequests.acceptedTripStep)
@@ -149,9 +191,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         activeStatus: mapAcceptedTripStepToTripsStatus(rideRequests.acceptedTripStep),
         captain: customerHomeMock.captain.name,
         destinationDetail: acceptedCustomerRequest.destinationDetail,
+        feedbackNote: liveCustomerFeedback?.note ?? null,
+        feedbackRating: liveCustomerFeedback?.rating ?? null,
         isCompleted: rideRequests.acceptedTripStep === "completed",
         payment: acceptedCustomerRequest.paymentMethod,
+        paymentStatus: rideRequests.acceptedTripStep === "completed" ? "مدفوع mock" : "بانتظار اكتمال الرحلة",
         price: acceptedCustomerRequest.price,
+        receiptNumber: "WAS-0001",
         route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
         serviceLabel: acceptedCustomerRequest.serviceLabel,
         time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن",
@@ -166,6 +212,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setRequestStatus(null);
     setRating(null);
     setCompletionNote("");
+    setSelectedFeedbackTags([]);
   }
 
   function startNewTrip() {
@@ -198,6 +245,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setNotice(null);
     setIsNotificationsOpen(false);
     resetRide();
+  }
+
+  function selectDestinationFromSearch(place: DestinationPlace) {
+    selectDestination(place);
+    setNotice(`تم اختيار ${place.label} من البحث`);
+  }
+
+  function useSelectedSearchDestination() {
+    if (!selectedDestination) {
+      setNotice("اختر وجهة من نتائج البحث");
+      return;
+    }
+
+    setActiveNav("الرئيسية");
+    setNotice(`تم تجهيز ${selectedDestination.label} للطلب`);
   }
 
   function requestTrip() {
@@ -245,19 +307,38 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setNotice("تم إلغاء البحث عن كابتن");
   }
 
-  function submitCustomerFeedback(nextRating: number | null, nextNote: string) {
+  function submitCustomerFeedback(nextRating: number | null, nextNote: string, nextTags = selectedFeedbackTags) {
     if (!acceptedCustomerRequest || effectiveRideStage !== "completed" || !nextRating) {
       return;
     }
 
     dispatchRideRequests({
       feedback: {
-        note: nextNote.trim(),
+        note: formatCustomerFeedbackNote(nextNote, nextTags),
         rating: nextRating,
         requestId: acceptedCustomerRequest.id,
       },
       type: "submit-customer-feedback",
     });
+  }
+
+  function toggleFeedbackTag(tag: string) {
+    const nextTags = selectedFeedbackTags.includes(tag)
+      ? selectedFeedbackTags.filter((selectedTag) => selectedTag !== tag)
+      : [...selectedFeedbackTags, tag];
+
+    setSelectedFeedbackTags(nextTags);
+    submitCustomerFeedback(rating, completionNote, nextTags);
+  }
+
+  function sendCustomerFeedback() {
+    if (!rating) {
+      setNotice("اختر تقييم النجوم أولًا");
+      return;
+    }
+
+    submitCustomerFeedback(rating, completionNote, selectedFeedbackTags);
+    setNotice("تم إرسال تقييم الرحلة للكابتن");
   }
 
   function renderTripConfirmation() {
@@ -530,47 +611,23 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           }
           serviceLabel={acceptedCustomerRequest?.serviceLabel ?? customerHomeMock.service.label}
         />
-        <View style={styles.starsRow}>
-          {[1, 2, 3, 4, 5].map((star) => (
-            <Pressable
-              key={star}
-              accessibilityRole="button"
-              accessibilityLabel={`تقييم ${star} نجوم`}
-              hitSlop={8}
-              onPress={() => {
-                setRating(star);
-                submitCustomerFeedback(star, completionNote);
-              }}
-            >
-              <Star
-                color={colors.cyan}
-                fill={rating && rating >= star ? colors.cyan : "transparent"}
-                size={28}
-              />
-            </Pressable>
-          ))}
-        </View>
-        {rating ? <Text style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text> : null}
-        <View style={styles.detailField}>
-          <Text selectable style={styles.detailLabel}>
-            ملاحظة الرحلة
-          </Text>
-          <TextInput
-            accessibilityLabel="ملاحظة الرحلة"
-            multiline
-            onChangeText={(note) => {
-              setCompletionNote(note);
-              submitCustomerFeedback(rating, note);
-            }}
-            placeholder="اكتب ملاحظة اختيارية"
-            placeholderTextColor={colors.textMuted}
-            style={[styles.detailInput, styles.completionNoteInput]}
-            value={completionNote}
-          />
-        </View>
-        {completionNote.trim() ? (
-          <Text style={styles.feedbackText}>{`ملاحظتك: ${completionNote.trim()}`}</Text>
-        ) : null}
+        <CustomerFeedbackCard
+          captainLabel={`${customerHomeMock.captain.name} • ${customerHomeMock.captain.carModel}`}
+          completionNote={completionNote}
+          feedbackTags={CUSTOMER_FEEDBACK_TAGS}
+          onChangeNote={(note) => {
+            setCompletionNote(note);
+            submitCustomerFeedback(rating, note);
+          }}
+          onSend={sendCustomerFeedback}
+          onSelectRating={(star) => {
+            setRating(star);
+            submitCustomerFeedback(star, completionNote);
+          }}
+          onToggleTag={toggleFeedbackTag}
+          rating={rating}
+          selectedTags={selectedFeedbackTags}
+        />
         <PremiumButton
           accessibilityLabel="رحلة جديدة"
           label="رحلة جديدة"
@@ -651,25 +708,42 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               ? customerHomeMock.trips.title
               : activeNav === "حسابي"
                 ? "ملف العميل"
-                : customerHomeMock.greeting}
+                : activeNav === "البحث"
+                  ? "البحث"
+                  : customerHomeMock.greeting}
           </Text>
           <Text selectable style={styles.subtitle}>
             {activeNav === "رحلاتي"
               ? "تابع رحلتك الحالية وسجل رحلاتك السابقة"
               : activeNav === "حسابي"
                 ? "بياناتك الأساسية وتجربة الدفع mock"
-                : customerHomeMock.subtitle}
+                : activeNav === "البحث"
+                  ? "اختر وجهتك بسرعة من الأماكن القريبة والمحفوظة"
+                  : customerHomeMock.subtitle}
           </Text>
         </View>
 
         {activeNav === "رحلاتي" ? (
           <CustomerTripsTab liveTrip={liveCustomerTrip} />
         ) : activeNav === "حسابي" ? (
-          <CustomerProfileTab />
+          <CustomerProfileTab
+            onAddPayment={() => setNotice("تم فتح إضافة طريقة دفع mock")}
+            onManageSecurity={() => setNotice("تم فتح إعدادات أمان الحساب mock")}
+          />
+        ) : activeNav === "البحث" ? (
+          <CustomerSearchTab
+            activeFilter={activeSearchFilter}
+            destinationDetail={selectedDestination ? destinationDetail : undefined}
+            onChangeFilter={setActiveSearchFilter}
+            onChangeQuery={setSearchQuery}
+            onSelectDestination={selectDestinationFromSearch}
+            onUseDestination={useSelectedSearchDestination}
+            pickupLabel={selectedPickup.label}
+            query={searchQuery}
+            selectedDestination={selectedDestination}
+          />
         ) : (
           <>
-            {activeNav === "البحث" ? <CustomerSearchTabIntro /> : null}
-
             <MockRouteMap
               destinationArea={selectedDestination?.area}
               destinationDetail={selectedDestination ? destinationDetail : undefined}
@@ -1032,6 +1106,132 @@ function CustomerReceiptCard({
   );
 }
 
+function CustomerFeedbackCard({
+  captainLabel,
+  completionNote,
+  feedbackTags,
+  onChangeNote,
+  onSelectRating,
+  onSend,
+  onToggleTag,
+  rating,
+  selectedTags
+}: {
+  captainLabel: string;
+  completionNote: string;
+  feedbackTags: readonly string[];
+  onChangeNote: (note: string) => void;
+  onSelectRating: (rating: number) => void;
+  onSend: () => void;
+  onToggleTag: (tag: string) => void;
+  rating: number | null;
+  selectedTags: string[];
+}) {
+  const selectedTagSummary = selectedTags.join("، ");
+
+  return (
+    <View style={styles.customerFeedbackCard}>
+      <View style={styles.customerFeedbackHeader}>
+        <View style={styles.customerFeedbackIcon}>
+          <Sparkles color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.customerFeedbackCopy}>
+          <Text selectable style={styles.customerFeedbackTitle}>
+            تقييم التجربة
+          </Text>
+          <Text selectable style={styles.customerFeedbackMeta}>
+            كيف كانت الرحلة؟
+          </Text>
+          <Text selectable style={styles.customerFeedbackCaptain}>
+            {captainLabel}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.starsRow}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Pressable
+            key={star}
+            accessibilityRole="button"
+            accessibilityLabel={`تقييم ${star} نجوم`}
+            hitSlop={8}
+            onPress={() => onSelectRating(star)}
+            style={styles.starButton}
+          >
+            <Star
+              color={rating && rating >= star ? colors.cyan : colors.textMuted}
+              fill={rating && rating >= star ? colors.cyan : "transparent"}
+              size={30}
+            />
+          </Pressable>
+        ))}
+      </View>
+
+      {rating ? <Text selectable style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text> : null}
+
+      <View style={styles.feedbackTagsBlock}>
+        <Text selectable style={styles.feedbackTagsTitle}>
+          اختر ما أعجبك
+        </Text>
+        <View style={styles.feedbackTagsRow}>
+          {feedbackTags.map((tag) => {
+            const isSelected = selectedTags.includes(tag);
+
+            return (
+              <Pressable
+                key={tag}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                accessibilityLabel={`اختيار ملاحظة ${tag}`}
+                onPress={() => onToggleTag(tag)}
+                style={({ pressed }) => [
+                  styles.feedbackTag,
+                  isSelected ? styles.feedbackTagActive : null,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <Text selectable style={[styles.feedbackTagText, isSelected ? styles.feedbackTagTextActive : null]}>
+                  {tag}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      {selectedTagSummary ? (
+        <Text selectable style={styles.feedbackText}>{`ملاحظات مختارة: ${selectedTagSummary}`}</Text>
+      ) : null}
+
+      <View style={styles.detailField}>
+        <Text selectable style={styles.detailLabel}>
+          ملاحظة الرحلة
+        </Text>
+        <TextInput
+          accessibilityLabel="ملاحظة الرحلة"
+          multiline
+          onChangeText={onChangeNote}
+          placeholder="اكتب ملاحظة اختيارية"
+          placeholderTextColor={colors.textMuted}
+          style={[styles.detailInput, styles.completionNoteInput]}
+          value={completionNote}
+        />
+      </View>
+
+      {completionNote.trim() ? (
+        <Text selectable style={styles.feedbackText}>{`ملاحظتك: ${completionNote.trim()}`}</Text>
+      ) : null}
+
+      <PremiumButton
+        accessibilityLabel="إرسال تقييم الرحلة"
+        label="إرسال التقييم"
+        onPress={onSend}
+        style={styles.feedbackSubmitButton}
+      />
+    </View>
+  );
+}
+
 function CustomerSafetyPanel({
   onSafetyAlert,
   onShareTrip
@@ -1229,26 +1429,199 @@ function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
   );
 }
 
-function CustomerSearchTabIntro() {
+function CustomerSearchTab({
+  activeFilter,
+  destinationDetail,
+  onChangeFilter,
+  onChangeQuery,
+  onSelectDestination,
+  onUseDestination,
+  pickupLabel,
+  query,
+  selectedDestination
+}: {
+  activeFilter: CustomerSearchFilter;
+  destinationDetail?: string;
+  onChangeFilter: (filter: CustomerSearchFilter) => void;
+  onChangeQuery: (query: string) => void;
+  onSelectDestination: (place: DestinationPlace) => void;
+  onUseDestination: () => void;
+  pickupLabel: string;
+  query: string;
+  selectedDestination: DestinationPlace | null;
+}) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const results = customerHomeMock.savedPlaces.filter((place) => {
+    const matchesQuery =
+      !normalizedQuery ||
+      place.label.toLowerCase().includes(normalizedQuery) ||
+      place.area.toLowerCase().includes(normalizedQuery) ||
+      place.detail.toLowerCase().includes(normalizedQuery);
+    const matchesFilter =
+      activeFilter === "الكل" ||
+      (activeFilter === "مطاعم" && place.label.includes("مطعم")) ||
+      (activeFilter === "جامعات" && place.label.includes("جامعة")) ||
+      (activeFilter === "الأقرب" && (place.distance === "0.0 كم" || place.distance.startsWith("2.")));
+
+    return matchesQuery && matchesFilter;
+  });
+
   return (
-    <GlassCard style={styles.tabIntroCard} variant="strong">
-      <View style={styles.tabHeader}>
-        <View style={styles.tabIcon}>
-          <MapPin color={colors.cyan} size={22} />
+    <View style={styles.tabStack}>
+      <GlassCard style={styles.searchTabCard} variant="strong">
+        <View style={styles.tabHeader}>
+          <View style={styles.tabIcon}>
+            <Search color={colors.cyan} size={22} />
+          </View>
+          <View style={styles.tabCopy}>
+            <Text selectable style={styles.tabTitle}>
+              {customerHomeMock.searchTab.title}
+            </Text>
+            <Text selectable style={styles.tabMeta}>
+              اكتشف وجهتك
+            </Text>
+            <Text selectable style={styles.tabMeta}>
+              {customerHomeMock.searchTab.hint}
+            </Text>
+          </View>
         </View>
-        <View style={styles.tabCopy}>
-          <Text selectable style={styles.tabTitle}>
-            {customerHomeMock.searchTab.title}
-          </Text>
-          <Text selectable style={styles.tabMeta}>
-            {customerHomeMock.searchTab.subtitle}
-          </Text>
-          <Text selectable style={styles.tabMeta}>
-            {customerHomeMock.searchTab.hint}
-          </Text>
+
+        <View style={styles.searchInputShell}>
+          <Search color={colors.textMuted} size={18} />
+          <TextInput
+            accessibilityLabel="بحث الوجهات"
+            onChangeText={onChangeQuery}
+            placeholder="ابحث عن مكان أو منطقة"
+            placeholderTextColor={colors.textMuted}
+            style={styles.searchInput}
+            value={query}
+          />
         </View>
+
+        <View style={styles.searchFilterRow}>
+          {CUSTOMER_SEARCH_FILTERS.map((filter) => {
+            const isSelected = activeFilter === filter;
+
+            return (
+              <Pressable
+                key={filter}
+                accessibilityLabel={`فلتر البحث ${filter}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => onChangeFilter(filter)}
+                style={({ pressed }) => [
+                  styles.searchFilterChip,
+                  isSelected ? styles.searchFilterChipActive : null,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <Text
+                  selectable
+                  style={[styles.searchFilterText, isSelected ? styles.searchFilterTextActive : null]}
+                >
+                  {filter}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </GlassCard>
+
+      <MockRouteMap
+        destinationArea={selectedDestination?.area}
+        destinationDetail={selectedDestination ? destinationDetail : undefined}
+        phase="idle"
+        pickupLabel={pickupLabel}
+      />
+
+      <View style={styles.sectionHeader}>
+        <Text selectable style={styles.sectionTitle}>
+          اقتراحات قريبة
+        </Text>
+        <Text selectable style={styles.searchResultCount}>
+          {`نتائج البحث: ${results.length}`}
+        </Text>
       </View>
-    </GlassCard>
+
+      <View style={styles.searchResultsList}>
+        {results.map((place) => {
+          const Icon = place.icon;
+          const isSelected = selectedDestination?.label === place.label;
+
+          return (
+            <Pressable
+              key={place.label}
+              accessibilityLabel={`اختيار نتيجة ${place.label}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              onPress={() => onSelectDestination(place)}
+              style={({ pressed }) => [
+                styles.searchResultRow,
+                isSelected ? styles.searchResultRowActive : null,
+                pressed ? styles.pressed : null
+              ]}
+            >
+              <View style={styles.searchResultMetaPill}>
+                <Text selectable style={styles.searchResultMetaText}>
+                  {place.price}
+                </Text>
+              </View>
+              <View style={styles.searchResultCopy}>
+                <Text selectable style={styles.searchResultTitle}>
+                  {place.label}
+                </Text>
+                <Text selectable style={styles.searchResultArea}>
+                  {place.area}
+                </Text>
+                <Text selectable style={styles.searchResultDetail}>
+                  {`${place.detail} • ${place.distance}`}
+                </Text>
+              </View>
+              <View style={styles.searchResultIcon}>
+                <Icon color={isSelected ? colors.text : colors.cyan} size={18} />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {selectedDestination ? (
+        <GlassCard style={styles.searchSelectedCard} variant="strong">
+          <View style={styles.searchSelectedHeader}>
+            <View style={styles.searchSelectedIcon}>
+              <MapPin color={colors.cyan} size={18} />
+            </View>
+            <View style={styles.searchSelectedCopy}>
+              <Text selectable style={styles.searchSelectedTitle}>
+                وجهتك جاهزة
+              </Text>
+              <Text selectable style={styles.searchSelectedName}>
+                {selectedDestination.label}
+              </Text>
+              <Text selectable style={styles.searchSelectedMeta}>
+                {`${selectedDestination.area} • ${selectedDestination.distance}`}
+              </Text>
+            </View>
+          </View>
+          <PremiumButton
+            accessibilityLabel="استخدام الوجهة المختارة"
+            label="استخدام الوجهة"
+            onPress={onUseDestination}
+            style={styles.searchUseButton}
+          >
+            <MapPin color={colors.text} size={16} />
+          </PremiumButton>
+        </GlassCard>
+      ) : null}
+
+      {!results.length ? (
+        <GlassCard style={styles.searchEmptyCard}>
+          <Text selectable style={styles.feedbackText}>
+            لا توجد نتائج مطابقة الآن
+          </Text>
+        </GlassCard>
+      ) : null}
+    </View>
   );
 }
 
@@ -1256,18 +1629,6 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
   const trips = customerHomeMock.trips;
   const currentTrip = liveTrip ?? trips.current;
   const activeStatus = liveTrip?.activeStatus ?? trips.activeStatus;
-  const historyTrips = liveTrip?.isCompleted
-    ? [
-        {
-          id: "live-completed-trip",
-          date: "الآن",
-          destination: liveTrip.destinationDetail,
-          price: liveTrip.price,
-          status: "مكتملة",
-        },
-        ...trips.history,
-      ]
-    : trips.history;
 
   return (
     <View style={styles.tabStack}>
@@ -1304,7 +1665,8 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
       </View>
 
       <View style={styles.historyList}>
-        {historyTrips.map((trip) => (
+        {liveTrip?.isCompleted ? <CompletedTripHistoryCard liveTrip={liveTrip} /> : null}
+        {trips.history.map((trip) => (
           <View key={trip.id} style={styles.historyRow}>
             <View style={styles.historyStatus}>
               <CheckCircle color={colors.success} size={16} />
@@ -1327,35 +1689,236 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
   );
 }
 
-function CustomerProfileTab() {
+function CompletedTripHistoryCard({ liveTrip }: { liveTrip: CustomerTripsLiveRide }) {
+  return (
+    <GlassCard style={styles.completedTripHistoryCard} variant="strong">
+      <View style={styles.completedTripHistoryHeader}>
+        <View style={styles.completedTripHistoryBadge}>
+          <CheckCircle color={colors.success} size={16} />
+          <Text selectable style={styles.completedTripHistoryBadgeText}>
+            مكتملة
+          </Text>
+        </View>
+        <View style={styles.completedTripHistoryCopy}>
+          <Text selectable style={styles.completedTripHistoryTitle}>
+            ملخص الرحلة المكتملة
+          </Text>
+          <Text selectable style={styles.completedTripHistoryMeta}>
+            {`الآن • ${liveTrip.price}`}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.completedTripHistoryDestination}>
+        <Text selectable style={styles.historyTitle}>
+          {liveTrip.destinationDetail}
+        </Text>
+        <Text selectable style={styles.historyMeta}>
+          {liveTrip.route}
+        </Text>
+      </View>
+
+      <View style={styles.completedTripHistoryGrid}>
+        <View style={styles.completedTripHistoryTile}>
+          <CreditCard color={colors.cyan} size={16} />
+          <Text selectable style={styles.completedTripHistoryTileValue}>
+            {`إيصال ${liveTrip.receiptNumber}`}
+          </Text>
+          <Text selectable style={styles.completedTripHistoryTileLabel}>
+            {`حالة الدفع: ${liveTrip.paymentStatus}`}
+          </Text>
+        </View>
+        <View style={styles.completedTripHistoryTile}>
+          <Star color={colors.warning} fill={colors.warning} size={16} />
+          <Text selectable style={styles.completedTripHistoryTileValue}>
+            {liveTrip.feedbackRating ? `تقييم الرحلة: ${liveTrip.feedbackRating} نجوم` : "بانتظار التقييم"}
+          </Text>
+          <Text selectable style={styles.completedTripHistoryTileLabel}>
+            {`طريقة الدفع: ${liveTrip.payment}`}
+          </Text>
+        </View>
+      </View>
+
+      {liveTrip.feedbackNote ? (
+        <Text selectable style={styles.completedTripHistoryNote}>
+          {`ملاحظاتك: ${liveTrip.feedbackNote}`}
+        </Text>
+      ) : null}
+    </GlassCard>
+  );
+}
+
+function CustomerProfileTab({
+  onAddPayment,
+  onManageSecurity
+}: {
+  onAddPayment: () => void;
+  onManageSecurity: () => void;
+}) {
   const profile = customerHomeMock.profile;
 
   return (
-    <GlassCard style={styles.profileCard} variant="strong">
-      <View style={styles.profileHeader}>
-        <View style={styles.profileAvatar}>
-          <User color={colors.text} size={24} />
+    <View style={styles.profileStack}>
+      <GlassCard style={styles.profileCard} variant="strong">
+        <View style={styles.profileHeader}>
+          <View style={styles.profileAvatar}>
+            <User color={colors.text} size={24} />
+          </View>
+          <View style={styles.profileCopy}>
+            <Text selectable style={styles.profileTitle}>
+              {profile.title}
+            </Text>
+            <Text selectable style={styles.profileName}>
+              {profile.name}
+            </Text>
+            <Text selectable style={styles.profileMeta}>
+              {profile.city}
+            </Text>
+          </View>
         </View>
-        <View style={styles.profileCopy}>
-          <Text selectable style={styles.profileTitle}>
-            {profile.title}
-          </Text>
-          <Text selectable style={styles.profileName}>
-            {profile.name}
-          </Text>
-          <Text selectable style={styles.profileMeta}>
-            {profile.city}
-          </Text>
-        </View>
-      </View>
 
-      <View style={styles.profileRows}>
-        <ProfileRow icon={<Phone color={colors.cyan} size={16} />} label="رقم الجوال" value={profile.phone} />
-        <ProfileRow icon={<MapPin color={colors.success} size={16} />} label="المنطقة" value={profile.homeArea} />
-        <ProfileRow icon={<CreditCard color={colors.violetSoft} size={16} />} label="طريقة الدفع" value={profile.defaultPayment} />
-        <ProfileRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="تقييمك" value={profile.rating} />
-      </View>
-    </GlassCard>
+        <View style={styles.profileRows}>
+          <ProfileRow icon={<Phone color={colors.cyan} size={16} />} label="رقم الجوال" value={profile.phone} />
+          <ProfileRow icon={<MapPin color={colors.success} size={16} />} label="المنطقة" value={profile.homeArea} />
+          <ProfileRow icon={<CreditCard color={colors.violetSoft} size={16} />} label="طريقة الدفع" value={profile.defaultPayment} />
+          <ProfileRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="تقييمك" value={profile.rating} />
+        </View>
+      </GlassCard>
+
+      <GlassCard style={styles.profileWalletCard} variant="strong">
+        <View style={styles.profileSectionHeader}>
+          <View style={styles.profileSectionIcon}>
+            <CreditCard color={colors.cyan} size={18} />
+          </View>
+          <View style={styles.profileSectionCopy}>
+            <Text selectable style={styles.profileSectionTitle}>
+              محفظة واصل
+            </Text>
+            <Text selectable style={styles.profileSectionMeta}>
+              رصيد ومكافآت mock لنسخة التصميم
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.profileWalletGrid}>
+          <View style={styles.profileWalletTilePrimary}>
+            <Text selectable style={styles.profileWalletValue}>
+              {CUSTOMER_PROFILE_WALLET.balance}
+            </Text>
+            <Text selectable style={styles.profileWalletLabel}>
+              {CUSTOMER_PROFILE_WALLET.label}
+            </Text>
+          </View>
+          <View style={styles.profileWalletTile}>
+            <Text selectable style={styles.profileWalletValueSmall}>
+              {CUSTOMER_PROFILE_WALLET.points}
+            </Text>
+            <Text selectable style={styles.profileWalletLabel}>
+              نقاط واصل
+            </Text>
+          </View>
+          <View style={styles.profileWalletTile}>
+            <Text selectable style={styles.profileWalletValueSmall}>
+              {CUSTOMER_PROFILE_WALLET.monthlySpend}
+            </Text>
+            <Text selectable style={styles.profileWalletLabel}>
+              هذا الشهر
+            </Text>
+          </View>
+        </View>
+      </GlassCard>
+
+      <GlassCard style={styles.profilePaymentCard}>
+        <View style={styles.profileSectionHeader}>
+          <View style={styles.profileSectionIcon}>
+            <CreditCard color={colors.violetSoft} size={18} />
+          </View>
+          <View style={styles.profileSectionCopy}>
+            <Text selectable style={styles.profileSectionTitle}>
+              طرق الدفع
+            </Text>
+            <Text selectable style={styles.profileSectionMeta}>
+              خيارات دفع mock جاهزة للتجربة
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.profilePaymentList}>
+          {CUSTOMER_PROFILE_PAYMENT_METHODS.map((method) => (
+            <View key={method.label} style={styles.profilePaymentRow}>
+              <View style={styles.profilePaymentStatus}>
+                <Text selectable style={styles.profilePaymentStatusText}>
+                  {method.status}
+                </Text>
+              </View>
+              <View style={styles.profilePaymentCopy}>
+                <Text selectable style={styles.profilePaymentTitle}>
+                  {method.label}
+                </Text>
+                <Text selectable style={styles.profilePaymentMeta}>
+                  {method.detail}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          accessibilityLabel="إضافة طريقة دفع mock"
+          accessibilityRole="button"
+          onPress={onAddPayment}
+          style={({ pressed }) => [styles.profileActionButton, pressed ? styles.pressed : null]}
+        >
+          <Sparkles color={colors.cyan} size={16} />
+          <Text selectable style={styles.profileActionText}>
+            إضافة طريقة دفع
+          </Text>
+        </Pressable>
+      </GlassCard>
+
+      <GlassCard style={styles.profileSecurityCard}>
+        <View style={styles.profileSectionHeader}>
+          <View style={styles.profileSectionIcon}>
+            <ShieldCheck color={colors.success} size={18} />
+          </View>
+          <View style={styles.profileSectionCopy}>
+            <Text selectable style={styles.profileSectionTitle}>
+              مركز الأمان
+            </Text>
+            <Text selectable style={styles.profileSectionMeta}>
+              إعدادات حماية الرحلات والحساب
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.profileSecurityList}>
+          {CUSTOMER_PROFILE_SECURITY_ITEMS.map((item) => (
+            <View key={item} style={styles.profileSecurityRow}>
+              <CheckCircle color={colors.success} size={16} />
+              <Text selectable style={styles.profileSecurityText}>
+                {item}
+              </Text>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          accessibilityLabel="إدارة أمان الحساب mock"
+          accessibilityRole="button"
+          onPress={onManageSecurity}
+          style={({ pressed }) => [
+            styles.profileActionButton,
+            styles.profileSecurityButton,
+            pressed ? styles.pressed : null
+          ]}
+        >
+          <ShieldCheck color={colors.success} size={16} />
+          <Text selectable style={styles.profileActionText}>
+            إدارة الأمان
+          </Text>
+        </Pressable>
+      </GlassCard>
+    </View>
   );
 }
 
@@ -2471,11 +3034,106 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
+  customerFeedbackCard: {
+    alignSelf: "stretch",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.28)",
+    backgroundColor: "rgba(139, 92, 246, 0.08)"
+  },
+  customerFeedbackHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  customerFeedbackIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  customerFeedbackCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  customerFeedbackTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  customerFeedbackMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  customerFeedbackCaptain: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
   starsRow: {
     flexDirection: "row",
     alignSelf: "center",
     gap: spacing.sm,
     paddingVertical: spacing.xs
+  },
+  starButton: {
+    minWidth: 40,
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill
+  },
+  feedbackTagsBlock: {
+    gap: spacing.xs
+  },
+  feedbackTagsTitle: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  feedbackTagsRow: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  feedbackTag: {
+    minHeight: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  feedbackTagActive: {
+    borderColor: "rgba(0, 229, 255, 0.38)",
+    backgroundColor: "rgba(0, 229, 255, 0.14)"
+  },
+  feedbackTagText: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  feedbackTagTextActive: {
+    color: colors.text
+  },
+  feedbackSubmitButton: {
+    minHeight: 46,
+    borderRadius: radii.sm
   },
   tabStack: {
     gap: spacing.md
@@ -2485,6 +3143,182 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.lg,
     borderColor: "rgba(0, 229, 255, 0.28)"
+  },
+  searchTabCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.3)"
+  },
+  searchInputShell: {
+    minHeight: 50,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  searchInput: {
+    ...rtlText,
+    flex: 1,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "800",
+    paddingVertical: spacing.xs
+  },
+  searchFilterRow: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  searchFilterChip: {
+    minHeight: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  searchFilterChipActive: {
+    borderColor: "rgba(0, 229, 255, 0.36)",
+    backgroundColor: "rgba(0, 229, 255, 0.13)"
+  },
+  searchFilterText: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  searchFilterTextActive: {
+    color: colors.text
+  },
+  searchResultCount: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  searchResultsList: {
+    gap: spacing.sm
+  },
+  searchResultRow: {
+    minHeight: 78,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  searchResultRowActive: {
+    borderColor: "rgba(0, 229, 255, 0.38)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  searchResultMetaPill: {
+    minHeight: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(139, 92, 246, 0.16)"
+  },
+  searchResultMetaText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  searchResultCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  searchResultTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  searchResultArea: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  searchResultDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  searchResultIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  searchSelectedCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.34)"
+  },
+  searchSelectedHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  searchSelectedIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  searchSelectedCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  searchSelectedTitle: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  searchSelectedName: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  searchSelectedMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  searchUseButton: {
+    minHeight: 46,
+    borderRadius: radii.sm
+  },
+  searchEmptyCard: {
+    padding: spacing.md,
+    alignItems: "flex-end"
   },
   tabHeader: {
     flexDirection: "row-reverse",
@@ -2535,6 +3369,98 @@ const styles = StyleSheet.create({
   historyList: {
     gap: spacing.sm
   },
+  completedTripHistoryCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.32)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  completedTripHistoryHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  completedTripHistoryBadge: {
+    minHeight: 34,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.26)",
+    backgroundColor: "rgba(51, 231, 168, 0.12)"
+  },
+  completedTripHistoryBadgeText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  completedTripHistoryCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  completedTripHistoryTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  completedTripHistoryMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  completedTripHistoryDestination: {
+    gap: spacing.xxs,
+    alignItems: "flex-end",
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  completedTripHistoryGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  completedTripHistoryTile: {
+    flex: 1,
+    minHeight: 82,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  completedTripHistoryTileValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  completedTripHistoryTileLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  completedTripHistoryNote: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    lineHeight: 20
+  },
   historyRow: {
     minHeight: 72,
     flexDirection: "row",
@@ -2578,6 +3504,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.compact,
     fontWeight: "800"
+  },
+  profileStack: {
+    gap: spacing.md
   },
   profileCard: {
     gap: spacing.md,
@@ -2625,6 +3554,190 @@ const styles = StyleSheet.create({
   },
   profileRows: {
     gap: spacing.xs
+  },
+  profileWalletCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.28)"
+  },
+  profilePaymentCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(139, 92, 246, 0.26)"
+  },
+  profileSecurityCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(51, 231, 168, 0.24)"
+  },
+  profileSectionHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  profileSectionIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  profileSectionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  profileSectionTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  profileSectionMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  profileWalletGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  profileWalletTilePrimary: {
+    flex: 1.3,
+    minHeight: 88,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  profileWalletTile: {
+    flex: 1,
+    minHeight: 88,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  profileWalletValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: 23,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  profileWalletValueSmall: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  profileWalletLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  profilePaymentList: {
+    gap: spacing.xs
+  },
+  profilePaymentRow: {
+    minHeight: 58,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  profilePaymentStatus: {
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  profilePaymentStatusText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  profilePaymentCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  profilePaymentTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profilePaymentMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  profileSecurityList: {
+    gap: spacing.xs
+  },
+  profileSecurityRow: {
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(51, 231, 168, 0.08)"
+  },
+  profileSecurityText: {
+    ...rtlText,
+    flex: 1,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileActionButton: {
+    minHeight: 44,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  profileSecurityButton: {
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.08)"
+  },
+  profileActionText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   profileRow: {
     minHeight: 46,

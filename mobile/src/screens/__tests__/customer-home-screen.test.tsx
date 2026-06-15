@@ -516,6 +516,62 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("تم تجهيز إيصال الرحلة mock")).toBeTruthy();
   });
 
+  it("submits premium post-trip feedback with quick praise tags", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));
+
+    expect(screen.getByText("تقييم التجربة")).toBeTruthy();
+    expect(screen.getByText("كيف كانت الرحلة؟")).toBeTruthy();
+    expect(screen.getByText("اختر ما أعجبك")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تقييم 5 نجوم"));
+    await fireEvent.press(screen.getByLabelText("اختيار ملاحظة كابتن محترف"));
+    await fireEvent.press(screen.getByLabelText("اختيار ملاحظة قيادة هادئة"));
+    await fireEvent.changeText(screen.getByLabelText("ملاحظة الرحلة"), "الكابتن ممتاز");
+    await fireEvent.press(screen.getByLabelText("إرسال تقييم الرحلة"));
+
+    expect(screen.getByText("تم إرسال تقييم الرحلة للكابتن")).toBeTruthy();
+    expect(screen.getByText("تقييمك: 5 نجوم")).toBeTruthy();
+    expect(screen.getByText("ملاحظات مختارة: كابتن محترف، قيادة هادئة")).toBeTruthy();
+    expect(screen.getByText("ملاحظتك: الكابتن ممتاز")).toBeTruthy();
+    expect(screen.getByText("shared feedback: 5-كابتن محترف، قيادة هادئة • الكابتن ممتاز")).toBeTruthy();
+  });
+
+  it("shows a rich completed trip card with receipt, payment, and rating in trips history", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));
+    await fireEvent.press(screen.getByLabelText("تقييم 5 نجوم"));
+    await fireEvent.press(screen.getByLabelText("اختيار ملاحظة كابتن محترف"));
+    await fireEvent.press(screen.getByLabelText("اختيار ملاحظة قيادة هادئة"));
+    await fireEvent.changeText(screen.getByLabelText("ملاحظة الرحلة"), "الكابتن ممتاز");
+    await fireEvent.press(screen.getByLabelText("إرسال تقييم الرحلة"));
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(screen.getByText("ملخص الرحلة المكتملة")).toBeTruthy();
+    expect(screen.getByText("إيصال WAS-0001")).toBeTruthy();
+    expect(screen.getByText("حالة الدفع: مدفوع mock")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع: فيزا")).toBeTruthy();
+    expect(screen.getByText("تقييم الرحلة: 5 نجوم")).toBeTruthy();
+    expect(screen.getByText("ملاحظاتك: كابتن محترف، قيادة هادئة • الكابتن ممتاز")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("collects completion feedback and clears the shared ride for a new trip", async () => {
     const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
 
@@ -549,6 +605,59 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("التبويب النشط: رحلاتي")).toBeTruthy();
   });
 
+  it("shows a premium customer profile with wallet, payments, and security actions", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+
+    expect(screen.getByText("حساب العميل")).toBeTruthy();
+    expect(screen.getByText("محفظة واصل")).toBeTruthy();
+    expect(screen.getByText("120 شيكل")).toBeTruthy();
+    expect(screen.getByText("رصيد تجريبي")).toBeTruthy();
+    expect(screen.getByText("8 نقاط")).toBeTruthy();
+    expect(screen.getByText("طرق الدفع")).toBeTruthy();
+    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("فيزا • **** 4242")).toBeTruthy();
+    expect(screen.getByText("مركز الأمان")).toBeTruthy();
+    expect(screen.getByText("توثيق الجوال مفعّل")).toBeTruthy();
+    expect(screen.getByText("مشاركة الرحلة مع جهة موثوقة")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إضافة طريقة دفع mock"));
+    expect(screen.getByText("تم فتح إضافة طريقة دفع mock")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إدارة أمان الحساب mock"));
+    expect(screen.getByText("تم فتح إعدادات أمان الحساب mock")).toBeTruthy();
+  });
+
+  it("searches destinations from the search tab and prepares the selected place for booking", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("البحث"));
+
+    expect(screen.getByText("بحث سريع")).toBeTruthy();
+    expect(screen.getByText("اكتشف وجهتك")).toBeTruthy();
+    expect(screen.getByText("اقتراحات قريبة")).toBeTruthy();
+    expect(screen.getByLabelText("بحث الوجهات")).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText("بحث الوجهات"), "جامعة");
+
+    expect(screen.getByText("نتائج البحث: 1")).toBeTruthy();
+    expect(screen.getByText("جامعة النجاح")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("اختيار نتيجة جامعة النجاح"));
+
+    expect(screen.getByText("تم اختيار جامعة النجاح من البحث")).toBeTruthy();
+    expect(screen.getByText("وجهتك جاهزة")).toBeTruthy();
+    expect(screen.getByText("نابلس - الحرم الجديد")).toBeTruthy();
+    expect(screen.getByText("تفصيل: بوابة الجامعة الرئيسية")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("استخدام الوجهة المختارة"));
+
+    expect(screen.getByText("تم تجهيز جامعة النجاح للطلب")).toBeTruthy();
+    expect(screen.getByText("أهلًا بك، علي")).toBeTruthy();
+    expect(screen.getAllByText("الوجهة المختارة: جامعة النجاح").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("switches customer tabs into trips, search, and profile mock surfaces", async () => {
     const screen = await renderCustomerHome();
 
@@ -573,6 +682,6 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("علي محمد")).toBeTruthy();
     expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
     expect(screen.getByText("نابلس")).toBeTruthy();
-    expect(screen.getByText("كاش عند الاستلام")).toBeTruthy();
+    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
   });
 });
