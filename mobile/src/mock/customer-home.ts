@@ -9,33 +9,30 @@ export const customerHomeMock = {
   suggestedFare: "25 شيكل",
   pickup: "زواتا",
   pickupDetail: "موقعك الحالي - زواتا",
+  pickupOptions: [
+    {
+      id: "zawata",
+      label: "زواتا",
+      detail: "موقعك الحالي - زواتا",
+      eta: "0 د"
+    },
+    {
+      id: "rafidia",
+      label: "رفيديا",
+      detail: "رفيديا - قرب دوار الشهداء",
+      eta: "4 د"
+    },
+    {
+      id: "downtown",
+      label: "وسط نابلس",
+      detail: "وسط نابلس - منطقة الدوار",
+      eta: "6 د"
+    }
+  ],
   destinationHint: "إلى أين وجهتك اليوم؟",
   tripDistance: "2.4 كم",
   defaultPaymentMethod: "كاش عند الاستلام",
   paymentMethods: ["كاش عند الاستلام", "فيزا"] as const,
-  rideOptions: [
-    {
-      label: "خدمة واصل",
-      meta: "أقرب كابتن مناسب لرحلتك",
-      eta: "3 دقائق",
-      price: "25 شيكل",
-      badge: "الأسرع"
-    },
-    {
-      label: "واصل بريميوم",
-      meta: "سيارة أهدأ ومساحة أفضل",
-      eta: "4 دقائق",
-      price: "34 شيكل",
-      badge: "مميز"
-    },
-    {
-      label: "واصل عائلي",
-      meta: "مساحة أوسع لرحلة مريحة",
-      eta: "6 دقائق",
-      price: "46 شيكل",
-      badge: "واسع"
-    }
-  ] as const,
   matchingCaptains: "3 كباتن يطابقون الطلب",
   captain: {
     name: "أحمد محمد",
@@ -49,6 +46,29 @@ export const customerHomeMock = {
     locationLabel: "قريب من رفيديا",
     status: "الكابتن في الطريق إليك"
   },
+  notifications: [
+    {
+      id: "arrival-watch",
+      title: "الكابتن وصل للعميل",
+      detail: "سنخبرك فور وصول الكابتن إلى نقطة الانطلاق",
+      time: "الآن",
+      tone: "live"
+    },
+    {
+      id: "request-accepted",
+      title: "تم قبول الطلب",
+      detail: "بيانات الكابتن والمركبة تظهر مباشرة بعد القبول",
+      time: "قبل قليل",
+      tone: "success"
+    },
+    {
+      id: "payment-ready",
+      title: "الدفع جاهز",
+      detail: "يمكنك اختيار كاش أو فيزا في نسخة mock الحالية",
+      time: "اليوم",
+      tone: "info"
+    }
+  ],
   savedPlaces: [
     {
       label: "المنزل",

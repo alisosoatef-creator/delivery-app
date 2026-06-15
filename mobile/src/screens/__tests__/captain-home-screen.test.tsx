@@ -136,7 +136,7 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("علي محمد")).toBeTruthy();
     expect(screen.getByText("زواتا")).toBeTruthy();
     expect(screen.getByText("نابلس - رفيديا")).toBeTruthy();
-    expect(screen.getByText("مطعم شورما عكيفك")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("كاش عند الاستلام")).toBeTruthy();
 
@@ -154,6 +154,52 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+  });
+
+  it("shows a premium captain GPS route through pickup and destination steps", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+
+    expect(screen.getByTestId("captain-route-map")).toBeTruthy();
+    expect(screen.getByText("خط سير الكابتن")).toBeTruthy();
+    expect(screen.getByText("إلى نقطة الانطلاق")).toBeTruthy();
+    expect(screen.getByText("المسار النشط: زواتا")).toBeTruthy();
+    expect(screen.getByText("الوجهة التالية: نابلس - رفيديا")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    expect(screen.getByText("تم الوصول لنقطة الانطلاق")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    expect(screen.getByText("من العميل إلى الوجهة")).toBeTruthy();
+    expect(screen.getAllByText("2.4 كم").length).toBeGreaterThanOrEqual(1);
+
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    expect(screen.getByText("تم إكمال خط السير")).toBeTruthy();
+  });
+
+  it("keeps captain support and location sharing actions available during the trip", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+
+    expect(screen.getByText("مركز دعم الكابتن")).toBeTruthy();
+    expect(screen.getByText("مشاركة موقعي")).toBeTruthy();
+    expect(screen.getByText("مشكلة بالرحلة")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("مشاركة موقع الكابتن مع الدعم"));
+    expect(screen.getByText("تم تجهيز مشاركة موقع الكابتن mock")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تسجيل مشكلة في الرحلة"));
+    expect(screen.getByText("تم تسجيل مشكلة الرحلة mock")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+
+    expect(screen.getByText("العميل في الطريق")).toBeTruthy();
+    expect(screen.getByText("مركز دعم الكابتن")).toBeTruthy();
+    expect(screen.getByText("مشاركة موقعي")).toBeTruthy();
   });
 
   it("publishes captain trip progress to the shared mock state", async () => {

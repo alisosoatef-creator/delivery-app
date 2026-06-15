@@ -21,7 +21,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
-import { MockRouteMap } from "@/components/mock-route-map";
+import { MockRouteMap, type MockRouteMapPhase } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
@@ -41,8 +41,8 @@ import {
 } from "@/state/mock-trip-flow";
 
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
+type PickupPoint = (typeof customerHomeMock.pickupOptions)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
-type RideOption = (typeof customerHomeMock.rideOptions)[number];
 
 type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
@@ -74,6 +74,30 @@ function mapAcceptedTripStepToCustomerStage(step: CaptainTripStep | null): Custo
   return "captain";
 }
 
+function mapCustomerStageToMapPhase(stage: CustomerTripStage, step: CaptainTripStep | null): MockRouteMapPhase {
+  if (step) {
+    return step;
+  }
+
+  if (stage === "searching") {
+    return "searching";
+  }
+
+  if (stage === "captain") {
+    return "pickup";
+  }
+
+  if (stage === "active") {
+    return "driving";
+  }
+
+  if (stage === "completed") {
+    return "completed";
+  }
+
+  return "idle";
+}
+
 function mapAcceptedTripStepToTripsStatus(step: CaptainTripStep | null): string {
   if (step === "completed") {
     return "تم الوصول";
@@ -101,16 +125,18 @@ function mapAcceptedTripStepToCaptainStatus(step: CaptainTripStep | null): strin
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
+  const [selectedPickup, setSelectedPickup] = useState<PickupPoint>(customerHomeMock.pickupOptions[0]);
+  const [isMockLocationEnabled, setIsMockLocationEnabled] = useState(false);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
   const [completionNote, setCompletionNote] = useState<string>("");
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
-  const [selectedRideOption, setSelectedRideOption] = useState<RideOption>(customerHomeMock.rideOptions[0]);
   const { showConfirmation, stage: rideStage } = tripFlow;
   const acceptedCustomerRequest =
     rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID ? rideRequests.acceptedRequest : null;
@@ -148,8 +174,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setSelectedDestination(null);
     setDestinationDetail("");
     setPaymentMethod(customerHomeMock.defaultPaymentMethod);
-    setSelectedRideOption(customerHomeMock.rideOptions[0]);
     setNotice(null);
+    setIsNotificationsOpen(false);
+  }
+
+  function enableMockLocation() {
+    setIsMockLocationEnabled(true);
+    setIsNotificationsOpen(false);
+    setNotice("تم تفعيل موقع mock لهذه النسخة");
+  }
+
+  function selectPickup(nextPickup: PickupPoint) {
+    setSelectedPickup(nextPickup);
+    setIsMockLocationEnabled(true);
+    setIsNotificationsOpen(false);
+    setNotice(`تم اختيار ${nextPickup.label} كنقطة انطلاق mock`);
   }
 
   function selectDestination(place: DestinationPlace) {
@@ -157,6 +196,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setDestinationDetail(place.detail);
     setRequestStatus(null);
     setNotice(null);
+    setIsNotificationsOpen(false);
     resetRide();
   }
 
@@ -168,6 +208,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     }
 
     setNotice(null);
+    setIsNotificationsOpen(false);
     setRequestStatus(null);
     dispatchTripFlow({ type: "review-request" });
   }
@@ -186,9 +227,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       etaToPickup: customerHomeMock.captain.arrivalEta,
       id: LIVE_CUSTOMER_REQUEST_ID,
       paymentMethod,
-      pickup: customerHomeMock.pickup,
-      price: selectedRideOption.price,
-      serviceLabel: selectedRideOption.label,
+      pickup: selectedPickup.label,
+      price: customerHomeMock.service.price,
+      serviceLabel: customerHomeMock.service.label,
     };
 
     dispatchRideRequests({ request, type: "submit-customer-request" });
@@ -196,6 +237,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     dispatchTripFlow({ type: "confirm-request" });
     setRating(null);
     setNotice(null);
+    setIsNotificationsOpen(false);
   }
 
   function cancelSearch() {
@@ -240,12 +282,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </View>
 
         <View style={styles.confirmationRows}>
-          <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+          <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
           <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
           <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
-          <InfoRow label="نوع الرحلة" value={selectedRideOption.label} />
+          <InfoRow label="الخدمة" value={customerHomeMock.service.label} />
           <InfoRow label="المسافة" value={selectedDestination.distance} />
-          <InfoRow label="السعر التقديري" value={selectedRideOption.price} />
+          <InfoRow label="السعر التقديري" value={customerHomeMock.service.price} />
           <InfoRow label="طريقة الدفع" value={paymentMethod} />
         </View>
 
@@ -276,7 +318,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text style={styles.stageMeta}>نبحث عن أقرب كابتن يناسب رحلتك الآن</Text>
               {selectedDestination ? (
                 <Text style={styles.stageMeta}>
-                  {`${customerHomeMock.pickup} ← ${selectedDestination.area} • ${destinationDetail}`}
+                  {`${selectedPickup.label} ← ${selectedDestination.area} • ${destinationDetail}`}
                 </Text>
               ) : null}
             </View>
@@ -300,11 +342,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 ملخص البحث
               </Text>
               <View style={styles.confirmationRows}>
-                <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+                <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
                 <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
                 <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
-                <InfoRow label="نوع الرحلة" value={selectedRideOption.label} />
-                <InfoRow label="السعر" value={selectedRideOption.price} />
+                <InfoRow label="الخدمة" value={customerHomeMock.service.label} />
+                <InfoRow label="السعر" value={customerHomeMock.service.price} />
                 <InfoRow label="طريقة الدفع" value={paymentMethod} />
               </View>
             </View>
@@ -381,17 +423,22 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </View>
             <View style={styles.miniMetric}>
               <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{selectedRideOption.price}</Text>
+              <Text style={styles.metricValue}>{customerHomeMock.service.price}</Text>
               <Text style={styles.metricLabel}>السعر</Text>
             </View>
           </View>
 
           <View style={styles.captainDetailsGrid}>
             <InfoRow label="رقم الكابتن" value={captain.phone} />
-            <InfoRow label="نقطة الانطلاق" value={customerHomeMock.pickup} />
+            <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
             {selectedDestination ? <InfoRow label="منطقة الوجهة" value={selectedDestination.area} /> : null}
             {selectedDestination ? <InfoRow label="تفصيل الوجهة" value={destinationDetail} /> : null}
           </View>
+
+          <CustomerSafetyPanel
+            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
+            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة mock")}
+          />
 
           <View style={styles.stageActions}>
             <Pressable
@@ -447,6 +494,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text style={styles.metricLabel}>الوقت المتبقي</Text>
             </View>
           </View>
+          <CustomerSafetyPanel
+            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
+            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة mock")}
+          />
           <PremiumButton
             accessibilityLabel="إنهاء الرحلة"
             label="إنهاء الرحلة"
@@ -464,6 +515,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </View>
         <Text style={styles.completedTitle}>تم الوصول</Text>
         <Text style={styles.stageMeta}>شكرًا لاستخدامك واصل</Text>
+        <CustomerReceiptCard
+          amount={acceptedCustomerRequest?.price ?? customerHomeMock.service.price}
+          destinationDetail={acceptedCustomerRequest?.destinationDetail ?? destinationDetail}
+          onDownload={() => setNotice("تم تجهيز إيصال الرحلة mock")}
+          paymentMethod={acceptedCustomerRequest?.paymentMethod ?? paymentMethod}
+          receiptNumber="WAS-0001"
+          route={
+            acceptedCustomerRequest
+              ? `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`
+              : selectedDestination
+                ? `${selectedPickup.label} ← ${selectedDestination.area}`
+                : customerHomeMock.trips.current.route
+          }
+          serviceLabel={acceptedCustomerRequest?.serviceLabel ?? customerHomeMock.service.label}
+        />
         <View style={styles.starsRow}>
           {[1, 2, 3, 4, 5].map((star) => (
             <Pressable
@@ -536,7 +602,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             accessibilityRole="button"
             accessibilityLabel="فتح التنبيهات"
             hitSlop={10}
-            onPress={() => setNotice("لا توجد تنبيهات جديدة الآن")}
+            onPress={() => {
+              setNotice(null);
+              setIsNotificationsOpen((current) => !current);
+            }}
           >
             {({ pressed }) => (
               <GlassCard style={[styles.iconButton, pressed ? styles.pressed : null]}>
@@ -565,6 +634,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <GlassCard style={styles.feedbackCard}>
             <Text style={styles.feedbackText}>{notice}</Text>
           </GlassCard>
+        ) : null}
+
+        {isNotificationsOpen ? (
+          <CustomerNotificationCenter onClose={() => setIsNotificationsOpen(false)} />
         ) : null}
 
         {latestRealtimeEvent ? (
@@ -597,7 +670,19 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <>
             {activeNav === "البحث" ? <CustomerSearchTabIntro /> : null}
 
-            <MockRouteMap />
+            <MockRouteMap
+              destinationArea={selectedDestination?.area}
+              destinationDetail={selectedDestination ? destinationDetail : undefined}
+              phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
+              pickupLabel={selectedPickup.label}
+            />
+
+        <CustomerLocationCard
+          isMockLocationEnabled={isMockLocationEnabled}
+          onEnableLocation={enableMockLocation}
+          onSelectPickup={selectPickup}
+          selectedPickup={selectedPickup}
+        />
 
         <Pressable
           accessibilityRole="button"
@@ -610,7 +695,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 <MapPin color={colors.cyan} size={18} />
               </View>
               <View style={styles.searchCopy}>
-                <Text style={styles.searchLabel}>{customerHomeMock.pickupDetail}</Text>
+                <Text style={styles.searchLabel}>{selectedPickup.detail}</Text>
                 <Text style={styles.searchValue}>
                   {selectedDestination
                     ? `الوجهة المختارة: ${selectedDestination.label}`
@@ -636,7 +721,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <GlassCard style={styles.statCard}>
             <ShieldCheck color={colors.success} size={18} />
             <Text selectable style={styles.statValue}>
-              {selectedRideOption.price}
+              {customerHomeMock.service.price}
             </Text>
             <Text selectable style={styles.statLabel}>
               سعر مقترح
@@ -714,54 +799,35 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               />
             </View>
 
-            <View style={styles.rideOptionsGroup}>
+            <View style={styles.serviceGroup}>
               <Text selectable style={styles.detailLabel}>
-                اختر نوع الرحلة
+                خدمة واصل واحدة
               </Text>
-              <View style={styles.rideOptionsList}>
-                {customerHomeMock.rideOptions.map((option) => {
-                  const isSelected = selectedRideOption.label === option.label;
-
-                  return (
-                    <Pressable
-                      key={option.label}
-                      accessibilityLabel={`اختيار ${option.label}`}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: isSelected }}
-                      onPress={() => setSelectedRideOption(option)}
-                      style={({ pressed }) => [
-                        styles.rideOption,
-                        isSelected ? styles.rideOptionActive : null,
-                        pressed ? styles.pressed : null
-                      ]}
-                    >
-                      <View style={styles.rideOptionPriceBox}>
-                        <Text selectable style={styles.rideOptionPrice}>
-                          {option.price}
-                        </Text>
-                        <Text selectable style={styles.rideOptionEta}>
-                          {option.eta}
-                        </Text>
-                      </View>
-                      <View style={styles.rideOptionCopy}>
-                        <View style={styles.rideOptionTitleRow}>
-                          <View style={[styles.rideOptionBadge, isSelected ? styles.rideOptionBadgeActive : null]}>
-                            <Text selectable style={styles.rideOptionBadgeText}>
-                              {option.badge}
-                            </Text>
-                          </View>
-                          <Text selectable style={styles.rideOptionLabel}>
-                            {option.label}
-                          </Text>
-                        </View>
-                        <Text selectable style={styles.rideOptionMeta}>
-                          {option.meta}
-                        </Text>
-                      </View>
-                      {isSelected ? <CheckCircle color={colors.cyan} size={18} /> : null}
-                    </Pressable>
-                  );
-                })}
+              <View style={styles.serviceCard}>
+                <View style={styles.servicePriceBox}>
+                  <Text selectable style={styles.servicePrice}>
+                    {customerHomeMock.service.price}
+                  </Text>
+                  <Text selectable style={styles.serviceEta}>
+                    {customerHomeMock.service.eta}
+                  </Text>
+                </View>
+                <View style={styles.serviceCopy}>
+                  <View style={styles.serviceTitleRow}>
+                    <View style={styles.serviceBadge}>
+                      <Text selectable style={styles.serviceBadgeText}>
+                        أقرب كابتن
+                      </Text>
+                    </View>
+                    <Text selectable style={styles.serviceLabel}>
+                      {customerHomeMock.service.label}
+                    </Text>
+                  </View>
+                  <Text selectable style={styles.serviceMeta}>
+                    {customerHomeMock.service.meta}
+                  </Text>
+                </View>
+                <CheckCircle color={colors.cyan} size={18} />
               </View>
             </View>
 
@@ -805,13 +871,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
         <GlassCard style={styles.tripCard}>
           <View style={styles.tripPricePill}>
-            <Text style={styles.tripPrice}>{selectedRideOption.price}</Text>
+            <Text style={styles.tripPrice}>{customerHomeMock.service.price}</Text>
           </View>
           <View style={styles.tripCopy}>
-            <Text style={styles.tripLabel}>{selectedRideOption.label}</Text>
-            <Text style={styles.tripMeta}>{selectedRideOption.meta}</Text>
+            <Text style={styles.tripLabel}>{customerHomeMock.service.label}</Text>
+            <Text style={styles.tripMeta}>{customerHomeMock.service.meta}</Text>
             <Text style={styles.tripMeta}>
-              {selectedDestination ? `${selectedDestination.distance} • ${selectedRideOption.eta}` : selectedRideOption.eta}
+              {selectedDestination ? `${selectedDestination.distance} • ${customerHomeMock.service.eta}` : customerHomeMock.service.eta}
             </Text>
           </View>
         </GlassCard>
@@ -830,17 +896,17 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <GlassCard style={styles.feedbackCard}>
           <Text style={styles.feedbackText}>
             {requestStatus ??
-              `الطلب المحدد: ${selectedRideOption.label} • ${selectedRideOption.price}`}
+              `الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
           </Text>
           {requestStatus ? (
             <Text style={styles.feedbackMeta}>
-              {`الطلب المحدد: ${selectedRideOption.label} • ${selectedRideOption.price}`}
+              {`الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
             </Text>
           ) : null}
           {selectedDestination ? (
             <>
               <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
-              <Text style={styles.feedbackMeta}>{`${customerHomeMock.pickup} ← ${selectedDestination.area}`}</Text>
+              <Text style={styles.feedbackMeta}>{`${selectedPickup.label} ← ${selectedDestination.area}`}</Text>
             </>
           ) : null}
           {requestStatus && onPreviewCaptainRequests ? (
@@ -903,6 +969,119 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   );
 }
 
+function CustomerReceiptCard({
+  amount,
+  destinationDetail,
+  onDownload,
+  paymentMethod,
+  receiptNumber,
+  route,
+  serviceLabel
+}: {
+  amount: string;
+  destinationDetail: string;
+  onDownload: () => void;
+  paymentMethod: string;
+  receiptNumber: string;
+  route: string;
+  serviceLabel: string;
+}) {
+  return (
+    <View style={styles.receiptCard}>
+      <View style={styles.receiptHeader}>
+        <View style={styles.receiptIcon}>
+          <CreditCard color={colors.cyan} size={17} />
+        </View>
+        <View style={styles.receiptCopy}>
+          <Text selectable style={styles.receiptTitle}>
+            إيصال الرحلة
+          </Text>
+          <Text selectable style={styles.receiptMeta}>
+            {`رقم الإيصال: ${receiptNumber}`}
+          </Text>
+        </View>
+      </View>
+      <View style={styles.receiptRows}>
+        <Text selectable style={styles.receiptLine}>
+          {`المبلغ المدفوع: ${amount}`}
+        </Text>
+        <Text selectable style={styles.receiptLine}>
+          {`طريقة الدفع: ${paymentMethod}`}
+        </Text>
+        <Text selectable style={styles.receiptLine}>
+          {`الخدمة: ${serviceLabel}`}
+        </Text>
+        <Text selectable style={styles.receiptLine}>
+          {`المسار: ${route}`}
+        </Text>
+        <Text selectable style={styles.receiptLineMuted}>
+          {`تفصيل الوجهة: ${destinationDetail}`}
+        </Text>
+      </View>
+      <Pressable
+        accessibilityLabel="تحميل إيصال الرحلة"
+        accessibilityRole="button"
+        onPress={onDownload}
+        style={styles.receiptDownloadButton}
+      >
+        <Text selectable style={styles.receiptDownloadText}>
+          تحميل الإيصال
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function CustomerSafetyPanel({
+  onSafetyAlert,
+  onShareTrip
+}: {
+  onSafetyAlert: () => void;
+  onShareTrip: () => void;
+}) {
+  return (
+    <View style={styles.safetyPanel}>
+      <View style={styles.safetyHeader}>
+        <View style={styles.safetyIcon}>
+          <ShieldCheck color={colors.success} size={16} />
+        </View>
+        <View style={styles.safetyCopy}>
+          <Text selectable style={styles.safetyTitle}>
+            مركز الأمان
+          </Text>
+          <Text selectable style={styles.safetyMeta}>
+            مشاركة الرحلة أو إرسال تنبيه بدون مغادرة الشاشة
+          </Text>
+        </View>
+      </View>
+      <View style={styles.safetyActions}>
+        <Pressable
+          accessibilityLabel="مشاركة الرحلة مع جهة موثوقة"
+          accessibilityRole="button"
+          onPress={onShareTrip}
+          style={styles.safetyButton}
+        >
+          <MessageCircle color={colors.cyan} size={16} />
+          <Text selectable style={styles.safetyButtonText}>
+            مشاركة الرحلة
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="إرسال تنبيه أمان للرحلة"
+          accessibilityRole="button"
+          onPress={onSafetyAlert}
+          style={[styles.safetyButton, styles.safetyButtonAlert]}
+        >
+          <ShieldCheck color={colors.warning} size={16} />
+          <Text selectable style={styles.safetyButtonText}>
+            تنبيه أمان
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={styles.infoRow}>
@@ -913,6 +1092,140 @@ function InfoRow({ label, value }: { label: string; value: string }) {
         {label}
       </Text>
     </View>
+  );
+}
+
+function CustomerLocationCard({
+  isMockLocationEnabled,
+  onEnableLocation,
+  onSelectPickup,
+  selectedPickup
+}: {
+  isMockLocationEnabled: boolean;
+  onEnableLocation: () => void;
+  onSelectPickup: (pickup: PickupPoint) => void;
+  selectedPickup: PickupPoint;
+}) {
+  return (
+    <GlassCard style={styles.locationCard} variant="strong">
+      <View style={styles.locationHeader}>
+        <Pressable
+          accessibilityLabel="تفعيل موقع mock"
+          accessibilityRole="button"
+          onPress={onEnableLocation}
+          style={({ pressed }) => [
+            styles.locationToggle,
+            isMockLocationEnabled ? styles.locationToggleActive : null,
+            pressed ? styles.pressed : null
+          ]}
+        >
+          <MapPin color={isMockLocationEnabled ? colors.cyan : colors.textSoft} size={16} />
+          <Text selectable style={styles.locationToggleText}>
+            {isMockLocationEnabled ? "GPS mock مفعّل" : "GPS mock غير مفعّل"}
+          </Text>
+        </Pressable>
+
+        <View style={styles.locationCopy}>
+          <Text selectable style={styles.locationEyebrow}>
+            موقع الانطلاق
+          </Text>
+          <Text selectable style={styles.locationTitle}>
+            {`نقطة الانطلاق: ${selectedPickup.label}`}
+          </Text>
+          <Text selectable style={styles.locationDetail}>
+            {selectedPickup.detail}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.pickupOptions}>
+        {customerHomeMock.pickupOptions.map((pickup) => {
+          const isSelected = selectedPickup.id === pickup.id;
+
+          return (
+            <Pressable
+              key={pickup.id}
+              accessibilityLabel={`اختيار نقطة انطلاق ${pickup.label}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
+              onPress={() => onSelectPickup(pickup)}
+              style={({ pressed }) => [
+                styles.pickupOption,
+                isSelected ? styles.pickupOptionActive : null,
+                pressed ? styles.pressed : null
+              ]}
+            >
+              <Text
+                selectable
+                style={[
+                  styles.pickupOptionLabel,
+                  isSelected ? styles.pickupOptionLabelActive : null
+                ]}
+              >
+                {pickup.label}
+              </Text>
+              <Text selectable style={styles.pickupOptionEta}>
+                {pickup.eta}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </GlassCard>
+  );
+}
+
+function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
+  return (
+    <GlassCard style={styles.notificationCenterCard} variant="strong">
+      <View style={styles.notificationHeader}>
+        <Pressable
+          accessibilityLabel="إغلاق التنبيهات"
+          accessibilityRole="button"
+          hitSlop={8}
+          onPress={onClose}
+          style={({ pressed }) => [
+            styles.notificationCloseButton,
+            pressed ? styles.pressed : null
+          ]}
+        >
+          <XCircle color={colors.textMuted} size={18} />
+        </Pressable>
+        <View style={styles.notificationHeaderCopy}>
+          <Text selectable style={styles.notificationTitle}>
+            مركز التنبيهات
+          </Text>
+          <Text selectable style={styles.notificationMeta}>
+            تحديثات رحلتك المهمة في مكان واحد
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.notificationList}>
+        {customerHomeMock.notifications.map((notification) => (
+          <View key={notification.id} style={styles.notificationRow}>
+            <View
+              style={[
+                styles.notificationDot,
+                notification.tone === "live" ? styles.notificationDotLive : null,
+                notification.tone === "success" ? styles.notificationDotSuccess : null
+              ]}
+            />
+            <View style={styles.notificationCopy}>
+              <Text selectable style={styles.notificationRowTitle}>
+                {notification.title}
+              </Text>
+              <Text selectable style={styles.notificationRowDetail}>
+                {notification.detail}
+              </Text>
+            </View>
+            <Text selectable style={styles.notificationTime}>
+              {notification.time}
+            </Text>
+          </View>
+        ))}
+      </View>
+    </GlassCard>
   );
 }
 
@@ -976,7 +1289,7 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
         <View style={styles.tripTimelineBox}>
           <InfoRow label="المسار" value={currentTrip.route} />
           {liveTrip ? <InfoRow label="تفصيل الوجهة" value={liveTrip.destinationDetail} /> : null}
-          {liveTrip ? <InfoRow label="نوع الرحلة" value={liveTrip.serviceLabel} /> : null}
+          {liveTrip ? <InfoRow label="الخدمة" value={liveTrip.serviceLabel} /> : null}
           <InfoRow label="الكابتن" value={currentTrip.captain} />
           <InfoRow label="السعر" value={currentTrip.price} />
           <InfoRow label="الدفع" value={currentTrip.payment} />
@@ -1368,13 +1681,10 @@ const styles = StyleSheet.create({
   paymentGroup: {
     gap: spacing.xs
   },
-  rideOptionsGroup: {
+  serviceGroup: {
     gap: spacing.xs
   },
-  rideOptionsList: {
-    gap: spacing.xs
-  },
-  rideOption: {
+  serviceCard: {
     minHeight: 72,
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -1382,64 +1692,57 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
-  },
-  rideOptionActive: {
     borderColor: "rgba(0, 229, 255, 0.46)",
     backgroundColor: "rgba(0, 229, 255, 0.1)"
   },
-  rideOptionCopy: {
+  serviceCopy: {
     flex: 1,
     alignItems: "flex-end",
     gap: 4
   },
-  rideOptionTitleRow: {
+  serviceTitleRow: {
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: spacing.xs
   },
-  rideOptionLabel: {
+  serviceLabel: {
     ...rtlText,
     color: colors.text,
     fontSize: typography.body,
     fontWeight: "900"
   },
-  rideOptionMeta: {
+  serviceMeta: {
     ...rtlText,
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
   },
-  rideOptionPriceBox: {
+  servicePriceBox: {
     minWidth: 78,
     alignItems: "flex-end",
     gap: 3
   },
-  rideOptionPrice: {
+  servicePrice: {
     ...rtlText,
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900",
     fontVariant: ["tabular-nums"]
   },
-  rideOptionEta: {
+  serviceEta: {
     ...rtlText,
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
   },
-  rideOptionBadge: {
+  serviceBadge: {
     minHeight: 24,
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     borderRadius: radii.pill,
-    backgroundColor: "rgba(139, 92, 246, 0.14)"
-  },
-  rideOptionBadgeActive: {
     backgroundColor: "rgba(0, 229, 255, 0.16)"
   },
-  rideOptionBadgeText: {
+  serviceBadgeText: {
     ...rtlText,
     color: colors.textSoft,
     fontSize: 10,
@@ -1557,6 +1860,186 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "700"
+  },
+  locationCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.2)"
+  },
+  locationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  locationToggle: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  locationToggleActive: {
+    backgroundColor: "rgba(0, 229, 255, 0.12)",
+    borderColor: "rgba(0, 229, 255, 0.34)"
+  },
+  locationToggleText: {
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  locationCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  locationEyebrow: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  locationTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  locationDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "700"
+  },
+  pickupOptions: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  pickupOption: {
+    flex: 1,
+    minHeight: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.12)"
+  },
+  pickupOptionActive: {
+    backgroundColor: "rgba(139, 92, 246, 0.16)",
+    borderColor: "rgba(0, 229, 255, 0.38)"
+  },
+  pickupOptionLabel: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  pickupOptionLabelActive: {
+    color: colors.text
+  },
+  pickupOptionEta: {
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  notificationCenterCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.22)"
+  },
+  notificationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  notificationHeaderCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  notificationTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  notificationMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "700"
+  },
+  notificationCloseButton: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: colors.border
+  },
+  notificationList: {
+    gap: spacing.xs
+  },
+  notificationRow: {
+    minHeight: 58,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.12)"
+  },
+  notificationDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radii.pill,
+    backgroundColor: colors.blue
+  },
+  notificationDotLive: {
+    backgroundColor: colors.cyan
+  },
+  notificationDotSuccess: {
+    backgroundColor: colors.success
+  },
+  notificationCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  notificationRowTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  notificationRowDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "700",
+    lineHeight: 17
+  },
+  notificationTime: {
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
   },
   previewCaptainButton: {
     alignSelf: "stretch",
@@ -1789,6 +2272,73 @@ const styles = StyleSheet.create({
     borderColor: "rgba(147, 177, 255, 0.14)",
     backgroundColor: "rgba(255, 255, 255, 0.04)"
   },
+  safetyPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.18)",
+    backgroundColor: "rgba(51, 231, 168, 0.07)"
+  },
+  safetyHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  safetyIcon: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.1)"
+  },
+  safetyCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  safetyTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  safetyMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  safetyActions: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  safetyButton: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  safetyButtonAlert: {
+    borderColor: "rgba(255, 209, 102, 0.22)",
+    backgroundColor: "rgba(255, 209, 102, 0.08)"
+  },
+  safetyButtonText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
   miniMetric: {
     flex: 1,
     alignItems: "flex-end",
@@ -1848,6 +2398,77 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     color: colors.text,
     fontSize: 24,
+    fontWeight: "900"
+  },
+  receiptCard: {
+    alignSelf: "stretch",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  receiptHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  receiptIcon: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  receiptCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  receiptTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  receiptMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  receiptRows: {
+    gap: spacing.xs
+  },
+  receiptLine: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  receiptLineMuted: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  receiptDownloadButton: {
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  receiptDownloadText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
     fontWeight: "900"
   },
   starsRow: {

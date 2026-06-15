@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { MapPin, Navigation } from "lucide-react-native";
+import { Car, MapPin, Navigation } from "lucide-react-native";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, gradients, mapStyle, radii, shadows, spacing } from "@/design/tokens";
@@ -15,7 +15,83 @@ const roads = [
   { top: "36%", left: "6%", width: "86%", rotate: "69deg", opacity: 0.2 }
 ] as const;
 
-export function MockRouteMap() {
+export type MockRouteMapPhase = "idle" | "searching" | "pickup" | "arrived" | "driving" | "completed";
+
+type MockRouteMapProps = {
+  destinationArea?: string | null;
+  destinationDetail?: string | null;
+  phase?: MockRouteMapPhase;
+  pickupLabel?: string;
+};
+
+const captainPositions: Record<MockRouteMapPhase, { left: number; top: number }> = {
+  idle: { top: 126, left: 164 },
+  searching: { top: 126, left: 164 },
+  pickup: { top: 126, left: 164 },
+  arrived: { top: 150, left: 92 },
+  driving: { top: 92, left: 206 },
+  completed: { top: 62, left: 238 }
+};
+
+const phaseLabels: Record<MockRouteMapPhase, string> = {
+  idle: "مسار تجريبي جاهز",
+  searching: "نبحث عن أقرب كابتن",
+  pickup: "الكابتن يتحرك الآن",
+  arrived: "الكابتن عند نقطة الانطلاق",
+  driving: "الرحلة بدأت",
+  completed: "تم الوصول"
+};
+
+function getCaptainTracking(phase: MockRouteMapPhase, pickupLabel: string, destinationLabel: string, detailLabel?: string) {
+  if (phase === "pickup") {
+    return {
+      coordinates: "32.2257, 35.2396",
+      distance: "1.2 كم",
+      location: customerHomeMock.captain.locationLabel,
+      reached: `في الطريق إلى ${pickupLabel}`
+    };
+  }
+
+  if (phase === "arrived") {
+    return {
+      coordinates: "32.2220, 35.2442",
+      distance: "0.0 كم",
+      location: `عند ${pickupLabel}`,
+      reached: "نقطة الانطلاق"
+    };
+  }
+
+  if (phase === "driving") {
+    return {
+      coordinates: "32.2214, 35.2479",
+      distance: "2.1 كم",
+      location: `على مسار ${destinationLabel}`,
+      reached: "باتجاه الوجهة"
+    };
+  }
+
+  if (phase === "completed") {
+    return {
+      coordinates: "32.2199, 35.2513",
+      distance: "0.0 كم",
+      location: detailLabel ?? destinationLabel,
+      reached: "الوجهة"
+    };
+  }
+
+  return null;
+}
+
+export function MockRouteMap({
+  destinationArea,
+  destinationDetail,
+  phase = "idle",
+  pickupLabel = customerHomeMock.pickup
+}: MockRouteMapProps) {
+  const destinationLabel = destinationArea ?? "اختر وجهتك";
+  const detailLabel = destinationDetail?.trim();
+  const captainTracking = getCaptainTracking(phase, pickupLabel, destinationLabel, detailLabel);
+
   return (
     <View testID="mock-route-map" style={styles.mapShell}>
       <LinearGradient colors={mapStyle.background} style={StyleSheet.absoluteFill} />
@@ -48,7 +124,7 @@ export function MockRouteMap() {
         <MapPin color={colors.text} size={18} fill={colors.violet} />
       </View>
 
-      <View style={styles.driverPulse}>
+      <View testID="mock-map-captain-marker" style={[styles.driverPulse, captainPositions[phase]]}>
         <View style={styles.driverDot} />
       </View>
 
@@ -57,8 +133,55 @@ export function MockRouteMap() {
           {customerHomeMock.eta}
         </Text>
         <Text selectable style={styles.badgeLabel}>
-          أقرب وصول
+          {phaseLabels[phase]}
         </Text>
+      </View>
+
+      <View style={styles.routePanel}>
+        <Text selectable style={styles.routePanelTitle}>
+          الخريطة الحية
+        </Text>
+        <Text selectable style={styles.routePanelText}>
+          {`انطلاق: ${pickupLabel}`}
+        </Text>
+        <Text selectable style={styles.routePanelText}>
+          {`وجهة: ${destinationLabel}`}
+        </Text>
+        {detailLabel ? (
+          <Text selectable style={styles.routePanelDetail}>
+            {`تفصيل: ${detailLabel}`}
+          </Text>
+        ) : null}
+        {captainTracking ? (
+          <View style={styles.trackingPanel}>
+            <View style={styles.trackingHeader}>
+              <View style={styles.trackingIcon}>
+                <Car color={colors.text} size={14} />
+              </View>
+              <Text selectable style={styles.trackingTitle}>
+                تتبع الكابتن
+              </Text>
+            </View>
+            <Text selectable style={styles.trackingText}>
+              {`موقع الكابتن الآن: ${captainTracking.location}`}
+            </Text>
+            <Text selectable style={styles.trackingMeta}>
+              {`إحداثيات الكابتن: ${captainTracking.coordinates}`}
+            </Text>
+            <View style={styles.trackingMetrics}>
+              <View style={styles.trackingMetric}>
+                <Text selectable style={styles.trackingMetricText}>
+                  {`المسافة بينكم: ${captainTracking.distance}`}
+                </Text>
+              </View>
+              <View style={styles.trackingMetric}>
+                <Text selectable style={styles.trackingMetricText}>
+                  {`وصل إلى: ${captainTracking.reached}`}
+                </Text>
+              </View>
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <LinearGradient colors={gradients.cyanGlow} style={styles.bottomGlow} />
@@ -68,7 +191,7 @@ export function MockRouteMap() {
 
 const styles = StyleSheet.create({
   mapShell: {
-    height: 300,
+    height: 390,
     overflow: "hidden",
     borderRadius: radii.lg,
     borderWidth: 1,
@@ -135,8 +258,6 @@ const styles = StyleSheet.create({
   },
   driverPulse: {
     position: "absolute",
-    top: 126,
-    left: 164,
     width: 38,
     height: 38,
     alignItems: "center",
@@ -177,6 +298,105 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     fontWeight: "700",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  routePanel: {
+    position: "absolute",
+    right: spacing.md,
+    bottom: spacing.md,
+    left: spacing.md,
+    alignItems: "flex-end",
+    gap: 3,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(7, 11, 20, 0.72)"
+  },
+  routePanelTitle: {
+    color: colors.cyan,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  routePanelText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  routePanelDetail: {
+    color: colors.textMuted,
+    fontSize: 11,
+    fontWeight: "700",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  trackingPanel: {
+    alignSelf: "stretch",
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  trackingHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  trackingIcon: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.16)"
+  },
+  trackingTitle: {
+    flex: 1,
+    color: colors.cyan,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  trackingText: {
+    color: colors.text,
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  trackingMeta: {
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  trackingMetrics: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  trackingMetric: {
+    flex: 1,
+    minHeight: 34,
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  trackingMetricText: {
+    color: colors.textSoft,
+    fontSize: 10,
+    fontWeight: "900",
     textAlign: "right",
     writingDirection: "rtl"
   },

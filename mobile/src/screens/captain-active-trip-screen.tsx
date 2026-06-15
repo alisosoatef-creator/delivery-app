@@ -1,12 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { CheckCircle, Clock, MapPin, MessageCircle, Navigation, Phone, User, Wallet } from "lucide-react-native";
+import { CheckCircle, Clock, MapPin, MessageCircle, Navigation, Phone, ShieldCheck, User, Wallet } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useMemo, useReducer, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { CaptainRouteMap } from "@/components/captain-route-map";
 import { GlassCard } from "@/components/glass-card";
-import { MockRouteMap } from "@/components/mock-route-map";
 import { PremiumButton } from "@/components/premium-button";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
@@ -128,7 +128,7 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
           </View>
         </GlassCard>
 
-        <MockRouteMap />
+        <CaptainRouteMap request={request} step={tripStep} />
 
         <GlassCard style={styles.customerCard} variant="strong">
           <View style={styles.customerTop}>
@@ -162,6 +162,13 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
             <TripMetric icon={<Clock color={colors.cyan} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
             <TripMetric icon={<Navigation color={colors.violetSoft} size={16} />} label="المسافة" value={request.distance} />
           </View>
+
+          {tripStep !== "completed" ? (
+            <CaptainSupportPanel
+              onReportIssue={() => setNotice("تم تسجيل مشكلة الرحلة mock")}
+              onShareLocation={() => setNotice("تم تجهيز مشاركة موقع الكابتن mock")}
+            />
+          ) : null}
 
           {notice ? (
             <View style={styles.noticeBox}>
@@ -216,6 +223,56 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
           )}
         </GlassCard>
       </ScrollView>
+    </View>
+  );
+}
+
+function CaptainSupportPanel({
+  onReportIssue,
+  onShareLocation
+}: {
+  onReportIssue: () => void;
+  onShareLocation: () => void;
+}) {
+  return (
+    <View style={styles.supportPanel}>
+      <View style={styles.supportHeader}>
+        <View style={styles.supportIcon}>
+          <ShieldCheck color={colors.success} size={16} />
+        </View>
+        <View style={styles.supportCopy}>
+          <Text selectable style={styles.supportTitle}>
+            مركز دعم الكابتن
+          </Text>
+          <Text selectable style={styles.supportMeta}>
+            مشاركة الموقع أو تسجيل مشكلة بدون مغادرة الرحلة
+          </Text>
+        </View>
+      </View>
+      <View style={styles.supportActions}>
+        <Pressable
+          accessibilityLabel="مشاركة موقع الكابتن مع الدعم"
+          accessibilityRole="button"
+          onPress={onShareLocation}
+          style={styles.supportButton}
+        >
+          <Navigation color={colors.cyan} size={16} />
+          <Text selectable style={styles.supportButtonText}>
+            مشاركة موقعي
+          </Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="تسجيل مشكلة في الرحلة"
+          accessibilityRole="button"
+          onPress={onReportIssue}
+          style={[styles.supportButton, styles.supportButtonWarning]}
+        >
+          <MessageCircle color={colors.warning} size={16} />
+          <Text selectable style={styles.supportButtonText}>
+            مشكلة بالرحلة
+          </Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -508,6 +565,73 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
+  },
+  supportPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.18)",
+    backgroundColor: "rgba(51, 231, 168, 0.07)"
+  },
+  supportHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  supportIcon: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.1)"
+  },
+  supportCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  supportTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  supportMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  supportActions: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  supportButton: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  supportButtonWarning: {
+    borderColor: "rgba(255, 209, 102, 0.22)",
+    backgroundColor: "rgba(255, 209, 102, 0.08)"
+  },
+  supportButtonText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
   },
   noticeBox: {
     alignItems: "flex-end",
