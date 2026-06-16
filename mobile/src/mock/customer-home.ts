@@ -109,6 +109,47 @@ export const customerHomeMock = {
     eta: "3 دقائق",
     price: "25 شيكل"
   },
+  serviceTypes: [
+    {
+      id: "city",
+      label: "رحلة داخل المدينة",
+      emoji: "🚕",
+      vehicle: "تاكسي سكودا",
+      description: "مشاوير سريعة داخل نابلس",
+      eta: "3 دقائق",
+      price: "25 شيكل",
+      nextStepTitle: "تجهيز رحلة داخل المدينة",
+      nextStepHint: "اختر وجهة قريبة داخل نابلس وسنحسب المسافة والسعر مباشرة.",
+      nextStepAction: "متابعة رحلة داخل المدينة",
+      searchNotice: "ابحث عن وجهتك داخل المدينة"
+    },
+    {
+      id: "intercity",
+      label: "رحلة خارج المدينة",
+      emoji: "🚘",
+      vehicle: "سيارة مريحة",
+      description: "تنقل بين المناطق والمدن",
+      eta: "8 دقائق",
+      price: "45 شيكل",
+      nextStepTitle: "تجهيز رحلة خارج المدينة",
+      nextStepHint: "حدد المنطقة أو المدينة المطلوبة، وبعدها نعرض ملخص المسار.",
+      nextStepAction: "متابعة رحلة خارج المدينة",
+      searchNotice: "ابحث عن وجهتك خارج المدينة"
+    },
+    {
+      id: "delivery",
+      label: "توصيل طلبية",
+      emoji: "🚐",
+      vehicle: "سيارة كادي",
+      description: "غرض أو طلبية من نقطة لنقطة",
+      eta: "6 دقائق",
+      price: "35 شيكل",
+      nextStepTitle: "تجهيز توصيل الطلبية",
+      nextStepHint: "حدد نقطة الاستلام والتسليم وأضف وصف الغرض لاحقا.",
+      nextStepAction: "متابعة توصيل الطلبية",
+      searchNotice: "ابحث عن وجهة تسليم الطلبية"
+    }
+  ],
   searchTab: {
     title: "بحث سريع",
     subtitle: "اختر وجهة محفوظة أو ابدأ من الخريطة",

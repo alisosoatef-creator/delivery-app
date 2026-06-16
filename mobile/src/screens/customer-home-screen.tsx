@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import * as Haptics from "expo-haptics";
 import {
   Bell,
   Car,
@@ -44,6 +45,23 @@ import {
 type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
 type PickupPoint = (typeof customerHomeMock.pickupOptions)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
+type ServiceType = (typeof customerHomeMock.serviceTypes)[number];
+type CustomerSearchCopy = {
+  detailHint: string;
+  detailLabel: string;
+  detailPlaceholder: string;
+  detailPreviewPrefix: string;
+  inputLabel: string;
+  inputPlaceholder: string;
+  scope: string;
+  selectedActionAccessibilityLabel: string;
+  selectedActionLabel: string;
+  selectedNoticeSuffix: string;
+  selectedTitle: string;
+  subtitle: string;
+  title: string;
+  hint: string;
+};
 
 type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
@@ -85,6 +103,63 @@ const CUSTOMER_PROFILE_SECURITY_ITEMS = [
 const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "الأقرب"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
+
+function getCustomerSearchCopy(serviceType: ServiceType): CustomerSearchCopy {
+  if (serviceType.id === "delivery") {
+    return {
+      detailHint: "اكتب وصفا قصيرا يساعد الكابتن يعرف نقطة التسليم بالضبط.",
+      detailLabel: "ملاحظة التسليم للكابتن",
+      detailPlaceholder: "مثلا: تسليم عند الاستقبال أو باب العمارة",
+      detailPreviewPrefix: "سيظهر للكابتن",
+      hint: "حدد نقطة التسليم التي سيصل لها الكابتن مع الطلبية.",
+      inputLabel: "بحث وجهة التسليم",
+      inputPlaceholder: "ابحث عن نقطة تسليم أو منطقة",
+      scope: "توصيل طلبية",
+      selectedActionAccessibilityLabel: "استخدام وجهة التسليم",
+      selectedActionLabel: "استخدام وجهة التسليم",
+      selectedNoticeSuffix: "كوجهة تسليم",
+      selectedTitle: "وجهة التسليم جاهزة",
+      subtitle: "اختر نقطة تسليم الطلبية",
+      title: "بحث التسليم",
+    };
+  }
+
+  if (serviceType.id === "intercity") {
+    return {
+      detailHint: "أضف علامة وصول واضحة أو اسم منطقة تساعد الكابتن قبل الانطلاق.",
+      detailLabel: "تفصيل الوصول للكابتن",
+      detailPlaceholder: "مثلا: عند مدخل المدينة أو قرب المجمع",
+      detailPreviewPrefix: "سيظهر للكابتن",
+      hint: "ابحث عن المنطقة أو المدينة المطلوبة وسنجهز ملخص المسار.",
+      inputLabel: "بحث وجهة خارج المدينة",
+      inputPlaceholder: "ابحث عن مدينة أو منطقة",
+      scope: "خارج المدينة",
+      selectedActionAccessibilityLabel: "استخدام وجهة السفر",
+      selectedActionLabel: "استخدام وجهة السفر",
+      selectedNoticeSuffix: "كوجهة سفر",
+      selectedTitle: "وجهة السفر جاهزة",
+      subtitle: "اختر منطقة الوصول",
+      title: "بحث خارج المدينة",
+    };
+  }
+
+  return {
+    detailHint: "أضف مدخلا أو علامة قريبة حتى يعرف الكابتن المكان بدقة.",
+    detailLabel: "تفصيل الوجهة للكابتن",
+    detailPlaceholder: "اكتب مدخل البناية أو علامة قريبة",
+    detailPreviewPrefix: "سيظهر للكابتن",
+    hint: customerHomeMock.searchTab.hint,
+    inputLabel: "بحث الوجهات",
+    inputPlaceholder: "ابحث عن مكان أو منطقة",
+    scope: customerHomeMock.profile.city,
+    selectedActionAccessibilityLabel: "استخدام الوجهة المختارة",
+    selectedActionLabel: "استخدام الوجهة",
+    selectedNoticeSuffix: "من البحث",
+    selectedTitle: "وجهتك جاهزة",
+    subtitle: "اكتشف وجهتك",
+    title: customerHomeMock.searchTab.title,
+  };
+}
 
 function formatCustomerFeedbackNote(note: string, tags: string[]) {
   const trimmedNote = note.trim();
@@ -173,6 +248,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>(customerHomeMock.serviceTypes[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
   const { showConfirmation, stage: rideStage } = tripFlow;
@@ -206,6 +282,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "customer");
   const realtimeConnectionSummary = getMockRealtimeConnectionSummary(rideRequests.realtime, "customer");
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "customer", 4);
+  const selectedServiceLabel =
+    selectedServiceType.id === "city" ? customerHomeMock.service.label : selectedServiceType.label;
+  const selectedSearchCopy = getCustomerSearchCopy(selectedServiceType);
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -221,6 +300,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setSelectedDestination(null);
     setDestinationDetail("");
     setPaymentMethod(customerHomeMock.defaultPaymentMethod);
+    setSelectedServiceType(customerHomeMock.serviceTypes[0]);
     setNotice(null);
     setIsNotificationsOpen(false);
   }
@@ -249,7 +329,28 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
   function selectDestinationFromSearch(place: DestinationPlace) {
     selectDestination(place);
-    setNotice(`تم اختيار ${place.label} من البحث`);
+    setNotice(`تم اختيار ${place.label} ${selectedSearchCopy.selectedNoticeSuffix}`);
+  }
+
+  function selectServiceType(serviceType: ServiceType) {
+    setSelectedServiceType(serviceType);
+    setRequestStatus(null);
+    setNotice(`تم اختيار ${serviceType.label}`);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
+  }
+
+  function openDestinationSearch() {
+    setActiveNav("البحث");
+    setNotice("اختر وجهتك من البحث أو الأماكن المحفوظة");
+    setIsNotificationsOpen(false);
+  }
+
+  function continueSelectedServiceType() {
+    setActiveNav("البحث");
+    setNotice(selectedServiceType.searchNotice);
+    setIsNotificationsOpen(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
 
   function useSelectedSearchDestination() {
@@ -290,8 +391,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       id: LIVE_CUSTOMER_REQUEST_ID,
       paymentMethod,
       pickup: selectedPickup.label,
-      price: customerHomeMock.service.price,
-      serviceLabel: customerHomeMock.service.label,
+      price: selectedServiceType.price,
+      serviceLabel: selectedServiceLabel,
     };
 
     dispatchRideRequests({ request, type: "submit-customer-request" });
@@ -366,9 +467,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
           <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
           <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
-          <InfoRow label="الخدمة" value={customerHomeMock.service.label} />
+          <InfoRow label="الخدمة" value={selectedServiceLabel} />
+          <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
           <InfoRow label="المسافة" value={selectedDestination.distance} />
-          <InfoRow label="السعر التقديري" value={customerHomeMock.service.price} />
+          <InfoRow label="السعر التقديري" value={selectedServiceType.price} />
           <InfoRow label="طريقة الدفع" value={paymentMethod} />
         </View>
 
@@ -426,8 +528,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
                 <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
                 <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
-                <InfoRow label="الخدمة" value={customerHomeMock.service.label} />
-                <InfoRow label="السعر" value={customerHomeMock.service.price} />
+                <InfoRow label="الخدمة" value={selectedServiceLabel} />
+                <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
+                <InfoRow label="السعر" value={selectedServiceType.price} />
                 <InfoRow label="طريقة الدفع" value={paymentMethod} />
               </View>
             </View>
@@ -504,7 +607,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </View>
             <View style={styles.miniMetric}>
               <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{customerHomeMock.service.price}</Text>
+              <Text style={styles.metricValue}>{selectedServiceType.price}</Text>
               <Text style={styles.metricLabel}>السعر</Text>
             </View>
           </View>
@@ -597,7 +700,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <Text style={styles.completedTitle}>تم الوصول</Text>
         <Text style={styles.stageMeta}>شكرًا لاستخدامك واصل</Text>
         <CustomerReceiptCard
-          amount={acceptedCustomerRequest?.price ?? customerHomeMock.service.price}
+          amount={acceptedCustomerRequest?.price ?? selectedServiceType.price}
           destinationDetail={acceptedCustomerRequest?.destinationDetail ?? destinationDetail}
           onDownload={() => setNotice("تم تجهيز إيصال الرحلة mock")}
           paymentMethod={acceptedCustomerRequest?.paymentMethod ?? paymentMethod}
@@ -609,7 +712,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 ? `${selectedPickup.label} ← ${selectedDestination.area}`
                 : customerHomeMock.trips.current.route
           }
-          serviceLabel={acceptedCustomerRequest?.serviceLabel ?? customerHomeMock.service.label}
+          serviceLabel={acceptedCustomerRequest?.serviceLabel ?? selectedServiceLabel}
         />
         <CustomerFeedbackCard
           captainLabel={`${customerHomeMock.captain.name} • ${customerHomeMock.captain.carModel}`}
@@ -735,6 +838,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <CustomerSearchTab
             activeFilter={activeSearchFilter}
             destinationDetail={selectedDestination ? destinationDetail : undefined}
+            onChangeDestinationDetail={setDestinationDetail}
             onChangeFilter={setActiveSearchFilter}
             onChangeQuery={setSearchQuery}
             onRefreshSuggestions={() => setNotice("تم تحديث اقتراحات البحث mock فقط الآن")}
@@ -742,10 +846,153 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             onUseDestination={useSelectedSearchDestination}
             pickupLabel={selectedPickup.label}
             query={searchQuery}
+            searchCopy={selectedSearchCopy}
             selectedDestination={selectedDestination}
           />
         ) : (
           <>
+            <GlassCard testID="customer-primary-booking-card" style={styles.primaryBookingCard} variant="strong">
+              <View style={styles.primaryBookingHeader}>
+                <View style={styles.primaryBookingIcon}>
+                  <Search color={colors.cyan} size={22} />
+                </View>
+                <View style={styles.primaryBookingCopy}>
+                  <Text selectable style={styles.primaryBookingTitle}>
+                    اطلب رحلتك بسهولة
+                  </Text>
+                  <Text selectable style={styles.primaryBookingMeta}>
+                    اختر وجهتك أولا، وبعدها نجهز لك السعر والمسار والكابتن الأقرب.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.primaryBookingMetrics}>
+                <View style={styles.primaryBookingMetric}>
+                  <Text selectable style={styles.primaryBookingMetricValue}>
+                    {selectedPickup.label}
+                  </Text>
+                  <Text selectable style={styles.primaryBookingMetricLabel}>
+                    انطلاقك
+                  </Text>
+                </View>
+                <View style={styles.primaryBookingMetric}>
+                  <Text selectable style={styles.primaryBookingMetricValue}>
+                    {selectedServiceType.price}
+                  </Text>
+                  <Text selectable style={styles.primaryBookingMetricLabel}>
+                    سعر مبدئي
+                  </Text>
+                </View>
+              </View>
+
+              <PremiumButton
+                accessibilityLabel="اختيار الوجهة لبدء الطلب"
+                label="اختيار الوجهة"
+                onPress={openDestinationSearch}
+                style={styles.primaryBookingButton}
+              >
+                <MapPin color={colors.text} size={17} />
+              </PremiumButton>
+            </GlassCard>
+
+            <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker}>
+              <View style={styles.serviceTypeHeader}>
+                <View style={styles.serviceTypeHeaderIcon}>
+                  <Car color={colors.cyan} size={19} />
+                </View>
+                <View style={styles.serviceTypeHeaderCopy}>
+                  <Text selectable style={styles.serviceTypeTitle}>
+                    اختر نوع الخدمة
+                  </Text>
+                  <Text selectable style={styles.serviceTypeMeta}>
+                    ثلاث خيارات واضحة حسب مشوارك اليوم.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.serviceTypeList}>
+                {customerHomeMock.serviceTypes.map((serviceType) => {
+                  const isSelected = selectedServiceType.id === serviceType.id;
+
+                  return (
+                    <Pressable
+                      key={serviceType.id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`اختيار ${serviceType.label}`}
+                      accessibilityState={{ selected: isSelected }}
+                      onPress={() => selectServiceType(serviceType)}
+                      style={({ pressed }) => [
+                        styles.serviceTypeOption,
+                        isSelected ? styles.serviceTypeOptionActive : null,
+                        pressed ? styles.pressed : null
+                      ]}
+                    >
+                      <View style={styles.serviceTypeEmoji}>
+                        <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
+                      </View>
+                      <View style={styles.serviceTypeCopy}>
+                        <Text selectable style={styles.serviceTypeOptionTitle}>
+                          {serviceType.label}
+                        </Text>
+                        <Text selectable style={styles.serviceTypeOptionMeta}>
+                          {serviceType.vehicle} • {serviceType.description}
+                        </Text>
+                      </View>
+                      <View style={styles.serviceTypePricePill}>
+                        <Text selectable style={styles.serviceTypePriceText}>
+                          {serviceType.price}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </GlassCard>
+
+            <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
+              <View style={styles.serviceNextStepHeader}>
+                <View style={styles.serviceNextStepBadge}>
+                  <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
+                </View>
+                <View style={styles.serviceNextStepCopy}>
+                  <Text selectable style={styles.serviceNextStepTitle}>
+                    {selectedServiceType.nextStepTitle}
+                  </Text>
+                  <Text selectable style={styles.serviceNextStepMeta}>
+                    {selectedServiceType.nextStepHint}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.serviceNextStepSummary}>
+                <View style={styles.serviceNextStepMetric}>
+                  <Text selectable style={styles.serviceNextStepValue}>
+                    {selectedServiceType.eta}
+                  </Text>
+                  <Text selectable style={styles.serviceNextStepLabel}>
+                    وصول قريب
+                  </Text>
+                </View>
+                <View style={styles.serviceNextStepMetric}>
+                  <Text selectable style={styles.serviceNextStepValue}>
+                    {selectedServiceType.price}
+                  </Text>
+                  <Text selectable style={styles.serviceNextStepLabel}>
+                    تقدير أولي
+                  </Text>
+                </View>
+              </View>
+
+              <PremiumButton
+                accessibilityLabel={selectedServiceType.nextStepAction}
+                label={selectedServiceType.nextStepAction}
+                onPress={continueSelectedServiceType}
+                style={styles.serviceNextStepButton}
+              >
+                <Search color={colors.text} size={17} />
+              </PremiumButton>
+            </GlassCard>
+
             <MockRouteMap
               destinationArea={selectedDestination?.area}
               destinationDetail={selectedDestination ? destinationDetail : undefined}
@@ -797,7 +1044,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <GlassCard style={styles.statCard}>
             <ShieldCheck color={colors.success} size={18} />
             <Text selectable style={styles.statValue}>
-              {customerHomeMock.service.price}
+              {selectedServiceType.price}
             </Text>
             <Text selectable style={styles.statLabel}>
               سعر مقترح
@@ -877,15 +1124,15 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
             <View style={styles.serviceGroup}>
               <Text selectable style={styles.detailLabel}>
-                خدمة واصل واحدة
+                نوع الخدمة
               </Text>
               <View style={styles.serviceCard}>
                 <View style={styles.servicePriceBox}>
                   <Text selectable style={styles.servicePrice}>
-                    {customerHomeMock.service.price}
+                    {selectedServiceType.price}
                   </Text>
                   <Text selectable style={styles.serviceEta}>
-                    {customerHomeMock.service.eta}
+                    {selectedServiceType.eta}
                   </Text>
                 </View>
                 <View style={styles.serviceCopy}>
@@ -896,11 +1143,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                       </Text>
                     </View>
                     <Text selectable style={styles.serviceLabel}>
-                      {customerHomeMock.service.label}
+                      {selectedServiceType.label}
                     </Text>
                   </View>
                   <Text selectable style={styles.serviceMeta}>
-                    {customerHomeMock.service.meta}
+                    {selectedServiceType.description}
                   </Text>
                 </View>
                 <CheckCircle color={colors.cyan} size={18} />
@@ -947,13 +1194,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
         <GlassCard style={styles.tripCard}>
           <View style={styles.tripPricePill}>
-            <Text style={styles.tripPrice}>{customerHomeMock.service.price}</Text>
+            <Text style={styles.tripPrice}>{selectedServiceType.price}</Text>
           </View>
           <View style={styles.tripCopy}>
-            <Text style={styles.tripLabel}>{customerHomeMock.service.label}</Text>
-            <Text style={styles.tripMeta}>{customerHomeMock.service.meta}</Text>
+            <Text style={styles.tripLabel}>{selectedServiceLabel}</Text>
+            <Text style={styles.tripMeta}>{selectedServiceType.description}</Text>
             <Text style={styles.tripMeta}>
-              {selectedDestination ? `${selectedDestination.distance} • ${customerHomeMock.service.eta}` : customerHomeMock.service.eta}
+              {selectedDestination ? `${selectedDestination.distance} • ${selectedServiceType.eta}` : selectedServiceType.eta}
             </Text>
           </View>
         </GlassCard>
@@ -972,11 +1219,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <GlassCard style={styles.feedbackCard}>
           <Text style={styles.feedbackText}>
             {requestStatus ??
-              `الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
+              `الطلب المحدد: ${selectedServiceLabel} • ${selectedServiceType.price}`}
           </Text>
           {requestStatus ? (
             <Text style={styles.feedbackMeta}>
-              {`الطلب المحدد: ${customerHomeMock.service.label} • ${customerHomeMock.service.price}`}
+              {`الطلب المحدد: ${selectedServiceLabel} • ${selectedServiceType.price}`}
             </Text>
           ) : null}
           {selectedDestination ? (
@@ -1495,6 +1742,7 @@ function CustomerDestinationDiscoveryPanel({
 function CustomerSearchTab({
   activeFilter,
   destinationDetail,
+  onChangeDestinationDetail,
   onChangeFilter,
   onChangeQuery,
   onRefreshSuggestions,
@@ -1502,10 +1750,12 @@ function CustomerSearchTab({
   onUseDestination,
   pickupLabel,
   query,
+  searchCopy,
   selectedDestination
 }: {
   activeFilter: CustomerSearchFilter;
   destinationDetail?: string;
+  onChangeDestinationDetail: (detail: string) => void;
   onChangeFilter: (filter: CustomerSearchFilter) => void;
   onChangeQuery: (query: string) => void;
   onRefreshSuggestions: () => void;
@@ -1513,6 +1763,7 @@ function CustomerSearchTab({
   onUseDestination: () => void;
   pickupLabel: string;
   query: string;
+  searchCopy: CustomerSearchCopy;
   selectedDestination: DestinationPlace | null;
 }) {
   const normalizedQuery = query.trim().toLowerCase();
@@ -1540,13 +1791,13 @@ function CustomerSearchTab({
           </View>
           <View style={styles.tabCopy}>
             <Text selectable style={styles.tabTitle}>
-              {customerHomeMock.searchTab.title}
+              {searchCopy.title}
             </Text>
             <Text selectable style={styles.tabMeta}>
-              اكتشف وجهتك
+              {searchCopy.subtitle}
             </Text>
             <Text selectable style={styles.tabMeta}>
-              {customerHomeMock.searchTab.hint}
+              {searchCopy.hint}
             </Text>
           </View>
         </View>
@@ -1555,15 +1806,15 @@ function CustomerSearchTab({
           nearestPlace={customerHomeMock.savedPlaces[0]}
           onRefreshSuggestions={onRefreshSuggestions}
           savedPlacesCount={customerHomeMock.savedPlaces.length}
-          searchScope={customerHomeMock.profile.city}
+          searchScope={searchCopy.scope}
         />
 
         <View style={styles.searchInputShell}>
           <Search color={colors.textMuted} size={18} />
           <TextInput
-            accessibilityLabel="بحث الوجهات"
+            accessibilityLabel={searchCopy.inputLabel}
             onChangeText={onChangeQuery}
-            placeholder="ابحث عن مكان أو منطقة"
+            placeholder={searchCopy.inputPlaceholder}
             placeholderTextColor={colors.textMuted}
             style={styles.searchInput}
             value={query}
@@ -1665,7 +1916,7 @@ function CustomerSearchTab({
             </View>
             <View style={styles.searchSelectedCopy}>
               <Text selectable style={styles.searchSelectedTitle}>
-                وجهتك جاهزة
+                {searchCopy.selectedTitle}
               </Text>
               <Text selectable style={styles.searchSelectedName}>
                 {selectedDestination.label}
@@ -1675,9 +1926,31 @@ function CustomerSearchTab({
               </Text>
             </View>
           </View>
+          <View style={styles.searchDetailField}>
+            <Text selectable style={styles.detailLabel}>
+              {searchCopy.detailLabel}
+            </Text>
+            <Text selectable style={styles.searchDetailHint}>
+              {searchCopy.detailHint}
+            </Text>
+            <TextInput
+              accessibilityLabel={searchCopy.detailLabel}
+              multiline
+              onChangeText={onChangeDestinationDetail}
+              placeholder={searchCopy.detailPlaceholder}
+              placeholderTextColor={colors.textMuted}
+              style={[styles.detailInput, styles.searchDetailInput]}
+              value={destinationDetail ?? ""}
+            />
+            {destinationDetail?.trim() ? (
+              <Text selectable style={styles.searchDetailPreview}>
+                {`${searchCopy.detailPreviewPrefix}: ${destinationDetail.trim()}`}
+              </Text>
+            ) : null}
+          </View>
           <PremiumButton
-            accessibilityLabel="استخدام الوجهة المختارة"
-            label="استخدام الوجهة"
+            accessibilityLabel={searchCopy.selectedActionAccessibilityLabel}
+            label={searchCopy.selectedActionLabel}
             onPress={onUseDestination}
             style={styles.searchUseButton}
           >
@@ -2174,6 +2447,250 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     fontWeight: "600",
     letterSpacing: 0
+  },
+  primaryBookingCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.34)"
+  },
+  primaryBookingHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  primaryBookingIcon: {
+    width: 50,
+    height: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  primaryBookingCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  primaryBookingTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  primaryBookingMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  primaryBookingMetrics: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  primaryBookingMetric: {
+    flex: 1,
+    minHeight: 58,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  primaryBookingMetricValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  primaryBookingMetricLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  primaryBookingButton: {
+    minHeight: 50,
+    borderRadius: radii.sm
+  },
+  serviceTypePicker: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(147, 177, 255, 0.2)"
+  },
+  serviceTypeHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  serviceTypeHeaderIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  serviceTypeHeaderCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  serviceTypeTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  serviceTypeMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  serviceTypeList: {
+    gap: spacing.sm
+  },
+  serviceTypeOption: {
+    minHeight: 76,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  serviceTypeOptionActive: {
+    borderColor: "rgba(0, 229, 255, 0.44)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  serviceTypeEmoji: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.07)"
+  },
+  serviceTypeEmojiText: {
+    fontSize: 22
+  },
+  serviceTypeCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  serviceTypeOptionTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  serviceTypeOptionMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  serviceTypePricePill: {
+    minWidth: 70,
+    minHeight: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(139, 92, 246, 0.16)"
+  },
+  serviceTypePriceText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  serviceNextStepCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(139, 92, 246, 0.3)"
+  },
+  serviceNextStepHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  serviceNextStepBadge: {
+    width: 52,
+    height: 52,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(199, 183, 255, 0.28)",
+    backgroundColor: "rgba(139, 92, 246, 0.16)"
+  },
+  serviceNextStepEmoji: {
+    fontSize: 24
+  },
+  serviceNextStepCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  serviceNextStepTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  serviceNextStepMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  serviceNextStepSummary: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  serviceNextStepMetric: {
+    flex: 1,
+    minHeight: 56,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  serviceNextStepValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  serviceNextStepLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  serviceNextStepButton: {
+    minHeight: 48,
+    borderRadius: radii.sm
   },
   searchCard: {
     minHeight: 72,
@@ -3547,6 +4064,32 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.compact,
     fontWeight: "800"
+  },
+  searchDetailField: {
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.055)"
+  },
+  searchDetailHint: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 18
+  },
+  searchDetailInput: {
+    minHeight: 76,
+    textAlignVertical: "top"
+  },
+  searchDetailPreview: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    lineHeight: 18
   },
   searchUseButton: {
     minHeight: 46,
