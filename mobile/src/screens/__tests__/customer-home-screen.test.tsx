@@ -1,4 +1,5 @@
-import { describe, expect, it } from "@jest/globals";
+import { describe, expect, it, jest } from "@jest/globals";
+import * as Haptics from "expo-haptics";
 import { fireEvent, render } from "@testing-library/react-native";
 import { Pressable, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -146,6 +147,44 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("اختر وجهتك من البحث أو الأماكن المحفوظة")).toBeTruthy();
   });
 
+  it("wraps the primary customer booking path with motion-ready surfaces", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByTestId("customer-motion-primary-booking")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-booking-flow")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-service-type")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-service-next-step")).toBeTruthy();
+  });
+
+  it("adds haptic feedback to the primary destination action", async () => {
+    const hapticSpy = jest.spyOn(Haptics, "impactAsync").mockResolvedValue();
+    const screen = await renderCustomerHome();
+
+    try {
+      await fireEvent.press(screen.getByLabelText("اختيار الوجهة لبدء الطلب"));
+
+      expect(hapticSpy).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+    } finally {
+      hapticSpy.mockRestore();
+    }
+  });
+
+  it("summarizes the booking path in a compact three-step customer command strip", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByTestId("customer-booking-flow-strip")).toBeTruthy();
+    expect(screen.getByText("ابدأ الطلب بثلاث خطوات")).toBeTruthy();
+    expect(screen.getByText("نوع الخدمة")).toBeTruthy();
+    expect(screen.getByText("الوجهة")).toBeTruthy();
+    expect(screen.getByText("التأكيد")).toBeTruthy();
+    expect(screen.getByText("الوجهة بانتظار اختيارك")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+
+    expect(screen.getByText("الوجهة جاهزة")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("opens and closes a premium customer notification center", async () => {
     const screen = await renderCustomerHome();
 
@@ -267,12 +306,38 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("نعم - mock")).toBeTruthy();
   });
 
+  it("validates mock Visa details before showing the premium payment readiness state", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+
+    await fireEvent.changeText(screen.getByLabelText("اسم حامل البطاقة"), "ع");
+    await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "123");
+    await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "13/99");
+    await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "1");
+
+    expect(screen.getByText("أكمل بيانات فيزا قبل تأكيد الطلب")).toBeTruthy();
+    expect(screen.getByText("اسم حامل البطاقة مطلوب")).toBeTruthy();
+    expect(screen.getByText("رقم البطاقة يجب أن يكون 16 رقم")).toBeTruthy();
+    expect(screen.getByText("تاريخ الانتهاء بصيغة MM/YY")).toBeTruthy();
+    expect(screen.getByText("رمز CVC من 3 إلى 4 أرقام")).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText("اسم حامل البطاقة"), "علي محمد");
+    await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "4242424242424242");
+    await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "09/28");
+    await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "123");
+
+    expect(screen.getByText("بيانات فيزا جاهزة للتجربة")).toBeTruthy();
+    expect(screen.getByText("سيتم استخدام فيزا • **** 4242")).toBeTruthy();
+  });
+
   it("lets the customer choose one of three simple service types before booking", async () => {
     const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
 
     expect(screen.getByTestId("customer-service-type-picker")).toBeTruthy();
     expect(screen.getByText("اختر نوع الخدمة")).toBeTruthy();
-    expect(screen.getByText("رحلة داخل المدينة")).toBeTruthy();
+    expect(screen.getAllByText("رحلة داخل المدينة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("رحلة خارج المدينة")).toBeTruthy();
     expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
 

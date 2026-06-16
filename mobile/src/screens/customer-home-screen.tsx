@@ -1,3 +1,4 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from "expo-haptics";
 import {
@@ -19,8 +20,11 @@ import {
 } from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useReducer, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { z } from "zod";
 
 import { GlassCard } from "@/components/glass-card";
 import { MockRouteMap, type MockRouteMapPhase } from "@/components/mock-route-map";
@@ -103,6 +107,24 @@ const CUSTOMER_PROFILE_SECURITY_ITEMS = [
 const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "الأقرب"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
+
+const visaPaymentSchema = z.object({
+  cardholderName: z.string().trim().min(2, "اسم حامل البطاقة مطلوب"),
+  cardNumber: z.string().refine((value) => value.replace(/\D/g, "").length === 16, {
+    message: "رقم البطاقة يجب أن يكون 16 رقم"
+  }),
+  cvc: z.string().regex(/^\d{3,4}$/, "رمز CVC من 3 إلى 4 أرقام"),
+  expiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, "تاريخ الانتهاء بصيغة MM/YY")
+});
+
+type VisaPaymentFormValues = z.infer<typeof visaPaymentSchema>;
+
+const defaultVisaPaymentValues: VisaPaymentFormValues = {
+  cardholderName: "",
+  cardNumber: "",
+  cvc: "",
+  expiry: ""
+};
 
 function getCustomerSearchCopy(serviceType: ServiceType): CustomerSearchCopy {
   if (serviceType.id === "delivery") {
@@ -254,11 +276,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
-  const [visaCardholderName, setVisaCardholderName] = useState("");
-  const [visaCardNumber, setVisaCardNumber] = useState("");
-  const [visaExpiry, setVisaExpiry] = useState("");
-  const [visaCvc, setVisaCvc] = useState("");
   const [shouldSaveVisaCard, setShouldSaveVisaCard] = useState(false);
+  const visaForm = useForm<VisaPaymentFormValues>({
+    defaultValues: defaultVisaPaymentValues,
+    mode: "onChange",
+    resolver: zodResolver(visaPaymentSchema)
+  });
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>(customerHomeMock.serviceTypes[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
@@ -296,9 +319,17 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const selectedServiceLabel =
     selectedServiceType.id === "city" ? customerHomeMock.service.label : selectedServiceType.label;
   const selectedSearchCopy = getCustomerSearchCopy(selectedServiceType);
-  const visaCardLastFour = getVisaCardLastFour(visaCardNumber);
+  const visaPaymentValues = visaForm.watch();
+  const isVisaPaymentDirty = Object.values(visaPaymentValues).some((value) => value.trim().length > 0);
+  const visaValidationResult = visaPaymentSchema.safeParse(visaPaymentValues);
+  const visaValidationMessages = visaValidationResult.success
+    ? []
+    : Array.from(new Set(visaValidationResult.error.issues.map((issue) => issue.message)));
+  const visaCardLastFour = getVisaCardLastFour(visaPaymentValues.cardNumber);
   const effectivePaymentMethod =
-    paymentMethod === "فيزا" && visaCardLastFour ? `فيزا • **** ${visaCardLastFour}` : paymentMethod;
+    paymentMethod === "فيزا" && visaValidationResult.success && visaCardLastFour
+      ? `فيزا • **** ${visaCardLastFour}`
+      : paymentMethod;
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -309,10 +340,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function resetVisaPaymentDetails() {
-    setVisaCardholderName("");
-    setVisaCardNumber("");
-    setVisaExpiry("");
-    setVisaCvc("");
+    visaForm.reset(defaultVisaPaymentValues);
     setShouldSaveVisaCard(false);
   }
 
@@ -375,6 +403,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function openDestinationSearch() {
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setActiveNav("البحث");
     setNotice("اختر وجهتك من البحث أو الأماكن المحفوظة");
     setIsNotificationsOpen(false);
@@ -1009,147 +1038,160 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           />
         ) : (
           <>
-            <GlassCard testID="customer-primary-booking-card" style={styles.primaryBookingCard} variant="strong">
-              <View style={styles.primaryBookingHeader}>
-                <View style={styles.primaryBookingIcon}>
-                  <Search color={colors.cyan} size={22} />
+            <MotionSurface delay={0} testID="customer-motion-primary-booking">
+              <GlassCard testID="customer-primary-booking-card" style={styles.primaryBookingCard} variant="strong">
+                <View style={styles.primaryBookingHeader}>
+                  <View style={styles.primaryBookingIcon}>
+                    <Search color={colors.cyan} size={22} />
+                  </View>
+                  <View style={styles.primaryBookingCopy}>
+                    <Text selectable style={styles.primaryBookingTitle}>
+                      اطلب رحلتك بسهولة
+                    </Text>
+                    <Text selectable style={styles.primaryBookingMeta}>
+                      اختر وجهتك أولا، وبعدها نجهز لك السعر والمسار والكابتن الأقرب.
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.primaryBookingCopy}>
-                  <Text selectable style={styles.primaryBookingTitle}>
-                    اطلب رحلتك بسهولة
-                  </Text>
-                  <Text selectable style={styles.primaryBookingMeta}>
-                    اختر وجهتك أولا، وبعدها نجهز لك السعر والمسار والكابتن الأقرب.
-                  </Text>
-                </View>
-              </View>
 
-              <View style={styles.primaryBookingMetrics}>
-                <View style={styles.primaryBookingMetric}>
-                  <Text selectable style={styles.primaryBookingMetricValue}>
-                    {selectedPickup.label}
-                  </Text>
-                  <Text selectable style={styles.primaryBookingMetricLabel}>
-                    انطلاقك
-                  </Text>
+                <View style={styles.primaryBookingMetrics}>
+                  <View style={styles.primaryBookingMetric}>
+                    <Text selectable style={styles.primaryBookingMetricValue}>
+                      {selectedPickup.label}
+                    </Text>
+                    <Text selectable style={styles.primaryBookingMetricLabel}>
+                      انطلاقك
+                    </Text>
+                  </View>
+                  <View style={styles.primaryBookingMetric}>
+                    <Text selectable style={styles.primaryBookingMetricValue}>
+                      {selectedServiceType.price}
+                    </Text>
+                    <Text selectable style={styles.primaryBookingMetricLabel}>
+                      سعر مبدئي
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.primaryBookingMetric}>
-                  <Text selectable style={styles.primaryBookingMetricValue}>
-                    {selectedServiceType.price}
-                  </Text>
-                  <Text selectable style={styles.primaryBookingMetricLabel}>
-                    سعر مبدئي
-                  </Text>
-                </View>
-              </View>
 
-              <PremiumButton
-                accessibilityLabel="اختيار الوجهة لبدء الطلب"
-                label="اختيار الوجهة"
-                onPress={openDestinationSearch}
-                style={styles.primaryBookingButton}
-              >
-                <MapPin color={colors.text} size={17} />
-              </PremiumButton>
-            </GlassCard>
+                <PremiumButton
+                  accessibilityLabel="اختيار الوجهة لبدء الطلب"
+                  label="اختيار الوجهة"
+                  onPress={openDestinationSearch}
+                  style={styles.primaryBookingButton}
+                >
+                  <MapPin color={colors.text} size={17} />
+                </PremiumButton>
+              </GlassCard>
+            </MotionSurface>
 
-            <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker}>
-              <View style={styles.serviceTypeHeader}>
-                <View style={styles.serviceTypeHeaderIcon}>
-                  <Car color={colors.cyan} size={19} />
-                </View>
-                <View style={styles.serviceTypeHeaderCopy}>
-                  <Text selectable style={styles.serviceTypeTitle}>
-                    اختر نوع الخدمة
-                  </Text>
-                  <Text selectable style={styles.serviceTypeMeta}>
-                    ثلاث خيارات واضحة حسب مشوارك اليوم.
-                  </Text>
-                </View>
-              </View>
+            <MotionSurface delay={70} testID="customer-motion-booking-flow">
+              <CustomerBookingFlowStrip
+                destinationLabel={selectedDestination?.label ?? null}
+                serviceLabel={selectedServiceType.label}
+              />
+            </MotionSurface>
 
-              <View style={styles.serviceTypeList}>
-                {customerHomeMock.serviceTypes.map((serviceType) => {
-                  const isSelected = selectedServiceType.id === serviceType.id;
-
-                  return (
-                    <Pressable
-                      key={serviceType.id}
-                      accessibilityRole="button"
-                      accessibilityLabel={`اختيار ${serviceType.label}`}
-                      accessibilityState={{ selected: isSelected }}
-                      onPress={() => selectServiceType(serviceType)}
-                      style={({ pressed }) => [
-                        styles.serviceTypeOption,
-                        isSelected ? styles.serviceTypeOptionActive : null,
-                        pressed ? styles.pressed : null
-                      ]}
-                    >
-                      <View style={styles.serviceTypeEmoji}>
-                        <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
-                      </View>
-                      <View style={styles.serviceTypeCopy}>
-                        <Text selectable style={styles.serviceTypeOptionTitle}>
-                          {serviceType.label}
-                        </Text>
-                        <Text selectable style={styles.serviceTypeOptionMeta}>
-                          {serviceType.vehicle} • {serviceType.description}
-                        </Text>
-                      </View>
-                      <View style={styles.serviceTypePricePill}>
-                        <Text selectable style={styles.serviceTypePriceText}>
-                          {serviceType.price}
-                        </Text>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </GlassCard>
-
-            <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
-              <View style={styles.serviceNextStepHeader}>
-                <View style={styles.serviceNextStepBadge}>
-                  <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
+            <MotionSurface delay={140} testID="customer-motion-service-type">
+              <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker}>
+                <View style={styles.serviceTypeHeader}>
+                  <View style={styles.serviceTypeHeaderIcon}>
+                    <Car color={colors.cyan} size={19} />
+                  </View>
+                  <View style={styles.serviceTypeHeaderCopy}>
+                    <Text selectable style={styles.serviceTypeTitle}>
+                      اختر نوع الخدمة
+                    </Text>
+                    <Text selectable style={styles.serviceTypeMeta}>
+                      ثلاث خيارات واضحة حسب مشوارك اليوم.
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.serviceNextStepCopy}>
-                  <Text selectable style={styles.serviceNextStepTitle}>
-                    {selectedServiceType.nextStepTitle}
-                  </Text>
-                  <Text selectable style={styles.serviceNextStepMeta}>
-                    {selectedServiceType.nextStepHint}
-                  </Text>
-                </View>
-              </View>
 
-              <View style={styles.serviceNextStepSummary}>
-                <View style={styles.serviceNextStepMetric}>
-                  <Text selectable style={styles.serviceNextStepValue}>
-                    {selectedServiceType.eta}
-                  </Text>
-                  <Text selectable style={styles.serviceNextStepLabel}>
-                    وصول قريب
-                  </Text>
-                </View>
-                <View style={styles.serviceNextStepMetric}>
-                  <Text selectable style={styles.serviceNextStepValue}>
-                    {selectedServiceType.price}
-                  </Text>
-                  <Text selectable style={styles.serviceNextStepLabel}>
-                    تقدير أولي
-                  </Text>
-                </View>
-              </View>
+                <View style={styles.serviceTypeList}>
+                  {customerHomeMock.serviceTypes.map((serviceType) => {
+                    const isSelected = selectedServiceType.id === serviceType.id;
 
-              <PremiumButton
-                accessibilityLabel={selectedServiceType.nextStepAction}
-                label={selectedServiceType.nextStepAction}
-                onPress={continueSelectedServiceType}
-                style={styles.serviceNextStepButton}
-              >
-                <Search color={colors.text} size={17} />
-              </PremiumButton>
-            </GlassCard>
+                    return (
+                      <Pressable
+                        key={serviceType.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={`اختيار ${serviceType.label}`}
+                        accessibilityState={{ selected: isSelected }}
+                        onPress={() => selectServiceType(serviceType)}
+                        style={({ pressed }) => [
+                          styles.serviceTypeOption,
+                          isSelected ? styles.serviceTypeOptionActive : null,
+                          pressed ? styles.pressed : null
+                        ]}
+                      >
+                        <View style={styles.serviceTypeEmoji}>
+                          <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
+                        </View>
+                        <View style={styles.serviceTypeCopy}>
+                          <Text selectable style={styles.serviceTypeOptionTitle}>
+                            {serviceType.label}
+                          </Text>
+                          <Text selectable style={styles.serviceTypeOptionMeta}>
+                            {serviceType.vehicle} • {serviceType.description}
+                          </Text>
+                        </View>
+                        <View style={styles.serviceTypePricePill}>
+                          <Text selectable style={styles.serviceTypePriceText}>
+                            {serviceType.price}
+                          </Text>
+                        </View>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </GlassCard>
+            </MotionSurface>
+
+            <MotionSurface delay={210} testID="customer-motion-service-next-step">
+              <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
+                <View style={styles.serviceNextStepHeader}>
+                  <View style={styles.serviceNextStepBadge}>
+                    <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
+                  </View>
+                  <View style={styles.serviceNextStepCopy}>
+                    <Text selectable style={styles.serviceNextStepTitle}>
+                      {selectedServiceType.nextStepTitle}
+                    </Text>
+                    <Text selectable style={styles.serviceNextStepMeta}>
+                      {selectedServiceType.nextStepHint}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.serviceNextStepSummary}>
+                  <View style={styles.serviceNextStepMetric}>
+                    <Text selectable style={styles.serviceNextStepValue}>
+                      {selectedServiceType.eta}
+                    </Text>
+                    <Text selectable style={styles.serviceNextStepLabel}>
+                      وصول قريب
+                    </Text>
+                  </View>
+                  <View style={styles.serviceNextStepMetric}>
+                    <Text selectable style={styles.serviceNextStepValue}>
+                      {selectedServiceType.price}
+                    </Text>
+                    <Text selectable style={styles.serviceNextStepLabel}>
+                      تقدير أولي
+                    </Text>
+                  </View>
+                </View>
+
+                <PremiumButton
+                  accessibilityLabel={selectedServiceType.nextStepAction}
+                  label={selectedServiceType.nextStepAction}
+                  onPress={continueSelectedServiceType}
+                  style={styles.serviceNextStepButton}
+                >
+                  <Search color={colors.text} size={17} />
+                </PremiumButton>
+              </GlassCard>
+            </MotionSurface>
 
             <MockRouteMap
               destinationArea={selectedDestination?.area}
@@ -1356,42 +1398,92 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                     </View>
                   </View>
 
-                  <TextInput
-                    accessibilityLabel="اسم حامل البطاقة"
-                    onChangeText={setVisaCardholderName}
-                    placeholder="الاسم على البطاقة"
-                    placeholderTextColor={colors.textMuted}
-                    style={styles.paymentInput}
-                    value={visaCardholderName}
+                  <Controller
+                    control={visaForm.control}
+                    name="cardholderName"
+                    render={({ field: { onChange, value } }) => (
+                      <TextInput
+                        accessibilityLabel="اسم حامل البطاقة"
+                        onChangeText={onChange}
+                        placeholder="الاسم على البطاقة"
+                        placeholderTextColor={colors.textMuted}
+                        style={styles.paymentInput}
+                        value={value}
+                      />
+                    )}
                   />
-                  <TextInput
-                    accessibilityLabel="رقم بطاقة فيزا"
-                    keyboardType="number-pad"
-                    onChangeText={setVisaCardNumber}
-                    placeholder="0000 0000 0000 0000"
-                    placeholderTextColor={colors.textMuted}
-                    style={styles.paymentInput}
-                    value={visaCardNumber}
+                  <Controller
+                    control={visaForm.control}
+                    name="cardNumber"
+                    render={({ field: { onChange, value } }) => (
+                      <TextInput
+                        accessibilityLabel="رقم بطاقة فيزا"
+                        keyboardType="number-pad"
+                        onChangeText={onChange}
+                        placeholder="0000 0000 0000 0000"
+                        placeholderTextColor={colors.textMuted}
+                        style={styles.paymentInput}
+                        value={value}
+                      />
+                    )}
                   />
                   <View style={styles.paymentInputRow}>
-                    <TextInput
-                      accessibilityLabel="تاريخ انتهاء فيزا"
-                      onChangeText={setVisaExpiry}
-                      placeholder="MM/YY"
-                      placeholderTextColor={colors.textMuted}
-                      style={[styles.paymentInput, styles.paymentInputHalf]}
-                      value={visaExpiry}
+                    <Controller
+                      control={visaForm.control}
+                      name="expiry"
+                      render={({ field: { onChange, value } }) => (
+                        <TextInput
+                          accessibilityLabel="تاريخ انتهاء فيزا"
+                          onChangeText={onChange}
+                          placeholder="MM/YY"
+                          placeholderTextColor={colors.textMuted}
+                          style={[styles.paymentInput, styles.paymentInputHalf]}
+                          value={value}
+                        />
+                      )}
                     />
-                    <TextInput
-                      accessibilityLabel="رمز CVC"
-                      keyboardType="number-pad"
-                      onChangeText={setVisaCvc}
-                      placeholder="CVC"
-                      placeholderTextColor={colors.textMuted}
-                      secureTextEntry
-                      style={[styles.paymentInput, styles.paymentInputHalf]}
-                      value={visaCvc}
+                    <Controller
+                      control={visaForm.control}
+                      name="cvc"
+                      render={({ field: { onChange, value } }) => (
+                        <TextInput
+                          accessibilityLabel="رمز CVC"
+                          keyboardType="number-pad"
+                          onChangeText={onChange}
+                          placeholder="CVC"
+                          placeholderTextColor={colors.textMuted}
+                          secureTextEntry
+                          style={[styles.paymentInput, styles.paymentInputHalf]}
+                          value={value}
+                        />
+                      )}
                     />
+                  </View>
+
+                  <View
+                    style={[
+                      styles.visaReadinessBox,
+                      visaValidationResult.success
+                        ? styles.visaReadinessBoxReady
+                        : isVisaPaymentDirty
+                          ? styles.visaReadinessBoxWarning
+                          : null
+                    ]}
+                  >
+                    <Text selectable style={styles.visaReadinessTitle}>
+                      {visaValidationResult.success
+                        ? "بيانات فيزا جاهزة للتجربة"
+                        : isVisaPaymentDirty
+                          ? "أكمل بيانات فيزا قبل تأكيد الطلب"
+                          : "أدخل بيانات فيزا عند استخدام البطاقة"}
+                    </Text>
+                    {isVisaPaymentDirty && !visaValidationResult.success
+                      ? visaValidationMessages.map((message) => (
+                          <Text key={message} selectable style={styles.visaReadinessIssue}>
+                            {message}
+                          </Text>
+                        ))
+                      : null}
                   </View>
 
                   <Pressable
@@ -1413,7 +1505,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                     </Text>
                   </Pressable>
 
-                  {visaCardLastFour ? (
+                  {visaValidationResult.success && visaCardLastFour ? (
                     <View style={styles.visaSummaryBox}>
                       <Text selectable style={styles.visaSummaryText}>
                         {`سيتم استخدام فيزا • **** ${visaCardLastFour}`}
@@ -1536,6 +1628,96 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
       </View>
     </View>
+  );
+}
+
+function MotionSurface({
+  children,
+  delay,
+  testID
+}: {
+  children: ReactNode;
+  delay: number;
+  testID: string;
+}) {
+  return (
+    <Animated.View
+      entering={FadeInDown.duration(380).delay(delay)}
+      style={styles.motionSurface}
+      testID={testID}
+    >
+      {children}
+    </Animated.View>
+  );
+}
+
+function CustomerBookingFlowStrip({
+  destinationLabel,
+  serviceLabel
+}: {
+  destinationLabel: string | null;
+  serviceLabel: string;
+}) {
+  const steps = [
+    {
+      isReady: true,
+      label: "نوع الخدمة",
+      value: serviceLabel
+    },
+    {
+      isReady: Boolean(destinationLabel),
+      label: "الوجهة",
+      value: destinationLabel ? "الوجهة جاهزة" : "الوجهة بانتظار اختيارك"
+    },
+    {
+      isReady: Boolean(destinationLabel),
+      label: "التأكيد",
+      value: destinationLabel ? "جاهز للتأكيد" : "بعد اختيار الوجهة"
+    }
+  ];
+
+  return (
+    <GlassCard testID="customer-booking-flow-strip" style={styles.bookingFlowStrip} variant="strong">
+      <View style={styles.bookingFlowHeader}>
+        <View style={styles.bookingFlowHeaderIcon}>
+          <CheckCircle color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.bookingFlowCopy}>
+          <Text selectable style={styles.bookingFlowTitle}>
+            ابدأ الطلب بثلاث خطوات
+          </Text>
+          <Text selectable style={styles.bookingFlowMeta}>
+            نوع الخدمة، الوجهة، ثم تأكيد الطلب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.bookingFlowSteps}>
+        {steps.map((step, index) => (
+          <View key={step.label} style={[styles.bookingFlowStep, step.isReady ? styles.bookingFlowStepReady : null]}>
+            <View style={[styles.bookingFlowIndex, step.isReady ? styles.bookingFlowIndexReady : null]}>
+              <Text selectable style={styles.bookingFlowIndexText}>
+                {index + 1}
+              </Text>
+            </View>
+            <View style={styles.bookingFlowStepCopy}>
+              <Text selectable style={styles.bookingFlowStepLabel}>
+                {step.label}
+              </Text>
+              <Text selectable style={styles.bookingFlowStepValue}>
+                {step.value}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+
+      {destinationLabel ? (
+        <Text selectable style={styles.bookingFlowDestination}>
+          {destinationLabel}
+        </Text>
+      ) : null}
+    </GlassCard>
   );
 }
 
@@ -2951,6 +3133,108 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderRadius: radii.sm
   },
+  motionSurface: {
+    width: "100%"
+  },
+  bookingFlowStrip: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(7, 14, 28, 0.46)"
+  },
+  bookingFlowHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  bookingFlowHeaderIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  bookingFlowCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingFlowTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  bookingFlowMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  bookingFlowSteps: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  bookingFlowStep: {
+    flex: 1,
+    minHeight: 74,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  bookingFlowStepReady: {
+    borderColor: "rgba(0, 229, 255, 0.3)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  bookingFlowIndex: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(147, 177, 255, 0.12)"
+  },
+  bookingFlowIndexReady: {
+    backgroundColor: "rgba(0, 229, 255, 0.2)"
+  },
+  bookingFlowIndexText: {
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  bookingFlowStepCopy: {
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingFlowStepLabel: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  bookingFlowStepValue: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    lineHeight: 15
+  },
+  bookingFlowDestination: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   serviceTypePicker: {
     gap: spacing.md,
     padding: spacing.md,
@@ -3495,6 +3779,36 @@ const styles = StyleSheet.create({
   },
   paymentInputHalf: {
     flex: 1
+  },
+  visaReadinessBox: {
+    gap: spacing.xs,
+    alignItems: "flex-end",
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  visaReadinessBoxReady: {
+    borderColor: "rgba(52, 211, 153, 0.32)",
+    backgroundColor: "rgba(52, 211, 153, 0.08)"
+  },
+  visaReadinessBoxWarning: {
+    borderColor: "rgba(251, 191, 36, 0.28)",
+    backgroundColor: "rgba(251, 191, 36, 0.07)"
+  },
+  visaReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  visaReadinessIssue: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
   },
   saveVisaToggle: {
     minHeight: 44,
