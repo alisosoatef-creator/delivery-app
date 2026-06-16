@@ -107,6 +107,27 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("قبول الطلب")).toBeTruthy();
   });
 
+  it("shows a stronger captain operations center with an accept preview", async () => {
+    const screen = await renderCaptainHome();
+
+    expect(screen.getByText("مركز تشغيل الكابتن")).toBeTruthy();
+    expect(screen.getByText("جاهز لاستقبال الطلبات")).toBeTruthy();
+    expect(screen.getByText("طلبات قريبة الآن: 1")).toBeTruthy();
+    expect(screen.getByText("قوة المطابقة: 96%")).toBeTruthy();
+    expect(screen.getByText("وقت الاستجابة المتوقع: أقل من دقيقة")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("معاينة قبول الطلب التجريبي"));
+
+    expect(screen.getByText("تفاصيل الطلب قبل القبول")).toBeTruthy();
+    expect(screen.getByText("العميل المحدد")).toBeTruthy();
+    expect(screen.getByText("المسار المقترح")).toBeTruthy();
+    expect(screen.getByText("الدخل المتوقع")).toBeTruthy();
+    expect(screen.getByText("جاهز للانطلاق")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تأكيد قبول الطلب"));
+    expect(screen.getByTestId("captain-route-map")).toBeTruthy();
+  });
+
   it("toggles captain availability", async () => {
     const screen = await renderCaptainHome();
 
@@ -236,6 +257,22 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("لا توجد طلبات متاحة الآن")).toBeTruthy();
   });
 
+  it("shows a premium earnings command center for captain payouts", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
+
+    expect(screen.getByText("مركز أرباح الكابتن")).toBeTruthy();
+    expect(screen.getByText("صافي اليوم")).toBeTruthy();
+    expect(screen.getByText("هدف اليوم: 78%")).toBeTruthy();
+    expect(screen.getByText("متوسط الرحلة: 26 شيكل")).toBeTruthy();
+    expect(screen.getByText("أفضل فترة: 6 م - 9 م")).toBeTruthy();
+    expect(screen.getByText("رصيد قابل للسحب")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("مراجعة الأداء اليومي"));
+    expect(screen.getByText("مراجعة الأداء اليومي mock فقط الآن")).toBeTruthy();
+  });
+
   it("shows the completed accepted trip inside captain earnings", async () => {
     const screen = await renderCaptainHome();
 
@@ -294,6 +331,22 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+  });
+
+  it("shows a premium captain profile readiness center", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب حسابي"));
+
+    expect(screen.getByText("مركز ملف الكابتن")).toBeTruthy();
+    expect(screen.getByText("جاهزية الحساب")).toBeTruthy();
+    expect(screen.getByText("موثق للتشغيل")).toBeTruthy();
+    expect(screen.getByText("فحص المركبة: مكتمل")).toBeTruthy();
+    expect(screen.getByText("تأمين الرحلات: فعال")).toBeTruthy();
+    expect(screen.getByText("مستوى الخدمة: ممتاز")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تحديث بيانات الكابتن"));
+    expect(screen.getByText("تحديث بيانات الكابتن mock فقط الآن")).toBeTruthy();
   });
 
   it("shows the latest customer feedback inside captain profile", async () => {

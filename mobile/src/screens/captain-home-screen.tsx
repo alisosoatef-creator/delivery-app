@@ -33,6 +33,7 @@ export function CaptainHomeScreen() {
   const [isOnline, setIsOnline] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<CaptainAvailableRequest | null>(null);
+  const [previewRequest, setPreviewRequest] = useState<CaptainAvailableRequest | null>(null);
   const [activeTab, setActiveTab] = useState<CaptainTab>("home");
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const request = rideRequests.availableRequests[0];
@@ -134,12 +135,18 @@ export function CaptainHomeScreen() {
           <CaptainEarningsTab
             completedRequests={rideRequests.completedRequests}
             ratingDisplay={captainRatingDisplay}
+            onReview={() => setNotice("مراجعة الأداء اليومي mock فقط الآن")}
             onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
           />
         ) : activeTab === "profile" ? (
-          <CaptainProfileTab customerFeedback={rideRequests.customerFeedback} />
+          <CaptainProfileTab
+            customerFeedback={rideRequests.customerFeedback}
+            onUpdateProfile={() => setNotice("تحديث بيانات الكابتن mock فقط الآن")}
+          />
         ) : (
           <>
+            <CaptainOperationsPanel isOnline={isOnline} requestCount={rideRequests.availableRequests.length} />
+
             <View style={styles.metricsRow}>
               <MetricCard icon={<Wallet color={colors.cyan} size={18} />} label="أرباح اليوم" value={captainHomeMock.metrics.earningsToday} />
               <MetricCard icon={<Route color={colors.violetSoft} size={18} />} label="رحلات اليوم" value={captainHomeMock.metrics.tripsToday} />
@@ -154,6 +161,19 @@ export function CaptainHomeScreen() {
                 طلب واحد مطابق قريب منك
               </Text>
             </View>
+
+            {previewRequest ? (
+              <CaptainAcceptPreviewCard
+                request={previewRequest}
+                onCancel={() => setPreviewRequest(null)}
+                onConfirm={() => {
+                  setNotice(null);
+                  dispatchRideRequests({ requestId: previewRequest.id, type: "accept-request" });
+                  setActiveRequest(previewRequest);
+                  setPreviewRequest(null);
+                }}
+              />
+            ) : null}
 
             {request ? (
               <GlassCard style={styles.requestCard} variant="strong">
@@ -189,6 +209,25 @@ export function CaptainHomeScreen() {
                   <MiniInfo label="الدفع" value={request.paymentMethod} />
                 </View>
 
+                <Pressable
+                  accessibilityLabel="معاينة قبول الطلب التجريبي"
+                  accessibilityRole="button"
+                  onPress={() => setPreviewRequest(request)}
+                  style={({ pressed }) => [styles.acceptPreviewTrigger, pressed ? styles.pressed : null]}
+                >
+                  <View style={styles.previewTriggerIcon}>
+                    <ClipboardList color={colors.cyan} size={18} />
+                  </View>
+                  <View style={styles.previewTriggerCopy}>
+                    <Text selectable style={styles.previewTriggerTitle}>
+                      معاينة الطلب الذكية
+                    </Text>
+                    <Text selectable style={styles.previewTriggerMeta}>
+                      راجع المسار والدخل قبل بدء الرحلة
+                    </Text>
+                  </View>
+                </Pressable>
+
                 <View style={styles.actionsRow}>
                   <Pressable
                     accessibilityLabel="اتصال بالعميل"
@@ -203,6 +242,7 @@ export function CaptainHomeScreen() {
                     accessibilityRole="button"
                     onPress={() => {
                       dispatchRideRequests({ requestId: request.id, type: "decline-request" });
+                      setPreviewRequest(null);
                       setNotice("تم رفض الطلب التجريبي");
                     }}
                     style={({ pressed }) => [styles.declineButton, pressed ? styles.pressed : null]}
@@ -295,6 +335,103 @@ function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; va
   );
 }
 
+function CaptainOperationsPanel({ isOnline, requestCount }: { isOnline: boolean; requestCount: number }) {
+  return (
+    <GlassCard style={styles.operationsCard} variant="strong">
+      <View style={styles.operationsHeader}>
+        <View style={styles.operationsIcon}>
+          <Power color={isOnline ? colors.success : colors.textMuted} size={20} />
+        </View>
+        <View style={styles.operationsCopy}>
+          <Text selectable style={styles.operationsTitle}>
+            مركز تشغيل الكابتن
+          </Text>
+          <Text selectable style={styles.operationsStatus}>
+            {isOnline ? "جاهز لاستقبال الطلبات" : "متوقف مؤقتًا"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.operationsGrid}>
+        <View style={styles.operationMetric}>
+          <Text selectable style={styles.operationMetricText}>
+            {`طلبات قريبة الآن: ${requestCount}`}
+          </Text>
+        </View>
+        <View style={styles.operationMetric}>
+          <Text selectable style={styles.operationMetricText}>
+            قوة المطابقة: 96%
+          </Text>
+        </View>
+        <View style={styles.operationMetric}>
+          <Text selectable style={styles.operationMetricText}>
+            وقت الاستجابة المتوقع: أقل من دقيقة
+          </Text>
+        </View>
+      </View>
+    </GlassCard>
+  );
+}
+
+function CaptainAcceptPreviewCard({
+  onCancel,
+  onConfirm,
+  request
+}: {
+  onCancel: () => void;
+  onConfirm: () => void;
+  request: CaptainAvailableRequest;
+}) {
+  return (
+    <GlassCard style={styles.acceptPreviewCard} variant="strong">
+      <View style={styles.acceptPreviewHeader}>
+        <View style={styles.acceptPreviewIcon}>
+          <CheckCircle color={colors.cyan} size={20} />
+        </View>
+        <View style={styles.acceptPreviewCopy}>
+          <Text selectable style={styles.acceptPreviewTitle}>
+            تفاصيل الطلب قبل القبول
+          </Text>
+          <Text selectable style={styles.acceptPreviewMeta}>
+            تأكد من المسار والدخل قبل تحويل الطلب إلى رحلة نشطة
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.previewRows}>
+        <PreviewRow label="العميل المحدد" value={request.customerName} />
+        <PreviewRow label="المسار المقترح" value={`${request.pickup} ← ${request.destinationArea}`} />
+        <PreviewRow label="الدخل المتوقع" value={request.price} />
+        <PreviewRow label="جاهز للانطلاق" value={`الوصول خلال ${request.etaToPickup}`} />
+      </View>
+
+      <View style={styles.previewActions}>
+        <PremiumButton accessibilityLabel="تأكيد قبول الطلب" label="تأكيد قبول الطلب" onPress={onConfirm} style={styles.previewConfirmButton}>
+          <CheckCircle color={colors.text} size={18} />
+        </PremiumButton>
+        <Pressable accessibilityLabel="إلغاء معاينة قبول الطلب" accessibilityRole="button" onPress={onCancel} style={styles.previewCancelButton}>
+          <Text selectable style={styles.previewCancelText}>
+            إلغاء
+          </Text>
+        </Pressable>
+      </View>
+    </GlassCard>
+  );
+}
+
+function PreviewRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.previewRow}>
+      <Text selectable style={styles.previewRowValue}>
+        {value}
+      </Text>
+      <Text selectable style={styles.previewRowLabel}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 function RouteRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
     <View style={styles.routeRow}>
@@ -324,17 +461,87 @@ function MiniInfo({ label, value }: { label: string; value: string }) {
   );
 }
 
+function CaptainEarningsCommandCenter({
+  averageTrip,
+  dailyGoalProgress,
+  onReview,
+  withdrawableBalance
+}: {
+  averageTrip: string;
+  dailyGoalProgress: string;
+  onReview: () => void;
+  withdrawableBalance: string;
+}) {
+  return (
+    <View style={styles.earningsCommandPanel}>
+      <View style={styles.earningsCommandHeader}>
+        <View style={styles.earningsCommandIcon}>
+          <Wallet color={colors.cyan} size={20} />
+        </View>
+        <View style={styles.earningsCommandCopy}>
+          <Text selectable style={styles.earningsCommandTitle}>
+            مركز أرباح الكابتن
+          </Text>
+          <Text selectable style={styles.earningsCommandMeta}>
+            قراءة سريعة لدخل اليوم قبل السحب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.earningsCommandGrid}>
+        <View style={styles.earningsCommandMetric}>
+          <Text selectable style={styles.earningsCommandValue}>
+            صافي اليوم
+          </Text>
+          <Text selectable style={styles.earningsCommandLabel}>
+            هدف اليوم: {dailyGoalProgress}
+          </Text>
+        </View>
+        <View style={styles.earningsCommandMetric}>
+          <Text selectable style={styles.earningsCommandValue}>
+            رصيد قابل للسحب
+          </Text>
+          <Text selectable style={styles.earningsCommandLabel}>
+            {withdrawableBalance}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.earningsInsightList}>
+        <Text selectable style={styles.earningsInsightText}>
+          متوسط الرحلة: {averageTrip}
+        </Text>
+        <Text selectable style={styles.earningsInsightText}>
+          أفضل فترة: 6 م - 9 م
+        </Text>
+      </View>
+
+      <Pressable accessibilityLabel="مراجعة الأداء اليومي" accessibilityRole="button" onPress={onReview} style={({ pressed }) => [styles.earningsReviewButton, pressed ? styles.pressed : null]}>
+        <Text selectable style={styles.earningsReviewText}>
+          مراجعة الأداء اليومي
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function CaptainEarningsTab({
   completedRequests,
+  onReview,
   ratingDisplay,
   onWithdraw
 }: {
   completedRequests: CaptainAvailableRequest[];
+  onReview: () => void;
   ratingDisplay: string;
   onWithdraw: () => void;
 }) {
   const earnings = captainHomeMock.earnings;
   const earningsSummary = createCaptainEarningsSummary(completedRequests);
+  const earningsTotal = parseDisplayNumber(earningsSummary.todayTotal);
+  const completedTrips = parseDisplayNumber(earningsSummary.completedTrips);
+  const averageTrip = `${Math.round(earningsTotal / Math.max(completedTrips, 1))} شيكل`;
+  const dailyGoalProgress = `${Math.min(Math.round((earningsTotal / 800) * 100), 100)}%`;
 
   return (
     <GlassCard style={styles.earningsCard} variant="strong">
@@ -351,6 +558,13 @@ function CaptainEarningsTab({
           </Text>
         </View>
       </View>
+
+      <CaptainEarningsCommandCenter
+        averageTrip={averageTrip}
+        dailyGoalProgress={dailyGoalProgress}
+        onReview={onReview}
+        withdrawableBalance={earnings.lastPayout}
+      />
 
       <View style={styles.earningsTotalBox}>
         <Text selectable style={styles.earningsTotal}>
@@ -439,7 +653,67 @@ function createCaptainRatingDisplay(customerFeedback: CustomerRideFeedback | nul
   return customerFeedback ? customerFeedback.rating.toFixed(1) : captainHomeMock.metrics.rating;
 }
 
-function CaptainProfileTab({ customerFeedback }: { customerFeedback: CustomerRideFeedback | null }) {
+function CaptainProfileReadinessPanel({ onUpdateProfile }: { onUpdateProfile: () => void }) {
+  return (
+    <View style={styles.profileReadinessPanel}>
+      <View style={styles.profileReadinessHeader}>
+        <View style={styles.profileReadinessIcon}>
+          <CheckCircle color={colors.success} size={20} />
+        </View>
+        <View style={styles.profileReadinessCopy}>
+          <Text selectable style={styles.profileReadinessTitle}>
+            مركز ملف الكابتن
+          </Text>
+          <Text selectable style={styles.profileReadinessMeta}>
+            جاهزية الحساب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.profileReadinessGrid}>
+        <View style={styles.profileReadinessMetric}>
+          <Text selectable style={styles.profileReadinessValue}>
+            موثق للتشغيل
+          </Text>
+          <Text selectable style={styles.profileReadinessLabel}>
+            الهوية والرخصة
+          </Text>
+        </View>
+        <View style={styles.profileReadinessMetric}>
+          <Text selectable style={styles.profileReadinessValue}>
+            مستوى الخدمة: ممتاز
+          </Text>
+          <Text selectable style={styles.profileReadinessLabel}>
+            بناءً على التقييمات
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.profileReadinessList}>
+        <Text selectable style={styles.profileReadinessText}>
+          فحص المركبة: مكتمل
+        </Text>
+        <Text selectable style={styles.profileReadinessText}>
+          تأمين الرحلات: فعال
+        </Text>
+      </View>
+
+      <Pressable accessibilityLabel="تحديث بيانات الكابتن" accessibilityRole="button" onPress={onUpdateProfile} style={({ pressed }) => [styles.profileUpdateButton, pressed ? styles.pressed : null]}>
+        <Text selectable style={styles.profileUpdateText}>
+          تحديث بيانات الكابتن
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+function CaptainProfileTab({
+  customerFeedback,
+  onUpdateProfile
+}: {
+  customerFeedback: CustomerRideFeedback | null;
+  onUpdateProfile: () => void;
+}) {
   const profile = captainHomeMock.profile;
 
   return (
@@ -460,6 +734,8 @@ function CaptainProfileTab({ customerFeedback }: { customerFeedback: CustomerRid
           </Text>
         </View>
       </View>
+
+      <CaptainProfileReadinessPanel onUpdateProfile={onUpdateProfile} />
 
       <View style={styles.profileRows}>
         <ProfileRow label="رقم الجوال" value={profile.phone} />
@@ -609,6 +885,63 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
+  operationsCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.24)"
+  },
+  operationsHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  operationsIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.3)",
+    backgroundColor: "rgba(51, 231, 168, 0.1)"
+  },
+  operationsCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  operationsTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  operationsStatus: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  operationsGrid: {
+    gap: spacing.xs
+  },
+  operationMetric: {
+    minHeight: 38,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  operationMetricText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   metricsRow: {
     flexDirection: "row-reverse",
     gap: spacing.sm
@@ -737,6 +1070,133 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     gap: spacing.sm
   },
+  acceptPreviewTrigger: {
+    minHeight: 62,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  previewTriggerIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  previewTriggerCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  previewTriggerTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  previewTriggerMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  acceptPreviewCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(139, 92, 246, 0.32)",
+    backgroundColor: "rgba(18, 34, 58, 0.78)"
+  },
+  acceptPreviewHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  acceptPreviewIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  acceptPreviewCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  acceptPreviewTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  acceptPreviewMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  previewRows: {
+    gap: spacing.xs
+  },
+  previewRow: {
+    minHeight: 44,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  previewRowLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  previewRowValue: {
+    ...rtlText,
+    flex: 1,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  previewActions: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  previewConfirmButton: {
+    flex: 1,
+    minHeight: 50,
+    borderRadius: radii.sm
+  },
+  previewCancelButton: {
+    minHeight: 50,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.lg,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  previewCancelText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   miniInfo: {
     flex: 1,
     minHeight: 58,
@@ -758,6 +1218,98 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
+  },
+  earningsCommandPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  earningsCommandHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  earningsCommandIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  earningsCommandCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  earningsCommandTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  earningsCommandMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  earningsCommandGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  earningsCommandMetric: {
+    flex: 1,
+    minHeight: 68,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  earningsCommandValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  earningsCommandLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    fontVariant: ["tabular-nums"]
+  },
+  earningsInsightList: {
+    gap: spacing.xs
+  },
+  earningsInsightText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  earningsReviewButton: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.32)",
+    backgroundColor: "rgba(139, 92, 246, 0.14)"
+  },
+  earningsReviewText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   actionsRow: {
     flexDirection: "row-reverse",
@@ -1027,6 +1579,96 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     fontSize: typography.compact,
     fontWeight: "800"
+  },
+  profileReadinessPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.07)"
+  },
+  profileReadinessHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  profileReadinessIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.3)",
+    backgroundColor: "rgba(51, 231, 168, 0.12)"
+  },
+  profileReadinessCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  profileReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  profileReadinessMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  profileReadinessGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  profileReadinessMetric: {
+    flex: 1,
+    minHeight: 68,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  profileReadinessValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileReadinessLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  profileReadinessList: {
+    gap: spacing.xs
+  },
+  profileReadinessText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileUpdateButton: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  profileUpdateText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   profileRows: {
     gap: spacing.xs

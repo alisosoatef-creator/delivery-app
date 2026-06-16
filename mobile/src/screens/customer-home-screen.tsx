@@ -729,6 +729,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <CustomerProfileTab
             onAddPayment={() => setNotice("تم فتح إضافة طريقة دفع mock")}
             onManageSecurity={() => setNotice("تم فتح إعدادات أمان الحساب mock")}
+            onReviewProfile={() => setNotice("مراجعة بيانات الحساب mock فقط الآن")}
           />
         ) : activeNav === "البحث" ? (
           <CustomerSearchTab
@@ -736,6 +737,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             destinationDetail={selectedDestination ? destinationDetail : undefined}
             onChangeFilter={setActiveSearchFilter}
             onChangeQuery={setSearchQuery}
+            onRefreshSuggestions={() => setNotice("تم تحديث اقتراحات البحث mock فقط الآن")}
             onSelectDestination={selectDestinationFromSearch}
             onUseDestination={useSelectedSearchDestination}
             pickupLabel={selectedPickup.label}
@@ -1429,11 +1431,73 @@ function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
   );
 }
 
+function CustomerDestinationDiscoveryPanel({
+  nearestPlace,
+  onRefreshSuggestions,
+  savedPlacesCount,
+  searchScope
+}: {
+  nearestPlace: DestinationPlace;
+  onRefreshSuggestions: () => void;
+  savedPlacesCount: number;
+  searchScope: string;
+}) {
+  return (
+    <View style={styles.destinationDiscoveryPanel}>
+      <View style={styles.destinationDiscoveryHeader}>
+        <View style={styles.destinationDiscoveryIcon}>
+          <Sparkles color={colors.cyan} size={20} />
+        </View>
+        <View style={styles.destinationDiscoveryCopy}>
+          <Text selectable style={styles.destinationDiscoveryTitle}>
+            مركز اكتشاف الوجهات
+          </Text>
+          <Text selectable style={styles.destinationDiscoveryMeta}>
+            اقتراحات ذكية
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.destinationDiscoveryGrid}>
+        <View style={styles.destinationDiscoveryMetric}>
+          <MapPin color={colors.success} size={16} />
+          <Text selectable style={styles.destinationDiscoveryValue}>
+            {`أقرب وجهة: ${nearestPlace.label}`}
+          </Text>
+        </View>
+        <View style={styles.destinationDiscoveryMetric}>
+          <Search color={colors.cyan} size={16} />
+          <Text selectable style={styles.destinationDiscoveryValue}>
+            {`نطاق البحث: ${searchScope}`}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.destinationDiscoveryFooter}>
+        <Text selectable style={styles.destinationDiscoveryText}>
+          {`وجهات محفوظة: ${savedPlacesCount}`}
+        </Text>
+        <Pressable
+          accessibilityLabel="تحديث اقتراحات البحث"
+          accessibilityRole="button"
+          onPress={onRefreshSuggestions}
+          style={({ pressed }) => [styles.destinationDiscoveryButton, pressed ? styles.pressed : null]}
+        >
+          <Text selectable style={styles.destinationDiscoveryButtonText}>
+            تحديث الاقتراحات
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
 function CustomerSearchTab({
   activeFilter,
   destinationDetail,
   onChangeFilter,
   onChangeQuery,
+  onRefreshSuggestions,
   onSelectDestination,
   onUseDestination,
   pickupLabel,
@@ -1444,6 +1508,7 @@ function CustomerSearchTab({
   destinationDetail?: string;
   onChangeFilter: (filter: CustomerSearchFilter) => void;
   onChangeQuery: (query: string) => void;
+  onRefreshSuggestions: () => void;
   onSelectDestination: (place: DestinationPlace) => void;
   onUseDestination: () => void;
   pickupLabel: string;
@@ -1485,6 +1550,13 @@ function CustomerSearchTab({
             </Text>
           </View>
         </View>
+
+        <CustomerDestinationDiscoveryPanel
+          nearestPlace={customerHomeMock.savedPlaces[0]}
+          onRefreshSuggestions={onRefreshSuggestions}
+          savedPlacesCount={customerHomeMock.savedPlaces.length}
+          searchScope={customerHomeMock.profile.city}
+        />
 
         <View style={styles.searchInputShell}>
           <Search color={colors.textMuted} size={18} />
@@ -1748,12 +1820,81 @@ function CompletedTripHistoryCard({ liveTrip }: { liveTrip: CustomerTripsLiveRid
   );
 }
 
+function CustomerProfileTrustCenter({
+  onReviewProfile,
+  savedPlacesCount
+}: {
+  onReviewProfile: () => void;
+  savedPlacesCount: number;
+}) {
+  return (
+    <View style={styles.customerTrustPanel}>
+      <View style={styles.customerTrustHeader}>
+        <View style={styles.customerTrustIcon}>
+          <ShieldCheck color={colors.success} size={20} />
+        </View>
+        <View style={styles.customerTrustCopy}>
+          <Text selectable style={styles.customerTrustTitle}>
+            مركز ثقة العميل
+          </Text>
+          <Text selectable style={styles.customerTrustMeta}>
+            جاهزية الحساب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.customerTrustGrid}>
+        <View style={styles.customerTrustMetric}>
+          <CheckCircle color={colors.success} size={16} />
+          <Text selectable style={styles.customerTrustValue}>
+            رحلات آمنة
+          </Text>
+          <Text selectable style={styles.customerTrustLabel}>
+            مشاركة الرحلة مفعّلة
+          </Text>
+        </View>
+        <View style={styles.customerTrustMetric}>
+          <CreditCard color={colors.cyan} size={16} />
+          <Text selectable style={styles.customerTrustValue}>
+            الدفع محمي
+          </Text>
+          <Text selectable style={styles.customerTrustLabel}>
+            طرق الدفع جاهزة
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.customerTrustList}>
+        <Text selectable style={styles.customerTrustText}>
+          الملف مكتمل: 92%
+        </Text>
+        <Text selectable style={styles.customerTrustText}>
+          {`الوجهات المحفوظة: ${savedPlacesCount}`}
+        </Text>
+      </View>
+
+      <Pressable
+        accessibilityLabel="مراجعة بيانات الحساب"
+        accessibilityRole="button"
+        onPress={onReviewProfile}
+        style={({ pressed }) => [styles.customerTrustButton, pressed ? styles.pressed : null]}
+      >
+        <Text selectable style={styles.customerTrustButtonText}>
+          مراجعة بيانات الحساب
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
 function CustomerProfileTab({
   onAddPayment,
-  onManageSecurity
+  onManageSecurity,
+  onReviewProfile
 }: {
   onAddPayment: () => void;
   onManageSecurity: () => void;
+  onReviewProfile: () => void;
 }) {
   const profile = customerHomeMock.profile;
 
@@ -1776,6 +1917,11 @@ function CustomerProfileTab({
             </Text>
           </View>
         </View>
+
+        <CustomerProfileTrustCenter
+          onReviewProfile={onReviewProfile}
+          savedPlacesCount={customerHomeMock.savedPlaces.length}
+        />
 
         <View style={styles.profileRows}>
           <ProfileRow icon={<Phone color={colors.cyan} size={16} />} label="رقم الجوال" value={profile.phone} />
@@ -3150,6 +3296,96 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderColor: "rgba(0, 229, 255, 0.3)"
   },
+  destinationDiscoveryPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  destinationDiscoveryHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  destinationDiscoveryIcon: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  destinationDiscoveryCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  destinationDiscoveryTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  destinationDiscoveryMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  destinationDiscoveryGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  destinationDiscoveryMetric: {
+    flex: 1,
+    minHeight: 58,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 5,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  destinationDiscoveryValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  destinationDiscoveryFooter: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  destinationDiscoveryText: {
+    ...rtlText,
+    flex: 1,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  destinationDiscoveryButton: {
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.32)",
+    backgroundColor: "rgba(139, 92, 246, 0.14)"
+  },
+  destinationDiscoveryButtonText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
   searchInputShell: {
     minHeight: 50,
     flexDirection: "row-reverse",
@@ -3551,6 +3787,97 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     fontSize: typography.compact,
     fontWeight: "800"
+  },
+  customerTrustPanel: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.07)"
+  },
+  customerTrustHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  customerTrustIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.3)",
+    backgroundColor: "rgba(51, 231, 168, 0.12)"
+  },
+  customerTrustCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  customerTrustTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  customerTrustMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  customerTrustGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  customerTrustMetric: {
+    flex: 1,
+    minHeight: 78,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  customerTrustValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  customerTrustLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  customerTrustList: {
+    gap: spacing.xs
+  },
+  customerTrustText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  customerTrustButton: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  customerTrustButtonText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   profileRows: {
     gap: spacing.xs

@@ -629,6 +629,37 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("تم فتح إعدادات أمان الحساب mock")).toBeTruthy();
   });
 
+  it("shows a customer trust center inside the profile tab", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+
+    expect(screen.getByText("مركز ثقة العميل")).toBeTruthy();
+    expect(screen.getByText("جاهزية الحساب")).toBeTruthy();
+    expect(screen.getByText("رحلات آمنة")).toBeTruthy();
+    expect(screen.getByText("الدفع محمي")).toBeTruthy();
+    expect(screen.getByText("الملف مكتمل: 92%")).toBeTruthy();
+    expect(screen.getByText("الوجهات المحفوظة: 4")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("مراجعة بيانات الحساب"));
+    expect(screen.getByText("مراجعة بيانات الحساب mock فقط الآن")).toBeTruthy();
+  });
+
+  it("shows a premium destination discovery center in the search tab", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("البحث"));
+
+    expect(screen.getByText("مركز اكتشاف الوجهات")).toBeTruthy();
+    expect(screen.getByText("اقتراحات ذكية")).toBeTruthy();
+    expect(screen.getByText("أقرب وجهة: المنزل")).toBeTruthy();
+    expect(screen.getByText("نطاق البحث: نابلس")).toBeTruthy();
+    expect(screen.getByText("وجهات محفوظة: 4")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تحديث اقتراحات البحث"));
+    expect(screen.getByText("تم تحديث اقتراحات البحث mock فقط الآن")).toBeTruthy();
+  });
+
   it("searches destinations from the search tab and prepares the selected place for booking", async () => {
     const screen = await renderCustomerHome();
 
