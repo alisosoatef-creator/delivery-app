@@ -199,6 +199,30 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getAllByText("تم إرسال طلبك للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
   });
 
+  it("shows a clear live request hub after confirming a customer request", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByTestId("customer-live-request-hub")).toBeTruthy();
+    expect(screen.getByText("مركز متابعة الطلب")).toBeTruthy();
+    expect(screen.getAllByText("طلبك وصل للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("حالة الطلب")).toBeTruthy();
+    expect(screen.getAllByText("نبحث عن أقرب كابتن").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("نوع الخدمة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("رحلة داخل المدينة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("طريقة الدفع").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("فيزا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("ملاحظة للكابتن")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("الخطوة التالية")).toBeTruthy();
+    expect(screen.getByText("سيظهر لك موقع الكابتن والمسافة فور قبول الطلب")).toBeTruthy();
+  });
+
   it("lets the customer enable mock GPS and choose a pickup point before confirming", async () => {
     const screen = await renderCustomerHome();
 
@@ -216,6 +240,31 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getAllByText("تأكيد الطلب").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("رفيديا").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("collects mock Visa details and save preference before confirmation", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+
+    expect(screen.getByText("بطاقة فيزا mock")).toBeTruthy();
+    expect(screen.getByText("بيانات تجريبية فقط، لن يتم خصم أي مبلغ الآن.")).toBeTruthy();
+
+    await fireEvent.changeText(screen.getByLabelText("اسم حامل البطاقة"), "علي محمد");
+    await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "4242424242424242");
+    await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "09/28");
+    await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "123");
+    await fireEvent.press(screen.getByLabelText("حفظ بطاقة فيزا لهذا الحساب"));
+
+    expect(screen.getByText("سيتم استخدام فيزا • **** 4242")).toBeTruthy();
+    expect(screen.getByText("سيتم حفظ البطاقة mock للاستخدام القادم")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("حفظ البطاقة")).toBeTruthy();
+    expect(screen.getByText("نعم - mock")).toBeTruthy();
   });
 
   it("lets the customer choose one of three simple service types before booking", async () => {
@@ -283,7 +332,7 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
-    expect(screen.getByText("نبحث عن أقرب كابتن")).toBeTruthy();
+    expect(screen.getAllByText("نبحث عن أقرب كابتن").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
     expect(screen.getByText("الكابتن يتحرك الآن")).toBeTruthy();
@@ -298,7 +347,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("وصل إلى: نقطة الانطلاق")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
-    expect(screen.getByText("الرحلة بدأت")).toBeTruthy();
+    expect(screen.getAllByText("الرحلة بدأت").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("المسافة بينكم: 2.1 كم")).toBeTruthy();
     expect(screen.getByText("وصل إلى: باتجاه الوجهة")).toBeTruthy();
   });
@@ -358,12 +407,19 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
     expect(screen.getByText("تم قبول طلبك")).toBeTruthy();
-    expect(screen.getByText("الكابتن في الطريق إليك")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن في الطريق إليك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("أحمد محمد")).toBeTruthy();
     expect(screen.getByText("تويوتا كامري 2022")).toBeTruthy();
     expect(screen.getByText("أبيض • لوحة 1234")).toBeTruthy();
     expect(screen.getByText("+970 59 555 1234")).toBeTruthy();
-    expect(screen.getByText("قريب من رفيديا")).toBeTruthy();
+    expect(screen.getAllByText("قريب من رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("captain-arrival-panel")).toBeTruthy();
+    expect(screen.getByText("لوحة وصول الكابتن")).toBeTruthy();
+    expect(screen.getByText("يتجه الآن إلى نقطة الانطلاق")).toBeTruthy();
+    expect(screen.getByText("المسافة حتى وصول الكابتن")).toBeTruthy();
+    expect(screen.getByText("2.1 كم")).toBeTruthy();
+    expect(screen.getByText("التحديث القادم")).toBeTruthy();
+    expect(screen.getByText("سنخبرك فور اقترابه من نقطة الانطلاق")).toBeTruthy();
     expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
 
@@ -423,13 +479,20 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
 
-    expect(screen.getByText("الكابتن في الطريق إليك")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن في الطريق إليك").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("وصول الكابتن للعميل"));
 
     expect(screen.getByTestId("accepted-captain-card")).toBeTruthy();
-    expect(screen.getByText("الكابتن وصل إليك")).toBeTruthy();
+    expect(screen.getAllByText("الكابتن وصل إليك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("الكابتن وصل للعميل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-pickup-handoff-panel")).toBeTruthy();
+    expect(screen.getByText("إجراءات الاستلام")).toBeTruthy();
+    expect(screen.getByText("الكابتن وصل لنقطة الانطلاق")).toBeTruthy();
+    expect(screen.getByText("رمز التحقق mock")).toBeTruthy();
+    expect(screen.getByText("4821")).toBeTruthy();
+    expect(screen.getByText("تأكد من المركبة واللوحة قبل الانطلاق")).toBeTruthy();
+    expect(screen.getByText("جاهز لبدء الرحلة")).toBeTruthy();
     expect(screen.queryByText("الكابتن في الطريق إليك")).toBeNull();
   });
 
@@ -479,6 +542,15 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
 
     expect(screen.getByText("الرحلة الحالية")).toBeTruthy();
+    expect(screen.getByTestId("customer-active-ride-panel")).toBeTruthy();
+    expect(screen.getByText("متابعة الرحلة النشطة")).toBeTruthy();
+    expect(screen.getByText("الكابتن يتجه إلى الوجهة")).toBeTruthy();
+    expect(screen.getByText("المسار الحالي")).toBeTruthy();
+    expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("طريقة الدفع أثناء الرحلة")).toBeTruthy();
+    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("المتبقي للوصول")).toBeTruthy();
+    expect(screen.getByText("سنخبرك عند الاقتراب من الوجهة")).toBeTruthy();
     expect(screen.queryByText("تم قبول طلبك")).toBeNull();
 
     await fireEvent.press(screen.getByLabelText("إنهاء الرحلة من الكابتن"));

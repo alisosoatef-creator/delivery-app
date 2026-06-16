@@ -232,6 +232,12 @@ function mapAcceptedTripStepToCaptainStatus(step: CaptainTripStep | null): strin
   return customerHomeMock.captain.status;
 }
 
+function getVisaCardLastFour(cardNumber: string): string {
+  const digits = cardNumber.replace(/\D/g, "");
+
+  return digits.length >= 4 ? digits.slice(-4) : "";
+}
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
@@ -248,6 +254,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
+  const [visaCardholderName, setVisaCardholderName] = useState("");
+  const [visaCardNumber, setVisaCardNumber] = useState("");
+  const [visaExpiry, setVisaExpiry] = useState("");
+  const [visaCvc, setVisaCvc] = useState("");
+  const [shouldSaveVisaCard, setShouldSaveVisaCard] = useState(false);
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>(customerHomeMock.serviceTypes[0]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
@@ -285,6 +296,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const selectedServiceLabel =
     selectedServiceType.id === "city" ? customerHomeMock.service.label : selectedServiceType.label;
   const selectedSearchCopy = getCustomerSearchCopy(selectedServiceType);
+  const visaCardLastFour = getVisaCardLastFour(visaCardNumber);
+  const effectivePaymentMethod =
+    paymentMethod === "فيزا" && visaCardLastFour ? `فيزا • **** ${visaCardLastFour}` : paymentMethod;
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -294,12 +308,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setSelectedFeedbackTags([]);
   }
 
+  function resetVisaPaymentDetails() {
+    setVisaCardholderName("");
+    setVisaCardNumber("");
+    setVisaExpiry("");
+    setVisaCvc("");
+    setShouldSaveVisaCard(false);
+  }
+
   function startNewTrip() {
     dispatchRideRequests({ type: "reset-requests" });
     resetRide();
     setSelectedDestination(null);
     setDestinationDetail("");
     setPaymentMethod(customerHomeMock.defaultPaymentMethod);
+    resetVisaPaymentDetails();
     setSelectedServiceType(customerHomeMock.serviceTypes[0]);
     setNotice(null);
     setIsNotificationsOpen(false);
@@ -337,6 +360,17 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setRequestStatus(null);
     setNotice(`تم اختيار ${serviceType.label}`);
     setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
+  }
+
+  function selectPaymentMethod(method: PaymentMethod) {
+    setPaymentMethod(method);
+    setNotice(null);
+    void Haptics.selectionAsync();
+  }
+
+  function toggleSaveVisaCard() {
+    setShouldSaveVisaCard((currentValue) => !currentValue);
     void Haptics.selectionAsync();
   }
 
@@ -389,7 +423,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       distance: selectedDestination.distance,
       etaToPickup: customerHomeMock.captain.arrivalEta,
       id: LIVE_CUSTOMER_REQUEST_ID,
-      paymentMethod,
+      paymentMethod: effectivePaymentMethod,
       pickup: selectedPickup.label,
       price: selectedServiceType.price,
       serviceLabel: selectedServiceLabel,
@@ -471,7 +505,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
           <InfoRow label="المسافة" value={selectedDestination.distance} />
           <InfoRow label="السعر التقديري" value={selectedServiceType.price} />
-          <InfoRow label="طريقة الدفع" value={paymentMethod} />
+          <InfoRow label="طريقة الدفع" value={effectivePaymentMethod} />
+          {paymentMethod === "فيزا" ? (
+            <InfoRow label="حفظ البطاقة" value={shouldSaveVisaCard ? "نعم - mock" : "لا"} />
+          ) : null}
         </View>
 
         <PremiumButton
@@ -531,7 +568,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 <InfoRow label="الخدمة" value={selectedServiceLabel} />
                 <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
                 <InfoRow label="السعر" value={selectedServiceType.price} />
-                <InfoRow label="طريقة الدفع" value={paymentMethod} />
+                <InfoRow label="طريقة الدفع" value={effectivePaymentMethod} />
+                {paymentMethod === "فيزا" ? (
+                  <InfoRow label="حفظ البطاقة" value={shouldSaveVisaCard ? "نعم - mock" : "لا"} />
+                ) : null}
               </View>
             </View>
           ) : null}
@@ -612,6 +652,16 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </View>
           </View>
 
+          <CustomerCaptainArrivalPanel
+            arrivalEta={captain.arrivalEta}
+            captainLocation={captain.locationLabel}
+            pickupLabel={selectedPickup.label}
+          />
+
+          {rideRequests.acceptedTripStep === "arrived" ? (
+            <CustomerPickupHandoffPanel captainName={captain.name} vehicleLabel={`${captain.carColor} • لوحة ${captain.plate}`} />
+          ) : null}
+
           <View style={styles.captainDetailsGrid}>
             <InfoRow label="رقم الكابتن" value={captain.phone} />
             <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
@@ -653,6 +703,14 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     }
 
     if (effectiveRideStage === "active") {
+      const activeRideRoute = acceptedCustomerRequest
+        ? `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`
+        : selectedDestination
+          ? `${selectedPickup.label} ← ${selectedDestination.area}`
+          : customerHomeMock.trips.current.route;
+      const activeRideDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? destinationDetail;
+      const activeRidePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
+
       return (
         <GlassCard style={styles.stageCard}>
           <View style={styles.stageHeader}>
@@ -678,6 +736,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text style={styles.metricLabel}>الوقت المتبقي</Text>
             </View>
           </View>
+          <CustomerActiveRidePanel
+            destinationDetail={activeRideDestinationDetail}
+            paymentMethod={activeRidePaymentMethod}
+            route={activeRideRoute}
+          />
           <CustomerSafetyPanel
             onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
             onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة mock")}
@@ -703,7 +766,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           amount={acceptedCustomerRequest?.price ?? selectedServiceType.price}
           destinationDetail={acceptedCustomerRequest?.destinationDetail ?? destinationDetail}
           onDownload={() => setNotice("تم تجهيز إيصال الرحلة mock")}
-          paymentMethod={acceptedCustomerRequest?.paymentMethod ?? paymentMethod}
+          paymentMethod={acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod}
           receiptNumber="WAS-0001"
           route={
             acceptedCustomerRequest
@@ -738,6 +801,101 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           style={styles.secondaryButton}
           variant="secondary"
         />
+      </GlassCard>
+    );
+  }
+
+  function renderLiveRequestHub() {
+    if (!requestStatus || !selectedDestination || effectiveRideStage === "idle") {
+      return null;
+    }
+
+    const liveStatus =
+      effectiveRideStage === "searching"
+        ? "نبحث عن أقرب كابتن"
+        : effectiveRideStage === "captain"
+          ? mapAcceptedTripStepToCaptainStatus(rideRequests.acceptedTripStep)
+          : effectiveRideStage === "active"
+            ? "الرحلة بدأت"
+            : "تمت الرحلة بنجاح";
+    const nextStep =
+      effectiveRideStage === "searching"
+        ? "سيظهر لك موقع الكابتن والمسافة فور قبول الطلب"
+        : effectiveRideStage === "captain"
+          ? "تابع موقع الكابتن والمسافة حتى يصل إليك"
+          : effectiveRideStage === "active"
+            ? "الكابتن بدأ الرحلة نحو وجهتك"
+            : "راجع الإيصال وقيم تجربتك";
+    const liveDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? destinationDetail;
+    const livePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
+    const liveRoute = acceptedCustomerRequest
+      ? `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`
+      : `${selectedPickup.label} ← ${selectedDestination.area}`;
+    const liveDistance = acceptedCustomerRequest?.distance ?? selectedDestination.distance;
+    const livePrice = acceptedCustomerRequest?.price ?? selectedServiceType.price;
+
+    return (
+      <GlassCard testID="customer-live-request-hub" style={styles.liveRequestHubCard} variant="strong">
+        <View style={styles.liveRequestHubHeader}>
+          <View style={styles.liveRequestHubIcon}>
+            <ShieldCheck color={colors.cyan} size={20} />
+          </View>
+          <View style={styles.liveRequestHubCopy}>
+            <Text selectable style={styles.liveRequestHubTitle}>
+              مركز متابعة الطلب
+            </Text>
+            <Text selectable style={styles.liveRequestHubMeta}>
+              طلبك وصل للكباتن القريبين
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.liveRequestStatusBand}>
+          <View style={styles.liveRequestStatusIcon}>
+            <Car color={colors.text} size={18} />
+          </View>
+          <View style={styles.liveRequestStatusCopy}>
+            <Text selectable style={styles.liveRequestStatusLabel}>
+              حالة الطلب
+            </Text>
+            <Text selectable style={styles.liveRequestStatusValue}>
+              {liveStatus}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.liveRequestPills}>
+          <View style={styles.liveRequestPill}>
+            <Text selectable style={styles.liveRequestPillText}>
+              {liveDistance}
+            </Text>
+          </View>
+          <View style={styles.liveRequestPill}>
+            <Text selectable style={styles.liveRequestPillText}>
+              {livePrice}
+            </Text>
+          </View>
+          <View style={styles.liveRequestPill}>
+            <Text selectable style={styles.liveRequestPillText}>
+              {liveRoute}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.liveRequestRows}>
+          <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
+          <InfoRow label="طريقة الدفع" value={livePaymentMethod} />
+          <InfoRow label="ملاحظة للكابتن" value={liveDestinationDetail} />
+        </View>
+
+        <View style={styles.liveRequestNextStep}>
+          <Text selectable style={styles.liveRequestNextLabel}>
+            الخطوة التالية
+          </Text>
+          <Text selectable style={styles.liveRequestNextValue}>
+            {nextStep}
+          </Text>
+        </View>
       </GlassCard>
     );
   }
@@ -1164,7 +1322,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                     key={method}
                     accessibilityLabel={method}
                     accessibilityRole="button"
-                    onPress={() => setPaymentMethod(method)}
+                    onPress={() => selectPaymentMethod(method)}
                     style={({ pressed }) => [
                       styles.paymentOption,
                       paymentMethod === method ? styles.paymentOptionActive : null,
@@ -1182,6 +1340,93 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                   </Pressable>
                 ))}
               </View>
+              {paymentMethod === "فيزا" ? (
+                <View style={styles.visaPaymentPanel}>
+                  <View style={styles.visaPaymentHeader}>
+                    <View style={styles.visaPaymentIcon}>
+                      <CreditCard color={colors.cyan} size={18} />
+                    </View>
+                    <View style={styles.visaPaymentCopy}>
+                      <Text selectable style={styles.visaPaymentTitle}>
+                        بطاقة فيزا mock
+                      </Text>
+                      <Text selectable style={styles.visaPaymentMeta}>
+                        بيانات تجريبية فقط، لن يتم خصم أي مبلغ الآن.
+                      </Text>
+                    </View>
+                  </View>
+
+                  <TextInput
+                    accessibilityLabel="اسم حامل البطاقة"
+                    onChangeText={setVisaCardholderName}
+                    placeholder="الاسم على البطاقة"
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.paymentInput}
+                    value={visaCardholderName}
+                  />
+                  <TextInput
+                    accessibilityLabel="رقم بطاقة فيزا"
+                    keyboardType="number-pad"
+                    onChangeText={setVisaCardNumber}
+                    placeholder="0000 0000 0000 0000"
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.paymentInput}
+                    value={visaCardNumber}
+                  />
+                  <View style={styles.paymentInputRow}>
+                    <TextInput
+                      accessibilityLabel="تاريخ انتهاء فيزا"
+                      onChangeText={setVisaExpiry}
+                      placeholder="MM/YY"
+                      placeholderTextColor={colors.textMuted}
+                      style={[styles.paymentInput, styles.paymentInputHalf]}
+                      value={visaExpiry}
+                    />
+                    <TextInput
+                      accessibilityLabel="رمز CVC"
+                      keyboardType="number-pad"
+                      onChangeText={setVisaCvc}
+                      placeholder="CVC"
+                      placeholderTextColor={colors.textMuted}
+                      secureTextEntry
+                      style={[styles.paymentInput, styles.paymentInputHalf]}
+                      value={visaCvc}
+                    />
+                  </View>
+
+                  <Pressable
+                    accessibilityLabel="حفظ بطاقة فيزا لهذا الحساب"
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: shouldSaveVisaCard }}
+                    onPress={toggleSaveVisaCard}
+                    style={({ pressed }) => [
+                      styles.saveVisaToggle,
+                      shouldSaveVisaCard ? styles.saveVisaToggleActive : null,
+                      pressed ? styles.pressed : null
+                    ]}
+                  >
+                    <View style={styles.saveVisaCheck}>
+                      {shouldSaveVisaCard ? <CheckCircle color={colors.success} size={16} /> : null}
+                    </View>
+                    <Text selectable style={styles.saveVisaText}>
+                      حفظ البطاقة لهذا الحساب
+                    </Text>
+                  </Pressable>
+
+                  {visaCardLastFour ? (
+                    <View style={styles.visaSummaryBox}>
+                      <Text selectable style={styles.visaSummaryText}>
+                        {`سيتم استخدام فيزا • **** ${visaCardLastFour}`}
+                      </Text>
+                      {shouldSaveVisaCard ? (
+                        <Text selectable style={styles.visaSummaryMeta}>
+                          سيتم حفظ البطاقة mock للاستخدام القادم
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
             </View>
           </GlassCard>
         ) : null}
@@ -1215,6 +1460,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         {renderTripConfirmation()}
 
         {renderRideStagePanel()}
+
+        {renderLiveRequestHub()}
 
         <GlassCard style={styles.feedbackCard}>
           <Text style={styles.feedbackText}>
@@ -1526,6 +1773,192 @@ function CustomerSafetyPanel({
             تنبيه أمان
           </Text>
         </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function CustomerActiveRidePanel({
+  destinationDetail,
+  paymentMethod,
+  route
+}: {
+  destinationDetail: string;
+  paymentMethod: string;
+  route: string;
+}) {
+  return (
+    <View testID="customer-active-ride-panel" style={styles.activeRidePanel}>
+      <View style={styles.activeRideHeader}>
+        <View style={styles.activeRideIcon}>
+          <Car color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.activeRideCopy}>
+          <Text selectable style={styles.activeRideTitle}>
+            متابعة الرحلة النشطة
+          </Text>
+          <Text selectable style={styles.activeRideMeta}>
+            الكابتن يتجه إلى الوجهة
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.activeRideRouteBox}>
+        <Text selectable style={styles.activeRideRouteLabel}>
+          المسار الحالي
+        </Text>
+        <Text selectable style={styles.activeRideRouteValue}>
+          {route}
+        </Text>
+        <Text selectable style={styles.activeRideRouteDetail}>
+          {destinationDetail}
+        </Text>
+      </View>
+
+      <View style={styles.activeRideGrid}>
+        <View style={styles.activeRideGridItem}>
+          <Text selectable style={styles.activeRideGridValue}>
+            {paymentMethod}
+          </Text>
+          <Text selectable style={styles.activeRideGridLabel}>
+            طريقة الدفع أثناء الرحلة
+          </Text>
+        </View>
+        <View style={styles.activeRideGridItem}>
+          <Text selectable style={styles.activeRideGridValue}>
+            5 د
+          </Text>
+          <Text selectable style={styles.activeRideGridLabel}>
+            المتبقي للوصول
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.activeRideNextStep}>
+        <Text selectable style={styles.activeRideNextText}>
+          سنخبرك عند الاقتراب من الوجهة
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function CustomerCaptainArrivalPanel({
+  arrivalEta,
+  captainLocation,
+  pickupLabel
+}: {
+  arrivalEta: string;
+  captainLocation: string;
+  pickupLabel: string;
+}) {
+  return (
+    <View testID="captain-arrival-panel" style={styles.captainArrivalPanel}>
+      <View style={styles.captainArrivalHeader}>
+        <View style={styles.captainArrivalIcon}>
+          <MapPin color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.captainArrivalCopy}>
+          <Text selectable style={styles.captainArrivalTitle}>
+            لوحة وصول الكابتن
+          </Text>
+          <Text selectable style={styles.captainArrivalMeta}>
+            يتجه الآن إلى نقطة الانطلاق
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.captainArrivalTrack}>
+        <View style={styles.arrivalTrackStep}>
+          <Text selectable style={styles.arrivalTrackValue}>
+            {captainLocation}
+          </Text>
+          <Text selectable style={styles.arrivalTrackLabel}>
+            موقع الكابتن الآن
+          </Text>
+        </View>
+        <View style={styles.arrivalTrackLine} />
+        <View style={styles.arrivalTrackStep}>
+          <Text selectable style={styles.arrivalTrackValue}>
+            {pickupLabel}
+          </Text>
+          <Text selectable style={styles.arrivalTrackLabel}>
+            نقطة الاستلام
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.captainArrivalMetrics}>
+        <View style={styles.captainArrivalMetric}>
+          <Text selectable style={styles.captainArrivalMetricValue}>
+            {arrivalEta}
+          </Text>
+          <Text selectable style={styles.captainArrivalMetricLabel}>
+            وقت الوصول
+          </Text>
+        </View>
+        <View style={styles.captainArrivalMetric}>
+          <Text selectable style={styles.captainArrivalMetricValue}>
+            2.1 كم
+          </Text>
+          <Text selectable style={styles.captainArrivalMetricLabel}>
+            المسافة حتى وصول الكابتن
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.captainArrivalNext}>
+        <Text selectable style={styles.captainArrivalNextLabel}>
+          التحديث القادم
+        </Text>
+        <Text selectable style={styles.captainArrivalNextValue}>
+          سنخبرك فور اقترابه من نقطة الانطلاق
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function CustomerPickupHandoffPanel({ captainName, vehicleLabel }: { captainName: string; vehicleLabel: string }) {
+  return (
+    <View testID="customer-pickup-handoff-panel" style={styles.pickupHandoffPanel}>
+      <View style={styles.pickupHandoffHeader}>
+        <View style={styles.pickupHandoffIcon}>
+          <ShieldCheck color={colors.success} size={18} />
+        </View>
+        <View style={styles.pickupHandoffCopy}>
+          <Text selectable style={styles.pickupHandoffTitle}>
+            إجراءات الاستلام
+          </Text>
+          <Text selectable style={styles.pickupHandoffMeta}>
+            الكابتن وصل لنقطة الانطلاق
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.pickupHandoffCodeCard}>
+        <Text selectable style={styles.pickupHandoffCodeLabel}>
+          رمز التحقق mock
+        </Text>
+        <Text selectable style={styles.pickupHandoffCodeValue}>
+          4821
+        </Text>
+      </View>
+
+      <View style={styles.pickupHandoffChecklist}>
+        <Text selectable style={styles.pickupHandoffChecklistText}>
+          تأكد من المركبة واللوحة قبل الانطلاق
+        </Text>
+        <Text selectable style={styles.pickupHandoffChecklistMeta}>
+          {`${captainName} • ${vehicleLabel}`}
+        </Text>
+      </View>
+
+      <View style={styles.pickupHandoffReadyPill}>
+        <CheckCircle color={colors.success} size={16} />
+        <Text selectable style={styles.pickupHandoffReadyText}>
+          جاهز لبدء الرحلة
+        </Text>
       </View>
     </View>
   );
@@ -3002,6 +3435,117 @@ const styles = StyleSheet.create({
   paymentOptionTextActive: {
     color: colors.text
   },
+  visaPaymentPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(0, 229, 255, 0.06)"
+  },
+  visaPaymentHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  visaPaymentIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  visaPaymentCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  visaPaymentTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  visaPaymentMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  paymentInput: {
+    ...rtlText,
+    minHeight: 46,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  paymentInputRow: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  paymentInputHalf: {
+    flex: 1
+  },
+  saveVisaToggle: {
+    minHeight: 44,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  saveVisaToggleActive: {
+    borderColor: "rgba(52, 211, 153, 0.32)",
+    backgroundColor: "rgba(52, 211, 153, 0.08)"
+  },
+  saveVisaCheck: {
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(52, 211, 153, 0.42)"
+  },
+  saveVisaText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  visaSummaryBox: {
+    gap: 3,
+    alignItems: "flex-end",
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.13)"
+  },
+  visaSummaryText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  visaSummaryMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
   confirmationCard: {
     gap: spacing.md,
     padding: spacing.md,
@@ -3273,6 +3817,127 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
     borderRadius: radii.sm
   },
+  liveRequestHubCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(18, 34, 58, 0.74)"
+  },
+  liveRequestHubHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  liveRequestHubIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.3)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  liveRequestHubCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  liveRequestHubTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  liveRequestHubMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  liveRequestStatusBand: {
+    minHeight: 68,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.28)",
+    backgroundColor: "rgba(139, 92, 246, 0.12)"
+  },
+  liveRequestStatusIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.14)"
+  },
+  liveRequestStatusCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  liveRequestStatusLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  liveRequestStatusValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  liveRequestPills: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  liveRequestPill: {
+    minHeight: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  liveRequestPillText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  liveRequestRows: {
+    gap: spacing.xs
+  },
+  liveRequestNextStep: {
+    alignItems: "flex-end",
+    gap: 4,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  liveRequestNextLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  liveRequestNextValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   stageCard: {
     gap: spacing.md,
     padding: spacing.md,
@@ -3490,6 +4155,224 @@ const styles = StyleSheet.create({
     flexDirection: "row-reverse",
     gap: spacing.sm
   },
+  captainArrivalPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  captainArrivalHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  captainArrivalIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.3)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  captainArrivalCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  captainArrivalTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  captainArrivalMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  captainArrivalTrack: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  arrivalTrackStep: {
+    flex: 1,
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  arrivalTrackLine: {
+    width: 28,
+    height: 2,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.62)"
+  },
+  arrivalTrackValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  arrivalTrackLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  captainArrivalMetrics: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  captainArrivalMetric: {
+    flex: 1,
+    minHeight: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  captainArrivalMetricValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  captainArrivalMetricLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  captainArrivalNext: {
+    alignItems: "flex-end",
+    gap: 3,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.12)"
+  },
+  captainArrivalNextLabel: {
+    ...rtlText,
+    color: colors.violetSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  captainArrivalNextValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  pickupHandoffPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.08)"
+  },
+  pickupHandoffHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  pickupHandoffIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.28)",
+    backgroundColor: "rgba(51, 231, 168, 0.12)"
+  },
+  pickupHandoffCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  pickupHandoffTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  pickupHandoffMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  pickupHandoffCodeCard: {
+    minHeight: 82,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  pickupHandoffCodeLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  pickupHandoffCodeValue: {
+    color: colors.text,
+    fontSize: 30,
+    fontWeight: "900",
+    letterSpacing: 0,
+    fontVariant: ["tabular-nums"]
+  },
+  pickupHandoffChecklist: {
+    alignItems: "flex-end",
+    gap: 3,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  pickupHandoffChecklistText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  pickupHandoffChecklistMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  pickupHandoffReadyPill: {
+    minHeight: 38,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(51, 231, 168, 0.14)"
+  },
+  pickupHandoffReadyText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   captainDetailsGrid: {
     gap: spacing.xs,
     padding: spacing.sm,
@@ -3607,6 +4490,111 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  activeRidePanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  activeRideHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  activeRideIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
+  },
+  activeRideCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  activeRideTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  activeRideMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  activeRideRouteBox: {
+    alignItems: "flex-end",
+    gap: 4,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  activeRideRouteLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  activeRideRouteValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  activeRideRouteDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  activeRideGrid: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  activeRideGridItem: {
+    flex: 1,
+    minHeight: 58,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  activeRideGridValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  activeRideGridLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  activeRideNextStep: {
+    alignItems: "flex-end",
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.12)"
+  },
+  activeRideNextText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   completedIcon: {
     alignSelf: "center",

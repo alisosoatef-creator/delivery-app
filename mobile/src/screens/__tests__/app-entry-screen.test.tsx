@@ -97,6 +97,6 @@ describe("AppEntryScreen", () => {
     expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
     expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
-    expect(screen.getByText("مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
   });
 });

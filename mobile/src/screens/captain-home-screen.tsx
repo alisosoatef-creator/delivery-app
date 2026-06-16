@@ -204,6 +204,8 @@ export function CaptainHomeScreen() {
                   <RouteRow icon={<Clock color={colors.warning} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
                 </View>
 
+                <CaptainRequestBriefingPanel request={request} />
+
                 <View style={styles.requestMetaGrid}>
                   <MiniInfo label="المسافة" value={request.distance} />
                   <MiniInfo label="الدفع" value={request.paymentMethod} />
@@ -373,6 +375,45 @@ function CaptainOperationsPanel({ isOnline, requestCount }: { isOnline: boolean;
   );
 }
 
+function CaptainRequestBriefingPanel({ request }: { request: CaptainAvailableRequest }) {
+  return (
+    <View style={styles.requestBriefingPanel}>
+      <View style={styles.requestBriefingHeader}>
+        <View style={styles.requestBriefingIcon}>
+          <ClipboardList color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.requestBriefingCopy}>
+          <Text selectable style={styles.requestBriefingTitle}>
+            ملخص طلب العميل
+          </Text>
+          <Text selectable style={styles.requestBriefingMeta}>
+            راجع أهم التفاصيل قبل قبول الطلب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.requestBriefingGrid}>
+        <BriefingItem label="الخدمة المطلوبة" value={request.serviceLabel} />
+        <BriefingItem label="ملاحظة العميل للكابتن" value={request.destinationDetail} />
+        <BriefingItem label="طريقة الدفع المختارة" value={request.paymentMethod} />
+      </View>
+    </View>
+  );
+}
+
+function BriefingItem({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.briefingItem}>
+      <Text selectable style={styles.briefingLabel}>
+        {label}
+      </Text>
+      <Text selectable style={styles.briefingValue}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
 function CaptainAcceptPreviewCard({
   onCancel,
   onConfirm,
@@ -401,6 +442,9 @@ function CaptainAcceptPreviewCard({
       <View style={styles.previewRows}>
         <PreviewRow label="العميل المحدد" value={request.customerName} />
         <PreviewRow label="المسار المقترح" value={`${request.pickup} ← ${request.destinationArea}`} />
+        <PreviewRow label="نوع الخدمة" value={request.serviceLabel} />
+        <PreviewRow label="ملاحظة العميل" value={request.destinationDetail} />
+        <PreviewRow label="طريقة الدفع" value={request.paymentMethod} />
         <PreviewRow label="الدخل المتوقع" value={request.price} />
         <PreviewRow label="جاهز للانطلاق" value={`الوصول خلال ${request.etaToPickup}`} />
       </View>
@@ -1061,6 +1105,71 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   routeValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  requestBriefingPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.06)"
+  },
+  requestBriefingHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  requestBriefingIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  requestBriefingCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  requestBriefingTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  requestBriefingMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  requestBriefingGrid: {
+    gap: spacing.xs
+  },
+  briefingItem: {
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  briefingLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  briefingValue: {
     ...rtlText,
     color: colors.text,
     fontSize: typography.compact,

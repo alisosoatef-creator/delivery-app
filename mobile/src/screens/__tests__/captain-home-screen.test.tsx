@@ -86,6 +86,54 @@ async function renderCaptainHomeWithCustomerFeedbackProbe() {
   );
 }
 
+async function renderCaptainHomeWithSubmittedRequestProbe() {
+  function SubmittedRequestProbe() {
+    const [, dispatchRideRequests] = useMockRideRequests();
+
+    return (
+      <Pressable
+        accessibilityLabel="إرسال طلب عميل مباشر للكابتن"
+        onPress={() =>
+          dispatchRideRequests({
+            request: {
+              customerName: "ليان سالم",
+              customerPhone: "+970 59 444 2211",
+              destinationArea: "نابلس - رفيديا",
+              destinationDetail: "استلام من الباب الرئيسي وتسليم عند الاستقبال",
+              distance: "2.4 كم",
+              etaToPickup: "4 د",
+              id: "request-briefing-customer",
+              paymentMethod: "فيزا • **** 4242",
+              pickup: "زواتا",
+              price: "35 شيكل",
+              serviceLabel: "توصيل طلبية",
+            },
+            type: "submit-customer-request",
+          })
+        }
+      >
+        <Text>إرسال طلب عميل مباشر للكابتن</Text>
+      </Pressable>
+    );
+  }
+
+  return render(
+    <SafeAreaProvider
+      initialMetrics={{
+        frame: { x: 0, y: 0, width: 390, height: 844 },
+        insets: { top: 48, right: 0, bottom: 34, left: 0 }
+      }}
+    >
+      <MockAppProvider>
+        <View>
+          <CaptainHomeScreen />
+          <SubmittedRequestProbe />
+        </View>
+      </MockAppProvider>
+    </SafeAreaProvider>
+  );
+}
+
 describe("CaptainHomeScreen", () => {
   it("renders the premium captain dashboard with available mock request", async () => {
     const screen = await renderCaptainHome();
@@ -101,9 +149,9 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("+970 59 111 2222")).toBeTruthy();
     expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("مطعم شورما عكيفك")).toBeTruthy();
+    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("كاش عند الاستلام")).toBeTruthy();
+    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("قبول الطلب")).toBeTruthy();
   });
 
@@ -126,6 +174,27 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("تأكيد قبول الطلب"));
     expect(screen.getByTestId("captain-route-map")).toBeTruthy();
+  });
+
+  it("surfaces customer service note and payment clearly for the captain", async () => {
+    const screen = await renderCaptainHomeWithSubmittedRequestProbe();
+
+    await fireEvent.press(screen.getByLabelText("إرسال طلب عميل مباشر للكابتن"));
+
+    expect(screen.getByText("ليان سالم")).toBeTruthy();
+    expect(screen.getByText("ملخص طلب العميل")).toBeTruthy();
+    expect(screen.getByText("الخدمة المطلوبة")).toBeTruthy();
+    expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("ملاحظة العميل للكابتن")).toBeTruthy();
+    expect(screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("طريقة الدفع المختارة")).toBeTruthy();
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
+
+    await fireEvent.press(screen.getByLabelText("معاينة قبول الطلب التجريبي"));
+
+    expect(screen.getByText("نوع الخدمة")).toBeTruthy();
+    expect(screen.getByText("ملاحظة العميل")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع")).toBeTruthy();
   });
 
   it("toggles captain availability", async () => {
