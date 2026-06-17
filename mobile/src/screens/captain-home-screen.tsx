@@ -206,6 +206,8 @@ export function CaptainHomeScreen() {
 
                 <CaptainRequestBriefingPanel request={request} />
 
+                <CaptainDecisionSignalPanel request={request} />
+
                 <View style={styles.requestMetaGrid}>
                   <MiniInfo label="المسافة" value={request.distance} />
                   <MiniInfo label="الدفع" value={request.paymentMethod} />
@@ -410,6 +412,66 @@ function BriefingItem({ label, value }: { label: string; value: string }) {
       <Text selectable style={styles.briefingValue}>
         {value}
       </Text>
+    </View>
+  );
+}
+
+function CaptainDecisionSignalPanel({ request }: { request: CaptainAvailableRequest }) {
+  const routeLabel = `${request.pickup} ← ${request.destinationArea}`;
+  const signals = [
+    {
+      icon: <Wallet color={colors.success} size={15} />,
+      label: "دخل واضح",
+      value: request.price
+    },
+    {
+      icon: <Clock color={colors.cyan} size={15} />,
+      label: "وصول سريع",
+      value: request.etaToPickup
+    },
+    {
+      icon: <Route color={colors.violetSoft} size={15} />,
+      label: "مسار مفهوم",
+      value: routeLabel
+    },
+    {
+      icon: <CheckCircle color={colors.success} size={15} />,
+      label: "دفع مؤكد",
+      value: request.paymentMethod
+    }
+  ];
+
+  return (
+    <View testID="captain-decision-signal-panel" style={styles.decisionSignalPanel}>
+      <View style={styles.decisionSignalHeader}>
+        <View style={styles.decisionSignalIcon}>
+          <CheckCircle color={colors.cyan} size={18} />
+        </View>
+        <View style={styles.decisionSignalCopy}>
+          <Text selectable style={styles.decisionSignalTitle}>
+            مؤشرات قرار الكابتن
+          </Text>
+          <Text selectable style={styles.decisionSignalMeta}>
+            أهم ما تحتاجه قبل قبول الطلب
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.decisionSignalGrid}>
+        {signals.map((signal) => (
+          <View key={signal.label} style={styles.decisionSignalItem}>
+            <View style={styles.decisionSignalItemIcon}>{signal.icon}</View>
+            <View style={styles.decisionSignalItemCopy}>
+              <Text selectable style={styles.decisionSignalItemLabel}>
+                {signal.label}
+              </Text>
+              <Text selectable style={styles.decisionSignalItemValue}>
+                {signal.value}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
@@ -1170,6 +1232,86 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   briefingValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  decisionSignalPanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.22)",
+    backgroundColor: "rgba(51, 231, 168, 0.055)"
+  },
+  decisionSignalHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  decisionSignalIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  decisionSignalCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  decisionSignalTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  decisionSignalMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  decisionSignalGrid: {
+    gap: spacing.xs
+  },
+  decisionSignalItem: {
+    minHeight: 48,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  decisionSignalItemIcon: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  decisionSignalItemCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  decisionSignalItemLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  decisionSignalItemValue: {
     ...rtlText,
     color: colors.text,
     fontSize: typography.compact,

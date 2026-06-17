@@ -105,8 +105,10 @@ const CUSTOMER_PROFILE_SECURITY_ITEMS = [
   "تنبيهات الدفع والرحلات مفعّلة"
 ] as const;
 const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "الأقرب"] as const;
+const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض شخصية"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
+type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
 
 const visaPaymentSchema = z.object({
   cardholderName: z.string().trim().min(2, "اسم حامل البطاقة مطلوب"),
@@ -246,6 +248,50 @@ function mapAcceptedTripStepToTripsStatus(step: CaptainTripStep | null): string 
   return customerHomeMock.captain.status;
 }
 
+type CustomerJourneyStepState = "done" | "pending";
+
+type CustomerJourneyStep = {
+  detail: string;
+  label: string;
+  state: CustomerJourneyStepState;
+};
+
+function getCustomerJourneySteps(liveTrip: CustomerTripsLiveRide): CustomerJourneyStep[] {
+  const isCompleted = liveTrip.isCompleted;
+  const isDriving = liveTrip.activeStatus === "العميل في الطريق";
+  const isCaptainArrived = liveTrip.activeStatus === "الكابتن وصل إليك";
+  const captainStepDone = isCompleted || isDriving || isCaptainArrived;
+  const drivingStepDone = isCompleted || isDriving;
+
+  return [
+    {
+      detail: "وصل طلبك للكباتن القريبين",
+      label: "تم إرسال الطلب",
+      state: "done"
+    },
+    {
+      detail: `الكابتن ${liveTrip.captain} قبل الطلب`,
+      label: "تم قبول الطلب",
+      state: "done"
+    },
+    {
+      detail: "موقع الكابتن والمسافة تظهر للعميل",
+      label: isCaptainArrived ? "الكابتن وصل إليك" : "الكابتن في الطريق",
+      state: captainStepDone ? "done" : "pending"
+    },
+    {
+      detail: liveTrip.route,
+      label: "بدأت الرحلة",
+      state: drivingStepDone ? "done" : "pending"
+    },
+    {
+      detail: liveTrip.destinationDetail,
+      label: isCompleted ? "تم الوصول" : "بانتظار الوصول",
+      state: isCompleted ? "done" : "pending"
+    }
+  ];
+}
+
 function mapAcceptedTripStepToCaptainStatus(step: CaptainTripStep | null): string {
   if (step === "arrived") {
     return "الكابتن وصل إليك";
@@ -275,6 +321,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [completionNote, setCompletionNote] = useState<string>("");
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
+  const [deliveryPackageDescription, setDeliveryPackageDescription] = useState<string>("");
+  const [selectedDeliveryPackageType, setSelectedDeliveryPackageType] = useState<DeliveryPackageType>(
+    DELIVERY_PACKAGE_TYPES[0]
+  );
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
   const [shouldSaveVisaCard, setShouldSaveVisaCard] = useState(false);
   const visaForm = useForm<VisaPaymentFormValues>({
@@ -330,6 +380,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     paymentMethod === "فيزا" && visaValidationResult.success && visaCardLastFour
       ? `فيزا • **** ${visaCardLastFour}`
       : paymentMethod;
+  const deliveryPackageDescriptionTrimmed = deliveryPackageDescription.trim();
+  const captainDestinationDetail =
+    selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
+      ? `${destinationDetail} • ${selectedDeliveryPackageType} • ${deliveryPackageDescriptionTrimmed}`
+      : destinationDetail;
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -349,6 +404,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     resetRide();
     setSelectedDestination(null);
     setDestinationDetail("");
+    setDeliveryPackageDescription("");
+    setSelectedDeliveryPackageType(DELIVERY_PACKAGE_TYPES[0]);
     setPaymentMethod(customerHomeMock.defaultPaymentMethod);
     resetVisaPaymentDetails();
     setSelectedServiceType(customerHomeMock.serviceTypes[0]);
@@ -448,7 +505,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       customerName: customerHomeMock.profile.name,
       customerPhone: customerHomeMock.profile.phone,
       destinationArea: selectedDestination.area,
-      destinationDetail,
+      destinationDetail: captainDestinationDetail,
       distance: selectedDestination.distance,
       etaToPickup: customerHomeMock.captain.arrivalEta,
       id: LIVE_CUSTOMER_REQUEST_ID,
@@ -526,10 +583,19 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           </View>
         </View>
 
+        <CustomerOrderReadinessPanel
+          destination={selectedDestination}
+          destinationDetail={captainDestinationDetail}
+          paymentMethod={effectivePaymentMethod}
+          pickup={selectedPickup}
+          serviceLabel={selectedServiceLabel}
+          serviceType={selectedServiceType}
+        />
+
         <View style={styles.confirmationRows}>
           <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
           <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
-          <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
+          <InfoRow label="تفصيل الوجهة" value={captainDestinationDetail} />
           <InfoRow label="الخدمة" value={selectedServiceLabel} />
           <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
           <InfoRow label="المسافة" value={selectedDestination.distance} />
@@ -567,7 +633,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text style={styles.stageMeta}>نبحث عن أقرب كابتن يناسب رحلتك الآن</Text>
               {selectedDestination ? (
                 <Text style={styles.stageMeta}>
-                  {`${selectedPickup.label} ← ${selectedDestination.area} • ${destinationDetail}`}
+                  {`${selectedPickup.label} ← ${selectedDestination.area} • ${captainDestinationDetail}`}
                 </Text>
               ) : null}
             </View>
@@ -593,7 +659,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <View style={styles.confirmationRows}>
                 <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
                 <InfoRow label="منطقة الوجهة" value={selectedDestination.area} />
-                <InfoRow label="تفصيل الوجهة" value={destinationDetail} />
+                <InfoRow label="تفصيل الوجهة" value={captainDestinationDetail} />
                 <InfoRow label="الخدمة" value={selectedServiceLabel} />
                 <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
                 <InfoRow label="السعر" value={selectedServiceType.price} />
@@ -695,7 +761,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             <InfoRow label="رقم الكابتن" value={captain.phone} />
             <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
             {selectedDestination ? <InfoRow label="منطقة الوجهة" value={selectedDestination.area} /> : null}
-            {selectedDestination ? <InfoRow label="تفصيل الوجهة" value={destinationDetail} /> : null}
+            {selectedDestination ? <InfoRow label="تفصيل الوجهة" value={captainDestinationDetail} /> : null}
           </View>
 
           <CustomerSafetyPanel
@@ -737,7 +803,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         : selectedDestination
           ? `${selectedPickup.label} ← ${selectedDestination.area}`
           : customerHomeMock.trips.current.route;
-      const activeRideDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? destinationDetail;
+      const activeRideDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail;
       const activeRidePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
 
       return (
@@ -793,7 +859,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <Text style={styles.stageMeta}>شكرًا لاستخدامك واصل</Text>
         <CustomerReceiptCard
           amount={acceptedCustomerRequest?.price ?? selectedServiceType.price}
-          destinationDetail={acceptedCustomerRequest?.destinationDetail ?? destinationDetail}
+          destinationDetail={acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail}
           onDownload={() => setNotice("تم تجهيز إيصال الرحلة mock")}
           paymentMethod={acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod}
           receiptNumber="WAS-0001"
@@ -855,7 +921,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           : effectiveRideStage === "active"
             ? "الكابتن بدأ الرحلة نحو وجهتك"
             : "راجع الإيصال وقيم تجربتك";
-    const liveDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? destinationDetail;
+    const liveDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail;
     const livePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
     const liveRoute = acceptedCustomerRequest
       ? `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`
@@ -1322,6 +1388,19 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               />
             </View>
 
+            {selectedServiceType.id === "delivery" ? (
+              <CustomerDeliveryPackagePanel
+                description={deliveryPackageDescription}
+                onChangeDescription={setDeliveryPackageDescription}
+                onSelectType={(packageType) => {
+                  setSelectedDeliveryPackageType(packageType);
+                  void Haptics.selectionAsync();
+                }}
+                packageTypes={DELIVERY_PACKAGE_TYPES}
+                selectedType={selectedDeliveryPackageType}
+              />
+            ) : null}
+
             <View style={styles.serviceGroup}>
               <Text selectable style={styles.detailLabel}>
                 نوع الخدمة
@@ -1718,6 +1797,185 @@ function CustomerBookingFlowStrip({
         </Text>
       ) : null}
     </GlassCard>
+  );
+}
+
+function CustomerDeliveryPackagePanel({
+  description,
+  onChangeDescription,
+  onSelectType,
+  packageTypes,
+  selectedType
+}: {
+  description: string;
+  onChangeDescription: (description: string) => void;
+  onSelectType: (packageType: DeliveryPackageType) => void;
+  packageTypes: readonly DeliveryPackageType[];
+  selectedType: DeliveryPackageType;
+}) {
+  const trimmedDescription = description.trim();
+
+  return (
+    <View testID="customer-delivery-package-panel" style={styles.deliveryPackagePanel}>
+      <View style={styles.deliveryPackageHeader}>
+        <View style={styles.deliveryPackageIcon}>
+          <Sparkles color={colors.cyan} size={17} />
+        </View>
+        <View style={styles.deliveryPackageCopy}>
+          <Text selectable style={styles.deliveryPackageTitle}>
+            تفاصيل الطلبية
+          </Text>
+          <Text selectable style={styles.deliveryPackageMeta}>
+            أضف نوع الغرض ووصفه حتى يظهر للكابتن بوضوح.
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.deliveryPackageTypeGroup}>
+        <Text selectable style={styles.deliveryPackageLabel}>
+          نوع الغرض
+        </Text>
+        <View style={styles.deliveryPackageChips}>
+          {packageTypes.map((packageType) => {
+            const isSelected = selectedType === packageType;
+
+            return (
+              <Pressable
+                key={packageType}
+                accessibilityLabel={`اختيار نوع غرض ${packageType}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => onSelectType(packageType)}
+                style={({ pressed }) => [
+                  styles.deliveryPackageChip,
+                  isSelected ? styles.deliveryPackageChipActive : null,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <Text
+                  selectable
+                  style={[
+                    styles.deliveryPackageChipText,
+                    isSelected ? styles.deliveryPackageChipTextActive : null
+                  ]}
+                >
+                  {packageType}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <TextInput
+        accessibilityLabel="وصف الطلبية"
+        multiline
+        onChangeText={onChangeDescription}
+        placeholder="مثلا: كيس ملابس صغير أو مستندات داخل ظرف"
+        placeholderTextColor={colors.textMuted}
+        style={styles.deliveryPackageInput}
+        value={description}
+      />
+
+      {trimmedDescription ? (
+        <View style={styles.deliveryPackagePreview}>
+          <Text selectable style={styles.deliveryPackagePreviewLabel}>
+            {selectedType}
+          </Text>
+          <Text selectable style={styles.deliveryPackagePreviewText}>
+            {trimmedDescription}
+          </Text>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function CustomerOrderReadinessPanel({
+  destination,
+  destinationDetail,
+  paymentMethod,
+  pickup,
+  serviceLabel,
+  serviceType
+}: {
+  destination: DestinationPlace;
+  destinationDetail: string;
+  paymentMethod: string;
+  pickup: PickupPoint;
+  serviceLabel: string;
+  serviceType: ServiceType;
+}) {
+  const routeLabel = `${pickup.label} ← ${destination.area}`;
+  const captainNote = destinationDetail.trim() || destination.detail;
+  const captainNoteLabel = destinationDetail.trim() ? "ملاحظة الكابتن جاهزة" : "ملاحظة الكابتن من الوجهة";
+  const readinessItems = [
+    {
+      detail: `${serviceType.vehicle} • ${serviceType.eta}`,
+      icon: "service",
+      label: "الخدمة المختارة",
+      value: serviceLabel
+    },
+    {
+      detail: destination.distance,
+      icon: "route",
+      label: "المسار واضح",
+      value: routeLabel
+    },
+    {
+      detail: captainNote,
+      icon: "note",
+      label: captainNoteLabel,
+      value: destination.label
+    },
+    {
+      detail: "سيظهر للكابتن بعد القبول",
+      icon: "payment",
+      label: "الدفع جاهز",
+      value: paymentMethod
+    }
+  ] as const;
+
+  return (
+    <View testID="customer-order-readiness-panel" style={styles.orderReadinessPanel}>
+      <View style={styles.orderReadinessHeader}>
+        <View style={styles.orderReadinessIcon}>
+          <CheckCircle color={colors.success} size={18} />
+        </View>
+        <View style={styles.orderReadinessCopy}>
+          <Text selectable style={styles.orderReadinessTitle}>
+            ملخص جاهزية الطلب
+          </Text>
+          <Text selectable style={styles.orderReadinessMeta}>
+            أهم تفاصيل الطلب جاهزة قبل الإرسال للكابتن
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.orderReadinessGrid}>
+        {readinessItems.map((item) => (
+          <View key={item.label} style={styles.orderReadinessItem}>
+            <View style={styles.orderReadinessItemIcon}>
+              {item.icon === "service" ? <Car color={colors.cyan} size={15} /> : null}
+              {item.icon === "route" ? <MapPin color={colors.cyan} size={15} /> : null}
+              {item.icon === "note" ? <MessageCircle color={colors.violetSoft} size={15} /> : null}
+              {item.icon === "payment" ? <CreditCard color={colors.success} size={15} /> : null}
+            </View>
+            <View style={styles.orderReadinessItemCopy}>
+              <Text selectable style={styles.orderReadinessItemLabel}>
+                {item.label}
+              </Text>
+              <Text selectable style={styles.orderReadinessItemValue}>
+                {item.value}
+              </Text>
+              <Text selectable style={styles.orderReadinessItemDetail}>
+                {item.detail}
+              </Text>
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
   );
 }
 
@@ -2618,6 +2876,8 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
         </View>
       </GlassCard>
 
+      {liveTrip ? <CustomerJourneyTimeline liveTrip={liveTrip} /> : null}
+
       <View style={styles.sectionHeader}>
         <Text selectable style={styles.sectionTitle}>
           {trips.historyTitle}
@@ -2646,6 +2906,65 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
         ))}
       </View>
     </View>
+  );
+}
+
+function CustomerJourneyTimeline({ liveTrip }: { liveTrip: CustomerTripsLiveRide }) {
+  const journeySteps = getCustomerJourneySteps(liveTrip);
+  const statusText = liveTrip.isCompleted ? "كل الخطوات مكتملة" : `المرحلة الحالية: ${liveTrip.activeStatus}`;
+
+  return (
+    <GlassCard testID="customer-trip-journey-timeline" style={styles.customerJourneyTimelineCard} variant="strong">
+      <View style={styles.customerJourneyHeader}>
+        <View style={styles.customerJourneyIcon}>
+          {liveTrip.isCompleted ? (
+            <CheckCircle color={colors.success} size={20} />
+          ) : (
+            <Clock color={colors.cyan} size={20} />
+          )}
+        </View>
+        <View style={styles.customerJourneyCopy}>
+          <Text selectable style={styles.customerJourneyTitle}>
+            خط سير الرحلة
+          </Text>
+          <Text selectable style={styles.customerJourneyMeta}>
+            {statusText}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.customerJourneySteps}>
+        {journeySteps.map((step) => {
+          const isDone = step.state === "done";
+
+          return (
+            <View
+              key={step.label}
+              style={[styles.customerJourneyStep, isDone ? styles.customerJourneyStepDone : null]}
+            >
+              <View style={[styles.customerJourneyStepIcon, isDone ? styles.customerJourneyStepIconDone : null]}>
+                {isDone ? (
+                  <CheckCircle color={colors.success} size={15} />
+                ) : (
+                  <Clock color={colors.textMuted} size={15} />
+                )}
+              </View>
+              <View style={styles.customerJourneyStepCopy}>
+                <Text
+                  selectable
+                  style={[styles.customerJourneyStepText, isDone ? styles.customerJourneyStepTextDone : null]}
+                >
+                  {step.label}
+                </Text>
+                <Text selectable style={styles.customerJourneyStepDetail}>
+                  {step.detail}
+                </Text>
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </GlassCard>
   );
 }
 
@@ -3617,6 +3936,118 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: "rgba(255, 255, 255, 0.05)"
   },
+  deliveryPackagePanel: {
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.055)"
+  },
+  deliveryPackageHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  deliveryPackageIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  deliveryPackageCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  deliveryPackageTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  deliveryPackageMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  deliveryPackageTypeGroup: {
+    gap: spacing.xs
+  },
+  deliveryPackageLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  deliveryPackageChips: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  deliveryPackageChip: {
+    minHeight: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  deliveryPackageChipActive: {
+    borderColor: "rgba(0, 229, 255, 0.36)",
+    backgroundColor: "rgba(0, 229, 255, 0.13)"
+  },
+  deliveryPackageChipText: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  deliveryPackageChipTextActive: {
+    color: colors.text
+  },
+  deliveryPackageInput: {
+    ...rtlText,
+    minHeight: 64,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)",
+    textAlignVertical: "top"
+  },
+  deliveryPackagePreview: {
+    alignItems: "flex-end",
+    padding: spacing.sm,
+    gap: 4,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.13)"
+  },
+  deliveryPackagePreviewLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  deliveryPackagePreviewText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    lineHeight: 18
+  },
   completionNoteInput: {
     minHeight: 82,
     textAlignVertical: "top"
@@ -3868,6 +4299,95 @@ const styles = StyleSheet.create({
   },
   confirmationRows: {
     gap: spacing.xs
+  },
+  orderReadinessPanel: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.055)"
+  },
+  orderReadinessHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  orderReadinessIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.28)",
+    backgroundColor: "rgba(51, 231, 168, 0.1)"
+  },
+  orderReadinessCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  orderReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  orderReadinessMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  orderReadinessGrid: {
+    gap: spacing.xs
+  },
+  orderReadinessItem: {
+    minHeight: 58,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  orderReadinessItemIcon: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  orderReadinessItemCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  orderReadinessItemLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  orderReadinessItemValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  orderReadinessItemDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 18
   },
   infoRow: {
     minHeight: 42,
@@ -5446,6 +5966,98 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(147, 177, 255, 0.14)",
     backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  customerJourneyTimelineCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.06)"
+  },
+  customerJourneyHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  customerJourneyIcon: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.11)"
+  },
+  customerJourneyCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  customerJourneyTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  customerJourneyMeta: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  customerJourneySteps: {
+    gap: spacing.xs
+  },
+  customerJourneyStep: {
+    minHeight: 54,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  customerJourneyStepDone: {
+    borderColor: "rgba(51, 231, 168, 0.18)",
+    backgroundColor: "rgba(51, 231, 168, 0.08)"
+  },
+  customerJourneyStepIcon: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  customerJourneyStepIconDone: {
+    borderColor: "rgba(51, 231, 168, 0.24)",
+    backgroundColor: "rgba(51, 231, 168, 0.11)"
+  },
+  customerJourneyStepCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 2
+  },
+  customerJourneyStepText: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  customerJourneyStepTextDone: {
+    color: colors.text
+  },
+  customerJourneyStepDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 18
   },
   historyList: {
     gap: spacing.sm

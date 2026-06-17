@@ -197,6 +197,23 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("طريقة الدفع")).toBeTruthy();
   });
 
+  it("shows captain decision signals before accepting a customer request", async () => {
+    const screen = await renderCaptainHomeWithSubmittedRequestProbe();
+
+    await fireEvent.press(screen.getByLabelText("إرسال طلب عميل مباشر للكابتن"));
+
+    expect(screen.getByTestId("captain-decision-signal-panel")).toBeTruthy();
+    expect(screen.getByText("مؤشرات قرار الكابتن")).toBeTruthy();
+    expect(screen.getByText("دخل واضح")).toBeTruthy();
+    expect(screen.getAllByText("35 شيكل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("وصول سريع")).toBeTruthy();
+    expect(screen.getAllByText("4 د").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("مسار مفهوم")).toBeTruthy();
+    expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("دفع مؤكد")).toBeTruthy();
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("toggles captain availability", async () => {
     const screen = await renderCaptainHome();
 
