@@ -87,8 +87,12 @@ describe("AppEntryScreen", () => {
     await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
     await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
-    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
-    await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
+    await fireEvent.press(screen.getByLabelText("اختيار وجهة مطعم شورما عكيفك"));
+    await fireEvent.changeText(
+      screen.getByLabelText("ملاحظة الوصول للكابتن"),
+      "مطعم شورما عكيفك - الباب الرئيسي"
+    );
+    await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 

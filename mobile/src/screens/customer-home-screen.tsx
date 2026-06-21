@@ -110,7 +110,7 @@ const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
-type CustomerBookingStep = "service" | "pickup" | "details";
+type CustomerBookingStep = "service" | "pickup" | "destination" | "details";
 
 const visaPaymentSchema = z.object({
   cardholderName: z.string().trim().min(2, "اسم حامل البطاقة مطلوب"),
@@ -481,13 +481,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     void Haptics.selectionAsync();
   }
 
-  function openDestinationSearch() {
-    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setActiveNav("البحث");
-    setNotice("اختر وجهتك من البحث أو الأماكن المحفوظة");
-    setIsNotificationsOpen(false);
-  }
-
   function continueSelectedServiceType() {
     setBookingStep("pickup");
     setNotice(null);
@@ -496,10 +489,28 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function continuePickupSelection() {
+    setBookingStep("destination");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function continueDestinationSelection() {
+    if (!selectedDestination) {
+      return;
+    }
+
     setBookingStep("details");
     setNotice(null);
     setIsNotificationsOpen(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function editDestinationSelection() {
+    setBookingStep("destination");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
   }
 
   function useSelectedSearchDestination() {
@@ -1167,182 +1178,143 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 selectedPickup={selectedPickup}
                 selectedServiceType={selectedServiceType}
               />
+            ) : bookingStep === "destination" ? (
+              <CustomerDestinationSelectionPage
+                destinationDetail={destinationDetail}
+                onChangeDestinationDetail={setDestinationDetail}
+                onChangeQuery={setSearchQuery}
+                onContinue={continueDestinationSelection}
+                onSelectDestination={selectDestination}
+                pickupLabel={selectedPickup.label}
+                query={searchQuery}
+                selectedDestination={selectedDestination}
+                selectedServiceType={selectedServiceType}
+              />
             ) : (
               <View testID="customer-booking-details-page" style={styles.bookingDetailsPage}>
-            <MotionSurface delay={0} testID="customer-motion-primary-booking">
-              <GlassCard testID="customer-primary-booking-card" style={styles.primaryBookingCard} variant="strong">
-                <View style={styles.primaryBookingHeader}>
-                  <View style={styles.primaryBookingIcon}>
-                    <Search color={colors.cyan} size={22} />
-                  </View>
-                  <View style={styles.primaryBookingCopy}>
-                    <Text selectable style={styles.primaryBookingTitle}>
-                      اطلب رحلتك بسهولة
-                    </Text>
-                    <Text selectable style={styles.primaryBookingMeta}>
-                      اختر وجهتك أولا، وبعدها نجهز لك السعر والمسار والكابتن الأقرب.
-                    </Text>
-                  </View>
+        {selectedDestination ? (
+          <MotionSurface delay={0} testID="customer-motion-booking-review">
+            <GlassCard testID="customer-booking-review-card" style={styles.bookingReviewCard} variant="strong">
+              <View style={styles.bookingReviewHeader}>
+                <View style={styles.bookingReviewIcon}>
+                  <CheckCircle color={colors.success} size={21} />
                 </View>
+                <View style={styles.bookingReviewCopy}>
+                  <Text selectable style={styles.bookingReviewTitle}>
+                    راجع طلبك
+                  </Text>
+                  <Text selectable style={styles.bookingReviewMeta}>
+                    تأكد من المسار والدفع، ثم أرسل الطلب لأقرب كابتن.
+                  </Text>
+                </View>
+              </View>
 
-                <View style={styles.primaryBookingMetrics}>
-                  <View style={styles.primaryBookingMetric}>
-                    <Text selectable style={styles.primaryBookingMetricValue}>
+              <View style={styles.bookingReviewRoute}>
+                <View style={styles.bookingReviewRouteLine}>
+                  <View style={styles.bookingReviewRouteDot} />
+                  <View style={styles.bookingReviewRouteConnector} />
+                  <View style={[styles.bookingReviewRouteDot, styles.bookingReviewRouteDotDestination]} />
+                </View>
+                <View style={styles.bookingReviewRouteCopy}>
+                  <View style={styles.bookingReviewRoutePoint}>
+                    <Text selectable style={styles.bookingReviewRouteLabel}>
+                      نقطة الانطلاق
+                    </Text>
+                    <Text selectable style={styles.bookingReviewRouteValue}>
                       {selectedPickup.label}
                     </Text>
-                    <Text selectable style={styles.primaryBookingMetricLabel}>
-                      انطلاقك
-                    </Text>
                   </View>
-                  <View style={styles.primaryBookingMetric}>
-                    <Text selectable style={styles.primaryBookingMetricValue}>
-                      {selectedServiceType.price}
+                  <View style={styles.bookingReviewRoutePoint}>
+                    <Text selectable style={styles.bookingReviewRouteLabel}>
+                      الوجهة
                     </Text>
-                    <Text selectable style={styles.primaryBookingMetricLabel}>
-                      سعر مبدئي
+                    <Text selectable style={styles.bookingReviewRouteValue}>
+                      {selectedDestination.label}
+                    </Text>
+                    <Text selectable style={styles.bookingReviewRouteMeta}>
+                      {selectedDestination.area}
                     </Text>
                   </View>
                 </View>
-
-                <PremiumButton
-                  accessibilityLabel="اختيار الوجهة لبدء الطلب"
-                  label="اختيار الوجهة"
-                  onPress={openDestinationSearch}
-                  style={styles.primaryBookingButton}
-                >
-                  <MapPin color={colors.text} size={17} />
-                </PremiumButton>
-              </GlassCard>
-            </MotionSurface>
-
-            <MotionSurface delay={70} testID="customer-motion-booking-flow">
-              <CustomerBookingFlowStrip
-                destinationLabel={selectedDestination?.label ?? null}
-                serviceLabel={selectedServiceType.label}
-              />
-            </MotionSurface>
-
-            <MockRouteMap
-              destinationArea={selectedDestination?.area}
-              destinationDetail={selectedDestination ? destinationDetail : undefined}
-              phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
-              pickupLabel={selectedPickup.label}
-            />
-
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="اختيار الوجهة"
-          onPress={() => setNotice("اختر وجهة من الأماكن المحفوظة")}
-        >
-          {({ pressed }) => (
-            <GlassCard style={[styles.searchCard, pressed ? styles.pressed : null]}>
-              <View style={styles.searchIcon}>
-                <MapPin color={colors.cyan} size={18} />
               </View>
-              <View style={styles.searchCopy}>
-                <Text style={styles.searchLabel}>{selectedPickup.detail}</Text>
-                <Text style={styles.searchValue}>
-                  {selectedDestination
-                    ? `الوجهة المختارة: ${selectedDestination.label}`
-                    : customerHomeMock.destinationHint}
-                </Text>
-                {selectedDestination ? <Text style={styles.searchLabel}>{selectedDestination.area}</Text> : null}
-              </View>
-              <ChevronLeft color={colors.textMuted} size={20} />
-            </GlassCard>
-          )}
-        </Pressable>
-
-        <View style={styles.quickStats}>
-          <GlassCard style={styles.statCard}>
-            <Sparkles color={colors.cyan} size={18} />
-            <Text selectable style={styles.statValue}>
-              {customerHomeMock.nearbyDrivers}
-            </Text>
-            <Text selectable style={styles.statLabel}>
-              سائقون قريبون
-            </Text>
-          </GlassCard>
-          <GlassCard style={styles.statCard}>
-            <ShieldCheck color={colors.success} size={18} />
-            <Text selectable style={styles.statValue}>
-              {selectedServiceType.price}
-            </Text>
-            <Text selectable style={styles.statLabel}>
-              سعر مقترح
-            </Text>
-          </GlassCard>
-        </View>
-
-        <View style={styles.sectionHeader}>
-          <Text selectable style={styles.sectionTitle}>
-            أماكن محفوظة
-          </Text>
-        </View>
-
-        <View style={styles.savedPlaces}>
-          {customerHomeMock.savedPlaces.map((place) => {
-            const Icon = place.icon;
-
-            return (
-              <Pressable
-                key={place.label}
-                accessibilityRole="button"
-                accessibilityLabel={`اختيار ${place.label}`}
-                onPress={() => selectDestination(place)}
-              >
-                {({ pressed }) => (
-                  <GlassCard
-                    style={[
-                      styles.placeCard,
-                      selectedDestination?.label === place.label ? styles.selectableCardActive : null,
-                      pressed ? styles.pressed : null
-                    ]}
-                  >
-                    <View style={styles.placeIcon}>
-                      <Icon color={colors.text} size={17} />
-                    </View>
-                    <View style={styles.placeCopy}>
-                      <Text style={styles.placeLabel}>{place.label}</Text>
-                      <Text style={styles.placeDetail}>{place.area}</Text>
-                      <Text style={styles.placeDetail}>{place.detail}</Text>
-                    </View>
-                  </GlassCard>
-                )}
-              </Pressable>
-            );
-          })}
-        </View>
-
-        {selectedDestination ? (
-          <GlassCard style={styles.destinationCard} variant="strong">
-            <View style={styles.destinationHeader}>
-              <View style={styles.destinationPin}>
-                <MapPin color={colors.cyan} size={18} />
-              </View>
-              <View style={styles.destinationCopy}>
-                <Text selectable style={styles.destinationTitle}>
-                  {selectedDestination.area}
-                </Text>
-                <Text selectable style={styles.destinationMeta}>
-                  {selectedDestination.label}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.detailField}>
-              <Text selectable style={styles.detailLabel}>
-                تفصيل الوجهة
+              <Text selectable style={styles.bookingReviewRouteSummary}>
+                {`${selectedPickup.label} ← ${selectedDestination.area}`}
               </Text>
-              <TextInput
-                accessibilityLabel="تفصيل الوجهة"
-                onChangeText={setDestinationDetail}
-                placeholder="اكتب تفصيل الوجهة"
-                placeholderTextColor={colors.textMuted}
-                style={styles.detailInput}
-                value={destinationDetail}
-              />
-            </View>
+
+              <View style={styles.bookingReviewMetrics}>
+                <View style={styles.bookingReviewMetric}>
+                  <Text selectable style={styles.bookingReviewMetricValue}>
+                    {selectedServiceType.price}
+                  </Text>
+                  <Text selectable style={styles.bookingReviewMetricLabel}>
+                    السعر
+                  </Text>
+                </View>
+                <View style={styles.bookingReviewMetric}>
+                  <Text selectable style={styles.bookingReviewMetricValue}>
+                    {selectedDestination.distance}
+                  </Text>
+                  <Text selectable style={styles.bookingReviewMetricLabel}>
+                    المسافة
+                  </Text>
+                </View>
+                <View style={styles.bookingReviewMetric}>
+                  <Text selectable style={styles.bookingReviewMetricValue}>
+                    {selectedServiceType.eta}
+                  </Text>
+                  <Text selectable style={styles.bookingReviewMetricLabel}>
+                    وصول الكابتن
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.bookingReviewNote}>
+                <MessageCircle color={colors.violetSoft} size={17} />
+                <View style={styles.bookingReviewNoteCopy}>
+                  <Text selectable style={styles.bookingReviewNoteLabel}>
+                    ملاحظة الكابتن
+                  </Text>
+                  <TextInput
+                    accessibilityLabel="تفصيل الوجهة"
+                    multiline
+                    onChangeText={setDestinationDetail}
+                    placeholder="أضف علامة واضحة للكابتن"
+                    placeholderTextColor={colors.textMuted}
+                    style={styles.bookingReviewNoteInput}
+                    value={destinationDetail}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.bookingReviewService}>
+                <View style={styles.bookingReviewServiceIcon}>
+                  <Text style={styles.bookingReviewServiceEmoji}>{selectedServiceType.emoji}</Text>
+                </View>
+                <View style={styles.bookingReviewServiceCopy}>
+                  <Text selectable style={styles.bookingReviewServiceTitle}>
+                    {selectedServiceLabel}
+                  </Text>
+                  <Text selectable style={styles.bookingReviewServiceMeta}>
+                    {selectedServiceType.label} • {selectedServiceType.vehicle}
+                  </Text>
+                </View>
+                <CheckCircle color={colors.cyan} size={18} />
+              </View>
+
+              <Pressable
+                accessibilityLabel="تعديل الوجهة"
+                accessibilityRole="button"
+                onPress={editDestinationSelection}
+                style={({ pressed }) => [
+                  styles.bookingReviewEdit,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <MapPin color={colors.cyan} size={16} />
+                <Text selectable style={styles.bookingReviewEditText}>
+                  تعديل الوجهة
+                </Text>
+              </Pressable>
 
             {selectedServiceType.id === "delivery" ? (
               <CustomerDeliveryPackagePanel
@@ -1356,38 +1328,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 selectedType={selectedDeliveryPackageType}
               />
             ) : null}
-
-            <View style={styles.serviceGroup}>
-              <Text selectable style={styles.detailLabel}>
-                نوع الخدمة
-              </Text>
-              <View style={styles.serviceCard}>
-                <View style={styles.servicePriceBox}>
-                  <Text selectable style={styles.servicePrice}>
-                    {selectedServiceType.price}
-                  </Text>
-                  <Text selectable style={styles.serviceEta}>
-                    {selectedServiceType.eta}
-                  </Text>
-                </View>
-                <View style={styles.serviceCopy}>
-                  <View style={styles.serviceTitleRow}>
-                    <View style={styles.serviceBadge}>
-                      <Text selectable style={styles.serviceBadgeText}>
-                        أقرب كابتن
-                      </Text>
-                    </View>
-                    <Text selectable style={styles.serviceLabel}>
-                      {selectedServiceType.label}
-                    </Text>
-                  </View>
-                  <Text selectable style={styles.serviceMeta}>
-                    {selectedServiceType.description}
-                  </Text>
-                </View>
-                <CheckCircle color={colors.cyan} size={18} />
-              </View>
-            </View>
 
             <View style={styles.paymentGroup}>
               <Text selectable style={styles.detailLabel}>
@@ -1556,26 +1496,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               ) : null}
             </View>
           </GlassCard>
+          </MotionSurface>
         ) : null}
-
-        <View style={styles.sectionHeader}>
-          <Text selectable style={styles.sectionTitle}>
-            تفاصيل الطلب
-          </Text>
-        </View>
-
-        <GlassCard style={styles.tripCard}>
-          <View style={styles.tripPricePill}>
-            <Text style={styles.tripPrice}>{selectedServiceType.price}</Text>
-          </View>
-          <View style={styles.tripCopy}>
-            <Text style={styles.tripLabel}>{selectedServiceLabel}</Text>
-            <Text style={styles.tripMeta}>{selectedServiceType.description}</Text>
-            <Text style={styles.tripMeta}>
-              {selectedDestination ? `${selectedDestination.distance} • ${selectedServiceType.eta}` : selectedServiceType.eta}
-            </Text>
-          </View>
-        </GlassCard>
 
         <PremiumButton
           accessibilityLabel="طلب رحلة"
@@ -1586,38 +1508,46 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
         {renderTripConfirmation()}
 
+        {effectiveRideStage !== "idle" && selectedDestination ? (
+          <MotionSurface delay={60} testID="customer-motion-live-route">
+            <MockRouteMap
+              destinationArea={selectedDestination.area}
+              destinationDetail={destinationDetail}
+              phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
+              pickupLabel={selectedPickup.label}
+            />
+          </MotionSurface>
+        ) : null}
+
         {renderRideStagePanel()}
 
         {renderLiveRequestHub()}
 
-        <GlassCard style={styles.feedbackCard}>
-          <Text style={styles.feedbackText}>
-            {requestStatus ??
-              `الطلب المحدد: ${selectedServiceLabel} • ${selectedServiceType.price}`}
-          </Text>
-          {requestStatus ? (
+        {requestStatus ? (
+          <GlassCard style={styles.feedbackCard}>
+            <Text style={styles.feedbackText}>{requestStatus}</Text>
             <Text style={styles.feedbackMeta}>
               {`الطلب المحدد: ${selectedServiceLabel} • ${selectedServiceType.price}`}
             </Text>
-          ) : null}
-          {selectedDestination ? (
-            <>
-              <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
-              <Text style={styles.feedbackMeta}>{`${selectedPickup.label} ← ${selectedDestination.area}`}</Text>
-            </>
-          ) : null}
-          {requestStatus && onPreviewCaptainRequests ? (
-            <PremiumButton
-              accessibilityLabel="معاينة الطلب عند الكابتن"
-              label="معاينة الطلب عند الكابتن"
-              onPress={onPreviewCaptainRequests}
-              style={styles.previewCaptainButton}
-              variant="secondary"
-            >
-              <Car color={colors.textSoft} size={16} />
-            </PremiumButton>
-          ) : null}
-        </GlassCard>
+            {selectedDestination ? (
+              <>
+                <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
+                <Text style={styles.feedbackMeta}>{`${selectedPickup.label} ← ${selectedDestination.area}`}</Text>
+              </>
+            ) : null}
+            {onPreviewCaptainRequests ? (
+              <PremiumButton
+                accessibilityLabel="معاينة الطلب عند الكابتن"
+                label="معاينة الطلب عند الكابتن"
+                onPress={onPreviewCaptainRequests}
+                style={styles.previewCaptainButton}
+                variant="secondary"
+              >
+                <Car color={colors.textSoft} size={16} />
+              </PremiumButton>
+            ) : null}
+          </GlassCard>
+        ) : null}
               </View>
             )}
           </View>
@@ -1692,6 +1622,203 @@ function MotionSurface({
     >
       {children}
     </Animated.View>
+  );
+}
+
+function CustomerDestinationSelectionPage({
+  destinationDetail,
+  onChangeDestinationDetail,
+  onChangeQuery,
+  onContinue,
+  onSelectDestination,
+  pickupLabel,
+  query,
+  selectedDestination,
+  selectedServiceType
+}: {
+  destinationDetail: string;
+  onChangeDestinationDetail: (detail: string) => void;
+  onChangeQuery: (query: string) => void;
+  onContinue: () => void;
+  onSelectDestination: (place: DestinationPlace) => void;
+  pickupLabel: string;
+  query: string;
+  selectedDestination: DestinationPlace | null;
+  selectedServiceType: ServiceType;
+}) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const results = customerHomeMock.savedPlaces.filter(
+    (place) =>
+      !normalizedQuery ||
+      place.label.toLowerCase().includes(normalizedQuery) ||
+      place.area.toLowerCase().includes(normalizedQuery) ||
+      place.detail.toLowerCase().includes(normalizedQuery)
+  );
+
+  return (
+    <View testID="customer-destination-selection-page" style={styles.destinationSelectionPage}>
+      <MotionSurface delay={0} testID="customer-motion-destination-search">
+        <View style={styles.destinationSelectionHeader}>
+          <View style={styles.destinationSelectionIcon}>
+            <Search color={colors.cyan} size={22} />
+          </View>
+          <View style={styles.destinationSelectionCopy}>
+            <Text selectable style={styles.destinationSelectionTitle}>
+              اختر وجهتك
+            </Text>
+            <Text selectable style={styles.destinationSelectionMeta}>
+              ابحث عن المكان، راجع المسافة، وأضف ملاحظة وصول واضحة.
+            </Text>
+            <Text selectable style={styles.destinationSelectionService}>
+              {selectedServiceType.label}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.searchInputShell}>
+          <Search color={colors.textMuted} size={18} />
+          <TextInput
+            accessibilityLabel="ابحث عن وجهة"
+            onChangeText={onChangeQuery}
+            placeholder="ابحث عن مكان أو منطقة"
+            placeholderTextColor={colors.textMuted}
+            style={styles.searchInput}
+            value={query}
+          />
+        </View>
+      </MotionSurface>
+
+      <MotionSurface delay={60} testID="customer-motion-destination-map">
+        <MockRouteMap
+          destinationArea={selectedDestination?.area}
+          destinationDetail={selectedDestination ? destinationDetail : undefined}
+          phase="idle"
+          pickupLabel={pickupLabel}
+        />
+      </MotionSurface>
+
+      <MotionSurface delay={110} testID="customer-motion-destination-results">
+        <View style={styles.sectionHeader}>
+          <Text selectable style={styles.sectionTitle}>
+            أماكن مقترحة
+          </Text>
+          <Text selectable style={styles.searchResultCount}>
+            {`${results.length} نتائج`}
+          </Text>
+        </View>
+
+        <View style={styles.searchResultsList}>
+          {results.map((place) => {
+            const Icon = place.icon;
+            const isSelected = selectedDestination?.label === place.label;
+
+            return (
+              <Pressable
+                key={place.label}
+                accessibilityLabel={`اختيار وجهة ${place.label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => onSelectDestination(place)}
+                style={({ pressed }) => [
+                  styles.searchResultRow,
+                  isSelected ? styles.searchResultRowActive : null,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <View style={styles.searchResultMetaPill}>
+                  <Text selectable style={styles.searchResultMetaText}>
+                    {place.distance}
+                  </Text>
+                </View>
+                <View style={styles.searchResultCopy}>
+                  <Text selectable style={styles.searchResultTitle}>
+                    {place.label}
+                  </Text>
+                  <Text selectable style={styles.searchResultArea}>
+                    {place.area}
+                  </Text>
+                  <Text selectable style={styles.searchResultDetail}>
+                    {place.detail}
+                  </Text>
+                </View>
+                <View style={styles.searchResultIcon}>
+                  <Icon color={isSelected ? colors.text : colors.cyan} size={18} />
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {!results.length ? (
+          <GlassCard style={styles.destinationSelectionEmpty}>
+            <Text selectable style={styles.destinationSelectionEmptyText}>
+              لا توجد نتائج مطابقة، جرّب اسم منطقة أو مكان آخر.
+            </Text>
+          </GlassCard>
+        ) : null}
+      </MotionSurface>
+
+      {selectedDestination ? (
+        <MotionSurface delay={160} testID="customer-motion-destination-confirmation">
+          <GlassCard style={styles.searchSelectedCard} variant="strong">
+            <View style={styles.searchSelectedHeader}>
+              <View style={styles.searchSelectedIcon}>
+                <MapPin color={colors.cyan} size={18} />
+              </View>
+              <View style={styles.searchSelectedCopy}>
+                <Text selectable style={styles.searchSelectedTitle}>
+                  الوجهة المختارة
+                </Text>
+                <Text selectable style={styles.searchSelectedName}>
+                  {selectedDestination.label}
+                </Text>
+                <Text selectable style={styles.searchSelectedMeta}>
+                  {`${selectedDestination.area} • ${selectedDestination.distance}`}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.searchDetailField}>
+              <Text selectable style={styles.detailLabel}>
+                ملاحظة الوصول للكابتن
+              </Text>
+              <Text selectable style={styles.searchDetailHint}>
+                اكتب علامة واضحة مثل اسم البوابة أو مدخل المبنى.
+              </Text>
+              <TextInput
+                accessibilityLabel="ملاحظة الوصول للكابتن"
+                multiline
+                onChangeText={onChangeDestinationDetail}
+                placeholder="مثلاً: الباب الرئيسي بجانب الصيدلية"
+                placeholderTextColor={colors.textMuted}
+                style={[styles.detailInput, styles.searchDetailInput]}
+                value={destinationDetail}
+              />
+              {destinationDetail.trim() ? (
+                <Text selectable style={styles.searchDetailPreview}>
+                  {destinationDetail.trim()}
+                </Text>
+              ) : null}
+            </View>
+
+            <PremiumButton
+              accessibilityLabel="متابعة من الوجهة"
+              label="متابعة إلى تفاصيل الطلب"
+              onPress={onContinue}
+              style={styles.searchUseButton}
+            >
+              <ChevronLeft color={colors.text} size={17} />
+            </PremiumButton>
+          </GlassCard>
+        </MotionSurface>
+      ) : (
+        <GlassCard style={styles.destinationSelectionEmpty}>
+          <Text selectable style={styles.destinationSelectionEmptyText}>
+            اختر وجهة من النتائج ليظهر ملخص المسافة وخيار المتابعة.
+          </Text>
+        </GlassCard>
+      )}
+    </View>
   );
 }
 
@@ -1908,76 +2035,6 @@ function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
         </PremiumButton>
       </GlassCard>
     </MotionSurface>
-  );
-}
-
-function CustomerBookingFlowStrip({
-  destinationLabel,
-  serviceLabel
-}: {
-  destinationLabel: string | null;
-  serviceLabel: string;
-}) {
-  const steps = [
-    {
-      isReady: true,
-      label: "نوع الخدمة",
-      value: serviceLabel
-    },
-    {
-      isReady: Boolean(destinationLabel),
-      label: "الوجهة",
-      value: destinationLabel ? "الوجهة جاهزة" : "الوجهة بانتظار اختيارك"
-    },
-    {
-      isReady: Boolean(destinationLabel),
-      label: "التأكيد",
-      value: destinationLabel ? "جاهز للتأكيد" : "بعد اختيار الوجهة"
-    }
-  ];
-
-  return (
-    <GlassCard testID="customer-booking-flow-strip" style={styles.bookingFlowStrip} variant="strong">
-      <View style={styles.bookingFlowHeader}>
-        <View style={styles.bookingFlowHeaderIcon}>
-          <CheckCircle color={colors.cyan} size={18} />
-        </View>
-        <View style={styles.bookingFlowCopy}>
-          <Text selectable style={styles.bookingFlowTitle}>
-            ابدأ الطلب بثلاث خطوات
-          </Text>
-          <Text selectable style={styles.bookingFlowMeta}>
-            نوع الخدمة، الوجهة، ثم تأكيد الطلب
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.bookingFlowSteps}>
-        {steps.map((step, index) => (
-          <View key={step.label} style={[styles.bookingFlowStep, step.isReady ? styles.bookingFlowStepReady : null]}>
-            <View style={[styles.bookingFlowIndex, step.isReady ? styles.bookingFlowIndexReady : null]}>
-              <Text selectable style={styles.bookingFlowIndexText}>
-                {index + 1}
-              </Text>
-            </View>
-            <View style={styles.bookingFlowStepCopy}>
-              <Text selectable style={styles.bookingFlowStepLabel}>
-                {step.label}
-              </Text>
-              <Text selectable style={styles.bookingFlowStepValue}>
-                {step.value}
-              </Text>
-            </View>
-          </View>
-        ))}
-      </View>
-
-      {destinationLabel ? (
-        <Text selectable style={styles.bookingFlowDestination}>
-          {destinationLabel}
-        </Text>
-      ) : null}
-    </GlassCard>
   );
 }
 
@@ -3573,6 +3630,62 @@ const styles = StyleSheet.create({
   serviceSelectionPage: {
     gap: spacing.md
   },
+  destinationSelectionPage: {
+    gap: spacing.md
+  },
+  destinationSelectionHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.sm
+  },
+  destinationSelectionIcon: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.11)"
+  },
+  destinationSelectionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  destinationSelectionTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  destinationSelectionMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  destinationSelectionService: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  destinationSelectionEmpty: {
+    alignItems: "center",
+    padding: spacing.md,
+    borderRadius: radii.md
+  },
+  destinationSelectionEmptyText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20,
+    textAlign: "center"
+  },
   pickupSelectionPage: {
     gap: spacing.md
   },
@@ -3650,6 +3763,228 @@ const styles = StyleSheet.create({
   bookingDetailsPage: {
     gap: spacing.md
   },
+  bookingReviewCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.3)",
+    backgroundColor: "rgba(8, 20, 42, 0.76)"
+  },
+  bookingReviewHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  bookingReviewIcon: {
+    width: 44,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(52, 211, 153, 0.3)",
+    backgroundColor: "rgba(52, 211, 153, 0.1)"
+  },
+  bookingReviewCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingReviewTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  bookingReviewMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  bookingReviewRoute: {
+    minHeight: 126,
+    flexDirection: "row-reverse",
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  bookingReviewRouteLine: {
+    width: 18,
+    alignItems: "center",
+    paddingVertical: 5
+  },
+  bookingReviewRouteDot: {
+    width: 11,
+    height: 11,
+    borderRadius: radii.pill,
+    borderWidth: 2,
+    borderColor: colors.cyan,
+    backgroundColor: colors.background
+  },
+  bookingReviewRouteConnector: {
+    flex: 1,
+    width: 2,
+    backgroundColor: "rgba(0, 229, 255, 0.34)"
+  },
+  bookingReviewRouteDotDestination: {
+    borderColor: colors.violetSoft
+  },
+  bookingReviewRouteCopy: {
+    flex: 1,
+    justifyContent: "space-between",
+    gap: spacing.md
+  },
+  bookingReviewRoutePoint: {
+    alignItems: "flex-end",
+    gap: 2
+  },
+  bookingReviewRouteLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  bookingReviewRouteValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  bookingReviewRouteMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  bookingReviewRouteSummary: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    textAlign: "center"
+  },
+  bookingReviewMetrics: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  bookingReviewMetric: {
+    flex: 1,
+    minHeight: 64,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    padding: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  bookingReviewMetricValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+    textAlign: "center"
+  },
+  bookingReviewMetricLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: 10,
+    fontWeight: "800",
+    textAlign: "center"
+  },
+  bookingReviewNote: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(139, 92, 246, 0.09)"
+  },
+  bookingReviewNoteCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingReviewNoteLabel: {
+    ...rtlText,
+    color: colors.violetSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  bookingReviewNoteInput: {
+    ...rtlText,
+    width: "100%",
+    minHeight: 44,
+    paddingHorizontal: 0,
+    paddingVertical: spacing.xs,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20,
+    textAlignVertical: "top"
+  },
+  bookingReviewService: {
+    minHeight: 66,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.16)",
+    backgroundColor: "rgba(0, 229, 255, 0.055)"
+  },
+  bookingReviewServiceIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  bookingReviewServiceEmoji: {
+    fontSize: 22
+  },
+  bookingReviewServiceCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingReviewServiceTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  bookingReviewServiceMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  bookingReviewEdit: {
+    minHeight: 42,
+    alignSelf: "flex-end",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  bookingReviewEditText: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   bookingWorkspaceBack: {
     minHeight: 42,
     alignSelf: "flex-end",
@@ -3712,177 +4047,8 @@ const styles = StyleSheet.create({
     width: "100%",
     minHeight: 58
   },
-  primaryBookingCard: {
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.34)"
-  },
-  primaryBookingHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.md
-  },
-  primaryBookingIcon: {
-    width: 50,
-    height: 50,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.28)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  primaryBookingCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  primaryBookingTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.section,
-    fontWeight: "900"
-  },
-  primaryBookingMeta: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "800",
-    lineHeight: 20
-  },
-  primaryBookingMetrics: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  primaryBookingMetric: {
-    flex: 1,
-    minHeight: 58,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 3,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.055)"
-  },
-  primaryBookingMetricValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  primaryBookingMetricLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  primaryBookingButton: {
-    minHeight: 50,
-    borderRadius: radii.sm
-  },
   motionSurface: {
     width: "100%"
-  },
-  bookingFlowStrip: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.26)",
-    backgroundColor: "rgba(7, 14, 28, 0.46)"
-  },
-  bookingFlowHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  bookingFlowHeaderIcon: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.26)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
-  },
-  bookingFlowCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  bookingFlowTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  bookingFlowMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  bookingFlowSteps: {
-    flexDirection: "row-reverse",
-    gap: spacing.xs
-  },
-  bookingFlowStep: {
-    flex: 1,
-    minHeight: 74,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.14)",
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
-  },
-  bookingFlowStepReady: {
-    borderColor: "rgba(0, 229, 255, 0.3)",
-    backgroundColor: "rgba(0, 229, 255, 0.08)"
-  },
-  bookingFlowIndex: {
-    width: 24,
-    height: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(147, 177, 255, 0.12)"
-  },
-  bookingFlowIndexReady: {
-    backgroundColor: "rgba(0, 229, 255, 0.2)"
-  },
-  bookingFlowIndexText: {
-    color: colors.text,
-    fontSize: typography.tiny,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  bookingFlowStepCopy: {
-    alignItems: "flex-end",
-    gap: 3
-  },
-  bookingFlowStepLabel: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
-  bookingFlowStepValue: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: "800",
-    lineHeight: 15
-  },
-  bookingFlowDestination: {
-    ...rtlText,
-    color: colors.cyan,
-    fontSize: typography.compact,
-    fontWeight: "900"
   },
   serviceTypePicker: {
     gap: spacing.md,
@@ -4058,63 +4224,6 @@ const styles = StyleSheet.create({
     minHeight: 48,
     borderRadius: radii.sm
   },
-  searchCard: {
-    minHeight: 72,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg
-  },
-  searchIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  searchCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  searchLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "700"
-  },
-  searchValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "800"
-  },
-  quickStats: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  statCard: {
-    flex: 1,
-    minHeight: 112,
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    padding: spacing.md
-  },
-  statValue: {
-    color: colors.text,
-    fontSize: 22,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"],
-    letterSpacing: 0
-  },
-  statLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "700"
-  },
   sectionHeader: {
     alignItems: "flex-end",
     paddingTop: spacing.xs
@@ -4125,124 +4234,9 @@ const styles = StyleSheet.create({
     fontSize: typography.section,
     fontWeight: "900"
   },
-  savedPlaces: {
-    gap: spacing.sm
-  },
-  placeCard: {
-    minHeight: 74,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md
-  },
-  placeIcon: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.sm,
-    backgroundColor: colors.surfaceSoft
-  },
-  placeCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  placeLabel: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  placeDetail: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "600"
-  },
-  tripCard: {
-    minHeight: 68,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: spacing.md
-  },
-  selectableCardActive: {
-    borderColor: "rgba(0, 229, 255, 0.46)",
-    backgroundColor: "rgba(0, 229, 255, 0.08)"
-  },
-  tripPricePill: {
-    minWidth: 76,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  tripPrice: {
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  tripCopy: {
-    alignItems: "flex-end",
-    gap: 4
-  },
-  tripLabel: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  tripMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "700"
-  },
   primaryButton: {
     height: 56,
     borderRadius: radii.sm
-  },
-  destinationCard: {
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.26)"
-  },
-  destinationHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.md
-  },
-  destinationPin: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.28)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  destinationCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  destinationTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  destinationMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "700"
   },
   detailField: {
     gap: spacing.xs
@@ -4384,73 +4378,6 @@ const styles = StyleSheet.create({
   },
   paymentGroup: {
     gap: spacing.xs
-  },
-  serviceGroup: {
-    gap: spacing.xs
-  },
-  serviceCard: {
-    minHeight: 72,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.46)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
-  },
-  serviceCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  serviceTitleRow: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.xs
-  },
-  serviceLabel: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  serviceMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  servicePriceBox: {
-    minWidth: 78,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  servicePrice: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  serviceEta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  serviceBadge: {
-    minHeight: 24,
-    justifyContent: "center",
-    paddingHorizontal: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.16)"
-  },
-  serviceBadgeText: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: 10,
-    fontWeight: "900"
   },
   paymentOptions: {
     flexDirection: "row-reverse",
