@@ -6,6 +6,7 @@ import {
   Car,
   CheckCircle,
   ChevronLeft,
+  ChevronRight,
   Clock,
   CreditCard,
   MapPin,
@@ -109,6 +110,7 @@ const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
+type CustomerBookingStep = "service" | "pickup" | "details";
 
 const visaPaymentSchema = z.object({
   cardholderName: z.string().trim().min(2, "اسم حامل البطاقة مطلوب"),
@@ -312,6 +314,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [selectedPickup, setSelectedPickup] = useState<PickupPoint>(customerHomeMock.pickupOptions[0]);
   const [isMockLocationEnabled, setIsMockLocationEnabled] = useState(false);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
+  const [isBookingFlowOpen, setIsBookingFlowOpen] = useState(false);
+  const [bookingStep, setBookingStep] = useState<CustomerBookingStep>("service");
   const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const [requestStatus, setRequestStatus] = useState<string | null>(null);
@@ -385,6 +389,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
       ? `${destinationDetail} • ${selectedDeliveryPackageType} • ${deliveryPackageDescriptionTrimmed}`
       : destinationDetail;
+  const isFocusedCustomerHome = activeNav === "الرئيسية" && !isBookingFlowOpen;
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -417,6 +422,23 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setIsMockLocationEnabled(true);
     setIsNotificationsOpen(false);
     setNotice("تم تفعيل موقع mock لهذه النسخة");
+  }
+
+  function openBookingFlow() {
+    setActiveNav("الرئيسية");
+    setIsBookingFlowOpen(true);
+    setBookingStep("service");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function closeBookingFlow() {
+    setIsBookingFlowOpen(false);
+    setBookingStep("service");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
   }
 
   function selectPickup(nextPickup: PickupPoint) {
@@ -467,8 +489,15 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function continueSelectedServiceType() {
-    setActiveNav("البحث");
-    setNotice(selectedServiceType.searchNotice);
+    setBookingStep("pickup");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }
+
+  function continuePickupSelection() {
+    setBookingStep("details");
+    setNotice(null);
     setIsNotificationsOpen(false);
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }
@@ -480,6 +509,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     }
 
     setActiveNav("الرئيسية");
+    setIsBookingFlowOpen(true);
+    setBookingStep("details");
     setNotice(`تم تجهيز ${selectedDestination.label} للطلب`);
   }
 
@@ -1053,12 +1084,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           <CustomerNotificationCenter onClose={() => setIsNotificationsOpen(false)} />
         ) : null}
 
-        {latestRealtimeEvent ? (
+        {!isFocusedCustomerHome && latestRealtimeEvent ? (
           <RealtimeStatusCard event={latestRealtimeEvent} summary={realtimeConnectionSummary} />
         ) : null}
-        <RealtimeActivityFeed events={recentRealtimeEvents} />
+        {!isFocusedCustomerHome ? <RealtimeActivityFeed events={recentRealtimeEvents} /> : null}
 
-        <View style={styles.heroCopy}>
+        <View style={[styles.heroCopy, isFocusedCustomerHome ? styles.focusedHeroCopy : null]}>
           <Text selectable style={styles.greeting}>
             {activeNav === "رحلاتي"
               ? customerHomeMock.trips.title
@@ -1066,7 +1097,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 ? "ملف العميل"
                 : activeNav === "البحث"
                   ? "البحث"
-                  : customerHomeMock.greeting}
+                  : isBookingFlowOpen
+                    ? "إنشاء طلب جديد"
+                    : "جاهز لمشوارك؟"}
           </Text>
           <Text selectable style={styles.subtitle}>
             {activeNav === "رحلاتي"
@@ -1075,7 +1108,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 ? "بياناتك الأساسية وتجربة الدفع mock"
                 : activeNav === "البحث"
                   ? "اختر وجهتك بسرعة من الأماكن القريبة والمحفوظة"
-                  : customerHomeMock.subtitle}
+                  : isBookingFlowOpen
+                    ? "خطوات رحلتك مرتبة في مساحة واحدة"
+                    : "اضغط على طلب رحلة، ونحن نرتب لك باقي الخطوات ببساطة"}
           </Text>
         </View>
 
@@ -1102,8 +1137,38 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             searchCopy={selectedSearchCopy}
             selectedDestination={selectedDestination}
           />
-        ) : (
-          <>
+        ) : isBookingFlowOpen ? (
+          <View testID="customer-booking-workspace" style={styles.bookingWorkspace}>
+            <Pressable
+              accessibilityLabel="العودة إلى الرئيسية"
+              accessibilityRole="button"
+              hitSlop={8}
+              onPress={closeBookingFlow}
+              style={({ pressed }) => [styles.bookingWorkspaceBack, pressed ? styles.pressed : null]}
+            >
+              <ChevronRight color={colors.textSoft} size={19} />
+              <Text selectable style={styles.bookingWorkspaceBackText}>
+                الرئيسية
+              </Text>
+            </Pressable>
+
+            {bookingStep === "service" ? (
+              <CustomerServiceSelectionPage
+                onContinue={continueSelectedServiceType}
+                onSelect={selectServiceType}
+                selectedServiceType={selectedServiceType}
+              />
+            ) : bookingStep === "pickup" ? (
+              <CustomerPickupSelectionPage
+                isMockLocationEnabled={isMockLocationEnabled}
+                onContinue={continuePickupSelection}
+                onEnableLocation={enableMockLocation}
+                onSelectPickup={selectPickup}
+                selectedPickup={selectedPickup}
+                selectedServiceType={selectedServiceType}
+              />
+            ) : (
+              <View testID="customer-booking-details-page" style={styles.bookingDetailsPage}>
             <MotionSurface delay={0} testID="customer-motion-primary-booking">
               <GlassCard testID="customer-primary-booking-card" style={styles.primaryBookingCard} variant="strong">
                 <View style={styles.primaryBookingHeader}>
@@ -1157,121 +1222,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               />
             </MotionSurface>
 
-            <MotionSurface delay={140} testID="customer-motion-service-type">
-              <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker}>
-                <View style={styles.serviceTypeHeader}>
-                  <View style={styles.serviceTypeHeaderIcon}>
-                    <Car color={colors.cyan} size={19} />
-                  </View>
-                  <View style={styles.serviceTypeHeaderCopy}>
-                    <Text selectable style={styles.serviceTypeTitle}>
-                      اختر نوع الخدمة
-                    </Text>
-                    <Text selectable style={styles.serviceTypeMeta}>
-                      ثلاث خيارات واضحة حسب مشوارك اليوم.
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.serviceTypeList}>
-                  {customerHomeMock.serviceTypes.map((serviceType) => {
-                    const isSelected = selectedServiceType.id === serviceType.id;
-
-                    return (
-                      <Pressable
-                        key={serviceType.id}
-                        accessibilityRole="button"
-                        accessibilityLabel={`اختيار ${serviceType.label}`}
-                        accessibilityState={{ selected: isSelected }}
-                        onPress={() => selectServiceType(serviceType)}
-                        style={({ pressed }) => [
-                          styles.serviceTypeOption,
-                          isSelected ? styles.serviceTypeOptionActive : null,
-                          pressed ? styles.pressed : null
-                        ]}
-                      >
-                        <View style={styles.serviceTypeEmoji}>
-                          <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
-                        </View>
-                        <View style={styles.serviceTypeCopy}>
-                          <Text selectable style={styles.serviceTypeOptionTitle}>
-                            {serviceType.label}
-                          </Text>
-                          <Text selectable style={styles.serviceTypeOptionMeta}>
-                            {serviceType.vehicle} • {serviceType.description}
-                          </Text>
-                        </View>
-                        <View style={styles.serviceTypePricePill}>
-                          <Text selectable style={styles.serviceTypePriceText}>
-                            {serviceType.price}
-                          </Text>
-                        </View>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </GlassCard>
-            </MotionSurface>
-
-            <MotionSurface delay={210} testID="customer-motion-service-next-step">
-              <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
-                <View style={styles.serviceNextStepHeader}>
-                  <View style={styles.serviceNextStepBadge}>
-                    <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
-                  </View>
-                  <View style={styles.serviceNextStepCopy}>
-                    <Text selectable style={styles.serviceNextStepTitle}>
-                      {selectedServiceType.nextStepTitle}
-                    </Text>
-                    <Text selectable style={styles.serviceNextStepMeta}>
-                      {selectedServiceType.nextStepHint}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.serviceNextStepSummary}>
-                  <View style={styles.serviceNextStepMetric}>
-                    <Text selectable style={styles.serviceNextStepValue}>
-                      {selectedServiceType.eta}
-                    </Text>
-                    <Text selectable style={styles.serviceNextStepLabel}>
-                      وصول قريب
-                    </Text>
-                  </View>
-                  <View style={styles.serviceNextStepMetric}>
-                    <Text selectable style={styles.serviceNextStepValue}>
-                      {selectedServiceType.price}
-                    </Text>
-                    <Text selectable style={styles.serviceNextStepLabel}>
-                      تقدير أولي
-                    </Text>
-                  </View>
-                </View>
-
-                <PremiumButton
-                  accessibilityLabel={selectedServiceType.nextStepAction}
-                  label={selectedServiceType.nextStepAction}
-                  onPress={continueSelectedServiceType}
-                  style={styles.serviceNextStepButton}
-                >
-                  <Search color={colors.text} size={17} />
-                </PremiumButton>
-              </GlassCard>
-            </MotionSurface>
-
             <MockRouteMap
               destinationArea={selectedDestination?.area}
               destinationDetail={selectedDestination ? destinationDetail : undefined}
               phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
               pickupLabel={selectedPickup.label}
             />
-
-        <CustomerLocationCard
-          isMockLocationEnabled={isMockLocationEnabled}
-          onEnableLocation={enableMockLocation}
-          onSelectPickup={selectPickup}
-          selectedPickup={selectedPickup}
-        />
 
         <Pressable
           accessibilityRole="button"
@@ -1662,7 +1618,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </PremiumButton>
           ) : null}
         </GlassCard>
-          </>
+              </View>
+            )}
+          </View>
+        ) : (
+          <CustomerBookingLauncher onStart={openBookingFlow} />
         )}
       </ScrollView>
 
@@ -1688,6 +1648,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               onPress={() => {
                 setNotice(null);
                 setActiveNav(item.label);
+                if (item.label === "الرئيسية") {
+                  setIsBookingFlowOpen(false);
+                }
               }}
               style={({ pressed }) => [
                 styles.navItem,
@@ -1703,9 +1666,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           );
         })}
       </GlassCard>
-      <View pointerEvents="none" style={[styles.activeNavToast, { bottom: insets.bottom + 92 }]}>
-        <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
-      </View>
+      {activeNav !== "الرئيسية" ? (
+        <View pointerEvents="none" style={[styles.activeNavToast, { bottom: insets.bottom + 92 }]}>
+          <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -1727,6 +1692,222 @@ function MotionSurface({
     >
       {children}
     </Animated.View>
+  );
+}
+
+function CustomerPickupSelectionPage({
+  isMockLocationEnabled,
+  onContinue,
+  onEnableLocation,
+  onSelectPickup,
+  selectedPickup,
+  selectedServiceType
+}: {
+  isMockLocationEnabled: boolean;
+  onContinue: () => void;
+  onEnableLocation: () => void;
+  onSelectPickup: (pickup: PickupPoint) => void;
+  selectedPickup: PickupPoint;
+  selectedServiceType: ServiceType;
+}) {
+  return (
+    <View testID="customer-pickup-selection-page" style={styles.pickupSelectionPage}>
+      <MotionSurface delay={0} testID="customer-motion-pickup-selection">
+        <View style={styles.pickupSelectionHeader}>
+          <View style={styles.pickupSelectionIcon}>
+            <MapPin color={colors.cyan} size={22} />
+          </View>
+          <View style={styles.pickupSelectionCopy}>
+            <Text selectable style={styles.pickupSelectionTitle}>
+              حدد موقع الانطلاق
+            </Text>
+            <Text selectable style={styles.pickupSelectionMeta}>
+              استخدم موقعك الحالي أو اختر أقرب نقطة مناسبة.
+            </Text>
+            <Text selectable style={styles.pickupSelectionService}>
+              {selectedServiceType.label}
+            </Text>
+          </View>
+        </View>
+      </MotionSurface>
+
+      <MotionSurface delay={70} testID="customer-motion-pickup-location">
+        <CustomerLocationCard
+          isMockLocationEnabled={isMockLocationEnabled}
+          onEnableLocation={onEnableLocation}
+          onSelectPickup={onSelectPickup}
+          selectedPickup={selectedPickup}
+        />
+      </MotionSurface>
+
+      <MotionSurface delay={140} testID="customer-motion-pickup-continue">
+        <GlassCard style={styles.pickupSelectionSummary} variant="strong">
+          <View style={styles.pickupSelectionSummaryCopy}>
+            <Text selectable style={styles.pickupSelectionSummaryLabel}>
+              نقطة الانطلاق المختارة
+            </Text>
+            <Text selectable style={styles.pickupSelectionSummaryValue}>
+              {selectedPickup.label}
+            </Text>
+            <Text selectable style={styles.pickupSelectionSummaryMeta}>
+              {selectedPickup.detail}
+            </Text>
+          </View>
+          <PremiumButton
+            accessibilityLabel="متابعة من موقع الانطلاق"
+            label="متابعة"
+            onPress={onContinue}
+            style={styles.pickupSelectionButton}
+          >
+            <ChevronLeft color={colors.text} size={17} />
+          </PremiumButton>
+        </GlassCard>
+      </MotionSurface>
+    </View>
+  );
+}
+
+function CustomerServiceSelectionPage({
+  onContinue,
+  onSelect,
+  selectedServiceType
+}: {
+  onContinue: () => void;
+  onSelect: (serviceType: ServiceType) => void;
+  selectedServiceType: ServiceType;
+}) {
+  return (
+    <View testID="customer-service-selection-page" style={styles.serviceSelectionPage}>
+      <MotionSurface delay={0} testID="customer-motion-service-type">
+        <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker} variant="strong">
+          <View style={styles.serviceTypeHeader}>
+            <View style={styles.serviceTypeHeaderIcon}>
+              <Car color={colors.cyan} size={19} />
+            </View>
+            <View style={styles.serviceTypeHeaderCopy}>
+              <Text selectable style={styles.serviceTypeTitle}>
+                اختر نوع رحلتك
+              </Text>
+              <Text selectable style={styles.serviceTypeMeta}>
+                ثلاثة خيارات بسيطة، اختر الأنسب لمشوارك.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.serviceTypeList}>
+            {customerHomeMock.serviceTypes.map((serviceType) => {
+              const isSelected = selectedServiceType.id === serviceType.id;
+
+              return (
+                <Pressable
+                  key={serviceType.id}
+                  accessibilityRole="button"
+                  accessibilityLabel={`اختيار ${serviceType.label}`}
+                  accessibilityState={{ selected: isSelected }}
+                  onPress={() => onSelect(serviceType)}
+                  style={({ pressed }) => [
+                    styles.serviceTypeOption,
+                    isSelected ? styles.serviceTypeOptionActive : null,
+                    pressed ? styles.pressed : null
+                  ]}
+                >
+                  <View style={styles.serviceTypeEmoji}>
+                    <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
+                  </View>
+                  <View style={styles.serviceTypeCopy}>
+                    <Text selectable style={styles.serviceTypeOptionTitle}>
+                      {serviceType.label}
+                    </Text>
+                    <Text selectable style={styles.serviceTypeOptionMeta}>
+                      {serviceType.vehicle} • {serviceType.description}
+                    </Text>
+                  </View>
+                  <View style={styles.serviceTypePricePill}>
+                    <Text selectable style={styles.serviceTypePriceText}>
+                      {serviceType.price}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </GlassCard>
+      </MotionSurface>
+
+      <MotionSurface delay={90} testID="customer-motion-service-next-step">
+        <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
+          <View style={styles.serviceNextStepHeader}>
+            <View style={styles.serviceNextStepBadge}>
+              <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
+            </View>
+            <View style={styles.serviceNextStepCopy}>
+              <Text selectable style={styles.serviceNextStepTitle}>
+                {selectedServiceType.nextStepTitle}
+              </Text>
+              <Text selectable style={styles.serviceNextStepMeta}>
+                {selectedServiceType.nextStepHint}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.serviceNextStepSummary}>
+            <View style={styles.serviceNextStepMetric}>
+              <Text selectable style={styles.serviceNextStepValue}>
+                {selectedServiceType.eta}
+              </Text>
+              <Text selectable style={styles.serviceNextStepLabel}>
+                وصول قريب
+              </Text>
+            </View>
+            <View style={styles.serviceNextStepMetric}>
+              <Text selectable style={styles.serviceNextStepValue}>
+                {selectedServiceType.price}
+              </Text>
+              <Text selectable style={styles.serviceNextStepLabel}>
+                تقدير أولي
+              </Text>
+            </View>
+          </View>
+
+          <PremiumButton
+            accessibilityLabel="متابعة الخدمة المختارة"
+            label="متابعة"
+            onPress={onContinue}
+            style={styles.serviceNextStepButton}
+          >
+            <ChevronLeft color={colors.text} size={17} />
+          </PremiumButton>
+        </GlassCard>
+      </MotionSurface>
+    </View>
+  );
+}
+
+function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
+  return (
+    <MotionSurface delay={0} testID="customer-motion-booking-launcher">
+      <GlassCard testID="customer-booking-launcher" style={styles.bookingLauncherCard} variant="strong">
+        <View style={styles.bookingLauncherIcon}>
+          <Car color={colors.cyan} size={28} />
+        </View>
+        <View style={styles.bookingLauncherCopy}>
+          <Text selectable style={styles.bookingLauncherTitle}>
+            رحلتك تبدأ من هنا
+          </Text>
+          <Text selectable style={styles.bookingLauncherMeta}>
+            افتح طلبًا جديدًا، وسنأخذك بين الخطوات واحدة واحدة.
+          </Text>
+        </View>
+        <PremiumButton
+          accessibilityLabel="بدء طلب رحلة"
+          label="اطلب رحلة"
+          onPress={onStart}
+          style={styles.bookingLauncherButton}
+        >
+          <MapPin color={colors.text} size={18} />
+        </PremiumButton>
+      </GlassCard>
+    </MotionSurface>
   );
 }
 
@@ -2429,7 +2610,7 @@ function CustomerLocationCard({
   selectedPickup: PickupPoint;
 }) {
   return (
-    <GlassCard style={styles.locationCard} variant="strong">
+    <GlassCard testID="customer-pickup-location-card" style={styles.locationCard} variant="strong">
       <View style={styles.locationHeader}>
         <Pressable
           accessibilityLabel="تفعيل موقع mock"
@@ -3368,6 +3549,10 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     paddingTop: spacing.xs
   },
+  focusedHeroCopy: {
+    alignItems: "center",
+    paddingTop: spacing.md
+  },
   greeting: {
     ...rtlText,
     color: colors.text,
@@ -3381,6 +3566,151 @@ const styles = StyleSheet.create({
     fontSize: typography.body,
     fontWeight: "600",
     letterSpacing: 0
+  },
+  bookingWorkspace: {
+    gap: spacing.md
+  },
+  serviceSelectionPage: {
+    gap: spacing.md
+  },
+  pickupSelectionPage: {
+    gap: spacing.md
+  },
+  pickupSelectionHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.sm
+  },
+  pickupSelectionIcon: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.11)"
+  },
+  pickupSelectionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  pickupSelectionTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  pickupSelectionMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  pickupSelectionService: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  pickupSelectionSummary: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(139, 92, 246, 0.28)"
+  },
+  pickupSelectionSummaryCopy: {
+    alignItems: "flex-end",
+    gap: 3
+  },
+  pickupSelectionSummaryLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  pickupSelectionSummaryValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  pickupSelectionSummaryMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  pickupSelectionButton: {
+    minHeight: 52
+  },
+  bookingDetailsPage: {
+    gap: spacing.md
+  },
+  bookingWorkspaceBack: {
+    minHeight: 42,
+    alignSelf: "flex-end",
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  bookingWorkspaceBackText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  bookingLauncherCard: {
+    minHeight: 360,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.34)",
+    backgroundColor: "rgba(8, 20, 42, 0.78)"
+  },
+  bookingLauncherIcon: {
+    width: 68,
+    height: 68,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.3)",
+    backgroundColor: "rgba(0, 229, 255, 0.11)"
+  },
+  bookingLauncherCopy: {
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  bookingLauncherTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900",
+    textAlign: "center"
+  },
+  bookingLauncherMeta: {
+    ...rtlText,
+    maxWidth: 280,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 21,
+    textAlign: "center"
+  },
+  bookingLauncherButton: {
+    width: "100%",
+    minHeight: 58
   },
   primaryBookingCard: {
     gap: spacing.md,

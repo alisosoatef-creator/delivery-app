@@ -8,7 +8,7 @@ import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CustomerHomeScreen } from "../customer-home-screen";
 
-async function renderCustomerHome() {
+async function renderCustomerLanding() {
   return render(
     <SafeAreaProvider
       initialMetrics={{
@@ -23,7 +23,33 @@ async function renderCustomerHome() {
   );
 }
 
-async function renderCustomerHomeWithCaptainAcceptanceProbe() {
+async function renderCustomerServiceSelection() {
+  const screen = await renderCustomerLanding();
+
+  await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+
+  return screen;
+}
+
+async function renderCustomerPickupSelection() {
+  const screen = await renderCustomerServiceSelection();
+
+  await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+
+  return screen;
+}
+
+async function renderCustomerHome() {
+  const screen = await renderCustomerPickupSelection();
+
+  await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+
+  return screen;
+}
+
+async function renderCustomerHomeWithCaptainAcceptanceProbe(
+  advanceTo: "service" | "pickup" | "details" = "details"
+) {
   function CaptainAcceptanceProbe() {
     const [rideRequests, dispatchRideRequests] = useMockRideRequests();
     const feedback = rideRequests.customerFeedback
@@ -96,7 +122,7 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe() {
     );
   }
 
-  return render(
+  const screen = await render(
     <SafeAreaProvider
       initialMetrics={{
         frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -111,14 +137,113 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe() {
       </MockAppProvider>
     </SafeAreaProvider>
   );
+
+  await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+  if (advanceTo !== "service") {
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+  }
+  if (advanceTo === "details") {
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+  }
+
+  return screen;
 }
 
 describe("CustomerHomeScreen", () => {
+  it("opens a dedicated booking workspace from a focused customer home", async () => {
+    const screen = await renderCustomerLanding();
+
+    expect(screen.getByTestId("customer-booking-launcher")).toBeTruthy();
+    expect(screen.getByText("جاهز لمشوارك؟")).toBeTruthy();
+    expect(screen.queryByTestId("customer-service-type-picker")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+
+    expect(screen.getByTestId("customer-booking-workspace")).toBeTruthy();
+    expect(screen.getByTestId("customer-service-type-picker")).toBeTruthy();
+    expect(screen.getByLabelText("العودة إلى الرئيسية")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("العودة إلى الرئيسية"));
+
+    expect(screen.getByTestId("customer-booking-launcher")).toBeTruthy();
+    expect(screen.queryByTestId("customer-booking-workspace")).toBeNull();
+  });
+
+  it("starts booking on a dedicated three-option service selection page", async () => {
+    const screen = await renderCustomerLanding();
+
+    await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+
+    expect(screen.getByTestId("customer-service-selection-page")).toBeTruthy();
+    expect(screen.getByText("اختر نوع رحلتك")).toBeTruthy();
+    expect(screen.getByLabelText("اختيار رحلة داخل المدينة")).toBeTruthy();
+    expect(screen.getByLabelText("اختيار رحلة خارج المدينة")).toBeTruthy();
+    expect(screen.getByLabelText("اختيار توصيل طلبية")).toBeTruthy();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+
+    expect(screen.getByTestId("customer-pickup-selection-page")).toBeTruthy();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+    expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByTestId("customer-service-type-picker")).toBeNull();
+  });
+
+  it("uses a dedicated pickup step with mock GPS before trip details", async () => {
+    const screen = await renderCustomerLanding();
+
+    await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+
+    expect(screen.getByTestId("customer-pickup-selection-page")).toBeTruthy();
+    expect(screen.getByText("حدد موقع الانطلاق")).toBeTruthy();
+    expect(screen.getByText("GPS mock غير مفعّل")).toBeTruthy();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("تفعيل موقع mock"));
+    await fireEvent.press(screen.getByLabelText("اختيار نقطة انطلاق رفيديا"));
+
+    expect(screen.getByText("GPS mock مفعّل")).toBeTruthy();
+    expect(screen.getByText("نقطة الانطلاق: رفيديا")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+
+    expect(screen.getByTestId("customer-booking-details-page")).toBeTruthy();
+    expect(screen.getByTestId("mock-route-map")).toBeTruthy();
+    expect(screen.getByText("انطلاق: رفيديا")).toBeTruthy();
+    expect(screen.queryByTestId("customer-pickup-location-card")).toBeNull();
+  });
+
+  it("keeps the focused customer home free from operational booking noise", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+    await fireEvent.press(screen.getByLabelText("العودة إلى الرئيسية"));
+
+    expect(screen.getByTestId("customer-booking-launcher")).toBeTruthy();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+    expect(screen.queryByText("سجل التحديثات المباشرة")).toBeNull();
+    expect(screen.queryByText("التبويب النشط: الرئيسية")).toBeNull();
+  });
+
+  it("returns to the focused launcher when the customer taps the home tab", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+    await fireEvent.press(screen.getByText("الرئيسية"));
+
+    expect(screen.getByTestId("customer-booking-launcher")).toBeTruthy();
+    expect(screen.queryByTestId("customer-booking-workspace")).toBeNull();
+  });
+
   it("renders the Arabic map-first customer mock experience for Nablus", async () => {
     const screen = await renderCustomerHome();
 
     expect(screen.getByText("واصل")).toBeTruthy();
-    expect(screen.getByText("أهلًا بك، علي")).toBeTruthy();
+    expect(screen.getByText("إنشاء طلب جديد")).toBeTruthy();
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
     expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
@@ -148,12 +273,19 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("wraps the primary customer booking path with motion-ready surfaces", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerServiceSelection();
+
+    expect(screen.getByTestId("customer-motion-service-type")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-service-next-step")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+
+    expect(screen.getByTestId("customer-pickup-selection-page")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
 
     expect(screen.getByTestId("customer-motion-primary-booking")).toBeTruthy();
     expect(screen.getByTestId("customer-motion-booking-flow")).toBeTruthy();
-    expect(screen.getByTestId("customer-motion-service-type")).toBeTruthy();
-    expect(screen.getByTestId("customer-motion-service-next-step")).toBeTruthy();
   });
 
   it("adds haptic feedback to the primary destination action", async () => {
@@ -263,7 +395,7 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("lets the customer enable mock GPS and choose a pickup point before confirming", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerPickupSelection();
 
     expect(screen.getByText("GPS mock غير مفعّل")).toBeTruthy();
 
@@ -274,6 +406,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("نقطة الانطلاق: رفيديا")).toBeTruthy();
     expect(screen.getAllByText("رفيديا - قرب دوار الشهداء").length).toBeGreaterThanOrEqual(1);
 
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
@@ -333,10 +466,10 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("lets the customer choose one of three simple service types before booking", async () => {
-    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe("service");
 
     expect(screen.getByTestId("customer-service-type-picker")).toBeTruthy();
-    expect(screen.getByText("اختر نوع الخدمة")).toBeTruthy();
+    expect(screen.getByText("اختر نوع رحلتك")).toBeTruthy();
     expect(screen.getAllByText("رحلة داخل المدينة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("رحلة خارج المدينة")).toBeTruthy();
     expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
@@ -344,9 +477,11 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("اختيار رحلة خارج المدينة"));
 
     expect(screen.getByText("تم اختيار رحلة خارج المدينة")).toBeTruthy();
-    expect(screen.getAllByText("رحلة خارج المدينة").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("رحلة خارج المدينة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("45 شيكل").length).toBeGreaterThanOrEqual(1);
 
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
@@ -365,25 +500,28 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("shows a focused next step for the selected service type", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
 
     expect(screen.getByTestId("customer-service-next-step")).toBeTruthy();
     expect(screen.getByText("تجهيز توصيل الطلبية")).toBeTruthy();
     expect(screen.getByText("حدد نقطة الاستلام والتسليم وأضف وصف الغرض لاحقا.")).toBeTruthy();
-    expect(screen.getByText("متابعة توصيل الطلبية")).toBeTruthy();
+    expect(screen.getByText("متابعة")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("متابعة توصيل الطلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
 
-    expect(screen.getByText("ابحث عن وجهة تسليم الطلبية")).toBeTruthy();
-    expect(screen.getAllByText("البحث").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-pickup-selection-page")).toBeTruthy();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+    expect(screen.queryByTestId("customer-service-type-picker")).toBeNull();
   });
 
   it("shows a compact order readiness summary before confirming the request", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
     await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "استلام من الباب الرئيسي وتسليم عند الاستقبال");
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
@@ -401,10 +539,11 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("projects pickup destination detail and captain movement onto the mock map", async () => {
-    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe("pickup");
 
     await fireEvent.press(screen.getByLabelText("تفعيل موقع mock"));
     await fireEvent.press(screen.getByLabelText("اختيار نقطة انطلاق رفيديا"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
     await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
 
@@ -902,15 +1041,17 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("استخدام الوجهة المختارة"));
 
     expect(screen.getByText("تم تجهيز جامعة النجاح للطلب")).toBeTruthy();
-    expect(screen.getByText("أهلًا بك، علي")).toBeTruthy();
+    expect(screen.getByText("إنشاء طلب جديد")).toBeTruthy();
     expect(screen.getAllByText("الوجهة المختارة: جامعة النجاح").length).toBeGreaterThanOrEqual(1);
   });
 
   it("adapts search guidance and selected destination copy to the active service type", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
-    await fireEvent.press(screen.getByLabelText("متابعة توصيل الطلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+    await fireEvent.press(screen.getByLabelText("اختيار الوجهة لبدء الطلب"));
 
     expect(screen.getByText("بحث التسليم")).toBeTruthy();
     expect(screen.getByText("اختر نقطة تسليم الطلبية")).toBeTruthy();
@@ -925,10 +1066,12 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("lets delivery customers add a captain note from search before confirming", async () => {
-    const screen = await renderCustomerHome();
+    const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
-    await fireEvent.press(screen.getByLabelText("متابعة توصيل الطلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+    await fireEvent.press(screen.getByLabelText("اختيار الوجهة لبدء الطلب"));
     await fireEvent.press(screen.getByLabelText("اختيار نتيجة المنزل"));
 
     expect(screen.getByText("ملاحظة التسليم للكابتن")).toBeTruthy();
@@ -950,9 +1093,11 @@ describe("CustomerHomeScreen", () => {
   });
 
   it("adds package details to delivery requests before sending them to the captain", async () => {
-    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe("service");
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
 
     expect(screen.getByTestId("customer-delivery-package-panel")).toBeTruthy();

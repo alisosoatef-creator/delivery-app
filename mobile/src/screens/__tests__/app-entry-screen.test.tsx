@@ -37,7 +37,7 @@ describe("AppEntryScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
     await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
 
-    expect(screen.getByText("أهلًا بك، علي")).toBeTruthy();
+    expect(screen.getByText("جاهز لمشوارك؟")).toBeTruthy();
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
   });
 
@@ -54,7 +54,7 @@ describe("AppEntryScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
     await fireEvent.press(screen.getByLabelText("إنشاء الحساب التجريبي"));
 
-    expect(screen.getByText("أهلًا بك، علي")).toBeTruthy();
+    expect(screen.getByText("جاهز لمشوارك؟")).toBeTruthy();
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
   });
 
@@ -84,6 +84,9 @@ describe("AppEntryScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
     await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
 
+    await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
     await fireEvent.press(screen.getByLabelText("اختيار مطعم شورما عكيفك"));
     await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
