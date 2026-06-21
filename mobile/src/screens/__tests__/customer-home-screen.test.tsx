@@ -409,37 +409,62 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("فيزا"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getAllByText("تأكيد الطلب").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("نقطة الانطلاق").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("منطقة الوجهة")).toBeTruthy();
-    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("2.4 كم").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("طريقة الدفع").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getByText("تأكيد وإرسال الطلب")).toBeTruthy();
+    expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("خدمة واصل • 2.4 كم")).toBeTruthy();
+    expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("فيزا").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
-    expect(screen.getByText("تم تأكيد طلبك التجريبي")).toBeTruthy();
+    expect(screen.getByTestId("customer-captain-search-surface")).toBeTruthy();
     expect(screen.getByText("جاري البحث عن كابتن")).toBeTruthy();
-    expect(screen.getByText("مباشر")).toBeTruthy();
-    expect(screen.getAllByText("طلب مباشر جديد").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("mock-route-map")).toBeTruthy();
+    expect(screen.getByTestId("captain-search-radar")).toBeTruthy();
     expect(screen.getAllByText("تم إرسال طلبك للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("shows a clear live request hub after confirming a customer request", async () => {
+  it("moves from one compact confirmation card into one focused captain search surface", async () => {
     const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getByText("تأكيد وإرسال الطلب")).toBeTruthy();
+    expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByLabelText("تأكيد الطلب")).toBeTruthy();
+    expect(screen.getByLabelText("العودة لتعديل الطلب")).toBeTruthy();
+    expect(screen.queryByTestId("customer-order-readiness-panel")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
+
+    expect(screen.getByTestId("customer-captain-search-surface")).toBeTruthy();
+    expect(screen.getByTestId("captain-search-radar")).toBeTruthy();
+    expect(screen.getByTestId("mock-route-map")).toBeTruthy();
+    expect(screen.getByLabelText("إلغاء البحث")).toBeTruthy();
+    expect(screen.queryByTestId("customer-booking-review-card")).toBeNull();
+    expect(screen.queryByTestId("customer-compact-confirmation-card")).toBeNull();
+    expect(screen.queryByTestId("customer-live-request-hub")).toBeNull();
+  });
+
+  it("shows a clear live request hub after the captain accepts the request", async () => {
+    const screen = await renderCustomerHomeWithCaptainAcceptanceProbe();
 
     await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "مطعم شورما عكيفك - الباب الرئيسي");
     await fireEvent.press(screen.getByLabelText("فيزا"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
+    expect(screen.queryByTestId("customer-live-request-hub")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
+
     expect(screen.getByTestId("customer-live-request-hub")).toBeTruthy();
     expect(screen.getByText("مركز متابعة الطلب")).toBeTruthy();
     expect(screen.getAllByText("طلبك وصل للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("حالة الطلب")).toBeTruthy();
-    expect(screen.getAllByText("نبحث عن أقرب كابتن").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("الكابتن في الطريق إليك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("نوع الخدمة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("رحلة داخل المدينة").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("طريقة الدفع").length).toBeGreaterThanOrEqual(1);
@@ -447,7 +472,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("ملاحظة للكابتن")).toBeTruthy();
     expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("الخطوة التالية")).toBeTruthy();
-    expect(screen.getByText("سيظهر لك موقع الكابتن والمسافة فور قبول الطلب")).toBeTruthy();
+    expect(screen.getByText("تابع موقع الكابتن والمسافة حتى يصل إليك")).toBeTruthy();
   });
 
   it("lets the customer enable mock GPS and choose a pickup point before confirming", async () => {
@@ -467,8 +492,9 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getAllByText("تأكيد الطلب").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getByText("رفيديا ← نابلس - رفيديا")).toBeTruthy();
+    expect(screen.getByText("خدمة واصل • 2.4 كم")).toBeTruthy();
   });
 
   it("collects mock Visa details and save preference before confirmation", async () => {
@@ -490,9 +516,10 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("حفظ البطاقة")).toBeTruthy();
-    expect(screen.getByText("نعم - mock")).toBeTruthy();
+    expect(screen.queryByText("حفظ البطاقة")).toBeNull();
+    expect(screen.queryByText("نعم - mock")).toBeNull();
   });
 
   it("validates mock Visa details before showing the premium payment readiness state", async () => {
@@ -541,13 +568,14 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getAllByText("نوع الخدمة").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("رحلة خارج المدينة").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getByText("رحلة خارج المدينة • 2.4 كم")).toBeTruthy();
     expect(screen.getAllByText("45 شيكل").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
-    expect(screen.getByText("الطلب المحدد: رحلة خارج المدينة • 45 شيكل")).toBeTruthy();
+    expect(screen.getByTestId("customer-captain-search-surface")).toBeTruthy();
+    expect(screen.getAllByText(/45 شيكل • كاش عند الاستلام/).length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
     await fireEvent.press(screen.getByText("رحلاتي"));
@@ -572,7 +600,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.queryByTestId("customer-service-type-picker")).toBeNull();
   });
 
-  it("shows a compact order readiness summary before confirming the request", async () => {
+  it("keeps the final delivery confirmation compact before sending the request", async () => {
     const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
@@ -586,16 +614,12 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getByTestId("customer-order-readiness-panel")).toBeTruthy();
-    expect(screen.getByText("ملخص جاهزية الطلب")).toBeTruthy();
-    expect(screen.getByText("الخدمة المختارة")).toBeTruthy();
-    expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("المسار واضح")).toBeTruthy();
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.queryByTestId("customer-order-readiness-panel")).toBeNull();
     expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("ملاحظة الكابتن جاهزة")).toBeTruthy();
-    expect(screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("الدفع جاهز")).toBeTruthy();
+    expect(screen.getByText("توصيل طلبية • 2.4 كم")).toBeTruthy();
     expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("استلام من الباب الرئيسي وتسليم عند الاستقبال")).toBeNull();
   });
 
   it("projects pickup destination detail and captain movement onto the mock map", async () => {
@@ -668,13 +692,11 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
+    expect(screen.getByTestId("customer-captain-search-surface")).toBeTruthy();
     expect(screen.getByTestId("captain-search-radar")).toBeTruthy();
-    expect(screen.getByText("ملخص البحث")).toBeTruthy();
-    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("mock-route-map")).toBeTruthy();
+    expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/25 شيكل • كاش عند الاستلام/).length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("3 كباتن يطابقون الطلب")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("إلغاء البحث"));
@@ -1136,9 +1158,9 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("استخدام وجهة التسليم"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getAllByText("تفصيل الوجهة").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getAllByText(/توصيل طلبية • \d+\.\d كم/).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("استلام من الباب الرئيسي وتسليم عند الاستقبال")).toBeNull();
   });
 
   it("adds package details to delivery requests before sending them to the captain", async () => {
@@ -1159,11 +1181,10 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("تفصيل الوجهة"), "استلام من الباب الرئيسي وتسليم عند الاستقبال");
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
-    expect(screen.getAllByText("أغراض شخصية").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("كيس ملابس صغير يحتاج تسليم يد بيد").length).toBeGreaterThanOrEqual(1);
-    expect(
-      screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال • أغراض شخصية • كيس ملابس صغير يحتاج تسليم يد بيد").length
-    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getByText("توصيل طلبية • 2.4 كم")).toBeTruthy();
+    expect(screen.queryByText("أغراض شخصية")).toBeNull();
+    expect(screen.queryByText("كيس ملابس صغير يحتاج تسليم يد بيد")).toBeNull();
 
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));

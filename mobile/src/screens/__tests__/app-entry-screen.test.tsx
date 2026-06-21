@@ -96,7 +96,8 @@ describe("AppEntryScreen", () => {
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
-    expect(screen.getByText("تم تأكيد طلبك التجريبي")).toBeTruthy();
+    expect(screen.getByTestId("customer-captain-search-surface")).toBeTruthy();
+    expect(screen.getAllByText("تم إرسال طلبك للكباتن القريبين").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("معاينة الطلب عند الكابتن"));
 
