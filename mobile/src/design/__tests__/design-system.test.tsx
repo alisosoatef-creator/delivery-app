@@ -2,14 +2,7 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { PremiumButton } from "@/components/premium-button";
-import {
-  accents,
-  glass,
-  mapStyle,
-  shadows,
-  touchTargets,
-  waselVisualDirection
-} from "../tokens";
+import { accents, glass, mapStyle, shadows, touchTargets, waselVisualDirection } from "../tokens";
 
 describe("Wasel design system", () => {
   it("codifies the approved premium mobile visual direction", () => {
@@ -17,7 +10,12 @@ describe("Wasel design system", () => {
     expect(waselVisualDirection.currency).toBe("شيكل");
     expect(waselVisualDirection.background).toEqual(["deep navy", "graphite"]);
     expect(waselVisualDirection.required).toEqual(
-      expect.arrayContaining(["glassmorphism", "map-first", "compact floating bottom nav", "Arabic RTL"])
+      expect.arrayContaining([
+        "glassmorphism",
+        "map-first",
+        "compact floating bottom nav",
+        "Arabic RTL"
+      ])
     );
     expect(waselVisualDirection.forbidden).toEqual(
       expect.arrayContaining(["ride types", "heavy neon borders", "old prototype look"])
@@ -41,6 +39,7 @@ describe("Wasel design system", () => {
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
     expect(onPress).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("premium-motion-button")).toBeTruthy();
     expect(screen.getByText("تأكيد الطلب")).toBeTruthy();
   });
 });

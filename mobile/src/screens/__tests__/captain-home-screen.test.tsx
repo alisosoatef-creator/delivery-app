@@ -58,9 +58,9 @@ async function renderCaptainHomeWithCustomerFeedbackProbe() {
             feedback: {
               note: "الكابتن ممتاز",
               rating: 5,
-              requestId: "request-live-customer",
+              requestId: "request-live-customer"
             },
-            type: "submit-customer-feedback",
+            type: "submit-customer-feedback"
           })
         }
       >
@@ -106,9 +106,9 @@ async function renderCaptainHomeWithSubmittedRequestProbe() {
               paymentMethod: "فيزا • **** 4242",
               pickup: "زواتا",
               price: "35 شيكل",
-              serviceLabel: "توصيل طلبية",
+              serviceLabel: "توصيل طلبية"
             },
-            type: "submit-customer-request",
+            type: "submit-customer-request"
           })
         }
       >
@@ -186,7 +186,9 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("الخدمة المطلوبة")).toBeTruthy();
     expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("ملاحظة العميل للكابتن")).toBeTruthy();
-    expect(screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("طريقة الدفع المختارة")).toBeTruthy();
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
 
@@ -397,6 +399,11 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("الطلبات")).toBeTruthy();
     expect(screen.getByText("الأرباح")).toBeTruthy();
     expect(screen.getByText("حسابي")).toBeTruthy();
+    expect(screen.getByTestId("captain-motion-tab-home")).toBeTruthy();
+    expect(screen.getByTestId("captain-motion-tab-requests")).toBeTruthy();
+    expect(screen.getByTestId("captain-motion-tab-earnings")).toBeTruthy();
+    expect(screen.getByTestId("captain-motion-tab-profile")).toBeTruthy();
+    expect(screen.getByTestId("captain-active-tab-motion-surface")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
     expect(screen.getByText("أرباح الكابتن")).toBeTruthy();

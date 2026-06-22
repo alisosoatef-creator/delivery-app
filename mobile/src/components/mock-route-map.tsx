@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Car, MapPin, Navigation } from "lucide-react-native";
+import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, gradients, mapStyle, radii, shadows, spacing } from "@/design/tokens";
@@ -15,7 +16,13 @@ const roads = [
   { top: "36%", left: "6%", width: "86%", rotate: "69deg", opacity: 0.2 }
 ] as const;
 
-export type MockRouteMapPhase = "idle" | "searching" | "pickup" | "arrived" | "driving" | "completed";
+export type MockRouteMapPhase =
+  | "idle"
+  | "searching"
+  | "pickup"
+  | "arrived"
+  | "driving"
+  | "completed";
 
 type MockRouteMapProps = {
   destinationArea?: string | null;
@@ -42,7 +49,12 @@ const phaseLabels: Record<MockRouteMapPhase, string> = {
   completed: "تم الوصول"
 };
 
-function getCaptainTracking(phase: MockRouteMapPhase, pickupLabel: string, destinationLabel: string, detailLabel?: string) {
+function getCaptainTracking(
+  phase: MockRouteMapPhase,
+  pickupLabel: string,
+  destinationLabel: string,
+  detailLabel?: string
+) {
   if (phase === "pickup") {
     return {
       coordinates: "32.2257, 35.2396",
@@ -82,7 +94,7 @@ function getCaptainTracking(phase: MockRouteMapPhase, pickupLabel: string, desti
   return null;
 }
 
-export function MockRouteMap({
+function MockRouteMapComponent({
   destinationArea,
   destinationDetail,
   phase = "idle",
@@ -188,6 +200,21 @@ export function MockRouteMap({
     </View>
   );
 }
+
+export function areMockRouteMapPropsEqual(
+  previous: Readonly<MockRouteMapProps>,
+  next: Readonly<MockRouteMapProps>
+) {
+  return (
+    previous.destinationArea === next.destinationArea &&
+    previous.destinationDetail === next.destinationDetail &&
+    previous.phase === next.phase &&
+    previous.pickupLabel === next.pickupLabel
+  );
+}
+
+export const MockRouteMap = memo(MockRouteMapComponent, areMockRouteMapPropsEqual);
+MockRouteMap.displayName = "MockRouteMap";
 
 const styles = StyleSheet.create({
   mapShell: {

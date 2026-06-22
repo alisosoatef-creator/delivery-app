@@ -1,5 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { Car, CheckCircle, MapPin, Navigation, Route } from "lucide-react-native";
+import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, gradients, mapStyle, radii, shadows, spacing, typography } from "@/design/tokens";
@@ -65,11 +66,15 @@ const stepConfig: Record<CaptainTripStep, Omit<RouteConfig, "activePoint" | "nex
   }
 };
 
-export function CaptainRouteMap({ request, step }: CaptainRouteMapProps) {
+function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
   const config = {
     ...stepConfig[step],
-    activePoint: step === "driving" || step === "completed" ? request.destinationArea : request.pickup,
-    nextPoint: step === "driving" || step === "completed" ? request.destinationDetail : request.destinationArea
+    activePoint:
+      step === "driving" || step === "completed" ? request.destinationArea : request.pickup,
+    nextPoint:
+      step === "driving" || step === "completed"
+        ? request.destinationDetail
+        : request.destinationArea
   };
 
   return (
@@ -115,7 +120,10 @@ export function CaptainRouteMap({ request, step }: CaptainRouteMapProps) {
         <MapPin color={colors.text} size={18} fill={colors.violet} />
       </View>
 
-      <View testID="captain-route-driver-marker" style={[styles.driverPulse, config.driverPosition]}>
+      <View
+        testID="captain-route-driver-marker"
+        style={[styles.driverPulse, config.driverPosition]}
+      >
         <View style={styles.driverHalo} />
         <Car color={colors.text} size={20} />
       </View>
@@ -174,6 +182,25 @@ export function CaptainRouteMap({ request, step }: CaptainRouteMapProps) {
     </View>
   );
 }
+
+export function areCaptainRouteMapPropsEqual(
+  previous: Readonly<CaptainRouteMapProps>,
+  next: Readonly<CaptainRouteMapProps>
+) {
+  return (
+    previous.step === next.step &&
+    previous.request.id === next.request.id &&
+    previous.request.pickup === next.request.pickup &&
+    previous.request.destinationArea === next.request.destinationArea &&
+    previous.request.destinationDetail === next.request.destinationDetail &&
+    previous.request.distance === next.request.distance &&
+    previous.request.etaToPickup === next.request.etaToPickup &&
+    previous.request.price === next.request.price
+  );
+}
+
+export const CaptainRouteMap = memo(CaptainRouteMapComponent, areCaptainRouteMapPropsEqual);
+CaptainRouteMap.displayName = "CaptainRouteMap";
 
 function RouteMetric({ label, value }: { label: string; value: string }) {
   return (

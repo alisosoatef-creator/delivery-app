@@ -1,13 +1,15 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { PropsWithChildren } from "react";
-import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
+import { StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
 
+import { MotionPressable, type MotionFeedback } from "@/components/motion-pressable";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 
 type PremiumButtonVariant = "primary" | "secondary";
 
 type PremiumButtonProps = PropsWithChildren<{
   accessibilityLabel: string;
+  feedback?: MotionFeedback;
   label: string;
   onPress: () => void;
   style?: StyleProp<ViewStyle>;
@@ -17,6 +19,7 @@ type PremiumButtonProps = PropsWithChildren<{
 export function PremiumButton({
   accessibilityLabel,
   children,
+  feedback = "none",
   label,
   onPress,
   style,
@@ -25,23 +28,26 @@ export function PremiumButton({
   const isPrimary = variant === "primary";
 
   return (
-    <Pressable
+    <MotionPressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      feedback={feedback}
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        isPrimary ? styles.primary : styles.secondary,
-        pressed ? styles.pressed : null,
-        style
-      ]}
+      style={[styles.button, isPrimary ? styles.primary : styles.secondary, style]}
+      testID="premium-motion-button"
     >
       {isPrimary ? (
-        <LinearGradient pointerEvents="none" colors={gradients.primary} style={StyleSheet.absoluteFill} />
+        <LinearGradient
+          pointerEvents="none"
+          colors={gradients.primary}
+          style={StyleSheet.absoluteFill}
+        />
       ) : null}
       {children}
-      <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>{label}</Text>
-    </Pressable>
+      <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>
+        {label}
+      </Text>
+    </MotionPressable>
   );
 }
 
@@ -63,10 +69,6 @@ const styles = StyleSheet.create({
   secondary: {
     borderColor: colors.border,
     backgroundColor: "rgba(255, 255, 255, 0.04)"
-  },
-  pressed: {
-    opacity: 0.82,
-    transform: [{ scale: 0.99 }]
   },
   label: {
     textAlign: "right",

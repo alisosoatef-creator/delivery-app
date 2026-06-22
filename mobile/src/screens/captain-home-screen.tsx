@@ -1,11 +1,27 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Car, CheckCircle, ClipboardList, Clock, Home, MapPin, Phone, Power, Route, Star, User, Wallet, XCircle } from "lucide-react-native";
+import {
+  Car,
+  CheckCircle,
+  ClipboardList,
+  Clock,
+  Home,
+  MapPin,
+  Phone,
+  Power,
+  Route,
+  Star,
+  User,
+  Wallet,
+  XCircle
+} from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
+import { MotionPressable } from "@/components/motion-pressable";
+import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
@@ -39,7 +55,10 @@ export function CaptainHomeScreen() {
   const request = rideRequests.availableRequests[0];
   const captainRatingDisplay = createCaptainRatingDisplay(rideRequests.customerFeedback);
   const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "captain");
-  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(rideRequests.realtime, "captain");
+  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(
+    rideRequests.realtime,
+    "captain"
+  );
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "captain", 4);
 
   if (activeRequest) {
@@ -76,7 +95,11 @@ export function CaptainHomeScreen() {
             accessibilityLabel="تغيير حالة الكابتن"
             accessibilityRole="button"
             onPress={() => setIsOnline((value) => !value)}
-            style={({ pressed }) => [styles.statusToggle, isOnline ? styles.statusOnline : styles.statusOffline, pressed ? styles.pressed : null]}
+            style={({ pressed }) => [
+              styles.statusToggle,
+              isOnline ? styles.statusOnline : styles.statusOffline,
+              pressed ? styles.pressed : null
+            ]}
           >
             <Power color={isOnline ? colors.success : colors.textMuted} size={18} />
             <Text selectable style={styles.statusText}>
@@ -131,157 +154,201 @@ export function CaptainHomeScreen() {
         ) : null}
         <RealtimeActivityFeed events={recentRealtimeEvents} />
 
-        {activeTab === "earnings" ? (
-          <CaptainEarningsTab
-            completedRequests={rideRequests.completedRequests}
-            ratingDisplay={captainRatingDisplay}
-            onReview={() => setNotice("مراجعة الأداء اليومي mock فقط الآن")}
-            onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
-          />
-        ) : activeTab === "profile" ? (
-          <CaptainProfileTab
-            customerFeedback={rideRequests.customerFeedback}
-            onUpdateProfile={() => setNotice("تحديث بيانات الكابتن mock فقط الآن")}
-          />
-        ) : (
-          <>
-            <CaptainOperationsPanel isOnline={isOnline} requestCount={rideRequests.availableRequests.length} />
-
-            <View style={styles.metricsRow}>
-              <MetricCard icon={<Wallet color={colors.cyan} size={18} />} label="أرباح اليوم" value={captainHomeMock.metrics.earningsToday} />
-              <MetricCard icon={<Route color={colors.violetSoft} size={18} />} label="رحلات اليوم" value={captainHomeMock.metrics.tripsToday} />
-              <MetricCard icon={<Star color={colors.warning} fill={colors.warning} size={18} />} label="تقييمك" value={captainRatingDisplay} />
-            </View>
-
-            <View style={styles.sectionHeader}>
-              <Text selectable style={styles.sectionTitle}>
-                الطلبات المتاحة
-              </Text>
-              <Text selectable style={styles.sectionMeta}>
-                طلب واحد مطابق قريب منك
-              </Text>
-            </View>
-
-            {previewRequest ? (
-              <CaptainAcceptPreviewCard
-                request={previewRequest}
-                onCancel={() => setPreviewRequest(null)}
-                onConfirm={() => {
-                  setNotice(null);
-                  dispatchRideRequests({ requestId: previewRequest.id, type: "accept-request" });
-                  setActiveRequest(previewRequest);
-                  setPreviewRequest(null);
-                }}
+        <MotionSurface key={activeTab} testID="captain-active-tab-motion-surface">
+          {activeTab === "earnings" ? (
+            <CaptainEarningsTab
+              completedRequests={rideRequests.completedRequests}
+              ratingDisplay={captainRatingDisplay}
+              onReview={() => setNotice("مراجعة الأداء اليومي mock فقط الآن")}
+              onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
+            />
+          ) : activeTab === "profile" ? (
+            <CaptainProfileTab
+              customerFeedback={rideRequests.customerFeedback}
+              onUpdateProfile={() => setNotice("تحديث بيانات الكابتن mock فقط الآن")}
+            />
+          ) : (
+            <>
+              <CaptainOperationsPanel
+                isOnline={isOnline}
+                requestCount={rideRequests.availableRequests.length}
               />
-            ) : null}
 
-            {request ? (
-              <GlassCard style={styles.requestCard} variant="strong">
-                <View style={styles.requestTop}>
-                  <View style={styles.customerAvatar}>
-                    <User color={colors.text} size={20} />
-                  </View>
-                  <View style={styles.requestCopy}>
-                    <Text selectable style={styles.requestTitle}>
-                      {request.customerName}
-                    </Text>
-                    <Text selectable style={styles.requestMeta}>
-                      {request.customerPhone}
-                    </Text>
-                  </View>
-                  <View style={styles.pricePill}>
-                    <Text selectable style={styles.priceText}>
-                      {request.price}
-                    </Text>
-                  </View>
-                </View>
+              <View style={styles.metricsRow}>
+                <MetricCard
+                  icon={<Wallet color={colors.cyan} size={18} />}
+                  label="أرباح اليوم"
+                  value={captainHomeMock.metrics.earningsToday}
+                />
+                <MetricCard
+                  icon={<Route color={colors.violetSoft} size={18} />}
+                  label="رحلات اليوم"
+                  value={captainHomeMock.metrics.tripsToday}
+                />
+                <MetricCard
+                  icon={<Star color={colors.warning} fill={colors.warning} size={18} />}
+                  label="تقييمك"
+                  value={captainRatingDisplay}
+                />
+              </View>
 
-                <View style={styles.routeBox}>
-                  <RouteRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
-                  <RouteRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
-                  <RouteRow icon={<Car color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
-                  <RouteRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="نوع الرحلة" value={request.serviceLabel} />
-                  <RouteRow icon={<Clock color={colors.warning} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
-                </View>
-
-                <CaptainRequestBriefingPanel request={request} />
-
-                <CaptainDecisionSignalPanel request={request} />
-
-                <View style={styles.requestMetaGrid}>
-                  <MiniInfo label="المسافة" value={request.distance} />
-                  <MiniInfo label="الدفع" value={request.paymentMethod} />
-                </View>
-
-                <Pressable
-                  accessibilityLabel="معاينة قبول الطلب التجريبي"
-                  accessibilityRole="button"
-                  onPress={() => setPreviewRequest(request)}
-                  style={({ pressed }) => [styles.acceptPreviewTrigger, pressed ? styles.pressed : null]}
-                >
-                  <View style={styles.previewTriggerIcon}>
-                    <ClipboardList color={colors.cyan} size={18} />
-                  </View>
-                  <View style={styles.previewTriggerCopy}>
-                    <Text selectable style={styles.previewTriggerTitle}>
-                      معاينة الطلب الذكية
-                    </Text>
-                    <Text selectable style={styles.previewTriggerMeta}>
-                      راجع المسار والدخل قبل بدء الرحلة
-                    </Text>
-                  </View>
-                </Pressable>
-
-                <View style={styles.actionsRow}>
-                  <Pressable
-                    accessibilityLabel="اتصال بالعميل"
-                    accessibilityRole="button"
-                    onPress={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
-                    style={styles.iconAction}
-                  >
-                    <Phone color={colors.textSoft} size={18} />
-                  </Pressable>
-                  <Pressable
-                    accessibilityLabel="رفض الطلب التجريبي"
-                    accessibilityRole="button"
-                    onPress={() => {
-                      dispatchRideRequests({ requestId: request.id, type: "decline-request" });
-                      setPreviewRequest(null);
-                      setNotice("تم رفض الطلب التجريبي");
-                    }}
-                    style={({ pressed }) => [styles.declineButton, pressed ? styles.pressed : null]}
-                  >
-                    <XCircle color={colors.textSoft} size={17} />
-                    <Text selectable style={styles.declineButtonText}>
-                      رفض
-                    </Text>
-                  </Pressable>
-                  <PremiumButton
-                    accessibilityLabel="قبول الطلب التجريبي"
-                    label="قبول الطلب"
-                    onPress={() => {
-                      setNotice(null);
-                      dispatchRideRequests({ requestId: request.id, type: "accept-request" });
-                      setActiveRequest(request);
-                    }}
-                    style={styles.acceptButton}
-                  >
-                    <CheckCircle color={colors.text} size={18} />
-                  </PremiumButton>
-                </View>
-              </GlassCard>
-            ) : (
-              <GlassCard style={styles.requestCard} variant="subtle">
+              <View style={styles.sectionHeader}>
                 <Text selectable style={styles.sectionTitle}>
-                  لا توجد طلبات متاحة الآن
+                  الطلبات المتاحة
                 </Text>
                 <Text selectable style={styles.sectionMeta}>
-                  ستظهر طلبات العملاء هنا عند تأكيدها من التطبيق
+                  طلب واحد مطابق قريب منك
                 </Text>
-              </GlassCard>
-            )}
-          </>
-        )}
+              </View>
+
+              {previewRequest ? (
+                <CaptainAcceptPreviewCard
+                  request={previewRequest}
+                  onCancel={() => setPreviewRequest(null)}
+                  onConfirm={() => {
+                    setNotice(null);
+                    dispatchRideRequests({ requestId: previewRequest.id, type: "accept-request" });
+                    setActiveRequest(previewRequest);
+                    setPreviewRequest(null);
+                  }}
+                />
+              ) : null}
+
+              {request ? (
+                <GlassCard style={styles.requestCard} variant="strong">
+                  <View style={styles.requestTop}>
+                    <View style={styles.customerAvatar}>
+                      <User color={colors.text} size={20} />
+                    </View>
+                    <View style={styles.requestCopy}>
+                      <Text selectable style={styles.requestTitle}>
+                        {request.customerName}
+                      </Text>
+                      <Text selectable style={styles.requestMeta}>
+                        {request.customerPhone}
+                      </Text>
+                    </View>
+                    <View style={styles.pricePill}>
+                      <Text selectable style={styles.priceText}>
+                        {request.price}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.routeBox}>
+                    <RouteRow
+                      icon={<MapPin color={colors.success} size={16} />}
+                      label="نقطة الانطلاق"
+                      value={request.pickup}
+                    />
+                    <RouteRow
+                      icon={<MapPin color={colors.cyan} size={16} />}
+                      label="منطقة الوجهة"
+                      value={request.destinationArea}
+                    />
+                    <RouteRow
+                      icon={<Car color={colors.violetSoft} size={16} />}
+                      label="تفصيل الوجهة"
+                      value={request.destinationDetail}
+                    />
+                    <RouteRow
+                      icon={<Star color={colors.warning} fill={colors.warning} size={16} />}
+                      label="نوع الرحلة"
+                      value={request.serviceLabel}
+                    />
+                    <RouteRow
+                      icon={<Clock color={colors.warning} size={16} />}
+                      label="الوصول للعميل"
+                      value={request.etaToPickup}
+                    />
+                  </View>
+
+                  <CaptainRequestBriefingPanel request={request} />
+
+                  <CaptainDecisionSignalPanel request={request} />
+
+                  <View style={styles.requestMetaGrid}>
+                    <MiniInfo label="المسافة" value={request.distance} />
+                    <MiniInfo label="الدفع" value={request.paymentMethod} />
+                  </View>
+
+                  <Pressable
+                    accessibilityLabel="معاينة قبول الطلب التجريبي"
+                    accessibilityRole="button"
+                    onPress={() => setPreviewRequest(request)}
+                    style={({ pressed }) => [
+                      styles.acceptPreviewTrigger,
+                      pressed ? styles.pressed : null
+                    ]}
+                  >
+                    <View style={styles.previewTriggerIcon}>
+                      <ClipboardList color={colors.cyan} size={18} />
+                    </View>
+                    <View style={styles.previewTriggerCopy}>
+                      <Text selectable style={styles.previewTriggerTitle}>
+                        معاينة الطلب الذكية
+                      </Text>
+                      <Text selectable style={styles.previewTriggerMeta}>
+                        راجع المسار والدخل قبل بدء الرحلة
+                      </Text>
+                    </View>
+                  </Pressable>
+
+                  <View style={styles.actionsRow}>
+                    <Pressable
+                      accessibilityLabel="اتصال بالعميل"
+                      accessibilityRole="button"
+                      onPress={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
+                      style={styles.iconAction}
+                    >
+                      <Phone color={colors.textSoft} size={18} />
+                    </Pressable>
+                    <Pressable
+                      accessibilityLabel="رفض الطلب التجريبي"
+                      accessibilityRole="button"
+                      onPress={() => {
+                        dispatchRideRequests({ requestId: request.id, type: "decline-request" });
+                        setPreviewRequest(null);
+                        setNotice("تم رفض الطلب التجريبي");
+                      }}
+                      style={({ pressed }) => [
+                        styles.declineButton,
+                        pressed ? styles.pressed : null
+                      ]}
+                    >
+                      <XCircle color={colors.textSoft} size={17} />
+                      <Text selectable style={styles.declineButtonText}>
+                        رفض
+                      </Text>
+                    </Pressable>
+                    <PremiumButton
+                      accessibilityLabel="قبول الطلب التجريبي"
+                      feedback="light"
+                      label="قبول الطلب"
+                      onPress={() => {
+                        setNotice(null);
+                        dispatchRideRequests({ requestId: request.id, type: "accept-request" });
+                        setActiveRequest(request);
+                      }}
+                      style={styles.acceptButton}
+                    >
+                      <CheckCircle color={colors.text} size={18} />
+                    </PremiumButton>
+                  </View>
+                </GlassCard>
+              ) : (
+                <GlassCard style={styles.requestCard} variant="subtle">
+                  <Text selectable style={styles.sectionTitle}>
+                    لا توجد طلبات متاحة الآن
+                  </Text>
+                  <Text selectable style={styles.sectionMeta}>
+                    ستظهر طلبات العملاء هنا عند تأكيدها من التطبيق
+                  </Text>
+                </GlassCard>
+              )}
+            </>
+          )}
+        </MotionSurface>
       </ScrollView>
       <GlassCard
         testID="captain-bottom-nav"
@@ -297,27 +364,25 @@ export function CaptainHomeScreen() {
           const isActive = activeTab === tab.key;
 
           return (
-            <Pressable
+            <MotionPressable
               key={tab.key}
               accessibilityLabel={`فتح تبويب ${tab.label}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: isActive }}
+              feedback="selection"
               hitSlop={8}
               onPress={() => {
                 setNotice(null);
                 setActiveTab(tab.key);
               }}
-              style={({ pressed }) => [
-                styles.navItem,
-                isActive ? styles.navItemActive : null,
-                pressed ? styles.navItemPressed : null
-              ]}
+              style={[styles.navItem, isActive ? styles.navItemActive : null]}
+              testID={`captain-motion-tab-${tab.key}`}
             >
               <Icon color={isActive ? colors.text : colors.textMuted} size={18} />
               <Text selectable style={[styles.navLabel, isActive ? styles.navLabelActive : null]}>
                 {tab.label}
               </Text>
-            </Pressable>
+            </MotionPressable>
           );
         })}
       </GlassCard>
@@ -339,7 +404,13 @@ function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; va
   );
 }
 
-function CaptainOperationsPanel({ isOnline, requestCount }: { isOnline: boolean; requestCount: number }) {
+function CaptainOperationsPanel({
+  isOnline,
+  requestCount
+}: {
+  isOnline: boolean;
+  requestCount: number;
+}) {
   return (
     <GlassCard style={styles.operationsCard} variant="strong">
       <View style={styles.operationsHeader}>
@@ -503,7 +574,10 @@ function CaptainAcceptPreviewCard({
 
       <View style={styles.previewRows}>
         <PreviewRow label="العميل المحدد" value={request.customerName} />
-        <PreviewRow label="المسار المقترح" value={`${request.pickup} ← ${request.destinationArea}`} />
+        <PreviewRow
+          label="المسار المقترح"
+          value={`${request.pickup} ← ${request.destinationArea}`}
+        />
         <PreviewRow label="نوع الخدمة" value={request.serviceLabel} />
         <PreviewRow label="ملاحظة العميل" value={request.destinationDetail} />
         <PreviewRow label="طريقة الدفع" value={request.paymentMethod} />
@@ -512,10 +586,21 @@ function CaptainAcceptPreviewCard({
       </View>
 
       <View style={styles.previewActions}>
-        <PremiumButton accessibilityLabel="تأكيد قبول الطلب" label="تأكيد قبول الطلب" onPress={onConfirm} style={styles.previewConfirmButton}>
+        <PremiumButton
+          accessibilityLabel="تأكيد قبول الطلب"
+          feedback="light"
+          label="تأكيد قبول الطلب"
+          onPress={onConfirm}
+          style={styles.previewConfirmButton}
+        >
           <CheckCircle color={colors.text} size={18} />
         </PremiumButton>
-        <Pressable accessibilityLabel="إلغاء معاينة قبول الطلب" accessibilityRole="button" onPress={onCancel} style={styles.previewCancelButton}>
+        <Pressable
+          accessibilityLabel="إلغاء معاينة قبول الطلب"
+          accessibilityRole="button"
+          onPress={onCancel}
+          style={styles.previewCancelButton}
+        >
           <Text selectable style={styles.previewCancelText}>
             إلغاء
           </Text>
@@ -622,7 +707,12 @@ function CaptainEarningsCommandCenter({
         </Text>
       </View>
 
-      <Pressable accessibilityLabel="مراجعة الأداء اليومي" accessibilityRole="button" onPress={onReview} style={({ pressed }) => [styles.earningsReviewButton, pressed ? styles.pressed : null]}>
+      <Pressable
+        accessibilityLabel="مراجعة الأداء اليومي"
+        accessibilityRole="button"
+        onPress={onReview}
+        style={({ pressed }) => [styles.earningsReviewButton, pressed ? styles.pressed : null]}
+      >
         <Text selectable style={styles.earningsReviewText}>
           مراجعة الأداء اليومي
         </Text>
@@ -743,7 +833,10 @@ function CaptainEarningsTab({
 function createCaptainEarningsSummary(completedRequests: CaptainAvailableRequest[]) {
   const baseTotal = parseDisplayNumber(captainHomeMock.earnings.todayTotal);
   const baseTrips = parseDisplayNumber(captainHomeMock.earnings.completedTrips);
-  const completedTotal = completedRequests.reduce((total, request) => total + parseDisplayNumber(request.price), 0);
+  const completedTotal = completedRequests.reduce(
+    (total, request) => total + parseDisplayNumber(request.price),
+    0
+  );
 
   return {
     todayTotal: `${baseTotal + completedTotal} شيكل`,
@@ -804,7 +897,12 @@ function CaptainProfileReadinessPanel({ onUpdateProfile }: { onUpdateProfile: ()
         </Text>
       </View>
 
-      <Pressable accessibilityLabel="تحديث بيانات الكابتن" accessibilityRole="button" onPress={onUpdateProfile} style={({ pressed }) => [styles.profileUpdateButton, pressed ? styles.pressed : null]}>
+      <Pressable
+        accessibilityLabel="تحديث بيانات الكابتن"
+        accessibilityRole="button"
+        onPress={onUpdateProfile}
+        style={({ pressed }) => [styles.profileUpdateButton, pressed ? styles.pressed : null]}
+      >
         <Text selectable style={styles.profileUpdateText}>
           تحديث بيانات الكابتن
         </Text>
@@ -1626,9 +1724,6 @@ const styles = StyleSheet.create({
   },
   navItemActive: {
     backgroundColor: "rgba(0, 229, 255, 0.14)"
-  },
-  navItemPressed: {
-    opacity: 0.72
   },
   navLabel: {
     ...rtlText,

@@ -167,6 +167,18 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe(
 }
 
 describe("CustomerHomeScreen", () => {
+  it("keeps the customer landing focused on one clear ride request action", async () => {
+    const screen = await renderCustomerLanding();
+
+    expect(screen.getByTestId("customer-focused-home")).toBeTruthy();
+    expect(screen.getByTestId("customer-home-ready-status")).toBeTruthy();
+    expect(screen.getByText("جاهز لطلب جديد")).toBeTruthy();
+    expect(screen.getAllByLabelText("بدء طلب رحلة")).toHaveLength(1);
+    expect(screen.queryByText("رحلتك تبدأ من هنا")).toBeNull();
+    expect(screen.queryByTestId("customer-service-type-picker")).toBeNull();
+    expect(screen.queryByTestId("mock-route-map")).toBeNull();
+  });
+
   it("opens a dedicated booking workspace from a focused customer home", async () => {
     const screen = await renderCustomerLanding();
 
@@ -1295,6 +1307,12 @@ describe("CustomerHomeScreen", () => {
 
   it("switches customer tabs into trips, search, and profile mock surfaces", async () => {
     const screen = await renderCustomerHome();
+
+    expect(screen.getByTestId("customer-motion-tab-0")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-tab-1")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-tab-2")).toBeTruthy();
+    expect(screen.getByTestId("customer-motion-tab-3")).toBeTruthy();
+    expect(screen.getByTestId("customer-active-tab-motion-surface")).toBeTruthy();
 
     await fireEvent.press(screen.getByText("رحلاتي"));
 
