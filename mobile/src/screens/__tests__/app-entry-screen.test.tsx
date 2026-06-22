@@ -73,7 +73,8 @@ describe("AppEntryScreen", () => {
 
     expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
     expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
-    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
+    expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
   });
 
   it("previews the confirmed customer request inside the captain dashboard mock", async () => {
@@ -102,9 +103,15 @@ describe("AppEntryScreen", () => {
     await fireEvent.press(screen.getByLabelText("معاينة الطلب عند الكابتن"));
 
     expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
-    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+
+    expect(screen.getByTestId("captain-request-details")).toBeTruthy();
     expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
-    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(
+      1
+    );
   });
 });

@@ -135,41 +135,71 @@ async function renderCaptainHomeWithSubmittedRequestProbe() {
 }
 
 describe("CaptainHomeScreen", () => {
+  it("keeps the captain home focused on one nearest-request decision", async () => {
+    const screen = await renderCaptainHome();
+
+    expect(screen.getByTestId("captain-focused-home")).toBeTruthy();
+    expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
+    expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
+    expect(screen.getAllByLabelText("قبول الطلب التجريبي")).toHaveLength(1);
+    expect(screen.getByLabelText("عرض تفاصيل الطلب التجريبي")).toBeTruthy();
+    expect(screen.queryByText("مركز تشغيل الكابتن")).toBeNull();
+    expect(screen.queryByText("ملخص طلب العميل")).toBeNull();
+    expect(screen.queryByTestId("captain-decision-signal-panel")).toBeNull();
+    expect(screen.queryByText("سجل التحديثات المباشرة")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+
+    expect(screen.getByTestId("captain-request-details")).toBeTruthy();
+    expect(screen.queryByTestId("captain-nearest-request-card")).toBeNull();
+    expect(screen.getByText("ملاحظة العميل")).toBeTruthy();
+    expect(screen.getByText("نوع الخدمة")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إلغاء معاينة قبول الطلب"));
+
+    expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
+    expect(screen.queryByTestId("captain-request-details")).toBeNull();
+  });
+
+  it("keeps realtime updates inside the requests tab", async () => {
+    const screen = await renderCaptainHome();
+
+    expect(screen.queryByText("سجل التحديثات المباشرة")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
+
+    expect(screen.getByText("سجل التحديثات المباشرة")).toBeTruthy();
+  });
+
   it("renders the premium captain dashboard with available mock request", async () => {
     const screen = await renderCaptainHome();
 
     expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
     expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
     expect(screen.getByText("متصل")).toBeTruthy();
-    expect(screen.getByText("620 شيكل")).toBeTruthy();
-    expect(screen.getByText("24")).toBeTruthy();
-    expect(screen.getByText("4.9")).toBeTruthy();
-    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
-    expect(screen.getByText("+970 59 111 2222")).toBeTruthy();
-    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("زواتا ← نابلس - رفيديا")).toBeTruthy();
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("كاش عند الاستلام").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("قبول الطلب")).toBeTruthy();
+    expect(screen.queryByText("620 شيكل")).toBeNull();
+    expect(screen.queryByText("24")).toBeNull();
+    expect(screen.queryByText("4.9")).toBeNull();
   });
 
-  it("shows a stronger captain operations center with an accept preview", async () => {
+  it("opens complete request details before confirming acceptance", async () => {
     const screen = await renderCaptainHome();
 
-    expect(screen.getByText("مركز تشغيل الكابتن")).toBeTruthy();
-    expect(screen.getByText("جاهز لاستقبال الطلبات")).toBeTruthy();
-    expect(screen.getByText("طلبات قريبة الآن: 1")).toBeTruthy();
-    expect(screen.getByText("قوة المطابقة: 96%")).toBeTruthy();
-    expect(screen.getByText("وقت الاستجابة المتوقع: أقل من دقيقة")).toBeTruthy();
-
-    await fireEvent.press(screen.getByLabelText("معاينة قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
 
     expect(screen.getByText("تفاصيل الطلب قبل القبول")).toBeTruthy();
     expect(screen.getByText("العميل المحدد")).toBeTruthy();
+    expect(screen.getByText("رقم العميل")).toBeTruthy();
     expect(screen.getByText("المسار المقترح")).toBeTruthy();
     expect(screen.getByText("الدخل المتوقع")).toBeTruthy();
+    expect(screen.getByText("المسافة")).toBeTruthy();
     expect(screen.getByText("جاهز للانطلاق")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("تأكيد قبول الطلب"));
@@ -182,37 +212,32 @@ describe("CaptainHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("إرسال طلب عميل مباشر للكابتن"));
 
     expect(screen.getByText("ليان سالم")).toBeTruthy();
-    expect(screen.getByText("ملخص طلب العميل")).toBeTruthy();
-    expect(screen.getByText("الخدمة المطلوبة")).toBeTruthy();
     expect(screen.getAllByText("توصيل طلبية").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("ملاحظة العميل للكابتن")).toBeTruthy();
-    expect(
-      screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length
-    ).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("طريقة الدفع المختارة")).toBeTruthy();
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("استلام من الباب الرئيسي وتسليم عند الاستقبال")).toBeNull();
 
-    await fireEvent.press(screen.getByLabelText("معاينة قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
 
     expect(screen.getByText("نوع الخدمة")).toBeTruthy();
     expect(screen.getByText("ملاحظة العميل")).toBeTruthy();
+    expect(
+      screen.getAllByText("استلام من الباب الرئيسي وتسليم عند الاستقبال").length
+    ).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("طريقة الدفع")).toBeTruthy();
   });
 
-  it("shows captain decision signals before accepting a customer request", async () => {
+  it("shows the core decision signals on the compact request card", async () => {
     const screen = await renderCaptainHomeWithSubmittedRequestProbe();
 
     await fireEvent.press(screen.getByLabelText("إرسال طلب عميل مباشر للكابتن"));
 
-    expect(screen.getByTestId("captain-decision-signal-panel")).toBeTruthy();
-    expect(screen.getByText("مؤشرات قرار الكابتن")).toBeTruthy();
-    expect(screen.getByText("دخل واضح")).toBeTruthy();
+    expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
     expect(screen.getAllByText("35 شيكل").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("وصول سريع")).toBeTruthy();
+    expect(screen.getByText("الوصول")).toBeTruthy();
     expect(screen.getAllByText("4 د").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("مسار مفهوم")).toBeTruthy();
+    expect(screen.getByText("المسار")).toBeTruthy();
     expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText("دفع مؤكد")).toBeTruthy();
+    expect(screen.getByText("الدفع")).toBeTruthy();
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
   });
 
@@ -232,6 +257,10 @@ describe("CaptainHomeScreen", () => {
 
     expect(screen.getByText("تم رفض الطلب التجريبي")).toBeTruthy();
     expect(screen.getByText("لا توجد طلبات متاحة الآن")).toBeTruthy();
+    expect(screen.queryByText("الكابتن اعتذر عن الطلب")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
+
     expect(screen.getAllByText("الكابتن اعتذر عن الطلب").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("علي محمد")).toBeNull();
   });
@@ -262,7 +291,7 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("25 شيكل تمت إضافتها للأرباح mock")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
-    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
   });
 
   it("shows a premium captain GPS route through pickup and destination steps", async () => {
@@ -423,7 +452,7 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("تويوتا كورولا - أبيض")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
-    expect(screen.getByText("الطلبات المتاحة")).toBeTruthy();
+    expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
   });
 
   it("shows a premium captain profile readiness center", async () => {
@@ -458,11 +487,13 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("إضافة تقييم عميل للكابتن"));
 
+    expect(screen.queryByText("مباشر")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب الطلبات"));
+
     expect(screen.getByText("مباشر")).toBeTruthy();
     expect(screen.getAllByText("تقييم جديد من العميل").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("سجل التحديثات المباشرة")).toBeTruthy();
-    expect(screen.getByText("5.0")).toBeTruthy();
-    expect(screen.queryByText("4.9")).toBeNull();
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
 

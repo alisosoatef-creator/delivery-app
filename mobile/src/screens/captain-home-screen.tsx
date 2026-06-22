@@ -14,7 +14,6 @@ import {
   Wallet,
   XCircle
 } from "lucide-react-native";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -130,14 +129,18 @@ export function CaptainHomeScreen() {
               ? "ملخص الدخل"
               : activeTab === "profile"
                 ? "ملف التشغيل"
-                : captainHomeMock.greeting}
+                : activeTab === "requests"
+                  ? "الطلبات المتاحة"
+                  : captainHomeMock.greeting}
           </Text>
           <Text selectable style={styles.subtitle}>
             {activeTab === "earnings"
               ? "ملخص دخل الكابتن بدون ربط API"
               : activeTab === "profile"
                 ? "بيانات تشغيلية mock للكابتن"
-                : "الطلبات القريبة تظهر هنا بدون ربط API"}
+                : activeTab === "requests"
+                  ? "تابع الطلبات والتحديثات المباشرة في مكان واحد"
+                  : "راجع أقرب طلب واتخذ قرارك بسرعة"}
           </Text>
         </View>
 
@@ -149,10 +152,25 @@ export function CaptainHomeScreen() {
           </GlassCard>
         ) : null}
 
-        {latestRealtimeEvent ? (
+        {activeTab === "requests" && latestRealtimeEvent ? (
           <RealtimeStatusCard event={latestRealtimeEvent} summary={realtimeConnectionSummary} />
         ) : null}
-        <RealtimeActivityFeed events={recentRealtimeEvents} />
+        {activeTab === "requests" && !latestRealtimeEvent ? (
+          <GlassCard testID="captain-realtime-empty-state" style={styles.realtimeEmptyCard}>
+            <View style={styles.realtimeEmptyIcon}>
+              <Clock color={colors.cyan} size={18} />
+            </View>
+            <View style={styles.realtimeEmptyCopy}>
+              <Text selectable style={styles.realtimeEmptyTitle}>
+                سجل التحديثات المباشرة
+              </Text>
+              <Text selectable style={styles.realtimeEmptyMeta}>
+                بانتظار أول تحديث للطلبات
+              </Text>
+            </View>
+          </GlassCard>
+        ) : null}
+        {activeTab === "requests" ? <RealtimeActivityFeed events={recentRealtimeEvents} /> : null}
 
         <MotionSurface key={activeTab} testID="captain-active-tab-motion-surface">
           {activeTab === "earnings" ? (
@@ -168,36 +186,16 @@ export function CaptainHomeScreen() {
               onUpdateProfile={() => setNotice("تحديث بيانات الكابتن mock فقط الآن")}
             />
           ) : (
-            <>
-              <CaptainOperationsPanel
-                isOnline={isOnline}
-                requestCount={rideRequests.availableRequests.length}
-              />
-
-              <View style={styles.metricsRow}>
-                <MetricCard
-                  icon={<Wallet color={colors.cyan} size={18} />}
-                  label="أرباح اليوم"
-                  value={captainHomeMock.metrics.earningsToday}
-                />
-                <MetricCard
-                  icon={<Route color={colors.violetSoft} size={18} />}
-                  label="رحلات اليوم"
-                  value={captainHomeMock.metrics.tripsToday}
-                />
-                <MetricCard
-                  icon={<Star color={colors.warning} fill={colors.warning} size={18} />}
-                  label="تقييمك"
-                  value={captainRatingDisplay}
-                />
-              </View>
-
+            <View
+              testID={activeTab === "home" ? "captain-focused-home" : "captain-requests-workspace"}
+              style={styles.captainRequestWorkspace}
+            >
               <View style={styles.sectionHeader}>
                 <Text selectable style={styles.sectionTitle}>
-                  الطلبات المتاحة
+                  {activeTab === "home" ? "أقرب طلب جاهز" : "الطلبات المتاحة"}
                 </Text>
                 <Text selectable style={styles.sectionMeta}>
-                  طلب واحد مطابق قريب منك
+                  {request ? `الوصول خلال ${request.etaToPickup}` : "بانتظار طلب قريب"}
                 </Text>
               </View>
 
@@ -212,130 +210,22 @@ export function CaptainHomeScreen() {
                     setPreviewRequest(null);
                   }}
                 />
-              ) : null}
-
-              {request ? (
-                <GlassCard style={styles.requestCard} variant="strong">
-                  <View style={styles.requestTop}>
-                    <View style={styles.customerAvatar}>
-                      <User color={colors.text} size={20} />
-                    </View>
-                    <View style={styles.requestCopy}>
-                      <Text selectable style={styles.requestTitle}>
-                        {request.customerName}
-                      </Text>
-                      <Text selectable style={styles.requestMeta}>
-                        {request.customerPhone}
-                      </Text>
-                    </View>
-                    <View style={styles.pricePill}>
-                      <Text selectable style={styles.priceText}>
-                        {request.price}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.routeBox}>
-                    <RouteRow
-                      icon={<MapPin color={colors.success} size={16} />}
-                      label="نقطة الانطلاق"
-                      value={request.pickup}
-                    />
-                    <RouteRow
-                      icon={<MapPin color={colors.cyan} size={16} />}
-                      label="منطقة الوجهة"
-                      value={request.destinationArea}
-                    />
-                    <RouteRow
-                      icon={<Car color={colors.violetSoft} size={16} />}
-                      label="تفصيل الوجهة"
-                      value={request.destinationDetail}
-                    />
-                    <RouteRow
-                      icon={<Star color={colors.warning} fill={colors.warning} size={16} />}
-                      label="نوع الرحلة"
-                      value={request.serviceLabel}
-                    />
-                    <RouteRow
-                      icon={<Clock color={colors.warning} size={16} />}
-                      label="الوصول للعميل"
-                      value={request.etaToPickup}
-                    />
-                  </View>
-
-                  <CaptainRequestBriefingPanel request={request} />
-
-                  <CaptainDecisionSignalPanel request={request} />
-
-                  <View style={styles.requestMetaGrid}>
-                    <MiniInfo label="المسافة" value={request.distance} />
-                    <MiniInfo label="الدفع" value={request.paymentMethod} />
-                  </View>
-
-                  <Pressable
-                    accessibilityLabel="معاينة قبول الطلب التجريبي"
-                    accessibilityRole="button"
-                    onPress={() => setPreviewRequest(request)}
-                    style={({ pressed }) => [
-                      styles.acceptPreviewTrigger,
-                      pressed ? styles.pressed : null
-                    ]}
-                  >
-                    <View style={styles.previewTriggerIcon}>
-                      <ClipboardList color={colors.cyan} size={18} />
-                    </View>
-                    <View style={styles.previewTriggerCopy}>
-                      <Text selectable style={styles.previewTriggerTitle}>
-                        معاينة الطلب الذكية
-                      </Text>
-                      <Text selectable style={styles.previewTriggerMeta}>
-                        راجع المسار والدخل قبل بدء الرحلة
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  <View style={styles.actionsRow}>
-                    <Pressable
-                      accessibilityLabel="اتصال بالعميل"
-                      accessibilityRole="button"
-                      onPress={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
-                      style={styles.iconAction}
-                    >
-                      <Phone color={colors.textSoft} size={18} />
-                    </Pressable>
-                    <Pressable
-                      accessibilityLabel="رفض الطلب التجريبي"
-                      accessibilityRole="button"
-                      onPress={() => {
-                        dispatchRideRequests({ requestId: request.id, type: "decline-request" });
-                        setPreviewRequest(null);
-                        setNotice("تم رفض الطلب التجريبي");
-                      }}
-                      style={({ pressed }) => [
-                        styles.declineButton,
-                        pressed ? styles.pressed : null
-                      ]}
-                    >
-                      <XCircle color={colors.textSoft} size={17} />
-                      <Text selectable style={styles.declineButtonText}>
-                        رفض
-                      </Text>
-                    </Pressable>
-                    <PremiumButton
-                      accessibilityLabel="قبول الطلب التجريبي"
-                      feedback="light"
-                      label="قبول الطلب"
-                      onPress={() => {
-                        setNotice(null);
-                        dispatchRideRequests({ requestId: request.id, type: "accept-request" });
-                        setActiveRequest(request);
-                      }}
-                      style={styles.acceptButton}
-                    >
-                      <CheckCircle color={colors.text} size={18} />
-                    </PremiumButton>
-                  </View>
-                </GlassCard>
+              ) : request ? (
+                <CaptainNearestRequestCard
+                  onAccept={() => {
+                    setNotice(null);
+                    dispatchRideRequests({ requestId: request.id, type: "accept-request" });
+                    setActiveRequest(request);
+                  }}
+                  onCall={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
+                  onDecline={() => {
+                    dispatchRideRequests({ requestId: request.id, type: "decline-request" });
+                    setPreviewRequest(null);
+                    setNotice("تم رفض الطلب التجريبي");
+                  }}
+                  onShowDetails={() => setPreviewRequest(request)}
+                  request={request}
+                />
               ) : (
                 <GlassCard style={styles.requestCard} variant="subtle">
                   <Text selectable style={styles.sectionTitle}>
@@ -346,7 +236,7 @@ export function CaptainHomeScreen() {
                   </Text>
                 </GlassCard>
               )}
-            </>
+            </View>
           )}
         </MotionSurface>
       </ScrollView>
@@ -390,160 +280,110 @@ export function CaptainHomeScreen() {
   );
 }
 
-function MetricCard({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <GlassCard style={styles.metricCard}>
-      {icon}
-      <Text selectable style={styles.metricValue}>
-        {value}
-      </Text>
-      <Text selectable style={styles.metricLabel}>
-        {label}
-      </Text>
-    </GlassCard>
-  );
-}
-
-function CaptainOperationsPanel({
-  isOnline,
-  requestCount
+function CaptainNearestRequestCard({
+  onAccept,
+  onCall,
+  onDecline,
+  onShowDetails,
+  request
 }: {
-  isOnline: boolean;
-  requestCount: number;
+  onAccept: () => void;
+  onCall: () => void;
+  onDecline: () => void;
+  onShowDetails: () => void;
+  request: CaptainAvailableRequest;
 }) {
   return (
-    <GlassCard style={styles.operationsCard} variant="strong">
-      <View style={styles.operationsHeader}>
-        <View style={styles.operationsIcon}>
-          <Power color={isOnline ? colors.success : colors.textMuted} size={20} />
+    <GlassCard testID="captain-nearest-request-card" style={styles.requestCard} variant="strong">
+      <View style={styles.requestTop}>
+        <View style={styles.customerAvatar}>
+          <User color={colors.text} size={20} />
         </View>
-        <View style={styles.operationsCopy}>
-          <Text selectable style={styles.operationsTitle}>
-            مركز تشغيل الكابتن
+        <View style={styles.requestCopy}>
+          <Text selectable style={styles.requestTitle}>
+            {request.customerName}
           </Text>
-          <Text selectable style={styles.operationsStatus}>
-            {isOnline ? "جاهز لاستقبال الطلبات" : "متوقف مؤقتًا"}
+          <Text selectable style={styles.requestMeta}>
+            {request.serviceLabel}
+          </Text>
+        </View>
+        <View style={styles.pricePill}>
+          <Text selectable style={styles.priceText}>
+            {request.price}
           </Text>
         </View>
       </View>
 
-      <View style={styles.operationsGrid}>
-        <View style={styles.operationMetric}>
-          <Text selectable style={styles.operationMetricText}>
-            {`طلبات قريبة الآن: ${requestCount}`}
-          </Text>
+      <View style={styles.compactRoute}>
+        <View style={styles.compactRouteIcon}>
+          <Route color={colors.cyan} size={18} />
         </View>
-        <View style={styles.operationMetric}>
-          <Text selectable style={styles.operationMetricText}>
-            قوة المطابقة: 96%
+        <View style={styles.compactRouteCopy}>
+          <Text selectable style={styles.compactRouteLabel}>
+            المسار
           </Text>
-        </View>
-        <View style={styles.operationMetric}>
-          <Text selectable style={styles.operationMetricText}>
-            وقت الاستجابة المتوقع: أقل من دقيقة
+          <Text selectable style={styles.compactRouteValue}>
+            {`${request.pickup} ← ${request.destinationArea}`}
           </Text>
         </View>
       </View>
-    </GlassCard>
-  );
-}
 
-function CaptainRequestBriefingPanel({ request }: { request: CaptainAvailableRequest }) {
-  return (
-    <View style={styles.requestBriefingPanel}>
-      <View style={styles.requestBriefingHeader}>
-        <View style={styles.requestBriefingIcon}>
+      <View style={styles.requestMetaGrid}>
+        <MiniInfo label="الوصول" value={request.etaToPickup} />
+        <MiniInfo label="المسافة" value={request.distance} />
+        <MiniInfo label="الدفع" value={request.paymentMethod} />
+      </View>
+
+      <MotionPressable
+        accessibilityLabel="عرض تفاصيل الطلب التجريبي"
+        accessibilityRole="button"
+        onPress={onShowDetails}
+        style={styles.acceptPreviewTrigger}
+      >
+        <View style={styles.previewTriggerIcon}>
           <ClipboardList color={colors.cyan} size={18} />
         </View>
-        <View style={styles.requestBriefingCopy}>
-          <Text selectable style={styles.requestBriefingTitle}>
-            ملخص طلب العميل
+        <View style={styles.previewTriggerCopy}>
+          <Text selectable style={styles.previewTriggerTitle}>
+            عرض التفاصيل
           </Text>
-          <Text selectable style={styles.requestBriefingMeta}>
-            راجع أهم التفاصيل قبل قبول الطلب
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.requestBriefingGrid}>
-        <BriefingItem label="الخدمة المطلوبة" value={request.serviceLabel} />
-        <BriefingItem label="ملاحظة العميل للكابتن" value={request.destinationDetail} />
-        <BriefingItem label="طريقة الدفع المختارة" value={request.paymentMethod} />
-      </View>
-    </View>
-  );
-}
-
-function BriefingItem({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.briefingItem}>
-      <Text selectable style={styles.briefingLabel}>
-        {label}
-      </Text>
-      <Text selectable style={styles.briefingValue}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function CaptainDecisionSignalPanel({ request }: { request: CaptainAvailableRequest }) {
-  const routeLabel = `${request.pickup} ← ${request.destinationArea}`;
-  const signals = [
-    {
-      icon: <Wallet color={colors.success} size={15} />,
-      label: "دخل واضح",
-      value: request.price
-    },
-    {
-      icon: <Clock color={colors.cyan} size={15} />,
-      label: "وصول سريع",
-      value: request.etaToPickup
-    },
-    {
-      icon: <Route color={colors.violetSoft} size={15} />,
-      label: "مسار مفهوم",
-      value: routeLabel
-    },
-    {
-      icon: <CheckCircle color={colors.success} size={15} />,
-      label: "دفع مؤكد",
-      value: request.paymentMethod
-    }
-  ];
-
-  return (
-    <View testID="captain-decision-signal-panel" style={styles.decisionSignalPanel}>
-      <View style={styles.decisionSignalHeader}>
-        <View style={styles.decisionSignalIcon}>
-          <CheckCircle color={colors.cyan} size={18} />
-        </View>
-        <View style={styles.decisionSignalCopy}>
-          <Text selectable style={styles.decisionSignalTitle}>
-            مؤشرات قرار الكابتن
-          </Text>
-          <Text selectable style={styles.decisionSignalMeta}>
-            أهم ما تحتاجه قبل قبول الطلب
+          <Text selectable style={styles.previewTriggerMeta}>
+            ملاحظة العميل، الموقع وطريقة الدفع
           </Text>
         </View>
-      </View>
+      </MotionPressable>
 
-      <View style={styles.decisionSignalGrid}>
-        {signals.map((signal) => (
-          <View key={signal.label} style={styles.decisionSignalItem}>
-            <View style={styles.decisionSignalItemIcon}>{signal.icon}</View>
-            <View style={styles.decisionSignalItemCopy}>
-              <Text selectable style={styles.decisionSignalItemLabel}>
-                {signal.label}
-              </Text>
-              <Text selectable style={styles.decisionSignalItemValue}>
-                {signal.value}
-              </Text>
-            </View>
-          </View>
-        ))}
+      <View style={styles.actionsRow}>
+        <Pressable
+          accessibilityLabel="اتصال بالعميل"
+          accessibilityRole="button"
+          onPress={onCall}
+          style={styles.iconAction}
+        >
+          <Phone color={colors.textSoft} size={18} />
+        </Pressable>
+        <Pressable
+          accessibilityLabel="رفض الطلب التجريبي"
+          accessibilityRole="button"
+          onPress={onDecline}
+          style={({ pressed }) => [styles.declineButton, pressed ? styles.pressed : null]}
+        >
+          <XCircle color={colors.textSoft} size={17} />
+          <Text selectable style={styles.declineButtonText}>
+            رفض
+          </Text>
+        </Pressable>
+        <PremiumButton
+          accessibilityLabel="قبول الطلب التجريبي"
+          feedback="light"
+          label="قبول الطلب"
+          onPress={onAccept}
+          style={styles.acceptButton}
+        >
+          <CheckCircle color={colors.text} size={18} />
+        </PremiumButton>
       </View>
-    </View>
+    </GlassCard>
   );
 }
 
@@ -557,7 +397,7 @@ function CaptainAcceptPreviewCard({
   request: CaptainAvailableRequest;
 }) {
   return (
-    <GlassCard style={styles.acceptPreviewCard} variant="strong">
+    <GlassCard testID="captain-request-details" style={styles.acceptPreviewCard} variant="strong">
       <View style={styles.acceptPreviewHeader}>
         <View style={styles.acceptPreviewIcon}>
           <CheckCircle color={colors.cyan} size={20} />
@@ -574,6 +414,7 @@ function CaptainAcceptPreviewCard({
 
       <View style={styles.previewRows}>
         <PreviewRow label="العميل المحدد" value={request.customerName} />
+        <PreviewRow label="رقم العميل" value={request.customerPhone} />
         <PreviewRow
           label="المسار المقترح"
           value={`${request.pickup} ← ${request.destinationArea}`}
@@ -582,6 +423,7 @@ function CaptainAcceptPreviewCard({
         <PreviewRow label="ملاحظة العميل" value={request.destinationDetail} />
         <PreviewRow label="طريقة الدفع" value={request.paymentMethod} />
         <PreviewRow label="الدخل المتوقع" value={request.price} />
+        <PreviewRow label="المسافة" value={request.distance} />
         <PreviewRow label="جاهز للانطلاق" value={`الوصول خلال ${request.etaToPickup}`} />
       </View>
 
@@ -619,22 +461,6 @@ function PreviewRow({ label, value }: { label: string; value: string }) {
       <Text selectable style={styles.previewRowLabel}>
         {label}
       </Text>
-    </View>
-  );
-}
-
-function RouteRow({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
-  return (
-    <View style={styles.routeRow}>
-      {icon}
-      <View style={styles.routeCopy}>
-        <Text selectable style={styles.routeLabel}>
-          {label}
-        </Text>
-        <Text selectable style={styles.routeValue}>
-          {value}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -1089,82 +915,35 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
-  operationsCard: {
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.24)"
-  },
-  operationsHeader: {
+  realtimeEmptyCard: {
+    minHeight: 76,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.sm
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.2)"
   },
-  operationsIcon: {
-    width: 46,
-    height: 46,
+  realtimeEmptyIcon: {
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(51, 231, 168, 0.3)",
-    backgroundColor: "rgba(51, 231, 168, 0.1)"
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
   },
-  operationsCopy: {
+  realtimeEmptyCopy: {
     flex: 1,
     alignItems: "flex-end",
     gap: 3
   },
-  operationsTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  operationsStatus: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "800"
-  },
-  operationsGrid: {
-    gap: spacing.xs
-  },
-  operationMetric: {
-    minHeight: 38,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-  },
-  operationMetricText: {
+  realtimeEmptyTitle: {
     ...rtlText,
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900"
   },
-  metricsRow: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  metricCard: {
-    flex: 1,
-    minHeight: 106,
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    padding: spacing.md
-  },
-  metricValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.section,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  metricLabel: {
+  realtimeEmptyMeta: {
     ...rtlText,
     color: colors.textMuted,
     fontSize: typography.tiny,
@@ -1186,6 +965,9 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.compact,
     fontWeight: "700"
+  },
+  captainRequestWorkspace: {
+    gap: spacing.md
   },
   requestCard: {
     gap: spacing.md,
@@ -1239,180 +1021,40 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
-  routeBox: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
-  },
-  routeRow: {
-    minHeight: 42,
+  compactRoute: {
+    minHeight: 72,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.sm
-  },
-  routeCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 2
-  },
-  routeLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  routeValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  requestBriefingPanel: {
     gap: spacing.sm,
     padding: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.22)",
-    backgroundColor: "rgba(0, 229, 255, 0.06)"
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.055)"
   },
-  requestBriefingHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  requestBriefingIcon: {
-    width: 38,
-    height: 38,
+  compactRouteIcon: {
+    width: 40,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.26)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
   },
-  requestBriefingCopy: {
+  compactRouteCopy: {
     flex: 1,
     alignItems: "flex-end",
-    gap: 3
+    gap: 4
   },
-  requestBriefingTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  requestBriefingMeta: {
+  compactRouteLabel: {
     ...rtlText,
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
   },
-  requestBriefingGrid: {
-    gap: spacing.xs
-  },
-  briefingItem: {
-    minHeight: 44,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 3,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.055)"
-  },
-  briefingLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  briefingValue: {
+  compactRouteValue: {
     ...rtlText,
     color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  decisionSignalPanel: {
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: "rgba(51, 231, 168, 0.22)",
-    backgroundColor: "rgba(51, 231, 168, 0.055)"
-  },
-  decisionSignalHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  decisionSignalIcon: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.26)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
-  },
-  decisionSignalCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  decisionSignalTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  decisionSignalMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  decisionSignalGrid: {
-    gap: spacing.xs
-  },
-  decisionSignalItem: {
-    minHeight: 48,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-  },
-  decisionSignalItemIcon: {
-    width: 30,
-    height: 30,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.16)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-  },
-  decisionSignalItemCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 2
-  },
-  decisionSignalItemLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
-  decisionSignalItemValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
+    fontSize: typography.body,
     fontWeight: "900"
   },
   requestMetaGrid: {
