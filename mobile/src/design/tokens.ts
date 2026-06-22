@@ -30,7 +30,9 @@ export const gradients = {
   app: [colors.background, "#09111F", "#101426"] as const,
   primary: accents.primary,
   cyanGlow: ["rgba(0, 229, 255, 0.34)", "rgba(0, 229, 255, 0)"] as const,
-  card: ["rgba(22, 32, 56, 0.86)", "rgba(9, 14, 26, 0.78)"] as const
+  card: ["rgba(22, 32, 56, 0.86)", "rgba(9, 14, 26, 0.78)"] as const,
+  buttonHighlight: ["rgba(255, 255, 255, 0.22)", "rgba(255, 255, 255, 0)"] as const,
+  floating: ["rgba(20, 31, 54, 0.94)", "rgba(7, 11, 20, 0.86)"] as const
 } as const;
 
 export const radii = {
@@ -51,6 +53,13 @@ export const spacing = {
   xxl: 36
 } as const;
 
+export const layoutRhythm = {
+  cardPadding: spacing.md,
+  denseCardPadding: spacing.sm,
+  sectionGap: spacing.md,
+  compactSectionGap: spacing.sm
+} as const;
+
 export const typography = {
   title: 28,
   section: 18,
@@ -59,28 +68,56 @@ export const typography = {
   tiny: 11
 } as const;
 
+export const shadows = {
+  cardSubtle: "0 8px 24px rgba(0, 0, 0, 0.2)",
+  card: "0 14px 38px rgba(0, 0, 0, 0.34)",
+  cardStrong: "0 18px 46px rgba(0, 0, 0, 0.4)",
+  floating: "0 20px 54px rgba(0, 0, 0, 0.48)",
+  primaryAction: "0 12px 30px rgba(60, 103, 255, 0.28)",
+  activeControl: "0 8px 22px rgba(0, 173, 255, 0.14)",
+  glowCyan: "0 0 16px rgba(0, 229, 255, 0.64)"
+} as const;
+
 export const glass = {
   default: {
     blurIntensity: 30,
     backgroundColor: colors.surface,
-    borderColor: colors.border
+    borderColor: colors.border,
+    shadow: shadows.card,
+    highlightColor: "rgba(255, 255, 255, 0.08)"
   },
   strong: {
     blurIntensity: 38,
     backgroundColor: colors.surfaceStrong,
-    borderColor: colors.borderStrong
+    borderColor: colors.borderStrong,
+    shadow: shadows.cardStrong,
+    highlightColor: "rgba(255, 255, 255, 0.12)"
   },
   subtle: {
     blurIntensity: 22,
     backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderColor: "rgba(147, 177, 255, 0.12)"
+    borderColor: "rgba(147, 177, 255, 0.12)",
+    shadow: shadows.cardSubtle,
+    highlightColor: "rgba(255, 255, 255, 0.05)"
+  },
+  floating: {
+    blurIntensity: 42,
+    backgroundColor: "rgba(12, 19, 34, 0.92)",
+    borderColor: "rgba(147, 177, 255, 0.22)",
+    shadow: shadows.floating,
+    highlightColor: "rgba(255, 255, 255, 0.1)"
   }
 } as const;
 
-export const shadows = {
-  card: "0 14px 38px rgba(0, 0, 0, 0.34)",
-  floating: "0 18px 48px rgba(0, 0, 0, 0.42)",
-  glowCyan: "0 0 16px rgba(0, 229, 255, 0.78)"
+export const controlSurfaces = {
+  secondary: {
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderColor: "rgba(147, 177, 255, 0.2)"
+  },
+  activeNavigation: {
+    backgroundColor: "rgba(0, 199, 235, 0.14)",
+    borderColor: "rgba(0, 229, 255, 0.16)"
+  }
 } as const;
 
 export const touchTargets = {
@@ -104,6 +141,7 @@ export const rtl = {
 
 export const waselVisualDirection = {
   theme: "luxury-futuristic-rtl",
+  polish: "premium-balanced",
   currency: "شيكل",
   background: ["deep navy", "graphite"] as const,
   required: [

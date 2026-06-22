@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
+import { useResponsiveLayout } from "@/design/responsive";
 import { colors, gradients, radii, shadows, spacing, typography } from "@/design/tokens";
 
 type WelcomeScreenProps = {
@@ -21,6 +22,7 @@ export function WelcomeScreen({
   onCustomerRegister
 }: WelcomeScreenProps) {
   const insets = useSafeAreaInsets();
+  const responsive = useResponsiveLayout();
 
   return (
     <View style={styles.root}>
@@ -32,8 +34,12 @@ export function WelcomeScreen({
         contentContainerStyle={[
           styles.content,
           {
+            alignSelf: "center",
+            maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxl
+            paddingBottom: insets.bottom + spacing.xxl,
+            paddingHorizontal: responsive.horizontalPadding,
+            width: "100%"
           }
         ]}
       >
@@ -196,8 +202,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     justifyContent: "center",
-    gap: spacing.lg,
-    paddingHorizontal: spacing.lg
+    gap: spacing.lg
   },
   hero: {
     alignItems: "center",

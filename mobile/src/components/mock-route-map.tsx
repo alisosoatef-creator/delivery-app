@@ -105,7 +105,13 @@ function MockRouteMapComponent({
   const captainTracking = getCaptainTracking(phase, pickupLabel, destinationLabel, detailLabel);
 
   return (
-    <View testID="mock-route-map" style={styles.mapShell}>
+    <View
+      accessibilityLabel={`خريطة الرحلة: من ${pickupLabel} إلى ${destinationLabel}. ${phaseLabels[phase]}`}
+      accessibilityRole="image"
+      accessible
+      testID="mock-route-map"
+      style={styles.mapShell}
+    >
       <LinearGradient colors={mapStyle.background} style={StyleSheet.absoluteFill} />
       <View style={styles.gridLayer}>
         {roads.map((road, index) => (

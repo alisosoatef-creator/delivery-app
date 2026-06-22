@@ -1,16 +1,27 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { ChevronRight } from "lucide-react-native";
 import type { PropsWithChildren, ReactNode } from "react";
-import { Pressable, ScrollView, StyleProp, StyleSheet, Text, TextInput, View, ViewStyle } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+  ViewStyle
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
+import { useResponsiveLayout } from "@/design/responsive";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 
 type AuthScreenFrameProps = PropsWithChildren;
 
 export function AuthScreenFrame({ children }: AuthScreenFrameProps) {
   const insets = useSafeAreaInsets();
+  const responsive = useResponsiveLayout();
 
   return (
     <View style={styles.root}>
@@ -22,8 +33,12 @@ export function AuthScreenFrame({ children }: AuthScreenFrameProps) {
         contentContainerStyle={[
           styles.content,
           {
+            alignSelf: "center",
+            maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxl
+            paddingBottom: insets.bottom + spacing.xxl,
+            paddingHorizontal: responsive.horizontalPadding,
+            width: "100%"
           }
         ]}
       >
@@ -183,8 +198,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: spacing.lg,
-    paddingHorizontal: spacing.lg
+    gap: spacing.lg
   },
   topBar: {
     minHeight: 48,

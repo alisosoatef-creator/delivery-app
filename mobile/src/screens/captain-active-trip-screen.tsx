@@ -1,5 +1,15 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { CheckCircle, Clock, MapPin, MessageCircle, Navigation, Phone, ShieldCheck, User, Wallet } from "lucide-react-native";
+import {
+  CheckCircle,
+  Clock,
+  MapPin,
+  MessageCircle,
+  Navigation,
+  Phone,
+  ShieldCheck,
+  User,
+  Wallet
+} from "lucide-react-native";
 import type { ReactNode } from "react";
 import { useMemo, useReducer, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -8,7 +18,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CaptainRouteMap } from "@/components/captain-route-map";
 import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
-import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import { useResponsiveLayout } from "@/design/responsive";
+import { colors, gradients, radii, spacing, touchTargets, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import {
@@ -22,9 +33,16 @@ type CaptainActiveTripScreenProps = {
   request: CaptainAvailableRequest;
 };
 
-export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainActiveTripScreenProps) {
+export function CaptainActiveTripScreen({
+  onBackToRequests,
+  request
+}: CaptainActiveTripScreenProps) {
   const insets = useSafeAreaInsets();
-  const [tripFlow, dispatchTripFlow] = useReducer(captainTripFlowReducer, createInitialCaptainTripFlow());
+  const responsive = useResponsiveLayout();
+  const [tripFlow, dispatchTripFlow] = useReducer(
+    captainTripFlowReducer,
+    createInitialCaptainTripFlow()
+  );
   const [, dispatchRideRequests] = useMockRideRequests();
   const [notice, setNotice] = useState<string | null>(null);
   const { step: tripStep } = tripFlow;
@@ -68,7 +86,7 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
     dispatchRideRequests({
       requestId: request.id,
       step: stepCopy.nextStep,
-      type: "update-accepted-trip-step",
+      type: "update-accepted-trip-step"
     });
   }
 
@@ -82,8 +100,12 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
         contentContainerStyle={[
           styles.content,
           {
+            alignSelf: "center",
+            maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxl
+            paddingBottom: insets.bottom + spacing.xxl,
+            paddingHorizontal: responsive.horizontalPadding,
+            width: "100%"
           }
         ]}
       >
@@ -114,7 +136,9 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
                 {tripStep === "completed" ? "تم إنهاء الرحلة" : stepCopy.label}
               </Text>
               <Text selectable style={styles.heroMeta}>
-                {tripStep === "completed" ? "تم تسجيل الرحلة ضمن بيانات mock لهذه المرحلة" : stepCopy.meta}
+                {tripStep === "completed"
+                  ? "تم تسجيل الرحلة ضمن بيانات mock لهذه المرحلة"
+                  : stepCopy.meta}
               </Text>
             </View>
           </View>
@@ -122,9 +146,17 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
           <View style={styles.progressTrack}>
             <ProgressNode active done label="قبول" />
             <View style={styles.progressLine} />
-            <ProgressNode active={tripStep !== "pickup"} done={tripStep !== "pickup"} label="وصول" />
+            <ProgressNode
+              active={tripStep !== "pickup"}
+              done={tripStep !== "pickup"}
+              label="وصول"
+            />
             <View style={styles.progressLine} />
-            <ProgressNode active={tripStep === "driving" || tripStep === "completed"} done={tripStep === "completed"} label="رحلة" />
+            <ProgressNode
+              active={tripStep === "driving" || tripStep === "completed"}
+              done={tripStep === "completed"}
+              label="رحلة"
+            />
           </View>
         </GlassCard>
 
@@ -151,16 +183,44 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
           </View>
 
           <View style={styles.detailsBox}>
-            <TripInfoRow icon={<MapPin color={colors.success} size={16} />} label="نقطة الانطلاق" value={request.pickup} />
-            <TripInfoRow icon={<MapPin color={colors.cyan} size={16} />} label="منطقة الوجهة" value={request.destinationArea} />
-            <TripInfoRow icon={<Navigation color={colors.violetSoft} size={16} />} label="تفصيل الوجهة" value={request.destinationDetail} />
-            <TripInfoRow icon={<Wallet color={colors.cyan} size={16} />} label="نوع الرحلة" value={request.serviceLabel} />
-            <TripInfoRow icon={<Wallet color={colors.warning} size={16} />} label="الدفع" value={request.paymentMethod} />
+            <TripInfoRow
+              icon={<MapPin color={colors.success} size={16} />}
+              label="نقطة الانطلاق"
+              value={request.pickup}
+            />
+            <TripInfoRow
+              icon={<MapPin color={colors.cyan} size={16} />}
+              label="منطقة الوجهة"
+              value={request.destinationArea}
+            />
+            <TripInfoRow
+              icon={<Navigation color={colors.violetSoft} size={16} />}
+              label="تفصيل الوجهة"
+              value={request.destinationDetail}
+            />
+            <TripInfoRow
+              icon={<Wallet color={colors.cyan} size={16} />}
+              label="نوع الرحلة"
+              value={request.serviceLabel}
+            />
+            <TripInfoRow
+              icon={<Wallet color={colors.warning} size={16} />}
+              label="الدفع"
+              value={request.paymentMethod}
+            />
           </View>
 
           <View style={styles.metricsGrid}>
-            <TripMetric icon={<Clock color={colors.cyan} size={16} />} label="الوصول للعميل" value={request.etaToPickup} />
-            <TripMetric icon={<Navigation color={colors.violetSoft} size={16} />} label="المسافة" value={request.distance} />
+            <TripMetric
+              icon={<Clock color={colors.cyan} size={16} />}
+              label="الوصول للعميل"
+              value={request.etaToPickup}
+            />
+            <TripMetric
+              icon={<Navigation color={colors.violetSoft} size={16} />}
+              label="المسافة"
+              value={request.distance}
+            />
           </View>
 
           {tripStep !== "completed" ? (
@@ -172,7 +232,12 @@ export function CaptainActiveTripScreen({ onBackToRequests, request }: CaptainAc
 
           {notice ? (
             <View style={styles.noticeBox}>
-              <Text selectable style={styles.noticeText}>
+              <Text
+                accessibilityLiveRegion="polite"
+                accessibilityRole="alert"
+                selectable
+                style={styles.noticeText}
+              >
                 {notice}
               </Text>
             </View>
@@ -334,8 +399,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg
+    gap: spacing.md
   },
   header: {
     minHeight: 52,
@@ -612,7 +676,7 @@ const styles = StyleSheet.create({
   },
   supportButton: {
     flex: 1,
-    minHeight: 42,
+    minHeight: touchTargets.minimum,
     flexDirection: "row-reverse",
     alignItems: "center",
     justifyContent: "center",

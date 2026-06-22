@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
@@ -135,6 +135,43 @@ async function renderCaptainHomeWithSubmittedRequestProbe() {
 }
 
 describe("CaptainHomeScreen", () => {
+  it("exposes captain availability as an accessible switch", async () => {
+    const screen = await renderCaptainHome();
+    const availabilitySwitch = screen.getByRole("switch", { name: "تغيير حالة الكابتن" });
+
+    expect(availabilitySwitch.props.accessibilityState).toEqual({ checked: true });
+
+    await fireEvent.press(availabilitySwitch);
+
+    expect(
+      screen.getByRole("switch", { name: "تغيير حالة الكابتن" }).props.accessibilityState
+    ).toEqual({ checked: false });
+  });
+
+  it("announces captain action feedback politely", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("اتصال بالعميل"));
+
+    const notice = screen.getByText("زر الاتصال بالعميل mock فقط الآن");
+    expect(notice.props.accessibilityLiveRegion).toBe("polite");
+    expect(notice.props.accessibilityRole).toBe("alert");
+  });
+
+  it("keeps the floating navigation flexible for compact screens", async () => {
+    const screen = await renderCaptainHome();
+    const navItemStyle = StyleSheet.flatten(
+      screen.getByTestId("captain-motion-tab-home").props.style
+    );
+
+    expect(navItemStyle).toMatchObject({
+      flex: 1,
+      maxWidth: 72,
+      minWidth: 0
+    });
+    expect(screen.getByText("الرئيسية").props.numberOfLines).toBe(1);
+  });
+
   it("keeps the captain home focused on one nearest-request decision", async () => {
     const screen = await renderCaptainHome();
 
@@ -299,7 +336,8 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
 
-    expect(screen.getByTestId("captain-route-map")).toBeTruthy();
+    expect(screen.getByTestId("captain-route-map")).toHaveProp("accessibilityRole", "image");
+    expect(screen.getByTestId("captain-route-map")).toHaveProp("accessible", true);
     expect(screen.getByText("خط سير الكابتن")).toBeTruthy();
     expect(screen.getByText("إلى نقطة الانطلاق")).toBeTruthy();
     expect(screen.getByText("المسار النشط: زواتا")).toBeTruthy();

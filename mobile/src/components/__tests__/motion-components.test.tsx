@@ -7,6 +7,21 @@ import { MotionPressable } from "@/components/motion-pressable";
 import { getMotionDuration, MotionSurface } from "@/components/motion-surface";
 
 describe("Wasel motion components", () => {
+  it("provides an accessible default touch target contract", async () => {
+    const screen = await render(
+      <MotionPressable accessibilityLabel="زر وصول" disabled>
+        <Text>زر وصول</Text>
+      </MotionPressable>
+    );
+
+    const button = screen.getByLabelText("زر وصول");
+
+    expect(button.props.accessible).toBe(true);
+    expect(button.props.accessibilityRole).toBe("button");
+    expect(button.props.accessibilityState).toEqual({ disabled: true });
+    expect(button.props.hitSlop).toEqual({ bottom: 8, left: 8, right: 8, top: 8 });
+  });
+
   it("keeps press interactions functional while using the shared motion control", async () => {
     const onPress = jest.fn();
     const onPressIn = jest.fn();

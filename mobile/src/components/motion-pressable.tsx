@@ -28,11 +28,16 @@ type MotionPressableProps = PropsWithChildren<
 >;
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+const defaultTouchHitSlop = { bottom: 8, left: 8, right: 8, top: 8 };
 
 export function MotionPressable({
+  accessibilityRole,
+  accessibilityState,
+  accessible,
   children,
   disabled,
   feedback = "none",
+  hitSlop,
   onPress,
   onPressIn,
   onPressOut,
@@ -73,7 +78,11 @@ export function MotionPressable({
   return (
     <AnimatedPressable
       {...pressableProps}
+      accessibilityRole={accessibilityRole ?? "button"}
+      accessibilityState={disabled ? { ...accessibilityState, disabled: true } : accessibilityState}
+      accessible={accessible ?? true}
       disabled={disabled}
+      hitSlop={hitSlop ?? defaultTouchHitSlop}
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}

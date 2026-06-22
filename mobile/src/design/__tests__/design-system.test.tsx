@@ -2,7 +2,18 @@ import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { PremiumButton } from "@/components/premium-button";
-import { accents, glass, mapStyle, shadows, touchTargets, waselVisualDirection } from "../tokens";
+import {
+  accents,
+  controlSurfaces,
+  glass,
+  gradients,
+  layoutRhythm,
+  mapStyle,
+  shadows,
+  spacing,
+  touchTargets,
+  waselVisualDirection
+} from "../tokens";
 
 describe("Wasel design system", () => {
   it("codifies the approved premium mobile visual direction", () => {
@@ -28,6 +39,18 @@ describe("Wasel design system", () => {
     expect(shadows.card).toContain("rgba(0, 0, 0");
     expect(touchTargets.minimum).toBeGreaterThanOrEqual(44);
     expect(mapStyle.routeGlow).toBe("rgba(0, 229, 255, 0.78)");
+  });
+
+  it("defines the premium balanced polish contract", () => {
+    expect(waselVisualDirection.polish).toBe("premium-balanced");
+    expect(glass.default.shadow).toBe(shadows.card);
+    expect(glass.strong.shadow).toBe(shadows.cardStrong);
+    expect(glass.subtle.shadow).toBe(shadows.cardSubtle);
+    expect(glass.floating.shadow).toBe(shadows.floating);
+    expect(glass.strong.highlightColor).toContain("rgba");
+    expect(gradients.buttonHighlight).toHaveLength(2);
+    expect(controlSurfaces.activeNavigation.backgroundColor).toContain("rgba");
+    expect(layoutRhythm.cardPadding).toBe(spacing.md);
   });
 
   it("renders a premium CTA as a real pressable button", async () => {

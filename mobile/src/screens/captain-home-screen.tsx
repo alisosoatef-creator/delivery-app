@@ -1,15 +1,12 @@
 import { LinearGradient } from "expo-linear-gradient";
 import {
-  Car,
   CheckCircle,
   ClipboardList,
   Clock,
   Home,
-  MapPin,
   Phone,
   Power,
   Route,
-  Star,
   User,
   Wallet,
   XCircle
@@ -23,6 +20,7 @@ import { MotionPressable } from "@/components/motion-pressable";
 import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
+import { useResponsiveLayout } from "@/design/responsive";
 import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import {
@@ -45,6 +43,7 @@ type CaptainTab = (typeof captainTabs)[number]["key"];
 
 export function CaptainHomeScreen() {
   const insets = useSafeAreaInsets();
+  const responsive = useResponsiveLayout();
   const [isOnline, setIsOnline] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [activeRequest, setActiveRequest] = useState<CaptainAvailableRequest | null>(null);
@@ -84,15 +83,21 @@ export function CaptainHomeScreen() {
         contentContainerStyle={[
           styles.content,
           {
+            alignSelf: "center",
+            maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + 120
+            paddingBottom: insets.bottom + 120,
+            paddingHorizontal: responsive.horizontalPadding,
+            width: "100%"
           }
         ]}
       >
         <View style={styles.header}>
           <Pressable
+            accessibilityHint="يبدّل بين استقبال الطلبات وإيقافها"
             accessibilityLabel="تغيير حالة الكابتن"
-            accessibilityRole="button"
+            accessibilityRole="switch"
+            accessibilityState={{ checked: isOnline }}
             onPress={() => setIsOnline((value) => !value)}
             style={({ pressed }) => [
               styles.statusToggle,
@@ -146,7 +151,12 @@ export function CaptainHomeScreen() {
 
         {notice ? (
           <GlassCard style={styles.noticeCard} variant="subtle">
-            <Text selectable style={styles.noticeText}>
+            <Text
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              selectable
+              style={styles.noticeText}
+            >
               {notice}
             </Text>
           </GlassCard>
@@ -245,7 +255,10 @@ export function CaptainHomeScreen() {
         style={[
           styles.bottomNav,
           {
-            bottom: insets.bottom + spacing.md
+            bottom: insets.bottom + spacing.md,
+            columnGap: responsive.navItemGap,
+            left: responsive.navInset,
+            right: responsive.navInset
           }
         ]}
       >
@@ -269,7 +282,13 @@ export function CaptainHomeScreen() {
               testID={`captain-motion-tab-${tab.key}`}
             >
               <Icon color={isActive ? colors.text : colors.textMuted} size={18} />
-              <Text selectable style={[styles.navLabel, isActive ? styles.navLabelActive : null]}>
+              <Text
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
+                numberOfLines={1}
+                selectable
+                style={[styles.navLabel, isActive ? styles.navLabelActive : null]}
+              >
                 {tab.label}
               </Text>
             </MotionPressable>
@@ -820,8 +839,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg
+    gap: spacing.md
   },
   header: {
     minHeight: 48,
@@ -1346,8 +1364,6 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
     minHeight: 68,
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -1357,7 +1373,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg
   },
   navItem: {
-    width: 72,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 72,
     minHeight: 52,
     alignItems: "center",
     justifyContent: "center",

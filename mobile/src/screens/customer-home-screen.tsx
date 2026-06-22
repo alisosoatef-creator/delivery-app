@@ -33,7 +33,8 @@ import { MotionPressable } from "@/components/motion-pressable";
 import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
-import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import { useResponsiveLayout } from "@/design/responsive";
+import { colors, gradients, radii, spacing, touchTargets, typography } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 import {
@@ -315,6 +316,7 @@ function getVisaCardLastFour(cardNumber: string): string {
 
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
+  const responsive = useResponsiveLayout();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
   const [selectedPickup, setSelectedPickup] = useState<PickupPoint>(
     customerHomeMock.pickupOptions[0]
@@ -1080,8 +1082,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         contentContainerStyle={[
           styles.content,
           {
+            alignSelf: "center",
+            maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + 120
+            paddingBottom: insets.bottom + 120,
+            paddingHorizontal: responsive.horizontalPadding,
+            width: "100%"
           }
         ]}
       >
@@ -1120,7 +1126,14 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
         {notice ? (
           <GlassCard style={styles.feedbackCard}>
-            <Text style={styles.feedbackText}>{notice}</Text>
+            <Text
+              accessibilityLiveRegion="polite"
+              accessibilityRole="alert"
+              selectable
+              style={styles.feedbackText}
+            >
+              {notice}
+            </Text>
           </GlassCard>
         ) : null}
 
@@ -1389,7 +1402,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                               <Pressable
                                 key={method}
                                 accessibilityLabel={method}
-                                accessibilityRole="button"
+                                accessibilityRole="radio"
+                                accessibilityState={{ checked: paymentMethod === method }}
                                 onPress={() => selectPaymentMethod(method)}
                                 style={({ pressed }) => [
                                   styles.paymentOption,
@@ -1582,7 +1596,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         style={[
           styles.bottomNav,
           {
-            bottom: insets.bottom + spacing.md
+            bottom: insets.bottom + spacing.md,
+            columnGap: responsive.navItemGap,
+            left: responsive.navInset,
+            right: responsive.navInset
           }
         ]}
       >
@@ -1609,6 +1626,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             >
               <Icon color={activeNav === item.label ? colors.text : colors.textMuted} size={18} />
               <Text
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
+                numberOfLines={1}
                 style={[styles.navLabel, activeNav === item.label ? styles.navLabelActive : null]}
               >
                 {item.label}
@@ -1717,8 +1737,8 @@ function CustomerDestinationSelectionPage({
               <Pressable
                 key={place.label}
                 accessibilityLabel={`اختيار وجهة ${place.label}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
                 onPress={() => onSelectDestination(place)}
                 style={({ pressed }) => [
                   styles.searchResultRow,
@@ -1933,9 +1953,9 @@ function CustomerServiceSelectionPage({
               return (
                 <Pressable
                   key={serviceType.id}
-                  accessibilityRole="button"
                   accessibilityLabel={`اختيار ${serviceType.label}`}
-                  accessibilityState={{ selected: isSelected }}
+                  accessibilityRole="radio"
+                  accessibilityState={{ checked: isSelected }}
                   onPress={() => onSelect(serviceType)}
                   style={({ pressed }) => [
                     styles.serviceTypeOption,
@@ -2098,8 +2118,8 @@ function CustomerDeliveryPackagePanel({
               <Pressable
                 key={packageType}
                 accessibilityLabel={`اختيار نوع غرض ${packageType}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
                 onPress={() => onSelectType(packageType)}
                 style={({ pressed }) => [
                   styles.deliveryPackageChip,
@@ -2285,8 +2305,8 @@ function CustomerFeedbackCard({
             return (
               <Pressable
                 key={tag}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isSelected }}
                 accessibilityLabel={`اختيار ملاحظة ${tag}`}
                 onPress={() => onToggleTag(tag)}
                 style={({ pressed }) => [
@@ -2573,8 +2593,8 @@ function CustomerLocationCard({
             <Pressable
               key={pickup.id}
               accessibilityLabel={`اختيار نقطة انطلاق ${pickup.label}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
               onPress={() => onSelectPickup(pickup)}
               style={({ pressed }) => [
                 styles.pickupOption,
@@ -2808,8 +2828,8 @@ function CustomerSearchTab({
               <Pressable
                 key={filter}
                 accessibilityLabel={`فلتر البحث ${filter}`}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
+                accessibilityRole="radio"
+                accessibilityState={{ checked: isSelected }}
                 onPress={() => onChangeFilter(filter)}
                 style={({ pressed }) => [
                   styles.searchFilterChip,
@@ -2857,8 +2877,8 @@ function CustomerSearchTab({
             <Pressable
               key={place.label}
               accessibilityLabel={`اختيار نتيجة ${place.label}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: isSelected }}
+              accessibilityRole="radio"
+              accessibilityState={{ checked: isSelected }}
               onPress={() => onSelectDestination(place)}
               style={({ pressed }) => [
                 styles.searchResultRow,
@@ -3446,8 +3466,7 @@ const styles = StyleSheet.create({
     flex: 1
   },
   content: {
-    gap: spacing.md,
-    paddingHorizontal: spacing.lg
+    gap: spacing.md
   },
   header: {
     minHeight: 48,
@@ -4221,7 +4240,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   deliveryPackageChip: {
-    minHeight: 36,
+    minHeight: touchTargets.minimum,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
@@ -4543,8 +4562,6 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    left: spacing.lg,
-    right: spacing.lg,
     minHeight: 68,
     flexDirection: "row-reverse",
     alignItems: "center",
@@ -4554,7 +4571,9 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg
   },
   navItem: {
-    width: 72,
+    flex: 1,
+    minWidth: 0,
+    maxWidth: 72,
     minHeight: 52,
     alignItems: "center",
     justifyContent: "center",
@@ -5425,7 +5444,7 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   receiptDownloadButton: {
-    minHeight: 40,
+    minHeight: touchTargets.minimum,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.sm,
@@ -5493,8 +5512,8 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs
   },
   starButton: {
-    minWidth: 40,
-    minHeight: 40,
+    minWidth: touchTargets.minimum,
+    minHeight: touchTargets.minimum,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill
@@ -5514,7 +5533,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   feedbackTag: {
-    minHeight: 38,
+    minHeight: touchTargets.minimum,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,
@@ -5670,7 +5689,7 @@ const styles = StyleSheet.create({
     gap: spacing.xs
   },
   searchFilterChip: {
-    minHeight: 36,
+    minHeight: touchTargets.minimum,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: spacing.sm,

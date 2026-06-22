@@ -80,6 +80,8 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
   return (
     <View
       accessibilityLabel={`خط سير الكابتن: ${config.activeLabel}`}
+      accessibilityRole="image"
+      accessible
       testID="captain-route-map"
       style={styles.mapShell}
     >

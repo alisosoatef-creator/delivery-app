@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import * as Haptics from "expo-haptics";
 import { fireEvent, render } from "@testing-library/react-native";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
@@ -167,6 +167,66 @@ async function renderCustomerHomeWithCaptainAcceptanceProbe(
 }
 
 describe("CustomerHomeScreen", () => {
+  it("announces customer action feedback politely", async () => {
+    const screen = await renderCustomerLanding();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب البحث"));
+    await fireEvent.press(screen.getByLabelText("تحديث اقتراحات البحث"));
+
+    const notice = screen.getByText("تم تحديث اقتراحات البحث mock فقط الآن");
+    expect(notice.props.accessibilityLiveRegion).toBe("polite");
+    expect(notice.props.accessibilityRole).toBe("alert");
+  });
+
+  it("exposes search filters as accessible radio controls with safe touch targets", async () => {
+    const screen = await renderCustomerLanding();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب البحث"));
+
+    const allFilter = screen.getByRole("radio", { name: "فلتر البحث الكل" });
+    const filterStyle = StyleSheet.flatten(allFilter.props.style);
+
+    expect(allFilter.props.accessibilityState).toEqual({ checked: true });
+    expect(filterStyle.minHeight).toBe(44);
+
+    await fireEvent.press(screen.getByRole("radio", { name: "فلتر البحث جامعات" }));
+
+    expect(
+      screen.getByRole("radio", { name: "فلتر البحث جامعات" }).props.accessibilityState
+    ).toEqual({ checked: true });
+  });
+
+  it("exposes payment methods as one checked radio choice", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(
+      screen.getByRole("radio", { name: "كاش عند الاستلام" }).props.accessibilityState
+    ).toEqual({ checked: true });
+    expect(screen.getByRole("radio", { name: "فيزا" }).props.accessibilityState).toEqual({
+      checked: false
+    });
+
+    await fireEvent.press(screen.getByRole("radio", { name: "فيزا" }));
+
+    expect(screen.getByRole("radio", { name: "فيزا" }).props.accessibilityState).toEqual({
+      checked: true
+    });
+  });
+
+  it("keeps the floating navigation flexible for compact screens", async () => {
+    const screen = await renderCustomerLanding();
+    const navItemStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-motion-tab-0").props.style
+    );
+
+    expect(navItemStyle).toMatchObject({
+      flex: 1,
+      maxWidth: 72,
+      minWidth: 0
+    });
+    expect(screen.getByText("الرئيسية").props.numberOfLines).toBe(1);
+  });
+
   it("keeps the customer landing focused on one clear ride request action", async () => {
     const screen = await renderCustomerLanding();
 
@@ -658,6 +718,8 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("وجهة: نابلس - رفيديا")).toBeTruthy();
     expect(screen.getByText("تفصيل: مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
     expect(screen.getByText("مسار تجريبي جاهز")).toBeTruthy();
+    expect(screen.getByTestId("mock-route-map")).toHaveProp("accessibilityRole", "image");
+    expect(screen.getByTestId("mock-route-map")).toHaveProp("accessible", true);
 
     await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
