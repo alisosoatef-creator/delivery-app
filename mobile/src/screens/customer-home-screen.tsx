@@ -11,6 +11,7 @@ import {
   CreditCard,
   MapPin,
   MessageCircle,
+  Navigation,
   Phone,
   Search,
   ShieldCheck,
@@ -146,7 +147,7 @@ function getCustomerSearchCopy(serviceType: ServiceType): CustomerSearchCopy {
       selectedNoticeSuffix: "كوجهة تسليم",
       selectedTitle: "وجهة التسليم جاهزة",
       subtitle: "اختر نقطة تسليم الطلبية",
-      title: "بحث التسليم",
+      title: "بحث التسليم"
     };
   }
 
@@ -165,7 +166,7 @@ function getCustomerSearchCopy(serviceType: ServiceType): CustomerSearchCopy {
       selectedNoticeSuffix: "كوجهة سفر",
       selectedTitle: "وجهة السفر جاهزة",
       subtitle: "اختر منطقة الوصول",
-      title: "بحث خارج المدينة",
+      title: "بحث خارج المدينة"
     };
   }
 
@@ -183,7 +184,7 @@ function getCustomerSearchCopy(serviceType: ServiceType): CustomerSearchCopy {
     selectedNoticeSuffix: "من البحث",
     selectedTitle: "وجهتك جاهزة",
     subtitle: "اكتشف وجهتك",
-    title: customerHomeMock.searchTab.title,
+    title: customerHomeMock.searchTab.title
   };
 }
 
@@ -210,7 +211,10 @@ function mapAcceptedTripStepToCustomerStage(step: CaptainTripStep | null): Custo
   return "captain";
 }
 
-function mapCustomerStageToMapPhase(stage: CustomerTripStage, step: CaptainTripStep | null): MockRouteMapPhase {
+function mapCustomerStageToMapPhase(
+  stage: CustomerTripStage,
+  step: CaptainTripStep | null
+): MockRouteMapPhase {
   if (step) {
     return step;
   }
@@ -311,14 +315,18 @@ function getVisaCardLastFour(cardNumber: string): string {
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const [selectedDestination, setSelectedDestination] = useState<DestinationPlace | null>(null);
-  const [selectedPickup, setSelectedPickup] = useState<PickupPoint>(customerHomeMock.pickupOptions[0]);
+  const [selectedPickup, setSelectedPickup] = useState<PickupPoint>(
+    customerHomeMock.pickupOptions[0]
+  );
   const [isMockLocationEnabled, setIsMockLocationEnabled] = useState(false);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
   const [isBookingFlowOpen, setIsBookingFlowOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState<CustomerBookingStep>("service");
-  const [tripFlow, dispatchTripFlow] = useReducer(customerTripFlowReducer, createInitialCustomerTripFlow());
+  const [tripFlow, dispatchTripFlow] = useReducer(
+    customerTripFlowReducer,
+    createInitialCustomerTripFlow()
+  );
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
-  const [requestStatus, setRequestStatus] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [rating, setRating] = useState<number | null>(null);
@@ -326,24 +334,30 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
   const [destinationDetail, setDestinationDetail] = useState<string>("");
   const [deliveryPackageDescription, setDeliveryPackageDescription] = useState<string>("");
-  const [selectedDeliveryPackageType, setSelectedDeliveryPackageType] = useState<DeliveryPackageType>(
-    DELIVERY_PACKAGE_TYPES[0]
+  const [selectedDeliveryPackageType, setSelectedDeliveryPackageType] =
+    useState<DeliveryPackageType>(DELIVERY_PACKAGE_TYPES[0]);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
+    customerHomeMock.defaultPaymentMethod
   );
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(customerHomeMock.defaultPaymentMethod);
   const [shouldSaveVisaCard, setShouldSaveVisaCard] = useState(false);
   const visaForm = useForm<VisaPaymentFormValues>({
     defaultValues: defaultVisaPaymentValues,
     mode: "onChange",
     resolver: zodResolver(visaPaymentSchema)
   });
-  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>(customerHomeMock.serviceTypes[0]);
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType>(
+    customerHomeMock.serviceTypes[0]
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
   const { showConfirmation, stage: rideStage } = tripFlow;
   const acceptedCustomerRequest =
-    rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID ? rideRequests.acceptedRequest : null;
+    rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID
+      ? rideRequests.acceptedRequest
+      : null;
   const liveCustomerFeedback =
-    acceptedCustomerRequest && rideRequests.customerFeedback?.requestId === acceptedCustomerRequest.id
+    acceptedCustomerRequest &&
+    rideRequests.customerFeedback?.requestId === acceptedCustomerRequest.id
       ? rideRequests.customerFeedback
       : null;
   const effectiveRideStage =
@@ -359,22 +373,28 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         feedbackRating: liveCustomerFeedback?.rating ?? null,
         isCompleted: rideRequests.acceptedTripStep === "completed",
         payment: acceptedCustomerRequest.paymentMethod,
-        paymentStatus: rideRequests.acceptedTripStep === "completed" ? "مدفوع mock" : "بانتظار اكتمال الرحلة",
+        paymentStatus:
+          rideRequests.acceptedTripStep === "completed" ? "مدفوع mock" : "بانتظار اكتمال الرحلة",
         price: acceptedCustomerRequest.price,
         receiptNumber: "WAS-0001",
         route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
         serviceLabel: acceptedCustomerRequest.serviceLabel,
-        time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن",
+        time: rideRequests.acceptedTripStep === "completed" ? "اكتملت الآن" : "نشطة الآن"
       }
     : null;
   const latestRealtimeEvent = getLatestMockRealtimeEvent(rideRequests.realtime, "customer");
-  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(rideRequests.realtime, "customer");
+  const realtimeConnectionSummary = getMockRealtimeConnectionSummary(
+    rideRequests.realtime,
+    "customer"
+  );
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "customer", 4);
   const selectedServiceLabel =
     selectedServiceType.id === "city" ? customerHomeMock.service.label : selectedServiceType.label;
   const selectedSearchCopy = getCustomerSearchCopy(selectedServiceType);
   const visaPaymentValues = visaForm.watch();
-  const isVisaPaymentDirty = Object.values(visaPaymentValues).some((value) => value.trim().length > 0);
+  const isVisaPaymentDirty = Object.values(visaPaymentValues).some(
+    (value) => value.trim().length > 0
+  );
   const visaValidationResult = visaPaymentSchema.safeParse(visaPaymentValues);
   const visaValidationMessages = visaValidationResult.success
     ? []
@@ -393,7 +413,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
-    setRequestStatus(null);
     setRating(null);
     setCompletionNote("");
     setSelectedFeedbackTags([]);
@@ -451,7 +470,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   function selectDestination(place: DestinationPlace) {
     setSelectedDestination(place);
     setDestinationDetail(place.detail);
-    setRequestStatus(null);
     setNotice(null);
     setIsNotificationsOpen(false);
     resetRide();
@@ -464,7 +482,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
   function selectServiceType(serviceType: ServiceType) {
     setSelectedServiceType(serviceType);
-    setRequestStatus(null);
     setNotice(`تم اختيار ${serviceType.label}`);
     setIsNotificationsOpen(false);
     void Haptics.selectionAsync();
@@ -534,7 +551,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
     setNotice(null);
     setIsNotificationsOpen(false);
-    setRequestStatus(null);
     dispatchTripFlow({ type: "review-request" });
   }
 
@@ -554,11 +570,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       paymentMethod: effectivePaymentMethod,
       pickup: selectedPickup.label,
       price: selectedServiceType.price,
-      serviceLabel: selectedServiceLabel,
+      serviceLabel: selectedServiceLabel
     };
 
     dispatchRideRequests({ request, type: "submit-customer-request" });
-    setRequestStatus("تم تأكيد طلبك التجريبي");
     dispatchTripFlow({ type: "confirm-request" });
     setRating(null);
     setNotice(null);
@@ -567,7 +582,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
   function returnToBookingReview() {
     dispatchTripFlow({ type: "reset" });
-    setRequestStatus(null);
     setNotice(null);
     void Haptics.selectionAsync();
   }
@@ -577,7 +591,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setNotice("تم إلغاء البحث عن كابتن");
   }
 
-  function submitCustomerFeedback(nextRating: number | null, nextNote: string, nextTags = selectedFeedbackTags) {
+  function submitCustomerFeedback(
+    nextRating: number | null,
+    nextNote: string,
+    nextTags = selectedFeedbackTags
+  ) {
     if (!acceptedCustomerRequest || effectiveRideStage !== "completed" || !nextRating) {
       return;
     }
@@ -586,9 +604,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       feedback: {
         note: formatCustomerFeedbackNote(nextNote, nextTags),
         rating: nextRating,
-        requestId: acceptedCustomerRequest.id,
+        requestId: acceptedCustomerRequest.id
       },
-      type: "submit-customer-feedback",
+      type: "submit-customer-feedback"
     });
   }
 
@@ -705,7 +723,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             <View style={styles.stageCopy}>
               <Text style={styles.stageTitle}>جاري البحث عن كابتن</Text>
               <Text style={styles.stageMeta}>نبحث عن أقرب كابتن يناسب رحلتك الآن</Text>
-              <Text selectable style={styles.captainSearchStatus}>تم إرسال طلبك للكباتن القريبين</Text>
+              <Text selectable style={styles.captainSearchStatus}>
+                تم إرسال طلبك للكباتن القريبين
+              </Text>
             </View>
           </View>
           {selectedDestination ? (
@@ -766,19 +786,70 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
     if (effectiveRideStage === "captain") {
       const captain = customerHomeMock.captain;
+      const hasCaptainArrived = rideRequests.acceptedTripStep === "arrived";
+      const liveArrivalEta = hasCaptainArrived ? "وصل الآن" : captain.arrivalEta;
+      const liveCaptainDistance = hasCaptainArrived ? "0.0 كم" : "1.2 كم";
+      const liveCaptainLocation = hasCaptainArrived
+        ? `عند ${selectedPickup.label}`
+        : captain.locationLabel;
 
       return (
-        <GlassCard testID="accepted-captain-card" style={styles.acceptedCaptainCard} variant="strong">
-          <View style={styles.acceptedHeader}>
-            <View style={styles.acceptedBadge}>
-              <CheckCircle color={colors.cyan} size={18} />
-              <Text selectable style={styles.acceptedBadgeText}>
-                تم قبول طلبك
+        <GlassCard
+          testID="customer-captain-tracking-surface"
+          style={styles.captainTrackingSurface}
+          variant="strong"
+        >
+          <View testID="accepted-captain-card" style={styles.acceptedCaptainSummary}>
+            <View style={styles.acceptedHeader}>
+              <View style={styles.acceptedBadge}>
+                <CheckCircle color={colors.cyan} size={18} />
+                <Text selectable style={styles.acceptedBadgeText}>
+                  تم قبول طلبك
+                </Text>
+              </View>
+              <Text selectable style={styles.acceptedStatus}>
+                {mapAcceptedTripStepToCaptainStatus(rideRequests.acceptedTripStep)}
               </Text>
             </View>
-            <Text selectable style={styles.acceptedStatus}>
-              {mapAcceptedTripStepToCaptainStatus(rideRequests.acceptedTripStep)}
-            </Text>
+          </View>
+
+          {selectedDestination ? (
+            <MockRouteMap
+              destinationArea={selectedDestination.area}
+              destinationDetail={captainDestinationDetail}
+              phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
+              pickupLabel={selectedPickup.label}
+            />
+          ) : null}
+
+          <View testID="captain-live-metrics" style={styles.captainLiveMetrics}>
+            <View style={styles.miniMetric}>
+              <Clock color={colors.cyan} size={16} />
+              <Text selectable style={styles.metricValue}>
+                {liveArrivalEta}
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                وقت الوصول
+              </Text>
+            </View>
+            <View style={styles.miniMetric}>
+              <MapPin color={colors.cyan} size={16} />
+              <Text selectable style={styles.metricValue}>
+                {liveCaptainDistance}
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                المسافة بينكم
+              </Text>
+            </View>
+            <View style={styles.miniMetric}>
+              <Car color={colors.violetSoft} size={16} />
+              <Text selectable style={styles.metricValue}>
+                {liveCaptainLocation}
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                موقع الكابتن
+              </Text>
+            </View>
           </View>
 
           <View style={styles.captainRow}>
@@ -795,6 +866,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text selectable style={styles.stageMeta}>
                 {`${captain.carColor} • لوحة ${captain.plate}`}
               </Text>
+              <Text selectable style={styles.stageMeta}>
+                {captain.phone}
+              </Text>
             </View>
             <View style={styles.ratingPill}>
               <Star color={colors.warning} fill={colors.warning} size={14} />
@@ -802,40 +876,27 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </View>
           </View>
 
-          <View style={styles.captainStats}>
-            <View style={styles.miniMetric}>
-              <Clock color={colors.cyan} size={16} />
-              <Text style={styles.metricValue}>{captain.arrivalEta}</Text>
-              <Text style={styles.metricLabel}>وصول</Text>
+          <View testID="captain-trip-summary" style={styles.captainTripSummary}>
+            <View style={styles.captainTripSummaryItem}>
+              <Car color={colors.cyan} size={16} />
+              <Text selectable style={styles.captainTripSummaryValue}>
+                {`${selectedServiceType.label} • ${selectedServiceType.price}`}
+              </Text>
             </View>
-            <View style={styles.miniMetric}>
-              <MapPin color={colors.cyan} size={16} />
-              <Text style={styles.metricValue}>{captain.locationLabel}</Text>
-              <Text style={styles.metricLabel}>موقع الكابتن</Text>
-            </View>
-            <View style={styles.miniMetric}>
-              <Car color={colors.violetSoft} size={16} />
-              <Text style={styles.metricValue}>{selectedServiceType.price}</Text>
-              <Text style={styles.metricLabel}>السعر</Text>
+            <View style={styles.captainTripSummaryItem}>
+              <CreditCard color={colors.violetSoft} size={16} />
+              <Text selectable style={styles.captainTripSummaryValue}>
+                {effectivePaymentMethod}
+              </Text>
             </View>
           </View>
-
-          <CustomerCaptainArrivalPanel
-            arrivalEta={captain.arrivalEta}
-            captainLocation={captain.locationLabel}
-            pickupLabel={selectedPickup.label}
-          />
 
           {rideRequests.acceptedTripStep === "arrived" ? (
-            <CustomerPickupHandoffPanel captainName={captain.name} vehicleLabel={`${captain.carColor} • لوحة ${captain.plate}`} />
+            <CustomerPickupHandoffPanel
+              captainName={captain.name}
+              vehicleLabel={`${captain.carColor} • لوحة ${captain.plate}`}
+            />
           ) : null}
-
-          <View style={styles.captainDetailsGrid}>
-            <InfoRow label="رقم الكابتن" value={captain.phone} />
-            <InfoRow label="نقطة الانطلاق" value={selectedPickup.label} />
-            {selectedDestination ? <InfoRow label="منطقة الوجهة" value={selectedDestination.area} /> : null}
-            {selectedDestination ? <InfoRow label="تفصيل الوجهة" value={captainDestinationDetail} /> : null}
-          </View>
 
           <CustomerSafetyPanel
             onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
@@ -876,11 +937,17 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         : selectedDestination
           ? `${selectedPickup.label} ← ${selectedDestination.area}`
           : customerHomeMock.trips.current.route;
-      const activeRideDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail;
-      const activeRidePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
+      const activeRideDestinationDetail =
+        acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail;
+      const activeRidePaymentMethod =
+        acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
 
       return (
-        <GlassCard style={styles.stageCard}>
+        <GlassCard
+          testID="customer-active-trip-surface"
+          style={styles.activeTripSurface}
+          variant="strong"
+        >
           <View style={styles.stageHeader}>
             <View style={styles.stagePulse}>
               <MapPin color={colors.cyan} size={22} />
@@ -890,18 +957,43 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               <Text style={styles.stageMeta}>الكابتن في الطريق إلى الوجهة المختارة</Text>
             </View>
           </View>
-          <View style={styles.tripMetrics}>
+
+          {selectedDestination ? (
+            <MockRouteMap
+              destinationArea={selectedDestination.area}
+              destinationDetail={activeRideDestinationDetail}
+              phase="driving"
+              pickupLabel={selectedPickup.label}
+            />
+          ) : null}
+
+          <View testID="customer-active-progress-strip" style={styles.tripMetrics}>
             <View style={styles.tripMetric}>
-              <Text style={styles.metricValue}>10:24</Text>
-              <Text style={styles.metricLabel}>الوصول المتوقع</Text>
+              <Clock color={colors.cyan} size={16} />
+              <Text selectable style={styles.metricValue}>
+                5 د
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                الوقت المتبقي
+              </Text>
             </View>
             <View style={styles.tripMetric}>
-              <Text style={styles.metricValue}>2.1 كم</Text>
-              <Text style={styles.metricLabel}>المسافة المتبقية</Text>
+              <MapPin color={colors.cyan} size={16} />
+              <Text selectable style={styles.metricValue}>
+                2.1 كم
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                المسافة المتبقية
+              </Text>
             </View>
             <View style={styles.tripMetric}>
-              <Text style={styles.metricValue}>5 د</Text>
-              <Text style={styles.metricLabel}>الوقت المتبقي</Text>
+              <Navigation color={colors.violetSoft} size={16} />
+              <Text selectable style={styles.metricValue}>
+                10:24
+              </Text>
+              <Text selectable style={styles.metricLabel}>
+                الوصول المتوقع
+              </Text>
             </View>
           </View>
           <CustomerActiveRidePanel
@@ -924,7 +1016,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     }
 
     return (
-      <GlassCard style={styles.stageCard}>
+      <GlassCard
+        testID="customer-trip-completion-surface"
+        style={styles.tripCompletionSurface}
+        variant="strong"
+      >
         <View style={styles.completedIcon}>
           <CheckCircle color={colors.cyan} size={42} />
         </View>
@@ -969,102 +1065,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           style={styles.secondaryButton}
           variant="secondary"
         />
-      </GlassCard>
-    );
-  }
-
-  function renderLiveRequestHub() {
-    if (
-      !requestStatus ||
-      !selectedDestination ||
-      effectiveRideStage === "idle" ||
-      effectiveRideStage === "searching"
-    ) {
-      return null;
-    }
-
-    const liveStatus =
-      effectiveRideStage === "captain"
-        ? mapAcceptedTripStepToCaptainStatus(rideRequests.acceptedTripStep)
-        : effectiveRideStage === "active"
-          ? "الرحلة بدأت"
-          : "تمت الرحلة بنجاح";
-    const nextStep =
-      effectiveRideStage === "captain"
-        ? "تابع موقع الكابتن والمسافة حتى يصل إليك"
-        : effectiveRideStage === "active"
-          ? "الكابتن بدأ الرحلة نحو وجهتك"
-          : "راجع الإيصال وقيم تجربتك";
-    const liveDestinationDetail = acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail;
-    const livePaymentMethod = acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod;
-    const liveRoute = acceptedCustomerRequest
-      ? `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`
-      : `${selectedPickup.label} ← ${selectedDestination.area}`;
-    const liveDistance = acceptedCustomerRequest?.distance ?? selectedDestination.distance;
-    const livePrice = acceptedCustomerRequest?.price ?? selectedServiceType.price;
-
-    return (
-      <GlassCard testID="customer-live-request-hub" style={styles.liveRequestHubCard} variant="strong">
-        <View style={styles.liveRequestHubHeader}>
-          <View style={styles.liveRequestHubIcon}>
-            <ShieldCheck color={colors.cyan} size={20} />
-          </View>
-          <View style={styles.liveRequestHubCopy}>
-            <Text selectable style={styles.liveRequestHubTitle}>
-              مركز متابعة الطلب
-            </Text>
-            <Text selectable style={styles.liveRequestHubMeta}>
-              طلبك وصل للكباتن القريبين
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.liveRequestStatusBand}>
-          <View style={styles.liveRequestStatusIcon}>
-            <Car color={colors.text} size={18} />
-          </View>
-          <View style={styles.liveRequestStatusCopy}>
-            <Text selectable style={styles.liveRequestStatusLabel}>
-              حالة الطلب
-            </Text>
-            <Text selectable style={styles.liveRequestStatusValue}>
-              {liveStatus}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.liveRequestPills}>
-          <View style={styles.liveRequestPill}>
-            <Text selectable style={styles.liveRequestPillText}>
-              {liveDistance}
-            </Text>
-          </View>
-          <View style={styles.liveRequestPill}>
-            <Text selectable style={styles.liveRequestPillText}>
-              {livePrice}
-            </Text>
-          </View>
-          <View style={styles.liveRequestPill}>
-            <Text selectable style={styles.liveRequestPillText}>
-              {liveRoute}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.liveRequestRows}>
-          <InfoRow label="نوع الخدمة" value={selectedServiceType.label} />
-          <InfoRow label="طريقة الدفع" value={livePaymentMethod} />
-          <InfoRow label="ملاحظة للكابتن" value={liveDestinationDetail} />
-        </View>
-
-        <View style={styles.liveRequestNextStep}>
-          <Text selectable style={styles.liveRequestNextLabel}>
-            الخطوة التالية
-          </Text>
-          <Text selectable style={styles.liveRequestNextValue}>
-            {nextStep}
-          </Text>
-        </View>
       </GlassCard>
     );
   }
@@ -1187,7 +1187,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               accessibilityRole="button"
               hitSlop={8}
               onPress={closeBookingFlow}
-              style={({ pressed }) => [styles.bookingWorkspaceBack, pressed ? styles.pressed : null]}
+              style={({ pressed }) => [
+                styles.bookingWorkspaceBack,
+                pressed ? styles.pressed : null
+              ]}
             >
               <ChevronRight color={colors.textSoft} size={19} />
               <Text selectable style={styles.bookingWorkspaceBackText}>
@@ -1224,364 +1227,342 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               />
             ) : (
               <View testID="customer-booking-details-page" style={styles.bookingDetailsPage}>
-        {selectedDestination && effectiveRideStage === "idle" && !showConfirmation ? (
-          <MotionSurface delay={0} testID="customer-motion-booking-review">
-            <GlassCard testID="customer-booking-review-card" style={styles.bookingReviewCard} variant="strong">
-              <View style={styles.bookingReviewHeader}>
-                <View style={styles.bookingReviewIcon}>
-                  <CheckCircle color={colors.success} size={21} />
-                </View>
-                <View style={styles.bookingReviewCopy}>
-                  <Text selectable style={styles.bookingReviewTitle}>
-                    راجع طلبك
-                  </Text>
-                  <Text selectable style={styles.bookingReviewMeta}>
-                    تأكد من المسار والدفع، ثم أرسل الطلب لأقرب كابتن.
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.bookingReviewRoute}>
-                <View style={styles.bookingReviewRouteLine}>
-                  <View style={styles.bookingReviewRouteDot} />
-                  <View style={styles.bookingReviewRouteConnector} />
-                  <View style={[styles.bookingReviewRouteDot, styles.bookingReviewRouteDotDestination]} />
-                </View>
-                <View style={styles.bookingReviewRouteCopy}>
-                  <View style={styles.bookingReviewRoutePoint}>
-                    <Text selectable style={styles.bookingReviewRouteLabel}>
-                      نقطة الانطلاق
-                    </Text>
-                    <Text selectable style={styles.bookingReviewRouteValue}>
-                      {selectedPickup.label}
-                    </Text>
-                  </View>
-                  <View style={styles.bookingReviewRoutePoint}>
-                    <Text selectable style={styles.bookingReviewRouteLabel}>
-                      الوجهة
-                    </Text>
-                    <Text selectable style={styles.bookingReviewRouteValue}>
-                      {selectedDestination.label}
-                    </Text>
-                    <Text selectable style={styles.bookingReviewRouteMeta}>
-                      {selectedDestination.area}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-              <Text selectable style={styles.bookingReviewRouteSummary}>
-                {`${selectedPickup.label} ← ${selectedDestination.area}`}
-              </Text>
-
-              <View style={styles.bookingReviewMetrics}>
-                <View style={styles.bookingReviewMetric}>
-                  <Text selectable style={styles.bookingReviewMetricValue}>
-                    {selectedServiceType.price}
-                  </Text>
-                  <Text selectable style={styles.bookingReviewMetricLabel}>
-                    السعر
-                  </Text>
-                </View>
-                <View style={styles.bookingReviewMetric}>
-                  <Text selectable style={styles.bookingReviewMetricValue}>
-                    {selectedDestination.distance}
-                  </Text>
-                  <Text selectable style={styles.bookingReviewMetricLabel}>
-                    المسافة
-                  </Text>
-                </View>
-                <View style={styles.bookingReviewMetric}>
-                  <Text selectable style={styles.bookingReviewMetricValue}>
-                    {selectedServiceType.eta}
-                  </Text>
-                  <Text selectable style={styles.bookingReviewMetricLabel}>
-                    وصول الكابتن
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.bookingReviewNote}>
-                <MessageCircle color={colors.violetSoft} size={17} />
-                <View style={styles.bookingReviewNoteCopy}>
-                  <Text selectable style={styles.bookingReviewNoteLabel}>
-                    ملاحظة الكابتن
-                  </Text>
-                  <TextInput
-                    accessibilityLabel="تفصيل الوجهة"
-                    multiline
-                    onChangeText={setDestinationDetail}
-                    placeholder="أضف علامة واضحة للكابتن"
-                    placeholderTextColor={colors.textMuted}
-                    style={styles.bookingReviewNoteInput}
-                    value={destinationDetail}
-                  />
-                </View>
-              </View>
-
-              <View style={styles.bookingReviewService}>
-                <View style={styles.bookingReviewServiceIcon}>
-                  <Text style={styles.bookingReviewServiceEmoji}>{selectedServiceType.emoji}</Text>
-                </View>
-                <View style={styles.bookingReviewServiceCopy}>
-                  <Text selectable style={styles.bookingReviewServiceTitle}>
-                    {selectedServiceLabel}
-                  </Text>
-                  <Text selectable style={styles.bookingReviewServiceMeta}>
-                    {selectedServiceType.label} • {selectedServiceType.vehicle}
-                  </Text>
-                </View>
-                <CheckCircle color={colors.cyan} size={18} />
-              </View>
-
-              <Pressable
-                accessibilityLabel="تعديل الوجهة"
-                accessibilityRole="button"
-                onPress={editDestinationSelection}
-                style={({ pressed }) => [
-                  styles.bookingReviewEdit,
-                  pressed ? styles.pressed : null
-                ]}
-              >
-                <MapPin color={colors.cyan} size={16} />
-                <Text selectable style={styles.bookingReviewEditText}>
-                  تعديل الوجهة
-                </Text>
-              </Pressable>
-
-            {selectedServiceType.id === "delivery" ? (
-              <CustomerDeliveryPackagePanel
-                description={deliveryPackageDescription}
-                onChangeDescription={setDeliveryPackageDescription}
-                onSelectType={(packageType) => {
-                  setSelectedDeliveryPackageType(packageType);
-                  void Haptics.selectionAsync();
-                }}
-                packageTypes={DELIVERY_PACKAGE_TYPES}
-                selectedType={selectedDeliveryPackageType}
-              />
-            ) : null}
-
-            <View style={styles.paymentGroup}>
-              <Text selectable style={styles.detailLabel}>
-                طريقة الدفع
-              </Text>
-              <View style={styles.paymentOptions}>
-                {customerHomeMock.paymentMethods.map((method) => (
-                  <Pressable
-                    key={method}
-                    accessibilityLabel={method}
-                    accessibilityRole="button"
-                    onPress={() => selectPaymentMethod(method)}
-                    style={({ pressed }) => [
-                      styles.paymentOption,
-                      paymentMethod === method ? styles.paymentOptionActive : null,
-                      pressed ? styles.pressed : null
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.paymentOptionText,
-                        paymentMethod === method ? styles.paymentOptionTextActive : null
-                      ]}
+                {selectedDestination && effectiveRideStage === "idle" && !showConfirmation ? (
+                  <MotionSurface delay={0} testID="customer-motion-booking-review">
+                    <GlassCard
+                      testID="customer-booking-review-card"
+                      style={styles.bookingReviewCard}
+                      variant="strong"
                     >
-                      {method}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-              {paymentMethod === "فيزا" ? (
-                <View style={styles.visaPaymentPanel}>
-                  <View style={styles.visaPaymentHeader}>
-                    <View style={styles.visaPaymentIcon}>
-                      <CreditCard color={colors.cyan} size={18} />
-                    </View>
-                    <View style={styles.visaPaymentCopy}>
-                      <Text selectable style={styles.visaPaymentTitle}>
-                        بطاقة فيزا mock
-                      </Text>
-                      <Text selectable style={styles.visaPaymentMeta}>
-                        بيانات تجريبية فقط، لن يتم خصم أي مبلغ الآن.
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Controller
-                    control={visaForm.control}
-                    name="cardholderName"
-                    render={({ field: { onChange, value } }) => (
-                      <TextInput
-                        accessibilityLabel="اسم حامل البطاقة"
-                        onChangeText={onChange}
-                        placeholder="الاسم على البطاقة"
-                        placeholderTextColor={colors.textMuted}
-                        style={styles.paymentInput}
-                        value={value}
-                      />
-                    )}
-                  />
-                  <Controller
-                    control={visaForm.control}
-                    name="cardNumber"
-                    render={({ field: { onChange, value } }) => (
-                      <TextInput
-                        accessibilityLabel="رقم بطاقة فيزا"
-                        keyboardType="number-pad"
-                        onChangeText={onChange}
-                        placeholder="0000 0000 0000 0000"
-                        placeholderTextColor={colors.textMuted}
-                        style={styles.paymentInput}
-                        value={value}
-                      />
-                    )}
-                  />
-                  <View style={styles.paymentInputRow}>
-                    <Controller
-                      control={visaForm.control}
-                      name="expiry"
-                      render={({ field: { onChange, value } }) => (
-                        <TextInput
-                          accessibilityLabel="تاريخ انتهاء فيزا"
-                          onChangeText={onChange}
-                          placeholder="MM/YY"
-                          placeholderTextColor={colors.textMuted}
-                          style={[styles.paymentInput, styles.paymentInputHalf]}
-                          value={value}
-                        />
-                      )}
-                    />
-                    <Controller
-                      control={visaForm.control}
-                      name="cvc"
-                      render={({ field: { onChange, value } }) => (
-                        <TextInput
-                          accessibilityLabel="رمز CVC"
-                          keyboardType="number-pad"
-                          onChangeText={onChange}
-                          placeholder="CVC"
-                          placeholderTextColor={colors.textMuted}
-                          secureTextEntry
-                          style={[styles.paymentInput, styles.paymentInputHalf]}
-                          value={value}
-                        />
-                      )}
-                    />
-                  </View>
-
-                  <View
-                    style={[
-                      styles.visaReadinessBox,
-                      visaValidationResult.success
-                        ? styles.visaReadinessBoxReady
-                        : isVisaPaymentDirty
-                          ? styles.visaReadinessBoxWarning
-                          : null
-                    ]}
-                  >
-                    <Text selectable style={styles.visaReadinessTitle}>
-                      {visaValidationResult.success
-                        ? "بيانات فيزا جاهزة للتجربة"
-                        : isVisaPaymentDirty
-                          ? "أكمل بيانات فيزا قبل تأكيد الطلب"
-                          : "أدخل بيانات فيزا عند استخدام البطاقة"}
-                    </Text>
-                    {isVisaPaymentDirty && !visaValidationResult.success
-                      ? visaValidationMessages.map((message) => (
-                          <Text key={message} selectable style={styles.visaReadinessIssue}>
-                            {message}
+                      <View style={styles.bookingReviewHeader}>
+                        <View style={styles.bookingReviewIcon}>
+                          <CheckCircle color={colors.success} size={21} />
+                        </View>
+                        <View style={styles.bookingReviewCopy}>
+                          <Text selectable style={styles.bookingReviewTitle}>
+                            راجع طلبك
                           </Text>
-                        ))
-                      : null}
-                  </View>
+                          <Text selectable style={styles.bookingReviewMeta}>
+                            تأكد من المسار والدفع، ثم أرسل الطلب لأقرب كابتن.
+                          </Text>
+                        </View>
+                      </View>
 
-                  <Pressable
-                    accessibilityLabel="حفظ بطاقة فيزا لهذا الحساب"
-                    accessibilityRole="checkbox"
-                    accessibilityState={{ checked: shouldSaveVisaCard }}
-                    onPress={toggleSaveVisaCard}
-                    style={({ pressed }) => [
-                      styles.saveVisaToggle,
-                      shouldSaveVisaCard ? styles.saveVisaToggleActive : null,
-                      pressed ? styles.pressed : null
-                    ]}
-                  >
-                    <View style={styles.saveVisaCheck}>
-                      {shouldSaveVisaCard ? <CheckCircle color={colors.success} size={16} /> : null}
-                    </View>
-                    <Text selectable style={styles.saveVisaText}>
-                      حفظ البطاقة لهذا الحساب
-                    </Text>
-                  </Pressable>
-
-                  {visaValidationResult.success && visaCardLastFour ? (
-                    <View style={styles.visaSummaryBox}>
-                      <Text selectable style={styles.visaSummaryText}>
-                        {`سيتم استخدام فيزا • **** ${visaCardLastFour}`}
+                      <View style={styles.bookingReviewRoute}>
+                        <View style={styles.bookingReviewRouteLine}>
+                          <View style={styles.bookingReviewRouteDot} />
+                          <View style={styles.bookingReviewRouteConnector} />
+                          <View
+                            style={[
+                              styles.bookingReviewRouteDot,
+                              styles.bookingReviewRouteDotDestination
+                            ]}
+                          />
+                        </View>
+                        <View style={styles.bookingReviewRouteCopy}>
+                          <View style={styles.bookingReviewRoutePoint}>
+                            <Text selectable style={styles.bookingReviewRouteLabel}>
+                              نقطة الانطلاق
+                            </Text>
+                            <Text selectable style={styles.bookingReviewRouteValue}>
+                              {selectedPickup.label}
+                            </Text>
+                          </View>
+                          <View style={styles.bookingReviewRoutePoint}>
+                            <Text selectable style={styles.bookingReviewRouteLabel}>
+                              الوجهة
+                            </Text>
+                            <Text selectable style={styles.bookingReviewRouteValue}>
+                              {selectedDestination.label}
+                            </Text>
+                            <Text selectable style={styles.bookingReviewRouteMeta}>
+                              {selectedDestination.area}
+                            </Text>
+                          </View>
+                        </View>
+                      </View>
+                      <Text selectable style={styles.bookingReviewRouteSummary}>
+                        {`${selectedPickup.label} ← ${selectedDestination.area}`}
                       </Text>
-                      {shouldSaveVisaCard ? (
-                        <Text selectable style={styles.visaSummaryMeta}>
-                          سيتم حفظ البطاقة mock للاستخدام القادم
+
+                      <View style={styles.bookingReviewMetrics}>
+                        <View style={styles.bookingReviewMetric}>
+                          <Text selectable style={styles.bookingReviewMetricValue}>
+                            {selectedServiceType.price}
+                          </Text>
+                          <Text selectable style={styles.bookingReviewMetricLabel}>
+                            السعر
+                          </Text>
+                        </View>
+                        <View style={styles.bookingReviewMetric}>
+                          <Text selectable style={styles.bookingReviewMetricValue}>
+                            {selectedDestination.distance}
+                          </Text>
+                          <Text selectable style={styles.bookingReviewMetricLabel}>
+                            المسافة
+                          </Text>
+                        </View>
+                        <View style={styles.bookingReviewMetric}>
+                          <Text selectable style={styles.bookingReviewMetricValue}>
+                            {selectedServiceType.eta}
+                          </Text>
+                          <Text selectable style={styles.bookingReviewMetricLabel}>
+                            وصول الكابتن
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.bookingReviewNote}>
+                        <MessageCircle color={colors.violetSoft} size={17} />
+                        <View style={styles.bookingReviewNoteCopy}>
+                          <Text selectable style={styles.bookingReviewNoteLabel}>
+                            ملاحظة الكابتن
+                          </Text>
+                          <TextInput
+                            accessibilityLabel="تفصيل الوجهة"
+                            multiline
+                            onChangeText={setDestinationDetail}
+                            placeholder="أضف علامة واضحة للكابتن"
+                            placeholderTextColor={colors.textMuted}
+                            style={styles.bookingReviewNoteInput}
+                            value={destinationDetail}
+                          />
+                        </View>
+                      </View>
+
+                      <View style={styles.bookingReviewService}>
+                        <View style={styles.bookingReviewServiceIcon}>
+                          <Text style={styles.bookingReviewServiceEmoji}>
+                            {selectedServiceType.emoji}
+                          </Text>
+                        </View>
+                        <View style={styles.bookingReviewServiceCopy}>
+                          <Text selectable style={styles.bookingReviewServiceTitle}>
+                            {selectedServiceLabel}
+                          </Text>
+                          <Text selectable style={styles.bookingReviewServiceMeta}>
+                            {selectedServiceType.label} • {selectedServiceType.vehicle}
+                          </Text>
+                        </View>
+                        <CheckCircle color={colors.cyan} size={18} />
+                      </View>
+
+                      <Pressable
+                        accessibilityLabel="تعديل الوجهة"
+                        accessibilityRole="button"
+                        onPress={editDestinationSelection}
+                        style={({ pressed }) => [
+                          styles.bookingReviewEdit,
+                          pressed ? styles.pressed : null
+                        ]}
+                      >
+                        <MapPin color={colors.cyan} size={16} />
+                        <Text selectable style={styles.bookingReviewEditText}>
+                          تعديل الوجهة
                         </Text>
+                      </Pressable>
+
+                      {selectedServiceType.id === "delivery" ? (
+                        <CustomerDeliveryPackagePanel
+                          description={deliveryPackageDescription}
+                          onChangeDescription={setDeliveryPackageDescription}
+                          onSelectType={(packageType) => {
+                            setSelectedDeliveryPackageType(packageType);
+                            void Haptics.selectionAsync();
+                          }}
+                          packageTypes={DELIVERY_PACKAGE_TYPES}
+                          selectedType={selectedDeliveryPackageType}
+                        />
                       ) : null}
-                    </View>
-                  ) : null}
-                </View>
-              ) : null}
-            </View>
-          </GlassCard>
-          </MotionSurface>
-        ) : null}
 
-        {effectiveRideStage === "idle" && !showConfirmation ? (
-          <PremiumButton
-            accessibilityLabel="طلب رحلة"
-            label="اطلب رحلة"
-            style={styles.primaryButton}
-            onPress={requestTrip}
-          />
-        ) : null}
+                      <View style={styles.paymentGroup}>
+                        <Text selectable style={styles.detailLabel}>
+                          طريقة الدفع
+                        </Text>
+                        <View style={styles.paymentOptions}>
+                          {customerHomeMock.paymentMethods.map((method) => (
+                            <Pressable
+                              key={method}
+                              accessibilityLabel={method}
+                              accessibilityRole="button"
+                              onPress={() => selectPaymentMethod(method)}
+                              style={({ pressed }) => [
+                                styles.paymentOption,
+                                paymentMethod === method ? styles.paymentOptionActive : null,
+                                pressed ? styles.pressed : null
+                              ]}
+                            >
+                              <Text
+                                style={[
+                                  styles.paymentOptionText,
+                                  paymentMethod === method ? styles.paymentOptionTextActive : null
+                                ]}
+                              >
+                                {method}
+                              </Text>
+                            </Pressable>
+                          ))}
+                        </View>
+                        {paymentMethod === "فيزا" ? (
+                          <View style={styles.visaPaymentPanel}>
+                            <View style={styles.visaPaymentHeader}>
+                              <View style={styles.visaPaymentIcon}>
+                                <CreditCard color={colors.cyan} size={18} />
+                              </View>
+                              <View style={styles.visaPaymentCopy}>
+                                <Text selectable style={styles.visaPaymentTitle}>
+                                  بطاقة فيزا mock
+                                </Text>
+                                <Text selectable style={styles.visaPaymentMeta}>
+                                  بيانات تجريبية فقط، لن يتم خصم أي مبلغ الآن.
+                                </Text>
+                              </View>
+                            </View>
 
-        {renderTripConfirmation()}
+                            <Controller
+                              control={visaForm.control}
+                              name="cardholderName"
+                              render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                  accessibilityLabel="اسم حامل البطاقة"
+                                  onChangeText={onChange}
+                                  placeholder="الاسم على البطاقة"
+                                  placeholderTextColor={colors.textMuted}
+                                  style={styles.paymentInput}
+                                  value={value}
+                                />
+                              )}
+                            />
+                            <Controller
+                              control={visaForm.control}
+                              name="cardNumber"
+                              render={({ field: { onChange, value } }) => (
+                                <TextInput
+                                  accessibilityLabel="رقم بطاقة فيزا"
+                                  keyboardType="number-pad"
+                                  onChangeText={onChange}
+                                  placeholder="0000 0000 0000 0000"
+                                  placeholderTextColor={colors.textMuted}
+                                  style={styles.paymentInput}
+                                  value={value}
+                                />
+                              )}
+                            />
+                            <View style={styles.paymentInputRow}>
+                              <Controller
+                                control={visaForm.control}
+                                name="expiry"
+                                render={({ field: { onChange, value } }) => (
+                                  <TextInput
+                                    accessibilityLabel="تاريخ انتهاء فيزا"
+                                    onChangeText={onChange}
+                                    placeholder="MM/YY"
+                                    placeholderTextColor={colors.textMuted}
+                                    style={[styles.paymentInput, styles.paymentInputHalf]}
+                                    value={value}
+                                  />
+                                )}
+                              />
+                              <Controller
+                                control={visaForm.control}
+                                name="cvc"
+                                render={({ field: { onChange, value } }) => (
+                                  <TextInput
+                                    accessibilityLabel="رمز CVC"
+                                    keyboardType="number-pad"
+                                    onChangeText={onChange}
+                                    placeholder="CVC"
+                                    placeholderTextColor={colors.textMuted}
+                                    secureTextEntry
+                                    style={[styles.paymentInput, styles.paymentInputHalf]}
+                                    value={value}
+                                  />
+                                )}
+                              />
+                            </View>
 
-        {effectiveRideStage !== "idle" && effectiveRideStage !== "searching" && selectedDestination ? (
-          <MotionSurface delay={60} testID="customer-motion-live-route">
-            <MockRouteMap
-              destinationArea={selectedDestination.area}
-              destinationDetail={destinationDetail}
-              phase={mapCustomerStageToMapPhase(effectiveRideStage, rideRequests.acceptedTripStep)}
-              pickupLabel={selectedPickup.label}
-            />
-          </MotionSurface>
-        ) : null}
+                            <View
+                              style={[
+                                styles.visaReadinessBox,
+                                visaValidationResult.success
+                                  ? styles.visaReadinessBoxReady
+                                  : isVisaPaymentDirty
+                                    ? styles.visaReadinessBoxWarning
+                                    : null
+                              ]}
+                            >
+                              <Text selectable style={styles.visaReadinessTitle}>
+                                {visaValidationResult.success
+                                  ? "بيانات فيزا جاهزة للتجربة"
+                                  : isVisaPaymentDirty
+                                    ? "أكمل بيانات فيزا قبل تأكيد الطلب"
+                                    : "أدخل بيانات فيزا عند استخدام البطاقة"}
+                              </Text>
+                              {isVisaPaymentDirty && !visaValidationResult.success
+                                ? visaValidationMessages.map((message) => (
+                                    <Text
+                                      key={message}
+                                      selectable
+                                      style={styles.visaReadinessIssue}
+                                    >
+                                      {message}
+                                    </Text>
+                                  ))
+                                : null}
+                            </View>
 
-        {renderRideStagePanel()}
+                            <Pressable
+                              accessibilityLabel="حفظ بطاقة فيزا لهذا الحساب"
+                              accessibilityRole="checkbox"
+                              accessibilityState={{ checked: shouldSaveVisaCard }}
+                              onPress={toggleSaveVisaCard}
+                              style={({ pressed }) => [
+                                styles.saveVisaToggle,
+                                shouldSaveVisaCard ? styles.saveVisaToggleActive : null,
+                                pressed ? styles.pressed : null
+                              ]}
+                            >
+                              <View style={styles.saveVisaCheck}>
+                                {shouldSaveVisaCard ? (
+                                  <CheckCircle color={colors.success} size={16} />
+                                ) : null}
+                              </View>
+                              <Text selectable style={styles.saveVisaText}>
+                                حفظ البطاقة لهذا الحساب
+                              </Text>
+                            </Pressable>
 
-        {renderLiveRequestHub()}
+                            {visaValidationResult.success && visaCardLastFour ? (
+                              <View style={styles.visaSummaryBox}>
+                                <Text selectable style={styles.visaSummaryText}>
+                                  {`سيتم استخدام فيزا • **** ${visaCardLastFour}`}
+                                </Text>
+                                {shouldSaveVisaCard ? (
+                                  <Text selectable style={styles.visaSummaryMeta}>
+                                    سيتم حفظ البطاقة mock للاستخدام القادم
+                                  </Text>
+                                ) : null}
+                              </View>
+                            ) : null}
+                          </View>
+                        ) : null}
+                      </View>
+                    </GlassCard>
+                  </MotionSurface>
+                ) : null}
 
-        {requestStatus && effectiveRideStage !== "searching" ? (
-          <GlassCard style={styles.feedbackCard}>
-            <Text style={styles.feedbackText}>{requestStatus}</Text>
-            <Text style={styles.feedbackMeta}>
-              {`الطلب المحدد: ${selectedServiceLabel} • ${selectedServiceType.price}`}
-            </Text>
-            {selectedDestination ? (
-              <>
-                <Text style={styles.feedbackMeta}>{`الوجهة المختارة: ${selectedDestination.label}`}</Text>
-                <Text style={styles.feedbackMeta}>{`${selectedPickup.label} ← ${selectedDestination.area}`}</Text>
-              </>
-            ) : null}
-            {onPreviewCaptainRequests ? (
-              <PremiumButton
-                accessibilityLabel="معاينة الطلب عند الكابتن"
-                label="معاينة الطلب عند الكابتن"
-                onPress={onPreviewCaptainRequests}
-                style={styles.previewCaptainButton}
-                variant="secondary"
-              >
-                <Car color={colors.textSoft} size={16} />
-              </PremiumButton>
-            ) : null}
-          </GlassCard>
-        ) : null}
+                {effectiveRideStage === "idle" && !showConfirmation ? (
+                  <PremiumButton
+                    accessibilityLabel="طلب رحلة"
+                    label="اطلب رحلة"
+                    style={styles.primaryButton}
+                    onPress={requestTrip}
+                  />
+                ) : null}
+
+                {renderTripConfirmation()}
+
+                {renderRideStagePanel()}
               </View>
             )}
           </View>
@@ -1623,7 +1604,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               ]}
             >
               <Icon color={activeNav === item.label ? colors.text : colors.textMuted} size={18} />
-              <Text style={[styles.navLabel, activeNav === item.label ? styles.navLabelActive : null]}>
+              <Text
+                style={[styles.navLabel, activeNav === item.label ? styles.navLabelActive : null]}
+              >
                 {item.label}
               </Text>
             </Pressable>
@@ -1940,7 +1923,11 @@ function CustomerServiceSelectionPage({
   return (
     <View testID="customer-service-selection-page" style={styles.serviceSelectionPage}>
       <MotionSurface delay={0} testID="customer-motion-service-type">
-        <GlassCard testID="customer-service-type-picker" style={styles.serviceTypePicker} variant="strong">
+        <GlassCard
+          testID="customer-service-type-picker"
+          style={styles.serviceTypePicker}
+          variant="strong"
+        >
           <View style={styles.serviceTypeHeader}>
             <View style={styles.serviceTypeHeaderIcon}>
               <Car color={colors.cyan} size={19} />
@@ -1996,7 +1983,11 @@ function CustomerServiceSelectionPage({
       </MotionSurface>
 
       <MotionSurface delay={90} testID="customer-motion-service-next-step">
-        <GlassCard testID="customer-service-next-step" style={styles.serviceNextStepCard} variant="strong">
+        <GlassCard
+          testID="customer-service-next-step"
+          style={styles.serviceNextStepCard}
+          variant="strong"
+        >
           <View style={styles.serviceNextStepHeader}>
             <View style={styles.serviceNextStepBadge}>
               <Text style={styles.serviceNextStepEmoji}>{selectedServiceType.emoji}</Text>
@@ -2047,7 +2038,11 @@ function CustomerServiceSelectionPage({
 function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
   return (
     <MotionSurface delay={0} testID="customer-motion-booking-launcher">
-      <GlassCard testID="customer-booking-launcher" style={styles.bookingLauncherCard} variant="strong">
+      <GlassCard
+        testID="customer-booking-launcher"
+        style={styles.bookingLauncherCard}
+        variant="strong"
+      >
         <View style={styles.bookingLauncherIcon}>
           <Car color={colors.cyan} size={28} />
         </View>
@@ -2287,7 +2282,9 @@ function CustomerFeedbackCard({
         ))}
       </View>
 
-      {rating ? <Text selectable style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text> : null}
+      {rating ? (
+        <Text selectable style={styles.feedbackText}>{`تقييمك: ${rating} نجوم`}</Text>
+      ) : null}
 
       <View style={styles.feedbackTagsBlock}>
         <Text selectable style={styles.feedbackTagsTitle}>
@@ -2310,7 +2307,10 @@ function CustomerFeedbackCard({
                   pressed ? styles.pressed : null
                 ]}
               >
-                <Text selectable style={[styles.feedbackTagText, isSelected ? styles.feedbackTagTextActive : null]}>
+                <Text
+                  selectable
+                  style={[styles.feedbackTagText, isSelected ? styles.feedbackTagTextActive : null]}
+                >
                   {tag}
                 </Text>
               </Pressable>
@@ -2320,7 +2320,10 @@ function CustomerFeedbackCard({
       </View>
 
       {selectedTagSummary ? (
-        <Text selectable style={styles.feedbackText}>{`ملاحظات مختارة: ${selectedTagSummary}`}</Text>
+        <Text
+          selectable
+          style={styles.feedbackText}
+        >{`ملاحظات مختارة: ${selectedTagSummary}`}</Text>
       ) : null}
 
       <View style={styles.detailField}>
@@ -2467,83 +2470,13 @@ function CustomerActiveRidePanel({
   );
 }
 
-function CustomerCaptainArrivalPanel({
-  arrivalEta,
-  captainLocation,
-  pickupLabel
+function CustomerPickupHandoffPanel({
+  captainName,
+  vehicleLabel
 }: {
-  arrivalEta: string;
-  captainLocation: string;
-  pickupLabel: string;
+  captainName: string;
+  vehicleLabel: string;
 }) {
-  return (
-    <View testID="captain-arrival-panel" style={styles.captainArrivalPanel}>
-      <View style={styles.captainArrivalHeader}>
-        <View style={styles.captainArrivalIcon}>
-          <MapPin color={colors.cyan} size={18} />
-        </View>
-        <View style={styles.captainArrivalCopy}>
-          <Text selectable style={styles.captainArrivalTitle}>
-            لوحة وصول الكابتن
-          </Text>
-          <Text selectable style={styles.captainArrivalMeta}>
-            يتجه الآن إلى نقطة الانطلاق
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.captainArrivalTrack}>
-        <View style={styles.arrivalTrackStep}>
-          <Text selectable style={styles.arrivalTrackValue}>
-            {captainLocation}
-          </Text>
-          <Text selectable style={styles.arrivalTrackLabel}>
-            موقع الكابتن الآن
-          </Text>
-        </View>
-        <View style={styles.arrivalTrackLine} />
-        <View style={styles.arrivalTrackStep}>
-          <Text selectable style={styles.arrivalTrackValue}>
-            {pickupLabel}
-          </Text>
-          <Text selectable style={styles.arrivalTrackLabel}>
-            نقطة الاستلام
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.captainArrivalMetrics}>
-        <View style={styles.captainArrivalMetric}>
-          <Text selectable style={styles.captainArrivalMetricValue}>
-            {arrivalEta}
-          </Text>
-          <Text selectable style={styles.captainArrivalMetricLabel}>
-            وقت الوصول
-          </Text>
-        </View>
-        <View style={styles.captainArrivalMetric}>
-          <Text selectable style={styles.captainArrivalMetricValue}>
-            2.1 كم
-          </Text>
-          <Text selectable style={styles.captainArrivalMetricLabel}>
-            المسافة حتى وصول الكابتن
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.captainArrivalNext}>
-        <Text selectable style={styles.captainArrivalNextLabel}>
-          التحديث القادم
-        </Text>
-        <Text selectable style={styles.captainArrivalNextValue}>
-          سنخبرك فور اقترابه من نقطة الانطلاق
-        </Text>
-      </View>
-    </View>
-  );
-}
-
-function CustomerPickupHandoffPanel({ captainName, vehicleLabel }: { captainName: string; vehicleLabel: string }) {
   return (
     <View testID="customer-pickup-handoff-panel" style={styles.pickupHandoffPanel}>
       <View style={styles.pickupHandoffHeader}>
@@ -2690,10 +2623,7 @@ function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
           accessibilityRole="button"
           hitSlop={8}
           onPress={onClose}
-          style={({ pressed }) => [
-            styles.notificationCloseButton,
-            pressed ? styles.pressed : null
-          ]}
+          style={({ pressed }) => [styles.notificationCloseButton, pressed ? styles.pressed : null]}
         >
           <XCircle color={colors.textMuted} size={18} />
         </Pressable>
@@ -2785,7 +2715,10 @@ function CustomerDestinationDiscoveryPanel({
           accessibilityLabel="تحديث اقتراحات البحث"
           accessibilityRole="button"
           onPress={onRefreshSuggestions}
-          style={({ pressed }) => [styles.destinationDiscoveryButton, pressed ? styles.pressed : null]}
+          style={({ pressed }) => [
+            styles.destinationDiscoveryButton,
+            pressed ? styles.pressed : null
+          ]}
         >
           <Text selectable style={styles.destinationDiscoveryButtonText}>
             تحديث الاقتراحات
@@ -2834,7 +2767,8 @@ function CustomerSearchTab({
       activeFilter === "الكل" ||
       (activeFilter === "مطاعم" && place.label.includes("مطعم")) ||
       (activeFilter === "جامعات" && place.label.includes("جامعة")) ||
-      (activeFilter === "الأقرب" && (place.distance === "0.0 كم" || place.distance.startsWith("2.")));
+      (activeFilter === "الأقرب" &&
+        (place.distance === "0.0 كم" || place.distance.startsWith("2.")));
 
     return matchesQuery && matchesFilter;
   });
@@ -2897,7 +2831,10 @@ function CustomerSearchTab({
               >
                 <Text
                   selectable
-                  style={[styles.searchFilterText, isSelected ? styles.searchFilterTextActive : null]}
+                  style={[
+                    styles.searchFilterText,
+                    isSelected ? styles.searchFilterTextActive : null
+                  ]}
                 >
                   {filter}
                 </Text>
@@ -3095,10 +3032,16 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
 
 function CustomerJourneyTimeline({ liveTrip }: { liveTrip: CustomerTripsLiveRide }) {
   const journeySteps = getCustomerJourneySteps(liveTrip);
-  const statusText = liveTrip.isCompleted ? "كل الخطوات مكتملة" : `المرحلة الحالية: ${liveTrip.activeStatus}`;
+  const statusText = liveTrip.isCompleted
+    ? "كل الخطوات مكتملة"
+    : `المرحلة الحالية: ${liveTrip.activeStatus}`;
 
   return (
-    <GlassCard testID="customer-trip-journey-timeline" style={styles.customerJourneyTimelineCard} variant="strong">
+    <GlassCard
+      testID="customer-trip-journey-timeline"
+      style={styles.customerJourneyTimelineCard}
+      variant="strong"
+    >
       <View style={styles.customerJourneyHeader}>
         <View style={styles.customerJourneyIcon}>
           {liveTrip.isCompleted ? (
@@ -3126,7 +3069,12 @@ function CustomerJourneyTimeline({ liveTrip }: { liveTrip: CustomerTripsLiveRide
               key={step.label}
               style={[styles.customerJourneyStep, isDone ? styles.customerJourneyStepDone : null]}
             >
-              <View style={[styles.customerJourneyStepIcon, isDone ? styles.customerJourneyStepIconDone : null]}>
+              <View
+                style={[
+                  styles.customerJourneyStepIcon,
+                  isDone ? styles.customerJourneyStepIconDone : null
+                ]}
+              >
                 {isDone ? (
                   <CheckCircle color={colors.success} size={15} />
                 ) : (
@@ -3136,7 +3084,10 @@ function CustomerJourneyTimeline({ liveTrip }: { liveTrip: CustomerTripsLiveRide
               <View style={styles.customerJourneyStepCopy}>
                 <Text
                   selectable
-                  style={[styles.customerJourneyStepText, isDone ? styles.customerJourneyStepTextDone : null]}
+                  style={[
+                    styles.customerJourneyStepText,
+                    isDone ? styles.customerJourneyStepTextDone : null
+                  ]}
                 >
                   {step.label}
                 </Text>
@@ -3194,7 +3145,9 @@ function CompletedTripHistoryCard({ liveTrip }: { liveTrip: CustomerTripsLiveRid
         <View style={styles.completedTripHistoryTile}>
           <Star color={colors.warning} fill={colors.warning} size={16} />
           <Text selectable style={styles.completedTripHistoryTileValue}>
-            {liveTrip.feedbackRating ? `تقييم الرحلة: ${liveTrip.feedbackRating} نجوم` : "بانتظار التقييم"}
+            {liveTrip.feedbackRating
+              ? `تقييم الرحلة: ${liveTrip.feedbackRating} نجوم`
+              : "بانتظار التقييم"}
           </Text>
           <Text selectable style={styles.completedTripHistoryTileLabel}>
             {`طريقة الدفع: ${liveTrip.payment}`}
@@ -3315,10 +3268,26 @@ function CustomerProfileTab({
         />
 
         <View style={styles.profileRows}>
-          <ProfileRow icon={<Phone color={colors.cyan} size={16} />} label="رقم الجوال" value={profile.phone} />
-          <ProfileRow icon={<MapPin color={colors.success} size={16} />} label="المنطقة" value={profile.homeArea} />
-          <ProfileRow icon={<CreditCard color={colors.violetSoft} size={16} />} label="طريقة الدفع" value={profile.defaultPayment} />
-          <ProfileRow icon={<Star color={colors.warning} fill={colors.warning} size={16} />} label="تقييمك" value={profile.rating} />
+          <ProfileRow
+            icon={<Phone color={colors.cyan} size={16} />}
+            label="رقم الجوال"
+            value={profile.phone}
+          />
+          <ProfileRow
+            icon={<MapPin color={colors.success} size={16} />}
+            label="المنطقة"
+            value={profile.homeArea}
+          />
+          <ProfileRow
+            icon={<CreditCard color={colors.violetSoft} size={16} />}
+            label="طريقة الدفع"
+            value={profile.defaultPayment}
+          />
+          <ProfileRow
+            icon={<Star color={colors.warning} fill={colors.warning} size={16} />}
+            label="تقييمك"
+            value={profile.rating}
+          />
         </View>
       </GlassCard>
 
@@ -4628,12 +4597,6 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
-  feedbackMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "700"
-  },
   locationCard: {
     gap: spacing.md,
     padding: spacing.md,
@@ -4814,137 +4777,19 @@ const styles = StyleSheet.create({
     fontSize: typography.tiny,
     fontWeight: "900"
   },
-  previewCaptainButton: {
-    alignSelf: "stretch",
-    minHeight: 44,
-    marginTop: spacing.xs,
-    borderRadius: radii.sm
-  },
-  liveRequestHubCard: {
+  activeTripSurface: {
     gap: spacing.md,
     padding: spacing.md,
-    borderColor: "rgba(0, 229, 255, 0.28)",
-    backgroundColor: "rgba(18, 34, 58, 0.74)"
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.34)",
+    backgroundColor: "rgba(7, 16, 34, 0.84)"
   },
-  liveRequestHubHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  liveRequestHubIcon: {
-    width: 46,
-    height: 46,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.3)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  liveRequestHubCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  liveRequestHubTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.section,
-    fontWeight: "900"
-  },
-  liveRequestHubMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "800"
-  },
-  liveRequestStatusBand: {
-    minHeight: 68,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.28)",
-    backgroundColor: "rgba(139, 92, 246, 0.12)"
-  },
-  liveRequestStatusIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.14)"
-  },
-  liveRequestStatusCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  liveRequestStatusLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  liveRequestStatusValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  liveRequestPills: {
-    flexDirection: "row-reverse",
-    flexWrap: "wrap",
-    gap: spacing.xs
-  },
-  liveRequestPill: {
-    minHeight: 34,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.18)",
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
-  },
-  liveRequestPillText: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
-  liveRequestRows: {
-    gap: spacing.xs
-  },
-  liveRequestNextStep: {
-    alignItems: "flex-end",
-    gap: 4,
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.2)",
-    backgroundColor: "rgba(0, 229, 255, 0.07)"
-  },
-  liveRequestNextLabel: {
-    ...rtlText,
-    color: colors.cyan,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
-  liveRequestNextValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  stageCard: {
+  tripCompletionSurface: {
     gap: spacing.md,
     padding: spacing.md,
-    borderColor: "rgba(0, 229, 255, 0.28)"
+    borderRadius: radii.lg,
+    borderColor: "rgba(51, 231, 168, 0.3)",
+    backgroundColor: "rgba(7, 16, 34, 0.88)"
   },
   captainSearchSurface: {
     gap: spacing.md,
@@ -5103,11 +4948,15 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: radii.sm
   },
-  acceptedCaptainCard: {
+  captainTrackingSurface: {
     gap: spacing.md,
     padding: spacing.md,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.32)"
+    borderColor: "rgba(0, 229, 255, 0.34)",
+    backgroundColor: "rgba(7, 16, 34, 0.84)"
+  },
+  acceptedCaptainSummary: {
+    gap: spacing.sm
   },
   acceptedHeader: {
     flexDirection: "row-reverse",
@@ -5174,129 +5023,32 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     fontVariant: ["tabular-nums"]
   },
-  captainStats: {
+  captainLiveMetrics: {
     flexDirection: "row-reverse",
     gap: spacing.sm
   },
-  captainArrivalPanel: {
-    gap: spacing.sm,
-    padding: spacing.sm,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.24)",
-    backgroundColor: "rgba(0, 229, 255, 0.07)"
-  },
-  captainArrivalHeader: {
+  captainTripSummary: {
     flexDirection: "row-reverse",
-    alignItems: "center",
     gap: spacing.sm
   },
-  captainArrivalIcon: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.3)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  captainArrivalCopy: {
+  captainTripSummaryItem: {
+    minHeight: 46,
     flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  captainArrivalTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  captainArrivalMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  captainArrivalTrack: {
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.xs
-  },
-  arrivalTrackStep: {
-    flex: 1,
-    minHeight: 54,
-    alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.055)"
-  },
-  arrivalTrackLine: {
-    width: 28,
-    height: 2,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.62)"
-  },
-  arrivalTrackValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  arrivalTrackLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  captainArrivalMetrics: {
-    flexDirection: "row-reverse",
-    gap: spacing.xs
-  },
-  captainArrivalMetric: {
-    flex: 1,
-    minHeight: 58,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 3,
-    paddingHorizontal: spacing.xs,
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: "rgba(147, 177, 255, 0.14)",
     backgroundColor: "rgba(255, 255, 255, 0.045)"
   },
-  captainArrivalMetricValue: {
+  captainTripSummaryValue: {
     ...rtlText,
+    flexShrink: 1,
     color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  captainArrivalMetricLabel: {
-    ...rtlText,
-    color: colors.textMuted,
     fontSize: typography.tiny,
-    fontWeight: "800"
-  },
-  captainArrivalNext: {
-    alignItems: "flex-end",
-    gap: 3,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(139, 92, 246, 0.12)"
-  },
-  captainArrivalNextLabel: {
-    ...rtlText,
-    color: colors.violetSoft,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
-  captainArrivalNextValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
     fontWeight: "900"
   },
   pickupHandoffPanel: {
@@ -5395,14 +5147,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900"
-  },
-  captainDetailsGrid: {
-    gap: spacing.xs,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.14)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
   },
   safetyPanel: {
     gap: spacing.sm,
