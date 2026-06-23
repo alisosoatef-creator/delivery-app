@@ -3,7 +3,16 @@ import { Car, MapPin, Navigation } from "lucide-react-native";
 import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, gradients, mapStyle, radii, shadows, spacing } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  glass,
+  gradients,
+  mapStyle,
+  radii,
+  shadows,
+  spacing
+} from "@/design/tokens";
 import { customerHomeMock } from "@/mock/customer-home";
 
 const roads = [
@@ -117,8 +126,16 @@ function MockRouteMapComponent({
         {roads.map((road, index) => (
           <View
             key={`${road.top}-${index}`}
+            testID={
+              index === 0
+                ? "mock-map-primary-road"
+                : index === roads.length - 1
+                  ? "mock-map-secondary-road"
+                  : undefined
+            }
             style={[
               styles.road,
+              index < 4 ? styles.roadPrimary : styles.roadSecondary,
               {
                 top: road.top,
                 left: road.left,
@@ -131,11 +148,11 @@ function MockRouteMapComponent({
         ))}
       </View>
 
-      <View style={[styles.routeSegment, styles.routeSegmentOne]} />
+      <View testID="mock-map-active-route" style={[styles.routeSegment, styles.routeSegmentOne]} />
       <View style={[styles.routeSegment, styles.routeSegmentTwo]} />
       <View style={[styles.routeSegment, styles.routeSegmentThree]} />
 
-      <View style={[styles.marker, styles.originMarker]}>
+      <View testID="mock-map-origin-marker" style={[styles.marker, styles.originMarker]}>
         <Navigation color={colors.text} size={18} fill={colors.blue} />
       </View>
       <View style={[styles.marker, styles.destinationMarker]}>
@@ -155,7 +172,7 @@ function MockRouteMapComponent({
         </Text>
       </View>
 
-      <View style={styles.routePanel}>
+      <View testID="mock-map-route-panel" style={styles.routePanel}>
         <Text selectable style={styles.routePanelTitle}>
           الخريطة الحية
         </Text>
@@ -212,11 +229,17 @@ export function areMockRouteMapPropsEqual(
   next: Readonly<MockRouteMapProps>
 ) {
   return (
-    previous.destinationArea === next.destinationArea &&
-    previous.destinationDetail === next.destinationDetail &&
-    previous.phase === next.phase &&
-    previous.pickupLabel === next.pickupLabel
+    (previous.destinationArea ?? null) === (next.destinationArea ?? null) &&
+    normalizeOptionalDetail(previous.destinationDetail) ===
+      normalizeOptionalDetail(next.destinationDetail) &&
+    (previous.phase ?? "idle") === (next.phase ?? "idle") &&
+    (previous.pickupLabel ?? customerHomeMock.pickup) ===
+      (next.pickupLabel ?? customerHomeMock.pickup)
   );
+}
+
+function normalizeOptionalDetail(value?: string | null) {
+  return value?.trim() || null;
 }
 
 export const MockRouteMap = memo(MockRouteMapComponent, areMockRouteMapPropsEqual);
@@ -228,7 +251,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: colors.borderStrong,
+    borderColor: glass.floating.borderColor,
     backgroundColor: colors.graphite,
     boxShadow: shadows.floating
   },
@@ -241,16 +264,21 @@ const styles = StyleSheet.create({
   },
   road: {
     position: "absolute",
-    height: 2,
     borderRadius: radii.pill,
     backgroundColor: mapStyle.road
+  },
+  roadPrimary: {
+    height: 3
+  },
+  roadSecondary: {
+    height: 1
   },
   routeSegment: {
     position: "absolute",
     height: 4,
     borderRadius: radii.pill,
     backgroundColor: mapStyle.route,
-    boxShadow: shadows.glowCyan
+    boxShadow: `0 0 18px ${mapStyle.routeGlow}`
   },
   routeSegmentOne: {
     top: 154,
@@ -277,9 +305,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.36)",
+    borderColor: glass.floating.borderColor,
     borderRadius: radii.pill,
-    backgroundColor: mapStyle.markerSurface
+    backgroundColor: mapStyle.markerSurface,
+    boxShadow: shadows.cardSubtle
   },
   originMarker: {
     top: 158,
@@ -298,7 +327,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0, 229, 255, 0.34)",
     borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.08)"
+    backgroundColor: "rgba(0, 229, 255, 0.08)",
+    boxShadow: `0 0 18px ${mapStyle.routeGlow}`
   },
   driverDot: {
     width: 10,
@@ -316,8 +346,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(7, 11, 20, 0.68)"
+    borderColor: glass.floating.borderColor,
+    backgroundColor: glass.floating.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   badgeValue: {
     color: colors.text,
@@ -345,8 +376,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.16)",
-    backgroundColor: "rgba(7, 11, 20, 0.72)"
+    borderColor: glass.floating.borderColor,
+    backgroundColor: glass.floating.backgroundColor,
+    boxShadow: shadows.card
   },
   routePanelTitle: {
     color: colors.cyan,
@@ -376,8 +408,8 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.18)",
-    backgroundColor: "rgba(0, 229, 255, 0.07)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   trackingHeader: {
     flexDirection: "row-reverse",
@@ -424,7 +456,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: spacing.xs,
     borderRadius: radii.xs,
-    backgroundColor: "rgba(255, 255, 255, 0.055)"
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   trackingMetricText: {
     color: colors.textSoft,

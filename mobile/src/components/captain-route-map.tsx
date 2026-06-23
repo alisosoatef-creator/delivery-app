@@ -3,7 +3,17 @@ import { Car, CheckCircle, MapPin, Navigation, Route } from "lucide-react-native
 import { memo } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, gradients, mapStyle, radii, shadows, spacing, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  glass,
+  gradients,
+  mapStyle,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
 
@@ -90,8 +100,16 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
         {roads.map((road, index) => (
           <View
             key={`${road.top}-${index}`}
+            testID={
+              index === 0
+                ? "captain-map-primary-road"
+                : index === roads.length - 1
+                  ? "captain-map-secondary-road"
+                  : undefined
+            }
             style={[
               styles.road,
+              index < 4 ? styles.roadPrimary : styles.roadSecondary,
               {
                 top: road.top,
                 left: road.left,
@@ -104,11 +122,20 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
         ))}
       </View>
 
-      <View style={[styles.routeSegment, styles.routeSegmentOne, segmentTone(config, 1)]} />
-      <View style={[styles.routeSegment, styles.routeSegmentTwo, segmentTone(config, 2)]} />
-      <View style={[styles.routeSegment, styles.routeSegmentThree, segmentTone(config, 3)]} />
+      <View
+        testID={routeSegmentTestId(config, 1)}
+        style={[styles.routeSegment, styles.routeSegmentOne, segmentTone(config, 1)]}
+      />
+      <View
+        testID={routeSegmentTestId(config, 2)}
+        style={[styles.routeSegment, styles.routeSegmentTwo, segmentTone(config, 2)]}
+      />
+      <View
+        testID={routeSegmentTestId(config, 3)}
+        style={[styles.routeSegment, styles.routeSegmentThree, segmentTone(config, 3)]}
+      />
 
-      <View style={[styles.marker, styles.startMarker]}>
+      <View testID="captain-map-start-marker" style={[styles.marker, styles.startMarker]}>
         <Navigation color={colors.text} size={18} fill={colors.blue} />
       </View>
       <View style={[styles.marker, styles.pickupMarker]}>
@@ -153,7 +180,7 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
         </Text>
       </View>
 
-      <View style={styles.routePanel}>
+      <View testID="captain-map-route-panel" style={styles.routePanel}>
         <View style={styles.routePanelTop}>
           <Text selectable style={styles.panelStatus}>
             {config.activeLabel}
@@ -229,6 +256,14 @@ function segmentTone(config: RouteConfig, segment: number) {
   return styles.routeSegmentPending;
 }
 
+function routeSegmentTestId(config: RouteConfig, segment: number) {
+  if (segment === config.segment && segment > config.completedSegments) {
+    return "captain-map-active-route";
+  }
+
+  return `captain-map-route-${segment}`;
+}
+
 const rtlText = {
   textAlign: "right" as const,
   writingDirection: "rtl" as const
@@ -240,7 +275,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.24)",
+    borderColor: glass.floating.borderColor,
     backgroundColor: colors.graphite,
     boxShadow: shadows.floating
   },
@@ -253,9 +288,14 @@ const styles = StyleSheet.create({
   },
   road: {
     position: "absolute",
-    height: 2,
     borderRadius: radii.pill,
     backgroundColor: mapStyle.road
+  },
+  roadPrimary: {
+    height: 3
+  },
+  roadSecondary: {
+    height: 1
   },
   routeSegment: {
     position: "absolute",
@@ -282,7 +322,7 @@ const styles = StyleSheet.create({
   },
   routeSegmentActive: {
     backgroundColor: mapStyle.route,
-    boxShadow: shadows.glowCyan
+    boxShadow: `0 0 18px ${mapStyle.routeGlow}`
   },
   routeSegmentDone: {
     backgroundColor: colors.violetSoft,
@@ -299,8 +339,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.34)",
-    backgroundColor: mapStyle.markerSurface
+    borderColor: glass.floating.borderColor,
+    backgroundColor: mapStyle.markerSurface,
+    boxShadow: shadows.cardSubtle
   },
   startMarker: {
     top: 192,
@@ -347,8 +388,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.18)",
-    backgroundColor: "rgba(7, 11, 20, 0.68)"
+    borderColor: glass.floating.borderColor,
+    backgroundColor: glass.floating.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   headerIcon: {
     width: 34,
@@ -385,8 +427,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.2)",
-    backgroundColor: "rgba(7, 11, 20, 0.72)"
+    borderColor: glass.floating.borderColor,
+    backgroundColor: glass.floating.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   distanceValue: {
     ...rtlText,
@@ -410,8 +453,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.18)",
-    backgroundColor: "rgba(7, 11, 20, 0.78)"
+    borderColor: glass.floating.borderColor,
+    backgroundColor: glass.floating.backgroundColor,
+    boxShadow: shadows.card
   },
   routePanelTop: {
     flexDirection: "row-reverse",
@@ -465,7 +509,7 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: spacing.sm,
     borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.055)"
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   routeMetricValue: {
     ...rtlText,

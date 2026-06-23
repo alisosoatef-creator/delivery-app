@@ -165,10 +165,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/components/captain-route-map.tsx`
 - Modify: `mobile/src/components/__tests__/route-map-performance.test.ts`
 
-- [ ] Add failing assertions for semantic map surface, route glow, marker surface, and memoized comparator behavior.
-- [ ] Clarify road hierarchy, route contrast, marker depth, and overlays using existing primitives.
-- [ ] Keep map components memoized and avoid continuous animation.
-- [ ] Run route-map performance and customer/captain screen tests.
+- [x] Add failing assertions for semantic map surface, route glow, marker surface, and memoized comparator behavior.
+- [x] Clarify road hierarchy, route contrast, marker depth, and overlays using existing primitives.
+- [x] Keep map components memoized and avoid continuous animation.
+- [x] Run route-map performance and customer/captain screen tests.
 
 ### Task 8: Full Visual Regression Gate
 
@@ -176,10 +176,10 @@ Expected: all commands pass.
 
 - Verify all phase files inside `mobile/`.
 
-- [ ] Run `npm.cmd --prefix mobile run lint`.
-- [ ] Run `npm.cmd --prefix mobile run check`.
-- [ ] Run `npm.cmd --prefix mobile test -- --runInBand --silent`.
-- [ ] Run Prettier on every phase file.
-- [ ] Run `git diff --check -- mobile`, `git status --short`, and `git diff --stat -- mobile`.
-- [ ] Verify the app in Expo Go on a physical Android device when available.
-- [ ] Report results without committing or pushing.
+- [x] Run `npm.cmd --prefix mobile run lint`.
+- [x] Run `npm.cmd --prefix mobile run check`.
+- [x] Run `npm.cmd --prefix mobile test -- --runInBand --silent`.
+- [x] Run Prettier on every phase file.
+- [x] Run `git diff --check -- mobile`, `git status --short`, and `git diff --stat -- mobile`.
+- [x] Verify Expo Go readiness by starting Metro with a clean cache. Physical Android automation was unavailable because ADB was not installed.
+- [x] Report results without committing or pushing.
