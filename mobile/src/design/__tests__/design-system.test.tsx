@@ -1,6 +1,8 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
+import { processColor, StyleSheet, Text } from "react-native";
 
+import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
 import {
   accents,
@@ -51,6 +53,66 @@ describe("Wasel design system", () => {
     expect(gradients.buttonHighlight).toHaveLength(2);
     expect(controlSurfaces.activeNavigation.backgroundColor).toContain("rgba");
     expect(layoutRhythm.cardPadding).toBe(spacing.md);
+  });
+
+  it("renders floating glass with semantic depth and an internal highlight", async () => {
+    const screen = await render(
+      <GlassCard testID="floating-glass-card" variant="floating">
+        <Text>Ø¨Ø·Ø§Ù‚Ø© Ø¹Ø§Ø¦Ù…Ø©</Text>
+      </GlassCard>
+    );
+
+    expect(StyleSheet.flatten(screen.getByTestId("floating-glass-card").props.style)).toMatchObject(
+      {
+        backgroundColor: glass.floating.backgroundColor,
+        borderColor: glass.floating.borderColor,
+        boxShadow: shadows.floating
+      }
+    );
+    expect(screen.getByTestId("floating-glass-card-surface").props.colors).toEqual(
+      gradients.floating.map((color) => processColor(color))
+    );
+    expect(screen.getByTestId("floating-glass-card-highlight").props.colors).toEqual(
+      [glass.floating.highlightColor, "rgba(255, 255, 255, 0)"].map((color) => processColor(color))
+    );
+  });
+
+  it("keeps primary and secondary buttons visually distinct with safe labels", async () => {
+    const primaryScreen = await render(
+      <PremiumButton
+        accessibilityLabel="ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø±Ø­Ù„Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø¯ÙŠÙ†Ø©"
+        label="ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø±Ø­Ù„Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø¯ÙŠÙ†Ø©"
+        onPress={() => undefined}
+      />
+    );
+    const secondaryScreen = await render(
+      <PremiumButton
+        accessibilityLabel="Ø¥Ù„ØºØ§Ø¡"
+        label="Ø¥Ù„ØºØ§Ø¡"
+        onPress={() => undefined}
+        variant="secondary"
+      />
+    );
+
+    expect(
+      StyleSheet.flatten(primaryScreen.getByTestId("premium-motion-button").props.style)
+    ).toMatchObject({
+      boxShadow: shadows.primaryAction
+    });
+    expect(primaryScreen.getByTestId("premium-button-highlight").props.colors).toEqual(
+      gradients.buttonHighlight.map((color) => processColor(color))
+    );
+
+    const primaryLabel = primaryScreen.getByText("ØªØ£ÙƒÙŠØ¯ Ø§Ù„Ø±Ø­Ù„Ø© Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…Ø¯ÙŠÙ†Ø©");
+    expect(primaryLabel.props.adjustsFontSizeToFit).toBe(true);
+    expect(primaryLabel.props.numberOfLines).toBe(1);
+
+    expect(
+      StyleSheet.flatten(secondaryScreen.getByTestId("premium-motion-button").props.style)
+    ).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor
+    });
   });
 
   it("renders a premium CTA as a real pressable button", async () => {

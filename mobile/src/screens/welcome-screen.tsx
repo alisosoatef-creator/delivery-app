@@ -6,7 +6,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
 import { useResponsiveLayout } from "@/design/responsive";
-import { colors, gradients, radii, shadows, spacing, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  gradients,
+  layoutRhythm,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from "@/design/tokens";
 
 type WelcomeScreenProps = {
   captainNotice?: string | null;
@@ -71,7 +80,7 @@ export function WelcomeScreen({
           </View>
         </View>
 
-        <GlassCard variant="strong" style={styles.promiseCard}>
+        <GlassCard testID="welcome-promise-card" variant="strong" style={styles.promiseCard}>
           <View style={styles.promiseHeader}>
             <View style={styles.promiseIcon}>
               <MapPin color={colors.cyan} size={20} />
@@ -108,12 +117,12 @@ export function WelcomeScreen({
           </View>
         </GlassCard>
 
-        <GlassCard variant="subtle" style={styles.roleCard}>
+        <GlassCard testID="welcome-role-card" style={styles.roleCard}>
           <Text selectable style={styles.roleTitle}>
             اختر نوع الحساب
           </Text>
           <View style={styles.roleGrid}>
-            <View style={styles.roleTile}>
+            <View testID="welcome-customer-role" style={styles.roleTile}>
               <View style={styles.roleIcon}>
                 <User color={colors.cyan} size={18} />
               </View>
@@ -127,7 +136,7 @@ export function WelcomeScreen({
               </View>
             </View>
 
-            <View style={styles.roleTile}>
+            <View testID="welcome-captain-role" style={styles.roleTile}>
               <View style={styles.roleIcon}>
                 <Car color={colors.violetSoft} size={18} />
               </View>
@@ -202,7 +211,7 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     justifyContent: "center",
-    gap: spacing.lg
+    gap: layoutRhythm.sectionGap
   },
   hero: {
     alignItems: "center",
@@ -210,15 +219,15 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg
   },
   logoHalo: {
-    width: 104,
-    height: 104,
+    width: 96,
+    height: 96,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.lg,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.24)",
-    backgroundColor: "rgba(0, 229, 255, 0.08)",
-    boxShadow: shadows.glowCyan
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.cardStrong
   },
   logoMark: {
     width: 76,
@@ -275,7 +284,7 @@ const styles = StyleSheet.create({
   },
   promiseCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg
   },
   promiseHeader: {
@@ -321,7 +330,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     padding: spacing.sm,
     borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    borderWidth: 1,
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   metricValue: {
     ...rtlText,
@@ -341,7 +353,7 @@ const styles = StyleSheet.create({
   },
   roleCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg
   },
   roleTitle: {
@@ -361,8 +373,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   roleIcon: {
     width: 42,

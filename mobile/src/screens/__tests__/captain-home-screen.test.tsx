@@ -3,6 +3,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { controlSurfaces, glass, shadows } from "@/design/tokens";
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CaptainHomeScreen } from "../captain-home-screen";
@@ -160,23 +161,49 @@ describe("CaptainHomeScreen", () => {
 
   it("keeps the floating navigation flexible for compact screens", async () => {
     const screen = await renderCaptainHome();
-    const navItemStyle = StyleSheet.flatten(
-      screen.getByTestId("captain-motion-tab-home").props.style
-    );
+    const navStyle = StyleSheet.flatten(screen.getByTestId("captain-bottom-nav").props.style);
+    const homeTab = screen.getByTestId("captain-motion-tab-home");
+    const navItemStyle = StyleSheet.flatten(homeTab.props.style);
 
+    expect(navStyle).toMatchObject({
+      backgroundColor: glass.floating.backgroundColor,
+      borderColor: glass.floating.borderColor,
+      boxShadow: shadows.floating
+    });
     expect(navItemStyle).toMatchObject({
+      backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+      borderColor: controlSurfaces.activeNavigation.borderColor,
+      boxShadow: shadows.activeControl,
       flex: 1,
       maxWidth: 72,
       minWidth: 0
     });
+    expect(homeTab.props.accessibilityRole).toBe("tab");
+    expect(homeTab.props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByText("الرئيسية").props.numberOfLines).toBe(1);
   });
 
   it("keeps the captain home focused on one nearest-request decision", async () => {
     const screen = await renderCaptainHome();
+    const requestStyle = StyleSheet.flatten(
+      screen.getByTestId("captain-nearest-request-card").props.style
+    );
+    const routeStyle = StyleSheet.flatten(
+      screen.getByTestId("captain-nearest-request-route").props.style
+    );
 
     expect(screen.getByTestId("captain-focused-home")).toBeTruthy();
     expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
+    expect(requestStyle).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(routeStyle).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor,
+      boxShadow: shadows.cardSubtle
+    });
     expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
     expect(screen.getAllByLabelText("قبول الطلب التجريبي")).toHaveLength(1);
     expect(screen.getByLabelText("عرض تفاصيل الطلب التجريبي")).toBeTruthy();
@@ -187,7 +214,20 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
 
-    expect(screen.getByTestId("captain-request-details")).toBeTruthy();
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-request-details").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-request-details-rows").props.style)
+    ).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor,
+      boxShadow: shadows.cardSubtle
+    });
     expect(screen.queryByTestId("captain-nearest-request-card")).toBeNull();
     expect(screen.getByText("ملاحظة العميل")).toBeTruthy();
     expect(screen.getByText("نوع الخدمة")).toBeTruthy();
@@ -306,6 +346,20 @@ describe("CaptainHomeScreen", () => {
     const screen = await renderCaptainHome();
 
     await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-active-trip-hero").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-active-trip-customer").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getByText("الرحلة الحالية")).toBeTruthy();
     expect(screen.getByText("الطريق إلى العميل")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
@@ -417,6 +471,13 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
 
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-earnings-overview").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getByText("مركز أرباح الكابتن")).toBeTruthy();
     expect(screen.getByText("صافي اليوم")).toBeTruthy();
     expect(screen.getByText("هدف اليوم: 78%")).toBeTruthy();
@@ -498,6 +559,13 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب حسابي"));
 
+    expect(
+      StyleSheet.flatten(screen.getByTestId("captain-profile-overview").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getByText("مركز ملف الكابتن")).toBeTruthy();
     expect(screen.getByText("جاهزية الحساب")).toBeTruthy();
     expect(screen.getByText("موثق للتشغيل")).toBeTruthy();

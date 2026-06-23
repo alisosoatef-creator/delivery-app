@@ -21,7 +21,17 @@ import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { useResponsiveLayout } from "@/design/responsive";
-import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  glass,
+  gradients,
+  layoutRhythm,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from "@/design/tokens";
 import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import {
   getLatestMockRealtimeEvent,
@@ -252,6 +262,7 @@ export function CaptainHomeScreen() {
       </ScrollView>
       <GlassCard
         testID="captain-bottom-nav"
+        variant="floating"
         style={[
           styles.bottomNav,
           {
@@ -333,7 +344,7 @@ function CaptainNearestRequestCard({
         </View>
       </View>
 
-      <View style={styles.compactRoute}>
+      <View testID="captain-nearest-request-route" style={styles.compactRoute}>
         <View style={styles.compactRouteIcon}>
           <Route color={colors.cyan} size={18} />
         </View>
@@ -431,7 +442,7 @@ function CaptainAcceptPreviewCard({
         </View>
       </View>
 
-      <View style={styles.previewRows}>
+      <View testID="captain-request-details-rows" style={styles.previewRows}>
         <PreviewRow label="العميل المحدد" value={request.customerName} />
         <PreviewRow label="رقم العميل" value={request.customerPhone} />
         <PreviewRow
@@ -585,7 +596,7 @@ function CaptainEarningsTab({
   const dailyGoalProgress = `${Math.min(Math.round((earningsTotal / 800) * 100), 100)}%`;
 
   return (
-    <GlassCard style={styles.earningsCard} variant="strong">
+    <GlassCard testID="captain-earnings-overview" style={styles.earningsCard} variant="strong">
       <View style={styles.earningsHeader}>
         <View style={styles.earningsIcon}>
           <Wallet color={colors.cyan} size={22} />
@@ -766,7 +777,7 @@ function CaptainProfileTab({
   const profile = captainHomeMock.profile;
 
   return (
-    <GlassCard style={styles.profileCard} variant="strong">
+    <GlassCard testID="captain-profile-overview" style={styles.profileCard} variant="strong">
       <View style={styles.profileHeader}>
         <View style={styles.profileAvatar}>
           <User color={colors.text} size={24} />
@@ -989,9 +1000,11 @@ const styles = StyleSheet.create({
   },
   requestCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.28)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   requestTop: {
     flexDirection: "row-reverse",
@@ -1047,8 +1060,9 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.18)",
-    backgroundColor: "rgba(0, 229, 255, 0.055)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   compactRouteIcon: {
     width: 40,
@@ -1117,10 +1131,11 @@ const styles = StyleSheet.create({
   },
   acceptPreviewCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(139, 92, 246, 0.32)",
-    backgroundColor: "rgba(18, 34, 58, 0.78)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   acceptPreviewHeader: {
     flexDirection: "row-reverse",
@@ -1155,7 +1170,13 @@ const styles = StyleSheet.create({
     fontWeight: "800"
   },
   previewRows: {
-    gap: spacing.xs
+    gap: spacing.xs,
+    padding: layoutRhythm.denseCardPadding,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   previewRow: {
     minHeight: 44,
@@ -1380,10 +1401,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-    borderRadius: radii.md
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "transparent"
   },
   navItemActive: {
-    backgroundColor: "rgba(0, 229, 255, 0.14)"
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    boxShadow: shadows.activeControl
   },
   navLabel: {
     ...rtlText,
@@ -1396,9 +1421,11 @@ const styles = StyleSheet.create({
   },
   earningsCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.3)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   earningsHeader: {
     flexDirection: "row-reverse",
@@ -1544,9 +1571,11 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(139, 92, 246, 0.32)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   profileHeader: {
     flexDirection: "row-reverse",

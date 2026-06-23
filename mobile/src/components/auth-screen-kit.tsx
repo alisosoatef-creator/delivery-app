@@ -15,7 +15,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
 import { useResponsiveLayout } from "@/design/responsive";
-import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  gradients,
+  layoutRhythm,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from "@/design/tokens";
 
 type AuthScreenFrameProps = PropsWithChildren;
 
@@ -97,11 +106,12 @@ export function AuthHero({ subtitle, title }: AuthHeroProps) {
 
 type AuthFormCardProps = PropsWithChildren<{
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }>;
 
-export function AuthFormCard({ children, style }: AuthFormCardProps) {
+export function AuthFormCard({ children, style, testID }: AuthFormCardProps) {
   return (
-    <GlassCard variant="strong" style={[styles.formCard, style]}>
+    <GlassCard testID={testID} variant="strong" style={[styles.formCard, style]}>
       {children}
     </GlassCard>
   );
@@ -136,6 +146,7 @@ type AuthFieldProps = {
   label: string;
   onChangeText: (value: string) => void;
   placeholder: string;
+  testID?: string;
   value: string;
 };
 
@@ -146,6 +157,7 @@ export function AuthField({
   label,
   onChangeText,
   placeholder,
+  testID,
   value
 }: AuthFieldProps) {
   return (
@@ -153,7 +165,7 @@ export function AuthField({
       <Text selectable style={styles.fieldLabel}>
         {label}
       </Text>
-      <View style={styles.inputWrap}>
+      <View testID={testID} style={styles.inputWrap}>
         {icon}
         <TextInput
           accessibilityLabel={accessibilityLabel}
@@ -170,12 +182,13 @@ export function AuthField({
 }
 
 type AuthNoteProps = {
+  testID?: string;
   text: string;
 };
 
-export function AuthNote({ text }: AuthNoteProps) {
+export function AuthNote({ testID, text }: AuthNoteProps) {
   return (
-    <GlassCard variant="subtle" style={styles.noteCard}>
+    <GlassCard testID={testID} variant="subtle" style={styles.noteCard}>
       <Text selectable style={styles.noteText}>
         {text}
       </Text>
@@ -198,7 +211,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: spacing.lg
+    gap: layoutRhythm.sectionGap
   },
   topBar: {
     minHeight: 48,
@@ -213,8 +226,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surfaceSoft
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   pressed: {
     opacity: 0.76,
@@ -256,7 +270,7 @@ const styles = StyleSheet.create({
   },
   formCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg
   },
   formHeader: {
@@ -271,8 +285,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.28)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.activeControl
   },
   formHeaderCopy: {
     flex: 1,
@@ -308,8 +323,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   input: {
     ...rtlText,

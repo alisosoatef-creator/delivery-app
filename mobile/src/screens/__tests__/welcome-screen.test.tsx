@@ -1,6 +1,9 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import { fireEvent, render } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { controlSurfaces, glass, shadows } from "@/design/tokens";
 
 import { WelcomeScreen } from "../welcome-screen";
 
@@ -39,6 +42,38 @@ describe("WelcomeScreen", () => {
     expect(screen.getByText("إنشاء حساب جديد")).toBeTruthy();
     expect(screen.getByText("الدخول ككابتن")).toBeTruthy();
     expect(screen.getByTestId("welcome-brand-mark")).toBeTruthy();
+  });
+
+  it("uses a calm premium hierarchy for brand, roles, and entry actions", async () => {
+    const { screen } = await renderWelcomeScreen();
+    const brandStyle = StyleSheet.flatten(screen.getByTestId("welcome-brand-mark").props.style);
+    const promiseStyle = StyleSheet.flatten(screen.getByTestId("welcome-promise-card").props.style);
+    const customerRoleStyle = StyleSheet.flatten(
+      screen.getByTestId("welcome-customer-role").props.style
+    );
+    const buttons = screen.getAllByTestId("premium-motion-button");
+    const primaryButtonStyle = StyleSheet.flatten(buttons[0].props.style);
+    const secondaryButtonStyle = StyleSheet.flatten(buttons[1].props.style);
+
+    expect(brandStyle).toMatchObject({
+      backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+      borderColor: controlSurfaces.activeNavigation.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(promiseStyle).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(customerRoleStyle).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor,
+      boxShadow: shadows.cardSubtle
+    });
+    expect(primaryButtonStyle.boxShadow).toBe(shadows.primaryAction);
+    expect(secondaryButtonStyle).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor
+    });
   });
 
   it("exposes mock entry actions without API connection", async () => {

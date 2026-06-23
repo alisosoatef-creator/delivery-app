@@ -99,10 +99,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/components/premium-button.tsx`
 - Modify: `mobile/src/design/__tests__/design-system.test.tsx`
 
-- [ ] Add failing tests for variant-specific shadows, internal highlights, floating glass, and primary/secondary button hierarchy.
-- [ ] Update `GlassCard` to consume variant shadows and highlights without changing its public layout behavior.
-- [ ] Update `PremiumButton` with the primary-action shadow, top highlight, secondary control surface, and safe single-line label scaling.
-- [ ] Run the design-system and motion component tests.
+- [x] Add failing tests for variant-specific shadows, internal highlights, floating glass, and primary/secondary button hierarchy.
+- [x] Update `GlassCard` to consume variant shadows and highlights without changing its public layout behavior.
+- [x] Update `PremiumButton` with the primary-action shadow, top highlight, secondary control surface, and safe single-line label scaling.
+- [x] Run the design-system and motion component tests.
 
 ### Task 3: Floating Navigation
 
@@ -113,10 +113,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/screens/__tests__/customer-home-screen.test.tsx`
 - Modify: `mobile/src/screens/__tests__/captain-home-screen.test.tsx`
 
-- [ ] Add failing assertions for the floating glass variant and shared active-navigation surface.
-- [ ] Apply the floating glass contract to both bottom navigations.
-- [ ] Preserve flexible narrow-screen sizing, tab roles, selection state, and labels.
-- [ ] Run both home screen suites.
+- [x] Add failing assertions for the floating glass variant and shared active-navigation surface.
+- [x] Apply the floating glass contract to both bottom navigations.
+- [x] Preserve flexible narrow-screen sizing, tab roles, selection state, and labels.
+- [x] Run both home screen suites.
 
 ### Task 4: Welcome And Authentication Polish
 
@@ -127,10 +127,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/screens/__tests__/welcome-screen.test.tsx`
 - Modify: `mobile/src/components/__tests__/auth-screen-kit.test.tsx`
 
-- [ ] Add failing assertions for polished strong cards and primary action hierarchy.
-- [ ] Refine brand, promise, role, form, and note surfaces using semantic tokens.
-- [ ] Preserve first-viewport simplicity, RTL, input behavior, and existing actions.
-- [ ] Run welcome and authentication tests.
+- [x] Add failing assertions for polished strong cards and primary action hierarchy.
+- [x] Refine brand, promise, role, form, and note surfaces using semantic tokens.
+- [x] Preserve first-viewport simplicity, RTL, input behavior, and existing actions.
+- [x] Run welcome and authentication tests.
 
 ### Task 5: Customer Experience Polish
 
@@ -139,10 +139,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/screens/customer-home-screen.tsx`
 - Modify: `mobile/src/screens/__tests__/customer-home-screen.test.tsx`
 
-- [ ] Add focused tests for the ride launcher, selected options, booking review, tracking, trips, search, and profile surface hierarchy.
-- [ ] Replace repeated one-off visual values with semantic tokens where they improve consistency.
-- [ ] Keep the booking flow, mock data, accessibility roles, and responsive contract unchanged.
-- [ ] Run the complete customer screen suite.
+- [x] Add focused tests for the ride launcher, selected options, booking review, tracking, trips, search, and profile surface hierarchy.
+- [x] Replace repeated one-off visual values with semantic tokens where they improve consistency.
+- [x] Keep the booking flow, mock data, accessibility roles, and responsive contract unchanged.
+- [x] Run the complete customer screen suite.
 
 ### Task 6: Captain Experience Polish
 
@@ -152,10 +152,10 @@ Expected: all commands pass.
 - Modify: `mobile/src/screens/captain-active-trip-screen.tsx`
 - Modify: `mobile/src/screens/__tests__/captain-home-screen.test.tsx`
 
-- [ ] Add focused tests for nearest-request, details, active-trip, earnings, and profile hierarchy.
-- [ ] Apply semantic card, control, selected-state, and status treatments.
-- [ ] Preserve the focused home, accept/decline flow, realtime placement, and trip progression.
-- [ ] Run the complete captain screen suite.
+- [x] Add focused tests for nearest-request, details, active-trip, earnings, and profile hierarchy.
+- [x] Apply semantic card, control, selected-state, and status treatments.
+- [x] Preserve the focused home, accept/decline flow, realtime placement, and trip progression.
+- [x] Run the complete captain screen suite.
 
 ### Task 7: Map Surface Polish
 

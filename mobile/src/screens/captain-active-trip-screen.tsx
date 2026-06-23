@@ -19,7 +19,18 @@ import { CaptainRouteMap } from "@/components/captain-route-map";
 import { GlassCard } from "@/components/glass-card";
 import { PremiumButton } from "@/components/premium-button";
 import { useResponsiveLayout } from "@/design/responsive";
-import { colors, gradients, radii, spacing, touchTargets, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  glass,
+  gradients,
+  layoutRhythm,
+  radii,
+  shadows,
+  spacing,
+  touchTargets,
+  typography
+} from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import {
@@ -126,7 +137,7 @@ export function CaptainActiveTripScreen({
           </View>
         </View>
 
-        <GlassCard style={styles.heroCard} variant="strong">
+        <GlassCard testID="captain-active-trip-hero" style={styles.heroCard} variant="strong">
           <View style={styles.heroTop}>
             <View style={styles.heroIcon}>
               <MapPin color={colors.cyan} size={22} />
@@ -162,7 +173,11 @@ export function CaptainActiveTripScreen({
 
         <CaptainRouteMap request={request} step={tripStep} />
 
-        <GlassCard style={styles.customerCard} variant="strong">
+        <GlassCard
+          testID="captain-active-trip-customer"
+          style={styles.customerCard}
+          variant="strong"
+        >
           <View style={styles.customerTop}>
             <View style={styles.customerAvatar}>
               <User color={colors.text} size={20} />
@@ -443,9 +458,11 @@ const styles = StyleSheet.create({
   },
   heroCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.3)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   heroTop: {
     flexDirection: "row-reverse",
@@ -524,8 +541,11 @@ const styles = StyleSheet.create({
   },
   customerCard: {
     gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.lg
+    padding: layoutRhythm.cardPadding,
+    borderRadius: radii.lg,
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor,
+    boxShadow: glass.strong.shadow
   },
   customerTop: {
     flexDirection: "row-reverse",
@@ -574,11 +594,12 @@ const styles = StyleSheet.create({
   },
   detailsBox: {
     gap: spacing.xs,
-    padding: spacing.sm,
+    padding: layoutRhythm.denseCardPadding,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.14)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   infoRow: {
     minHeight: 42,

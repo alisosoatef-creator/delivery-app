@@ -34,7 +34,18 @@ import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
 import { RealtimeActivityFeed, RealtimeStatusCard } from "@/components/realtime-status-card";
 import { useResponsiveLayout } from "@/design/responsive";
-import { colors, gradients, radii, spacing, touchTargets, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  glass,
+  gradients,
+  layoutRhythm,
+  radii,
+  shadows,
+  spacing,
+  touchTargets,
+  typography
+} from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 import {
@@ -1266,7 +1277,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                           </View>
                         </View>
 
-                        <View style={styles.bookingReviewRoute}>
+                        <View
+                          testID="customer-booking-review-route"
+                          style={styles.bookingReviewRoute}
+                        >
                           <View style={styles.bookingReviewRouteLine}>
                             <View style={styles.bookingReviewRouteDot} />
                             <View style={styles.bookingReviewRouteConnector} />
@@ -1593,6 +1607,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
       <GlassCard
         testID="floating-bottom-nav"
+        variant="floating"
         style={[
           styles.bottomNav,
           {
@@ -1962,6 +1977,7 @@ function CustomerServiceSelectionPage({
                     isSelected ? styles.serviceTypeOptionActive : null,
                     pressed ? styles.pressed : null
                   ]}
+                  testID={`customer-service-option-${serviceType.id}`}
                 >
                   <View style={styles.serviceTypeEmoji}>
                     <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
@@ -2783,7 +2799,7 @@ function CustomerSearchTab({
 
   return (
     <View style={styles.tabStack}>
-      <GlassCard style={styles.searchTabCard} variant="strong">
+      <GlassCard testID="customer-search-overview" style={styles.searchTabCard} variant="strong">
         <View style={styles.tabHeader}>
           <View style={styles.tabIcon}>
             <Search color={colors.cyan} size={22} />
@@ -2979,7 +2995,7 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
 
   return (
     <View style={styles.tabStack}>
-      <GlassCard style={styles.tripOverviewCard} variant="strong">
+      <GlassCard testID="customer-trips-overview" style={styles.tripOverviewCard} variant="strong">
         <View style={styles.tabHeader}>
           <View style={styles.tabIcon}>
             <Car color={colors.cyan} size={22} />
@@ -3252,7 +3268,7 @@ function CustomerProfileTab({
 
   return (
     <View style={styles.profileStack}>
-      <GlassCard style={styles.profileCard} variant="strong">
+      <GlassCard testID="customer-profile-overview" style={styles.profileCard} variant="strong">
         <View style={styles.profileHeader}>
           <View style={styles.profileAvatar}>
             <User color={colors.text} size={24} />
@@ -3299,7 +3315,7 @@ function CustomerProfileTab({
         </View>
       </GlassCard>
 
-      <GlassCard style={styles.profileWalletCard} variant="strong">
+      <GlassCard testID="customer-profile-wallet" style={styles.profileWalletCard} variant="strong">
         <View style={styles.profileSectionHeader}>
           <View style={styles.profileSectionIcon}>
             <CreditCard color={colors.cyan} size={18} />
@@ -3342,7 +3358,7 @@ function CustomerProfileTab({
         </View>
       </GlassCard>
 
-      <GlassCard style={styles.profilePaymentCard}>
+      <GlassCard testID="customer-profile-payment" style={styles.profilePaymentCard}>
         <View style={styles.profileSectionHeader}>
           <View style={styles.profileSectionIcon}>
             <CreditCard color={colors.violetSoft} size={18} />
@@ -3390,7 +3406,7 @@ function CustomerProfileTab({
         </Pressable>
       </GlassCard>
 
-      <GlassCard style={styles.profileSecurityCard}>
+      <GlassCard testID="customer-profile-security" style={styles.profileSecurityCard}>
         <View style={styles.profileSectionHeader}>
           <View style={styles.profileSectionIcon}>
             <ShieldCheck color={colors.success} size={18} />
@@ -3687,10 +3703,10 @@ const styles = StyleSheet.create({
   },
   bookingReviewCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.3)",
-    backgroundColor: "rgba(8, 20, 42, 0.76)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   bookingReviewHeader: {
     flexDirection: "row-reverse",
@@ -3732,8 +3748,9 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.16)",
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   bookingReviewRouteLine: {
     width: 18,
@@ -3802,7 +3819,10 @@ const styles = StyleSheet.create({
     gap: 3,
     padding: spacing.xs,
     borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    borderWidth: 1,
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
   },
   bookingReviewMetricValue: {
     ...rtlText,
@@ -3929,10 +3949,10 @@ const styles = StyleSheet.create({
     minHeight: 224,
     justifyContent: "space-between",
     gap: spacing.lg,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.34)",
-    backgroundColor: "rgba(8, 20, 42, 0.78)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   bookingReadyStatus: {
     minHeight: 84,
@@ -3976,9 +3996,9 @@ const styles = StyleSheet.create({
   },
   serviceTypePicker: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(147, 177, 255, 0.2)"
+    borderColor: glass.strong.borderColor
   },
   serviceTypeHeader: {
     flexDirection: "row-reverse",
@@ -4023,12 +4043,13 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.16)",
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   serviceTypeOptionActive: {
-    borderColor: "rgba(0, 229, 255, 0.44)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.activeControl
   },
   serviceTypeEmoji: {
     width: 44,
@@ -4315,12 +4336,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radii.sm,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   paymentOptionActive: {
-    borderColor: "rgba(0, 229, 255, 0.46)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.activeControl
   },
   paymentOptionText: {
     ...rtlText,
@@ -4578,10 +4600,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-    borderRadius: radii.md
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "transparent"
   },
   navItemActive: {
-    backgroundColor: "rgba(0, 229, 255, 0.14)"
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    boxShadow: shadows.activeControl
   },
   navLabel: {
     ...rtlText,
@@ -4672,13 +4698,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
     borderRadius: radii.md,
-    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.12)"
+    borderColor: controlSurfaces.secondary.borderColor
   },
   pickupOptionActive: {
-    backgroundColor: "rgba(139, 92, 246, 0.16)",
-    borderColor: "rgba(0, 229, 255, 0.38)"
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    boxShadow: shadows.activeControl
   },
   pickupOptionLabel: {
     ...rtlText,
@@ -4785,24 +4812,24 @@ const styles = StyleSheet.create({
   },
   activeTripSurface: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.34)",
-    backgroundColor: "rgba(7, 16, 34, 0.84)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   tripCompletionSurface: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(51, 231, 168, 0.3)",
-    backgroundColor: "rgba(7, 16, 34, 0.88)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   captainSearchSurface: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.32)",
-    backgroundColor: "rgba(7, 16, 34, 0.82)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   captainSearchStatus: {
     ...rtlText,
@@ -4956,10 +4983,10 @@ const styles = StyleSheet.create({
   },
   captainTrackingSurface: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.34)",
-    backgroundColor: "rgba(7, 16, 34, 0.84)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   acceptedCaptainSummary: {
     gap: spacing.sm
@@ -5570,9 +5597,10 @@ const styles = StyleSheet.create({
   },
   searchTabCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.3)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   destinationDiscoveryPanel: {
     gap: spacing.sm,
@@ -5695,12 +5723,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: "rgba(147, 177, 255, 0.18)",
-    backgroundColor: "rgba(255, 255, 255, 0.045)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   searchFilterChipActive: {
-    borderColor: "rgba(0, 229, 255, 0.36)",
-    backgroundColor: "rgba(0, 229, 255, 0.13)"
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.activeControl
   },
   searchFilterText: {
     ...rtlText,
@@ -5728,12 +5757,13 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
   },
   searchResultRowActive: {
-    borderColor: "rgba(0, 229, 255, 0.38)",
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
+    borderColor: controlSurfaces.activeNavigation.borderColor,
+    backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+    boxShadow: shadows.activeControl
   },
   searchResultMetaPill: {
     minHeight: 34,
@@ -5894,9 +5924,10 @@ const styles = StyleSheet.create({
   },
   tripOverviewCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.32)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   tripTimelineBox: {
     gap: spacing.xs,
@@ -6142,9 +6173,10 @@ const styles = StyleSheet.create({
   },
   profileCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(139, 92, 246, 0.32)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   profileHeader: {
     flexDirection: "row-reverse",
@@ -6280,21 +6312,22 @@ const styles = StyleSheet.create({
   },
   profileWalletCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(0, 229, 255, 0.28)"
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
   },
   profilePaymentCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(139, 92, 246, 0.26)"
+    borderColor: controlSurfaces.secondary.borderColor
   },
   profileSecurityCard: {
     gap: spacing.md,
-    padding: spacing.md,
+    padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
-    borderColor: "rgba(51, 231, 168, 0.24)"
+    borderColor: controlSurfaces.secondary.borderColor
   },
   profileSectionHeader: {
     flexDirection: "row-reverse",

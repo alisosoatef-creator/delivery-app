@@ -3,7 +3,15 @@ import { PropsWithChildren } from "react";
 import { StyleProp, StyleSheet, Text, ViewStyle } from "react-native";
 
 import { MotionPressable, type MotionFeedback } from "@/components/motion-pressable";
-import { colors, gradients, radii, spacing, typography } from "@/design/tokens";
+import {
+  colors,
+  controlSurfaces,
+  gradients,
+  radii,
+  shadows,
+  spacing,
+  typography
+} from "@/design/tokens";
 
 type PremiumButtonVariant = "primary" | "secondary";
 
@@ -37,14 +45,27 @@ export function PremiumButton({
       testID="premium-motion-button"
     >
       {isPrimary ? (
-        <LinearGradient
-          pointerEvents="none"
-          colors={gradients.primary}
-          style={StyleSheet.absoluteFill}
-        />
+        <>
+          <LinearGradient
+            pointerEvents="none"
+            colors={gradients.primary}
+            style={StyleSheet.absoluteFill}
+          />
+          <LinearGradient
+            pointerEvents="none"
+            colors={gradients.buttonHighlight}
+            style={styles.highlight}
+            testID="premium-button-highlight"
+          />
+        </>
       ) : null}
       {children}
-      <Text style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}>
+      <Text
+        adjustsFontSizeToFit
+        minimumFontScale={0.78}
+        numberOfLines={1}
+        style={[styles.label, isPrimary ? styles.primaryLabel : styles.secondaryLabel]}
+      >
         {label}
       </Text>
     </MotionPressable>
@@ -64,11 +85,19 @@ const styles = StyleSheet.create({
     borderWidth: 1
   },
   primary: {
-    borderColor: "rgba(255, 255, 255, 0.24)"
+    borderColor: "rgba(255, 255, 255, 0.24)",
+    boxShadow: shadows.primaryAction
   },
   secondary: {
-    borderColor: colors.border,
-    backgroundColor: "rgba(255, 255, 255, 0.04)"
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
+  },
+  highlight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    left: 0,
+    height: "52%"
   },
   label: {
     textAlign: "right",

@@ -4,6 +4,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { controlSurfaces, glass, shadows } from "@/design/tokens";
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CustomerHomeScreen } from "../customer-home-screen";
@@ -215,23 +216,41 @@ describe("CustomerHomeScreen", () => {
 
   it("keeps the floating navigation flexible for compact screens", async () => {
     const screen = await renderCustomerLanding();
-    const navItemStyle = StyleSheet.flatten(
-      screen.getByTestId("customer-motion-tab-0").props.style
-    );
+    const navStyle = StyleSheet.flatten(screen.getByTestId("floating-bottom-nav").props.style);
+    const homeTab = screen.getByTestId("customer-motion-tab-0");
+    const navItemStyle = StyleSheet.flatten(homeTab.props.style);
 
+    expect(navStyle).toMatchObject({
+      backgroundColor: glass.floating.backgroundColor,
+      borderColor: glass.floating.borderColor,
+      boxShadow: shadows.floating
+    });
     expect(navItemStyle).toMatchObject({
+      backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+      borderColor: controlSurfaces.activeNavigation.borderColor,
+      boxShadow: shadows.activeControl,
       flex: 1,
       maxWidth: 72,
       minWidth: 0
     });
+    expect(homeTab.props.accessibilityRole).toBe("tab");
+    expect(homeTab.props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByText("الرئيسية").props.numberOfLines).toBe(1);
   });
 
   it("keeps the customer landing focused on one clear ride request action", async () => {
     const screen = await renderCustomerLanding();
+    const launcherStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-booking-launcher").props.style
+    );
 
     expect(screen.getByTestId("customer-focused-home")).toBeTruthy();
     expect(screen.getByTestId("customer-home-ready-status")).toBeTruthy();
+    expect(launcherStyle).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getByText("جاهز لطلب جديد")).toBeTruthy();
     expect(screen.getAllByLabelText("بدء طلب رحلة")).toHaveLength(1);
     expect(screen.queryByText("رحلتك تبدأ من هنا")).toBeNull();
@@ -263,6 +282,14 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
 
+    const selectedCityStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-service-option-city").props.style
+    );
+    expect(selectedCityStyle).toMatchObject({
+      backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
+      borderColor: controlSurfaces.activeNavigation.borderColor,
+      boxShadow: shadows.activeControl
+    });
     expect(screen.getByTestId("customer-service-selection-page")).toBeTruthy();
     expect(screen.getByText("اختر نوع رحلتك")).toBeTruthy();
     expect(screen.getByLabelText("اختيار رحلة داخل المدينة")).toBeTruthy();
@@ -340,8 +367,24 @@ describe("CustomerHomeScreen", () => {
 
   it("shows a compact booking review without repeating destination discovery", async () => {
     const screen = await renderCustomerHome();
+    const reviewStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-booking-review-card").props.style
+    );
+    const reviewRouteStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-booking-review-route").props.style
+    );
 
     expect(screen.getByTestId("customer-booking-review-card")).toBeTruthy();
+    expect(reviewStyle).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(reviewRouteStyle).toMatchObject({
+      backgroundColor: controlSurfaces.secondary.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor,
+      boxShadow: shadows.cardSubtle
+    });
     expect(screen.getByText("راجع طلبك")).toBeTruthy();
     expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
@@ -975,7 +1018,13 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
     await fireEvent.press(screen.getByLabelText("بدء الرحلة من الكابتن"));
 
-    expect(screen.getByTestId("customer-active-trip-surface")).toBeTruthy();
+    expect(
+      StyleSheet.flatten(screen.getByTestId("customer-active-trip-surface").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getAllByTestId("mock-route-map")).toHaveLength(1);
     expect(screen.getByTestId("customer-active-progress-strip")).toBeTruthy();
     expect(screen.getAllByText("2.1 كم").length).toBeGreaterThanOrEqual(1);
@@ -1196,6 +1245,20 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByText("حسابي"));
 
+    expect(
+      StyleSheet.flatten(screen.getByTestId("customer-profile-overview").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
+    expect(
+      StyleSheet.flatten(screen.getByTestId("customer-profile-payment").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.default.backgroundColor,
+      borderColor: controlSurfaces.secondary.borderColor,
+      boxShadow: shadows.card
+    });
     expect(screen.getByText("حساب العميل")).toBeTruthy();
     expect(screen.getByText("محفظة واصل")).toBeTruthy();
     expect(screen.getByText("120 شيكل")).toBeTruthy();
@@ -1236,6 +1299,13 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByText("البحث"));
 
+    expect(
+      StyleSheet.flatten(screen.getByTestId("customer-search-overview").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
     expect(screen.getByText("مركز اكتشاف الوجهات")).toBeTruthy();
     expect(screen.getByText("اقتراحات ذكية")).toBeTruthy();
     expect(screen.getByText("أقرب وجهة: المنزل")).toBeTruthy();
@@ -1244,6 +1314,20 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("تحديث اقتراحات البحث"));
     expect(screen.getByText("تم تحديث اقتراحات البحث mock فقط الآن")).toBeTruthy();
+  });
+
+  it("keeps the trips overview in the same premium surface family", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("رحلاتي"));
+
+    expect(
+      StyleSheet.flatten(screen.getByTestId("customer-trips-overview").props.style)
+    ).toMatchObject({
+      backgroundColor: glass.strong.backgroundColor,
+      borderColor: glass.strong.borderColor,
+      boxShadow: shadows.cardStrong
+    });
   });
 
   it("searches destinations from the search tab and prepares the selected place for booking", async () => {
