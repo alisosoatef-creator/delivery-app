@@ -21,9 +21,9 @@ import {
   XCircle
 } from "lucide-react-native";
 import type { ReactNode } from "react";
-import { useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { z } from "zod";
 
@@ -334,6 +334,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   );
   const [isMockLocationEnabled, setIsMockLocationEnabled] = useState(false);
   const [activeNav, setActiveNav] = useState<string>(customerHomeMock.navItems[0].label);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
   const [isBookingFlowOpen, setIsBookingFlowOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState<CustomerBookingStep>("service");
   const [tripFlow, dispatchTripFlow] = useReducer(
@@ -364,6 +365,21 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
+
+  useEffect(() => {
+    const keyboardShowSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+    });
+    const keyboardHideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      keyboardShowSubscription.remove();
+      keyboardHideSubscription.remove();
+    };
+  }, []);
+
   const { showConfirmation, stage: rideStage } = tripFlow;
   const acceptedCustomerRequest =
     rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID
@@ -1605,54 +1621,56 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </MotionSurface>
       </ScrollView>
 
-      <GlassCard
-        testID="floating-bottom-nav"
-        variant="floating"
-        style={[
-          styles.bottomNav,
-          {
-            bottom: insets.bottom + spacing.md,
-            columnGap: responsive.navItemGap,
-            left: responsive.navInset,
-            right: responsive.navInset
-          }
-        ]}
-      >
-        {customerHomeMock.navItems.map((item, index) => {
-          const Icon = item.icon;
+      {!isKeyboardVisible ? (
+        <GlassCard
+          testID="floating-bottom-nav"
+          variant="floating"
+          style={[
+            styles.bottomNav,
+            {
+              bottom: insets.bottom + spacing.md,
+              columnGap: responsive.navItemGap,
+              left: responsive.navInset,
+              right: responsive.navInset
+            }
+          ]}
+        >
+          {customerHomeMock.navItems.map((item, index) => {
+            const Icon = item.icon;
 
-          return (
-            <MotionPressable
-              key={item.label}
-              accessibilityLabel={`فتح تبويب ${item.label}`}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: activeNav === item.label }}
-              feedback="selection"
-              hitSlop={8}
-              onPress={() => {
-                setNotice(null);
-                setActiveNav(item.label);
-                if (item.label === "الرئيسية") {
-                  setIsBookingFlowOpen(false);
-                }
-              }}
-              style={[styles.navItem, activeNav === item.label ? styles.navItemActive : null]}
-              testID={`customer-motion-tab-${index}`}
-            >
-              <Icon color={activeNav === item.label ? colors.text : colors.textMuted} size={18} />
-              <Text
-                adjustsFontSizeToFit
-                minimumFontScale={0.82}
-                numberOfLines={1}
-                style={[styles.navLabel, activeNav === item.label ? styles.navLabelActive : null]}
+            return (
+              <MotionPressable
+                key={item.label}
+                accessibilityLabel={`فتح تبويب ${item.label}`}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: activeNav === item.label }}
+                feedback="selection"
+                hitSlop={8}
+                onPress={() => {
+                  setNotice(null);
+                  setActiveNav(item.label);
+                  if (item.label === "الرئيسية") {
+                    setIsBookingFlowOpen(false);
+                  }
+                }}
+                style={[styles.navItem, activeNav === item.label ? styles.navItemActive : null]}
+                testID={`customer-motion-tab-${index}`}
               >
-                {item.label}
-              </Text>
-            </MotionPressable>
-          );
-        })}
-      </GlassCard>
-      {activeNav !== "الرئيسية" ? (
+                <Icon color={activeNav === item.label ? colors.text : colors.textMuted} size={18} />
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
+                  numberOfLines={1}
+                  style={[styles.navLabel, activeNav === item.label ? styles.navLabelActive : null]}
+                >
+                  {item.label}
+                </Text>
+              </MotionPressable>
+            );
+          })}
+        </GlassCard>
+      ) : null}
+      {!isKeyboardVisible && activeNav !== "الرئيسية" ? (
         <View pointerEvents="none" style={[styles.activeNavToast, { bottom: insets.bottom + 92 }]}>
           <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
         </View>

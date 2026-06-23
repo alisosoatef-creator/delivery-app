@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import * as Haptics from "expo-haptics";
-import { fireEvent, render } from "@testing-library/react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { controlSurfaces, glass, shadows } from "@/design/tokens";
@@ -236,6 +236,33 @@ describe("CustomerHomeScreen", () => {
     expect(homeTab.props.accessibilityRole).toBe("tab");
     expect(homeTab.props.accessibilityState).toEqual({ selected: true });
     expect(screen.getByText("الرئيسية").props.numberOfLines).toBe(1);
+  });
+
+  it("hides the floating navigation while the Android keyboard is visible", async () => {
+    const callbacks: Record<string, (() => void) | undefined> = {};
+    const addListenerSpy = jest
+      .spyOn(Keyboard, "addListener")
+      .mockImplementation((event, callback) => {
+        callbacks[event] = callback as () => void;
+
+        return { remove: jest.fn() } as unknown as ReturnType<typeof Keyboard.addListener>;
+      });
+    const screen = await renderCustomerLanding();
+
+    expect(screen.getByTestId("floating-bottom-nav")).toBeTruthy();
+
+    await act(async () => {
+      callbacks.keyboardDidShow?.();
+    });
+
+    expect(screen.queryByTestId("floating-bottom-nav")).toBeNull();
+
+    await act(async () => {
+      callbacks.keyboardDidHide?.();
+    });
+
+    expect(screen.getByTestId("floating-bottom-nav")).toBeTruthy();
+    addListenerSpy.mockRestore();
   });
 
   it("keeps the customer landing focused on one clear ride request action", async () => {
