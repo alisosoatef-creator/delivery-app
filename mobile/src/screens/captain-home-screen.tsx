@@ -51,6 +51,14 @@ const captainTabs = [
 
 type CaptainTab = (typeof captainTabs)[number]["key"];
 
+function getCaptainAcceptanceReadinessCopy(request: CaptainAvailableRequest) {
+  return {
+    detail: "المسار والدفع واضحان",
+    status: `ابدأ خلال ${request.etaToPickup}`,
+    title: "الطلب جاهز للقبول"
+  };
+}
+
 export function CaptainHomeScreen() {
   const insets = useSafeAreaInsets();
   const responsive = useResponsiveLayout();
@@ -426,6 +434,8 @@ function CaptainAcceptPreviewCard({
   onConfirm: () => void;
   request: CaptainAvailableRequest;
 }) {
+  const acceptanceReadinessCopy = getCaptainAcceptanceReadinessCopy(request);
+
   return (
     <GlassCard testID="captain-request-details" style={styles.acceptPreviewCard} variant="strong">
       <View style={styles.acceptPreviewHeader}>
@@ -455,6 +465,33 @@ function CaptainAcceptPreviewCard({
         <PreviewRow label="الدخل المتوقع" value={request.price} />
         <PreviewRow label="المسافة" value={request.distance} />
         <PreviewRow label="جاهز للانطلاق" value={`الوصول خلال ${request.etaToPickup}`} />
+      </View>
+
+      <View
+        accessibilityLabel={acceptanceReadinessCopy.title}
+        testID="captain-acceptance-readiness-strip"
+        style={styles.acceptanceReadinessStrip}
+      >
+        <View style={styles.acceptanceReadinessIcon}>
+          <CheckCircle color={colors.success} size={17} />
+        </View>
+        <View style={styles.acceptanceReadinessCopy}>
+          <Text numberOfLines={1} selectable style={styles.acceptanceReadinessTitle}>
+            {acceptanceReadinessCopy.title}
+          </Text>
+          <Text numberOfLines={2} selectable style={styles.acceptanceReadinessDetail}>
+            {acceptanceReadinessCopy.detail}
+          </Text>
+        </View>
+        <Text
+          adjustsFontSizeToFit
+          minimumFontScale={0.82}
+          numberOfLines={2}
+          selectable
+          style={styles.acceptanceReadinessStatus}
+        >
+          {acceptanceReadinessCopy.status}
+        </Text>
       </View>
 
       <View style={styles.previewActions}>
@@ -1200,6 +1237,56 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900"
+  },
+  acceptanceReadinessStrip: {
+    minHeight: 72,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.2)",
+    backgroundColor: "rgba(51, 231, 168, 0.08)",
+    boxShadow: shadows.cardSubtle
+  },
+  acceptanceReadinessIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.28)",
+    backgroundColor: "rgba(51, 231, 168, 0.1)"
+  },
+  acceptanceReadinessCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  acceptanceReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  acceptanceReadinessDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  acceptanceReadinessStatus: {
+    ...rtlText,
+    maxWidth: 104,
+    flexShrink: 1,
+    color: colors.success,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    lineHeight: 17
   },
   previewActions: {
     flexDirection: "row-reverse",

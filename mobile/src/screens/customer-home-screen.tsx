@@ -89,6 +89,12 @@ type PaymentReadinessCopy = {
   title: string;
 };
 
+type RequestReadinessCopy = {
+  detail: string;
+  status: string;
+  title: string;
+};
+
 type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
 };
@@ -403,6 +409,28 @@ function getPaymentReadinessCopy({
   };
 }
 
+function getRequestReadinessCopy({
+  paymentMethod,
+  visaValidationReady
+}: {
+  paymentMethod: PaymentMethod;
+  visaValidationReady: boolean;
+}): RequestReadinessCopy {
+  if (paymentMethod === "فيزا" && !visaValidationReady) {
+    return {
+      detail: "بيانات فيزا مطلوبة",
+      status: "فيزا غير مكتملة",
+      title: "أكمل الدفع قبل الإرسال"
+    };
+  }
+
+  return {
+    detail: "المسار والدفع مكتملان",
+    status: paymentMethod === "فيزا" ? "فيزا جاهزة للإرسال" : "كاش جاهز للإرسال",
+    title: "الطلب جاهز للإرسال"
+  };
+}
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const responsive = useResponsiveLayout();
@@ -519,6 +547,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     shouldSaveVisaCard,
     visaValidationReady: visaValidationResult.success
   });
+  const requestReadinessCopy = getRequestReadinessCopy({
+    paymentMethod,
+    visaValidationReady: visaValidationResult.success
+  });
+  const isRequestBlockedByPayment = paymentMethod === "فيزا" && !visaValidationResult.success;
   const deliveryPackageDescriptionTrimmed = deliveryPackageDescription.trim();
   const captainDestinationDetail =
     selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
@@ -661,6 +694,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     if (!selectedDestination) {
       setNotice("اختر وجهتك قبل تأكيد الطلب");
       dispatchTripFlow({ type: "reset" });
+      return;
+    }
+
+    if (paymentMethod === "فيزا" && !visaValidationResult.success) {
+      setNotice("أكمل بيانات فيزا قبل تأكيد الطلب");
       return;
     }
 
@@ -1722,6 +1760,43 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                               {paymentReadinessCopy.status}
                             </Text>
                           </View>
+                        </View>
+
+                        <View
+                          accessibilityLabel={requestReadinessCopy.title}
+                          testID="customer-request-readiness-strip"
+                          style={styles.requestReadinessStrip}
+                        >
+                          <View
+                            style={[
+                              styles.requestReadinessIcon,
+                              isRequestBlockedByPayment
+                                ? styles.requestReadinessIconWarning
+                                : styles.requestReadinessIconReady
+                            ]}
+                          >
+                            <ShieldCheck
+                              color={isRequestBlockedByPayment ? colors.warning : colors.success}
+                              size={17}
+                            />
+                          </View>
+                          <View style={styles.requestReadinessCopy}>
+                            <Text numberOfLines={1} selectable style={styles.requestReadinessTitle}>
+                              {requestReadinessCopy.title}
+                            </Text>
+                            <Text numberOfLines={2} selectable style={styles.requestReadinessDetail}>
+                              {requestReadinessCopy.detail}
+                            </Text>
+                          </View>
+                          <Text
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.82}
+                            numberOfLines={2}
+                            selectable
+                            style={styles.requestReadinessStatus}
+                          >
+                            {requestReadinessCopy.status}
+                          </Text>
                         </View>
                       </GlassCard>
                     </MotionSurface>
@@ -4927,6 +5002,62 @@ const styles = StyleSheet.create({
     fontSize: typography.tiny,
     fontWeight: "800",
     lineHeight: 16
+  },
+  requestReadinessStrip: {
+    minHeight: 76,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
+  },
+  requestReadinessIcon: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1
+  },
+  requestReadinessIconReady: {
+    borderColor: "rgba(53, 242, 176, 0.26)",
+    backgroundColor: "rgba(53, 242, 176, 0.1)"
+  },
+  requestReadinessIconWarning: {
+    borderColor: "rgba(255, 203, 107, 0.26)",
+    backgroundColor: "rgba(255, 203, 107, 0.1)"
+  },
+  requestReadinessCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  requestReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  requestReadinessDetail: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  requestReadinessStatus: {
+    ...rtlText,
+    maxWidth: 126,
+    flexShrink: 1,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    lineHeight: 17
   },
   compactConfirmationCard: {
     gap: spacing.md,

@@ -57,6 +57,13 @@ async function renderCustomerHome() {
   return screen;
 }
 
+async function fillMockVisaDetails(screen: Awaited<ReturnType<typeof render>>) {
+  await fireEvent.changeText(screen.getByLabelText("اسم حامل البطاقة"), "علي محمد");
+  await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "4242424242424242");
+  await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "09/28");
+  await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "123");
+}
+
 async function renderCustomerHomeWithCaptainAcceptanceProbe(
   advanceTo: "service" | "pickup" | "destination" | "details" = "details"
 ) {
@@ -595,6 +602,7 @@ describe("CustomerHomeScreen", () => {
       "مطعم شورما عكيفك - الباب الرئيسي"
     );
     await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fillMockVisaDetails(screen);
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
     expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
@@ -602,7 +610,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getAllByText("زواتا ← نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("خدمة واصل • 2.4 كم")).toBeTruthy();
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("فيزا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
 
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
@@ -644,6 +652,7 @@ describe("CustomerHomeScreen", () => {
       "مطعم شورما عكيفك - الباب الرئيسي"
     );
     await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fillMockVisaDetails(screen);
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
 
@@ -656,7 +665,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.queryByTestId("customer-live-request-hub")).toBeNull();
     expect(screen.getAllByText("الكابتن في الطريق إليك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("رحلة داخل المدينة • 25 شيكل")).toBeTruthy();
-    expect(screen.getAllByText("فيزا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("تفصيل: مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
   });
 
@@ -750,6 +759,53 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("فيزا جاهزة للطلب")).toBeTruthy();
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("الحفظ مفعّل mock")).toBeTruthy();
+  });
+
+  it("shows a final request readiness signal before sending the booking", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByTestId("customer-request-readiness-strip")).toBeTruthy();
+    expect(screen.getByText("الطلب جاهز للإرسال")).toBeTruthy();
+    expect(screen.getByText("المسار والدفع مكتملان")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+
+    expect(screen.getByText("أكمل الدفع قبل الإرسال")).toBeTruthy();
+    expect(screen.getByText("بيانات فيزا مطلوبة")).toBeTruthy();
+
+    await fillMockVisaDetails(screen);
+
+    expect(screen.getByText("الطلب جاهز للإرسال")).toBeTruthy();
+    expect(screen.getByText("فيزا جاهزة للإرسال")).toBeTruthy();
+  });
+
+  it("keeps the customer request readiness copy visually bounded", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByText("الطلب جاهز للإرسال").props.numberOfLines).toBe(1);
+    expect(screen.getByText("المسار والدفع مكتملان").props.numberOfLines).toBe(2);
+    expect(screen.getByText("كاش جاهز للإرسال").props.numberOfLines).toBe(2);
+    expect(screen.getByText("كاش جاهز للإرسال").props.adjustsFontSizeToFit).toBe(true);
+  });
+
+  it("keeps the customer on booking review until Visa details are complete", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+
+    expect(screen.getByText("أكمل بيانات فيزا قبل تأكيد الطلب")).toBeTruthy();
+    expect(screen.getByTestId("customer-booking-review-card")).toBeTruthy();
+    expect(screen.queryByTestId("customer-compact-confirmation-card")).toBeNull();
+
+    await fireEvent.changeText(screen.getByLabelText("اسم حامل البطاقة"), "علي محمد");
+    await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "4242424242424242");
+    await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "09/28");
+    await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "123");
+    await fireEvent.press(screen.getByLabelText("طلب رحلة"));
+
+    expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
   });
 
   it("lets the customer choose one of three simple service types before booking", async () => {
@@ -1135,6 +1191,7 @@ describe("CustomerHomeScreen", () => {
       "مطعم شورما عكيفك - الباب الرئيسي"
     );
     await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fillMockVisaDetails(screen);
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
@@ -1146,7 +1203,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(
       1
     );
-    expect(screen.getByText("فيزا")).toBeTruthy();
+    expect(screen.getByText("فيزا • **** 4242")).toBeTruthy();
   });
 
   it("shows a unified customer journey timeline inside the trips tab", async () => {
@@ -1206,6 +1263,7 @@ describe("CustomerHomeScreen", () => {
       "مطعم شورما عكيفك - الباب الرئيسي"
     );
     await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fillMockVisaDetails(screen);
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
@@ -1215,7 +1273,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("إيصال الرحلة")).toBeTruthy();
     expect(screen.getByText("رقم الإيصال: WAS-0001")).toBeTruthy();
     expect(screen.getByText("المبلغ المدفوع: 25 شيكل")).toBeTruthy();
-    expect(screen.getByText("طريقة الدفع: فيزا")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع: فيزا • **** 4242")).toBeTruthy();
     expect(screen.getByText("الخدمة: خدمة واصل")).toBeTruthy();
     expect(screen.getByText("المسار: زواتا ← نابلس - رفيديا")).toBeTruthy();
     expect(screen.getByText("تفصيل الوجهة: مطعم شورما عكيفك - الباب الرئيسي")).toBeTruthy();
@@ -1264,6 +1322,7 @@ describe("CustomerHomeScreen", () => {
       "مطعم شورما عكيفك - الباب الرئيسي"
     );
     await fireEvent.press(screen.getByLabelText("فيزا"));
+    await fillMockVisaDetails(screen);
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("تأكيد الطلب"));
     await fireEvent.press(screen.getByLabelText("قبول طلب العميل من الكابتن"));
@@ -1280,7 +1339,7 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("ملخص الرحلة المكتملة")).toBeTruthy();
     expect(screen.getByText("إيصال WAS-0001")).toBeTruthy();
     expect(screen.getByText("حالة الدفع: مدفوع mock")).toBeTruthy();
-    expect(screen.getByText("طريقة الدفع: فيزا")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع: فيزا • **** 4242")).toBeTruthy();
     expect(screen.getByText("تقييم الرحلة: 5 نجوم")).toBeTruthy();
     expect(screen.getByText("ملاحظاتك: كابتن محترف، قيادة هادئة • الكابتن ممتاز")).toBeTruthy();
     expect(screen.getAllByText("مطعم شورما عكيفك - الباب الرئيسي").length).toBeGreaterThanOrEqual(

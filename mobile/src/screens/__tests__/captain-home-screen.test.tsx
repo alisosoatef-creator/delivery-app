@@ -283,6 +283,28 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByTestId("captain-route-map")).toBeTruthy();
   });
 
+  it("shows final captain acceptance readiness before confirming request", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+
+    expect(screen.getByTestId("captain-acceptance-readiness-strip")).toBeTruthy();
+    expect(screen.getByText("الطلب جاهز للقبول")).toBeTruthy();
+    expect(screen.getByText("المسار والدفع واضحان")).toBeTruthy();
+    expect(screen.getByText("ابدأ خلال 3 د")).toBeTruthy();
+  });
+
+  it("keeps the captain acceptance readiness copy visually bounded", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+
+    expect(screen.getByText("الطلب جاهز للقبول").props.numberOfLines).toBe(1);
+    expect(screen.getByText("المسار والدفع واضحان").props.numberOfLines).toBe(2);
+    expect(screen.getByText("ابدأ خلال 3 د").props.numberOfLines).toBe(2);
+    expect(screen.getByText("ابدأ خلال 3 د").props.adjustsFontSizeToFit).toBe(true);
+  });
+
   it("surfaces customer service note and payment clearly for the captain", async () => {
     const screen = await renderCaptainHomeWithSubmittedRequestProbe();
 
