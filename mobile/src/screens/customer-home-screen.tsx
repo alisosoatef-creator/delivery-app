@@ -558,6 +558,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       ? `${destinationDetail} • ${selectedDeliveryPackageType} • ${deliveryPackageDescriptionTrimmed}`
       : destinationDetail;
   const isFocusedCustomerHome = activeNav === "الرئيسية" && !isBookingFlowOpen;
+  const shouldShowFloatingNav =
+    !isKeyboardVisible && !(isBookingFlowOpen && bookingStep !== "details");
 
   function resetRide() {
     dispatchTripFlow({ type: "reset" });
@@ -1823,7 +1825,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </MotionSurface>
       </ScrollView>
 
-      {!isKeyboardVisible ? (
+      {shouldShowFloatingNav ? (
         <GlassCard
           testID="floating-bottom-nav"
           variant="floating"

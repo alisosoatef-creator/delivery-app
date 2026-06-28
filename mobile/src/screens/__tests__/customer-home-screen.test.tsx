@@ -272,6 +272,23 @@ describe("CustomerHomeScreen", () => {
     addListenerSpy.mockRestore();
   });
 
+  it("hides the floating navigation while the booking flow is open", async () => {
+    const screen = await renderCustomerLanding();
+
+    expect(screen.getByTestId("floating-bottom-nav")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+
+    expect(screen.queryByTestId("floating-bottom-nav")).toBeNull();
+  });
+
+  it("hides the floating navigation while choosing a destination", async () => {
+    const screen = await renderCustomerDestinationSelection();
+
+    expect(screen.getByTestId("customer-destination-selection-page")).toBeTruthy();
+    expect(screen.queryByTestId("floating-bottom-nav")).toBeNull();
+  });
+
   it("keeps the customer landing focused on one clear ride request action", async () => {
     const screen = await renderCustomerLanding();
     const launcherStyle = StyleSheet.flatten(
@@ -1509,44 +1526,39 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
     await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
     await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
-    await fireEvent.press(screen.getByLabelText("فتح تبويب البحث"));
 
-    expect(screen.getByText("بحث التسليم")).toBeTruthy();
-    expect(screen.getByText("اختر نقطة تسليم الطلبية")).toBeTruthy();
-    expect(screen.getByText("نطاق البحث: توصيل طلبية")).toBeTruthy();
-    expect(screen.getByLabelText("بحث وجهة التسليم")).toBeTruthy();
+    expect(screen.getByText("اختر وجهتك")).toBeTruthy();
+    expect(screen.getByText("توصيل طلبية")).toBeTruthy();
+    expect(screen.getByLabelText("ابحث عن وجهة")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("اختيار نتيجة المنزل"));
+    await fireEvent.press(screen.getByLabelText("اختيار وجهة المنزل"));
 
-    expect(screen.getByText("تم اختيار المنزل كوجهة تسليم")).toBeTruthy();
-    expect(screen.getByText("وجهة التسليم جاهزة")).toBeTruthy();
-    expect(screen.getByText("استخدام وجهة التسليم")).toBeTruthy();
+    expect(screen.getByText("الوجهة المختارة")).toBeTruthy();
+    expect(screen.getAllByText("المنزل").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("متابعة إلى تفاصيل الطلب")).toBeTruthy();
   });
 
-  it("lets delivery customers add a captain note from search before confirming", async () => {
+  it("lets delivery customers add a captain note from the destination step before confirming", async () => {
     const screen = await renderCustomerServiceSelection();
 
     await fireEvent.press(screen.getByLabelText("اختيار توصيل طلبية"));
     await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
     await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
-    await fireEvent.press(screen.getByLabelText("فتح تبويب البحث"));
-    await fireEvent.press(screen.getByLabelText("اختيار نتيجة المنزل"));
+    await fireEvent.press(screen.getByLabelText("اختيار وجهة المنزل"));
 
-    expect(screen.getByText("ملاحظة التسليم للكابتن")).toBeTruthy();
+    expect(screen.getByText("ملاحظة الوصول للكابتن")).toBeTruthy();
     expect(
-      screen.getByText("اكتب وصفا قصيرا يساعد الكابتن يعرف نقطة التسليم بالضبط.")
+      screen.getByText("اكتب علامة واضحة مثل اسم البوابة أو مدخل المبنى.")
     ).toBeTruthy();
 
     await fireEvent.changeText(
-      screen.getByLabelText("ملاحظة التسليم للكابتن"),
+      screen.getByLabelText("ملاحظة الوصول للكابتن"),
       "استلام من الباب الرئيسي وتسليم عند الاستقبال"
     );
 
-    expect(
-      screen.getByText("سيظهر للكابتن: استلام من الباب الرئيسي وتسليم عند الاستقبال")
-    ).toBeTruthy();
+    expect(screen.getByText("استلام من الباب الرئيسي وتسليم عند الاستقبال")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("استخدام وجهة التسليم"));
+    await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
     await fireEvent.press(screen.getByLabelText("طلب رحلة"));
 
     expect(screen.getByTestId("customer-compact-confirmation-card")).toBeTruthy();
