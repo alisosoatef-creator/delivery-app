@@ -44,6 +44,15 @@ type CaptainActiveTripScreenProps = {
   request: CaptainAvailableRequest;
 };
 
+type CaptainActionGuideCopy = {
+  detailLabel: string;
+  detailValue: string;
+  meta: string;
+  nextButtonLabel: string;
+  stepLabel: string;
+  title: string;
+};
+
 export function CaptainActiveTripScreen({
   onBackToRequests,
   request
@@ -170,6 +179,8 @@ export function CaptainActiveTripScreen({
             />
           </View>
         </GlassCard>
+
+        <CaptainTripActionGuide request={request} step={tripStep} />
 
         <CaptainRouteMap request={request} step={tripStep} />
 
@@ -305,6 +316,109 @@ export function CaptainActiveTripScreen({
       </ScrollView>
     </View>
   );
+}
+
+function CaptainTripActionGuide({
+  request,
+  step
+}: {
+  request: CaptainAvailableRequest;
+  step: CaptainTripStep;
+}) {
+  const guide = getCaptainActionGuideCopy(step, request);
+
+  return (
+    <GlassCard testID="captain-trip-action-guide" style={styles.actionGuideCard}>
+      <View style={styles.actionGuideTop}>
+        <View style={styles.actionGuideStepBadge}>
+          <Text selectable style={styles.actionGuideStepText}>
+            {guide.stepLabel}
+          </Text>
+        </View>
+        <View style={styles.actionGuideCopy}>
+          <Text selectable style={styles.actionGuideTitle}>
+            {guide.title}
+          </Text>
+          <Text selectable style={styles.actionGuideMeta}>
+            {guide.meta}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.actionGuideDetails}>
+        <View style={styles.actionGuideDetailBox}>
+          <Text selectable style={styles.actionGuideDetailLabel}>
+            {guide.detailLabel}
+          </Text>
+          <Text selectable style={styles.actionGuideDetailValue}>
+            {guide.detailValue}
+          </Text>
+        </View>
+        <View style={styles.actionGuideDetailBox}>
+          <Text selectable style={styles.actionGuideDetailLabel}>
+            المسافة
+          </Text>
+          <Text selectable style={styles.actionGuideDetailValue}>
+            {request.distance}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.nextActionPill}>
+        <Navigation color={colors.cyan} size={16} />
+        <Text selectable style={styles.nextActionText}>
+          {`الزر التالي: ${guide.nextButtonLabel}`}
+        </Text>
+      </View>
+    </GlassCard>
+  );
+}
+
+function getCaptainActionGuideCopy(
+  step: CaptainTripStep,
+  request: CaptainAvailableRequest
+): CaptainActionGuideCopy {
+  if (step === "arrived") {
+    return {
+      detailLabel: "نقطة الصعود",
+      detailValue: request.pickup,
+      meta: "راجع اسم العميل وملاحظة الوجهة قبل بدء الرحلة",
+      nextButtonLabel: "ابدأ الرحلة الآن",
+      stepLabel: "خطوة الكابتن 2 من 4",
+      title: "ثبّت صعود العميل"
+    };
+  }
+
+  if (step === "driving") {
+    return {
+      detailLabel: "الوجهة",
+      detailValue: request.destinationArea,
+      meta: "ابق على المسار النشط حتى الوصول لنقطة التسليم",
+      nextButtonLabel: "إنهاء الرحلة",
+      stepLabel: "خطوة الكابتن 3 من 4",
+      title: "قد إلى الوجهة"
+    };
+  }
+
+  if (step === "completed") {
+    return {
+      detailLabel: "الأرباح",
+      detailValue: request.price,
+      meta: "تم حفظ الرحلة داخل تجربة mock وجاهزة للرجوع للطلبات",
+      nextButtonLabel: "العودة للطلبات",
+      stepLabel: "خطوة الكابتن 4 من 4",
+      title: "الرحلة مكتملة"
+    };
+  }
+
+  return {
+    detailLabel: "نقطة الالتقاء",
+    detailValue: request.pickup,
+    meta: `اتجه للعميل خلال ${request.etaToPickup} وخلّي المسار واضح`,
+    nextButtonLabel: "وصلت للعميل",
+    stepLabel: "خطوة الكابتن 1 من 4",
+    title: "اتجه إلى العميل"
+  };
 }
 
 function CaptainSupportPanel({
@@ -538,6 +652,99 @@ const styles = StyleSheet.create({
   },
   progressLabelActive: {
     color: colors.text
+  },
+  actionGuideCard: {
+    gap: spacing.md,
+    padding: layoutRhythm.cardPadding,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(10, 21, 43, 0.72)",
+    boxShadow: glass.strong.shadow
+  },
+  actionGuideTop: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  actionGuideStepBadge: {
+    minHeight: 40,
+    justifyContent: "center",
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.34)",
+    backgroundColor: "rgba(139, 92, 246, 0.14)"
+  },
+  actionGuideStepText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  actionGuideCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 4
+  },
+  actionGuideTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.section,
+    fontWeight: "900"
+  },
+  actionGuideMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800",
+    lineHeight: 20
+  },
+  actionGuideDetails: {
+    flexDirection: "row-reverse",
+    gap: spacing.sm
+  },
+  actionGuideDetailBox: {
+    flex: 1,
+    minHeight: 62,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor,
+    boxShadow: shadows.cardSubtle
+  },
+  actionGuideDetailLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  actionGuideDetailValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  nextActionPill: {
+    minHeight: touchTargets.minimum,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  nextActionText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   customerCard: {
     gap: spacing.md,

@@ -82,6 +82,13 @@ type CustomerSearchCopy = {
   hint: string;
 };
 
+type PaymentReadinessCopy = {
+  detail: string;
+  method: string;
+  status: string;
+  title: string;
+};
+
 type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
 };
@@ -125,6 +132,38 @@ const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
 type CustomerBookingStep = "service" | "pickup" | "destination" | "details";
+
+const CUSTOMER_BOOKING_STEPS: ReadonlyArray<{
+  helper: string;
+  id: CustomerBookingStep;
+  shortTitle: string;
+  title: string;
+}> = [
+  {
+    helper: "اختر داخل المدينة، خارج المدينة، أو توصيل طلبية.",
+    id: "service",
+    shortTitle: "نوع",
+    title: "نوع الرحلة"
+  },
+  {
+    helper: "فعّل موقعك أو اختر أقرب نقطة انطلاق مناسبة.",
+    id: "pickup",
+    shortTitle: "انطلاق",
+    title: "اختيار موقع الانطلاق"
+  },
+  {
+    helper: "حدد الوجهة وأضف ملاحظة قصيرة للكابتن.",
+    id: "destination",
+    shortTitle: "وجهة",
+    title: "الوجهة والملاحظة"
+  },
+  {
+    helper: "راجع المسار، السعر، وطريقة الدفع قبل الإرسال.",
+    id: "details",
+    shortTitle: "مراجعة",
+    title: "المراجعة والدفع"
+  }
+];
 
 const visaPaymentSchema = z.object({
   cardholderName: z.string().trim().min(2, "اسم حامل البطاقة مطلوب"),
@@ -325,6 +364,45 @@ function getVisaCardLastFour(cardNumber: string): string {
   return digits.length >= 4 ? digits.slice(-4) : "";
 }
 
+function getPaymentReadinessCopy({
+  effectivePaymentMethod,
+  isVisaPaymentDirty,
+  paymentMethod,
+  shouldSaveVisaCard,
+  visaValidationReady
+}: {
+  effectivePaymentMethod: string;
+  isVisaPaymentDirty: boolean;
+  paymentMethod: PaymentMethod;
+  shouldSaveVisaCard: boolean;
+  visaValidationReady: boolean;
+}): PaymentReadinessCopy {
+  if (paymentMethod !== "فيزا") {
+    return {
+      detail: "بدون بيانات إضافية",
+      method: effectivePaymentMethod,
+      status: "الدفع عند الاستلام للكابتن",
+      title: "الدفع جاهز للطلب"
+    };
+  }
+
+  if (visaValidationReady) {
+    return {
+      detail: shouldSaveVisaCard ? "الحفظ مفعّل mock" : "بدون حفظ البطاقة",
+      method: effectivePaymentMethod,
+      status: "لن يتم خصم أي مبلغ الآن",
+      title: "فيزا جاهزة للطلب"
+    };
+  }
+
+  return {
+    detail: isVisaPaymentDirty ? "راجع بيانات البطاقة قبل الطلب" : "أدخل بيانات البطاقة",
+    method: "فيزا",
+    status: "تجربة mock بدون خصم",
+    title: "بانتظار إكمال فيزا"
+  };
+}
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const responsive = useResponsiveLayout();
@@ -434,6 +512,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     paymentMethod === "فيزا" && visaValidationResult.success && visaCardLastFour
       ? `فيزا • **** ${visaCardLastFour}`
       : paymentMethod;
+  const paymentReadinessCopy = getPaymentReadinessCopy({
+    effectivePaymentMethod,
+    isVisaPaymentDirty,
+    paymentMethod,
+    shouldSaveVisaCard,
+    visaValidationReady: visaValidationResult.success
+  });
   const deliveryPackageDescriptionTrimmed = deliveryPackageDescription.trim();
   const captainDestinationDetail =
     selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
@@ -1243,6 +1328,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 </Text>
               </Pressable>
 
+              <CustomerBookingProgress currentStep={bookingStep} />
+
               {bookingStep === "service" ? (
                 <CustomerServiceSelectionPage
                   onContinue={continueSelectedServiceType}
@@ -1596,6 +1683,46 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                             </View>
                           ) : null}
                         </View>
+
+                        <View
+                          testID="customer-payment-readiness-card"
+                          style={styles.paymentReadinessCard}
+                        >
+                          <View style={styles.paymentReadinessIcon}>
+                            <CreditCard
+                              color={
+                                paymentMethod === "فيزا" && !visaValidationResult.success
+                                  ? colors.warning
+                                  : colors.cyan
+                              }
+                              size={18}
+                            />
+                          </View>
+                          <View style={styles.paymentReadinessCopy}>
+                            <Text selectable style={styles.paymentReadinessTitle}>
+                              {paymentReadinessCopy.title}
+                            </Text>
+                            <Text selectable style={styles.paymentReadinessMethod}>
+                              {paymentReadinessCopy.method}
+                            </Text>
+                            <Text selectable style={styles.paymentReadinessMeta}>
+                              {paymentReadinessCopy.detail}
+                            </Text>
+                          </View>
+                          <View style={styles.paymentReadinessStatus}>
+                            <CheckCircle
+                              color={
+                                paymentMethod === "فيزا" && !visaValidationResult.success
+                                  ? colors.textMuted
+                                  : colors.success
+                              }
+                              size={15}
+                            />
+                            <Text selectable style={styles.paymentReadinessStatusText}>
+                              {paymentReadinessCopy.status}
+                            </Text>
+                          </View>
+                        </View>
                       </GlassCard>
                     </MotionSurface>
                   ) : null}
@@ -1669,11 +1796,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             );
           })}
         </GlassCard>
-      ) : null}
-      {!isKeyboardVisible && activeNav !== "الرئيسية" ? (
-        <View pointerEvents="none" style={[styles.activeNavToast, { bottom: insets.bottom + 92 }]}>
-          <Text style={styles.activeNavText}>{`التبويب النشط: ${activeNav}`}</Text>
-        </View>
       ) : null}
     </View>
   );
@@ -1997,21 +2119,36 @@ function CustomerServiceSelectionPage({
                   ]}
                   testID={`customer-service-option-${serviceType.id}`}
                 >
-                  <View style={styles.serviceTypeEmoji}>
-                    <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
+                  <View style={styles.serviceTypeVisual}>
+                    <View style={styles.serviceTypeEmoji}>
+                      <Text style={styles.serviceTypeEmojiText}>{serviceType.emoji}</Text>
+                    </View>
+                    <Text selectable style={styles.serviceTypeVehicleText}>
+                      {serviceType.vehicle}
+                    </Text>
                   </View>
                   <View style={styles.serviceTypeCopy}>
                     <Text selectable style={styles.serviceTypeOptionTitle}>
                       {serviceType.label}
                     </Text>
                     <Text selectable style={styles.serviceTypeOptionMeta}>
-                      {serviceType.vehicle} • {serviceType.description}
+                      {serviceType.description}
+                    </Text>
+                    <Text selectable style={styles.serviceTypeBadgeText}>
+                      {serviceType.badge}
                     </Text>
                   </View>
-                  <View style={styles.serviceTypePricePill}>
-                    <Text selectable style={styles.serviceTypePriceText}>
-                      {serviceType.price}
-                    </Text>
+                  <View style={styles.serviceTypeMetrics}>
+                    <View style={styles.serviceTypePricePill}>
+                      <Text selectable style={styles.serviceTypePriceText}>
+                        {serviceType.price}
+                      </Text>
+                    </View>
+                    <View style={styles.serviceTypeEtaPill}>
+                      <Text selectable style={styles.serviceTypeEtaText}>
+                        {serviceType.eta}
+                      </Text>
+                    </View>
                   </View>
                 </Pressable>
               );
@@ -2061,7 +2198,7 @@ function CustomerServiceSelectionPage({
 
           <PremiumButton
             accessibilityLabel="متابعة الخدمة المختارة"
-            label="متابعة"
+            label={selectedServiceType.nextStepAction}
             onPress={onContinue}
             style={styles.serviceNextStepButton}
           >
@@ -2084,14 +2221,14 @@ function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
         >
           <View testID="customer-home-ready-status" style={styles.bookingReadyStatus}>
             <View style={styles.bookingReadyIcon}>
-              <CheckCircle color={colors.success} size={22} />
+              <MapPin color={colors.cyan} size={24} />
             </View>
             <View style={styles.bookingReadyCopy}>
               <Text selectable style={styles.bookingReadyTitle}>
-                جاهز لطلب جديد
+                اطلب رحلتك الآن
               </Text>
               <Text selectable style={styles.bookingReadyMeta}>
-                اختر نوع الرحلة والموقع بعد الضغط
+                ابدأ بطلب واحد واضح، وبعدها نرتب النوع والموقع والدفع خطوة بخطوة.
               </Text>
             </View>
           </View>
@@ -2105,6 +2242,73 @@ function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
           </PremiumButton>
         </GlassCard>
       </View>
+    </MotionSurface>
+  );
+}
+
+function CustomerBookingProgress({ currentStep }: { currentStep: CustomerBookingStep }) {
+  const activeIndex = Math.max(
+    0,
+    CUSTOMER_BOOKING_STEPS.findIndex((step) => step.id === currentStep)
+  );
+  const activeStep = CUSTOMER_BOOKING_STEPS[activeIndex] ?? CUSTOMER_BOOKING_STEPS[0];
+
+  return (
+    <MotionSurface delay={40} testID="customer-motion-booking-progress">
+      <GlassCard testID="customer-booking-progress" style={styles.bookingProgressCard}>
+        <View style={styles.bookingProgressHeader}>
+          <Text selectable style={styles.bookingProgressCounter}>
+            {`الخطوة ${activeIndex + 1} من ${CUSTOMER_BOOKING_STEPS.length}`}
+          </Text>
+          <View style={styles.bookingProgressCopy}>
+            <Text selectable style={styles.bookingProgressTitle}>
+              {activeStep.title}
+            </Text>
+            <Text selectable style={styles.bookingProgressHelper}>
+              {activeStep.helper}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.bookingProgressRail}>
+          {CUSTOMER_BOOKING_STEPS.map((step, index) => {
+            const isActive = index === activeIndex;
+            const isComplete = index < activeIndex;
+
+            return (
+              <View key={step.id} style={styles.bookingProgressStep}>
+                <View
+                  style={[
+                    styles.bookingProgressDot,
+                    isComplete ? styles.bookingProgressDotComplete : null,
+                    isActive ? styles.bookingProgressDotActive : null
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.bookingProgressDotText,
+                      isComplete || isActive ? styles.bookingProgressDotTextActive : null
+                    ]}
+                  >
+                    {index + 1}
+                  </Text>
+                </View>
+                <Text
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.82}
+                  numberOfLines={1}
+                  style={[
+                    styles.bookingProgressStepLabel,
+                    isActive ? styles.bookingProgressStepLabelActive : null
+                  ]}
+                >
+                  {step.shortTitle}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+      </GlassCard>
     </MotionSurface>
   );
 }
@@ -3963,8 +4167,102 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
+  bookingProgressCard: {
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderColor: "rgba(0, 229, 255, 0.2)"
+  },
+  bookingProgressHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  bookingProgressCounter: {
+    ...rtlText,
+    minWidth: 92,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    textAlign: "center",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 6,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  bookingProgressCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  bookingProgressTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  bookingProgressHelper: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  bookingProgressRail: {
+    flexDirection: "row-reverse",
+    alignItems: "flex-start",
+    gap: spacing.xs
+  },
+  bookingProgressStep: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  bookingProgressDot: {
+    width: 30,
+    height: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.22)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  bookingProgressDotActive: {
+    borderColor: "rgba(0, 229, 255, 0.5)",
+    backgroundColor: "rgba(0, 229, 255, 0.18)",
+    boxShadow: shadows.activeControl
+  },
+  bookingProgressDotComplete: {
+    borderColor: "rgba(51, 231, 168, 0.38)",
+    backgroundColor: "rgba(51, 231, 168, 0.13)"
+  },
+  bookingProgressDotText: {
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  bookingProgressDotTextActive: {
+    color: colors.text
+  },
+  bookingProgressStepLabel: {
+    ...rtlText,
+    width: "100%",
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    textAlign: "center"
+  },
+  bookingProgressStepLabelActive: {
+    color: colors.text,
+    fontWeight: "900"
+  },
   bookingLauncherCard: {
-    minHeight: 224,
+    minHeight: 238,
     justifyContent: "space-between",
     gap: spacing.lg,
     padding: layoutRhythm.cardPadding,
@@ -3973,44 +4271,47 @@ const styles = StyleSheet.create({
     backgroundColor: glass.strong.backgroundColor
   },
   bookingReadyStatus: {
-    minHeight: 84,
+    minHeight: 112,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.sm,
-    padding: spacing.sm,
+    gap: spacing.md,
+    padding: spacing.md,
     borderRadius: radii.md,
     borderWidth: 1,
-    borderColor: "rgba(51, 231, 168, 0.22)",
-    backgroundColor: "rgba(51, 231, 168, 0.07)"
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.075)"
   },
   bookingReadyIcon: {
-    width: 44,
-    height: 44,
+    width: 54,
+    height: 54,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
-    backgroundColor: "rgba(51, 231, 168, 0.12)"
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.12)"
   },
   bookingReadyCopy: {
     flex: 1,
     alignItems: "flex-end",
-    gap: 4
+    gap: spacing.xs
   },
   bookingReadyTitle: {
     ...rtlText,
     color: colors.text,
-    fontSize: typography.body,
+    fontSize: typography.section,
     fontWeight: "900"
   },
   bookingReadyMeta: {
     ...rtlText,
     color: colors.textSoft,
     fontSize: typography.compact,
-    fontWeight: "800"
+    fontWeight: "800",
+    lineHeight: 21
   },
   bookingLauncherButton: {
     width: "100%",
-    minHeight: 64
+    minHeight: 66
   },
   serviceTypePicker: {
     gap: spacing.md,
@@ -4054,7 +4355,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   serviceTypeOption: {
-    minHeight: 76,
+    minHeight: 104,
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: spacing.sm,
@@ -4069,9 +4370,15 @@ const styles = StyleSheet.create({
     backgroundColor: controlSurfaces.activeNavigation.backgroundColor,
     boxShadow: shadows.activeControl
   },
+  serviceTypeVisual: {
+    width: 78,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs
+  },
   serviceTypeEmoji: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.sm,
@@ -4079,6 +4386,13 @@ const styles = StyleSheet.create({
   },
   serviceTypeEmojiText: {
     fontSize: 22
+  },
+  serviceTypeVehicleText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    textAlign: "center"
   },
   serviceTypeCopy: {
     flex: 1,
@@ -4098,6 +4412,24 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     lineHeight: 17
   },
+  serviceTypeBadgeText: {
+    ...rtlText,
+    alignSelf: "flex-end",
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)",
+    backgroundColor: "rgba(0, 229, 255, 0.09)"
+  },
+  serviceTypeMetrics: {
+    width: 76,
+    alignItems: "stretch",
+    gap: spacing.xs
+  },
   serviceTypePricePill: {
     minWidth: 70,
     minHeight: 34,
@@ -4110,6 +4442,24 @@ const styles = StyleSheet.create({
   serviceTypePriceText: {
     ...rtlText,
     color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  serviceTypeEtaPill: {
+    minWidth: 70,
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.18)",
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  serviceTypeEtaText: {
+    ...rtlText,
+    color: colors.textSoft,
     fontSize: typography.tiny,
     fontWeight: "900",
     fontVariant: ["tabular-nums"]
@@ -4511,6 +4861,72 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.tiny,
     fontWeight: "800"
+  },
+  paymentReadinessCard: {
+    minHeight: 92,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)",
+    boxShadow: shadows.cardSubtle
+  },
+  paymentReadinessIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.26)",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  paymentReadinessCopy: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  paymentReadinessTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  paymentReadinessMethod: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  paymentReadinessMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  paymentReadinessStatus: {
+    maxWidth: 118,
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  paymentReadinessStatusText: {
+    ...rtlText,
+    flexShrink: 1,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 16
   },
   compactConfirmationCard: {
     gap: spacing.md,
@@ -6539,18 +6955,4 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "900"
   },
-  activeNavToast: {
-    position: "absolute",
-    right: spacing.xl,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(7, 11, 20, 0.62)"
-  },
-  activeNavText: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: 10,
-    fontWeight: "700"
-  }
 });

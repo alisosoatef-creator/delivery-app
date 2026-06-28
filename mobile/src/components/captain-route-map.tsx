@@ -180,6 +180,39 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
         </Text>
       </View>
 
+      <View testID="captain-map-navigation-stack" style={styles.navigationStack}>
+        <View style={styles.navigationStackHeader}>
+          <Text selectable style={styles.navigationStackLabel}>
+            التوجيه الحالي
+          </Text>
+          <Text selectable style={styles.navigationStackValue}>
+            {`اتجاه: ${config.activeLabel}`}
+          </Text>
+        </View>
+        <View style={styles.waypointRow}>
+          <View style={styles.waypointDot} />
+          <View style={styles.waypointCopy}>
+            <Text selectable style={styles.waypointLabel}>
+              نقطة الانطلاق
+            </Text>
+            <Text selectable style={styles.waypointValue}>
+              {`من: ${request.pickup}`}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.waypointRow}>
+          <View style={[styles.waypointDot, styles.waypointDotDestination]} />
+          <View style={styles.waypointCopy}>
+            <Text selectable style={styles.waypointLabel}>
+              نقطة الوصول
+            </Text>
+            <Text selectable style={styles.waypointValue}>
+              {`إلى: ${request.destinationArea}`}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <View testID="captain-map-route-panel" style={styles.routePanel}>
         <View style={styles.routePanelTop}>
           <Text selectable style={styles.panelStatus}>
@@ -443,6 +476,68 @@ const styles = StyleSheet.create({
     color: colors.textSoft,
     fontSize: typography.tiny,
     fontWeight: "800"
+  },
+  navigationStack: {
+    position: "absolute",
+    top: 84,
+    right: 124,
+    left: spacing.md,
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(10, 16, 30, 0.76)",
+    boxShadow: shadows.cardSubtle
+  },
+  navigationStackHeader: {
+    alignItems: "flex-end",
+    gap: 2
+  },
+  navigationStackLabel: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  navigationStackValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  waypointRow: {
+    minHeight: 28,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs
+  },
+  waypointDot: {
+    width: 10,
+    height: 10,
+    borderRadius: radii.pill,
+    backgroundColor: colors.success,
+    boxShadow: "0 0 10px rgba(51, 231, 168, 0.38)"
+  },
+  waypointDotDestination: {
+    backgroundColor: colors.violetSoft,
+    boxShadow: "0 0 10px rgba(199, 183, 255, 0.42)"
+  },
+  waypointCopy: {
+    flex: 1,
+    alignItems: "flex-end"
+  },
+  waypointLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  waypointValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
   },
   routePanel: {
     position: "absolute",

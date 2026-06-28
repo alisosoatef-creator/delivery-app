@@ -172,6 +172,35 @@ function MockRouteMapComponent({
         </Text>
       </View>
 
+      <View testID="mock-map-route-telemetry" style={styles.routeTelemetry}>
+        <View style={styles.telemetryRow}>
+          <Text selectable style={styles.telemetryLabel}>
+            المرحلة الحالية
+          </Text>
+          <Text selectable style={styles.telemetryValue}>
+            {`حالة: ${phaseLabels[phase]}`}
+          </Text>
+        </View>
+        <View style={styles.telemetryMetrics}>
+          <View style={styles.telemetryMetric}>
+            <Text selectable style={styles.telemetryMetricLabel}>
+              مسافة الرحلة
+            </Text>
+            <Text selectable style={styles.telemetryMetricValue}>
+              {customerHomeMock.tripDistance}
+            </Text>
+          </View>
+          <View style={styles.telemetryMetric}>
+            <Text selectable style={styles.telemetryMetricLabel}>
+              وصول الكابتن
+            </Text>
+            <Text selectable style={styles.telemetryMetricValue}>
+              {customerHomeMock.eta}
+            </Text>
+          </View>
+        </View>
+      </View>
+
       <View testID="mock-map-route-panel" style={styles.routePanel}>
         <Text selectable style={styles.routePanelTitle}>
           الخريطة الحية
@@ -362,6 +391,66 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 11,
     fontWeight: "700",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  routeTelemetry: {
+    position: "absolute",
+    top: spacing.md,
+    left: spacing.md,
+    width: 158,
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(10, 16, 30, 0.78)",
+    boxShadow: shadows.cardSubtle
+  },
+  telemetryRow: {
+    alignItems: "flex-end",
+    gap: 2
+  },
+  telemetryLabel: {
+    color: colors.cyan,
+    fontSize: 10,
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  telemetryValue: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: "900",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  telemetryMetrics: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  telemetryMetric: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 2,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.055)"
+  },
+  telemetryMetricLabel: {
+    color: colors.textMuted,
+    fontSize: 9,
+    fontWeight: "800",
+    textAlign: "right",
+    writingDirection: "rtl"
+  },
+  telemetryMetricValue: {
+    color: colors.text,
+    fontSize: 11,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
     textAlign: "right",
     writingDirection: "rtl"
   },

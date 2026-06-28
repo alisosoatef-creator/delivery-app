@@ -71,6 +71,25 @@ describe("route map render isolation", () => {
     });
   });
 
+  it("shows premium customer route telemetry without requiring a real map provider", async () => {
+    const screen = await render(
+      createElement(MockRouteMap, {
+        destinationArea: request.destinationArea,
+        destinationDetail: request.destinationDetail,
+        phase: "driving",
+        pickupLabel: request.pickup
+      })
+    );
+
+    expect(screen.getByTestId("mock-map-route-telemetry")).toBeTruthy();
+    expect(screen.getByText("المرحلة الحالية")).toBeTruthy();
+    expect(screen.getByText("الرحلة بدأت")).toBeTruthy();
+    expect(screen.getByText("مسافة الرحلة")).toBeTruthy();
+    expect(screen.getByText(customerHomeMock.tripDistance)).toBeTruthy();
+    expect(screen.getByText("وصول الكابتن")).toBeTruthy();
+    expect(screen.getAllByText(customerHomeMock.eta).length).toBeGreaterThanOrEqual(1);
+  });
+
   it("keeps the captain map route and overlays visually prioritized", async () => {
     const screen = await render(createElement(CaptainRouteMap, { request, step: "driving" }));
 
@@ -109,6 +128,18 @@ describe("route map render isolation", () => {
       borderColor: glass.floating.borderColor,
       boxShadow: shadows.card
     });
+  });
+
+  it("shows captain navigation waypoints and current guidance", async () => {
+    const screen = await render(createElement(CaptainRouteMap, { request, step: "driving" }));
+
+    expect(screen.getByTestId("captain-map-navigation-stack")).toBeTruthy();
+    expect(screen.getByText("التوجيه الحالي")).toBeTruthy();
+    expect(screen.getAllByText("من العميل إلى الوجهة").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("نقطة الانطلاق")).toBeTruthy();
+    expect(screen.getByText(`من: ${request.pickup}`)).toBeTruthy();
+    expect(screen.getByText("نقطة الوصول")).toBeTruthy();
+    expect(screen.getByText(`إلى: ${request.destinationArea}`)).toBeTruthy();
   });
 
   it("keeps the customer map stable until route inputs change", () => {

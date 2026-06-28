@@ -363,8 +363,8 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("الرحلة الحالية")).toBeTruthy();
     expect(screen.getByText("الطريق إلى العميل")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
-    expect(screen.getByText("زواتا")).toBeTruthy();
-    expect(screen.getByText("نابلس - رفيديا")).toBeTruthy();
+    expect(screen.getAllByText("زواتا").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("نابلس - رفيديا").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("مطعم شورما عكيفك").length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText("25 شيكل").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("كاش عند الاستلام")).toBeTruthy();
@@ -383,6 +383,35 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
+  });
+
+  it("guides the captain through the current trip action in one clear panel", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+
+    expect(screen.getByTestId("captain-trip-action-guide")).toBeTruthy();
+    expect(screen.getByText("خطوة الكابتن 1 من 4")).toBeTruthy();
+    expect(screen.getByText("اتجه إلى العميل")).toBeTruthy();
+    expect(screen.getByText("الزر التالي: وصلت للعميل")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
+
+    expect(screen.getByText("خطوة الكابتن 2 من 4")).toBeTruthy();
+    expect(screen.getByText("ثبّت صعود العميل")).toBeTruthy();
+    expect(screen.getByText("الزر التالي: ابدأ الرحلة الآن")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+
+    expect(screen.getByText("خطوة الكابتن 3 من 4")).toBeTruthy();
+    expect(screen.getByText("قد إلى الوجهة")).toBeTruthy();
+    expect(screen.getByText("الزر التالي: إنهاء الرحلة")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+
+    expect(screen.getByText("خطوة الكابتن 4 من 4")).toBeTruthy();
+    expect(screen.getByText("الرحلة مكتملة")).toBeTruthy();
+    expect(screen.getByText("الزر التالي: العودة للطلبات")).toBeTruthy();
   });
 
   it("shows a premium captain GPS route through pickup and destination steps", async () => {
