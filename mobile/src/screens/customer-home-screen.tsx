@@ -2066,6 +2066,7 @@ function CustomerDestinationSelectionPage({
 
             <PremiumButton
               accessibilityLabel="متابعة من الوجهة"
+              feedback="none"
               label="متابعة إلى تفاصيل الطلب"
               onPress={onContinue}
               style={styles.searchUseButton}
@@ -2145,6 +2146,7 @@ function CustomerPickupSelectionPage({
           </View>
           <PremiumButton
             accessibilityLabel="متابعة من موقع الانطلاق"
+            feedback="none"
             label="متابعة"
             onPress={onContinue}
             style={styles.pickupSelectionButton}
@@ -2285,6 +2287,7 @@ function CustomerServiceSelectionPage({
 
           <PremiumButton
             accessibilityLabel="متابعة الخدمة المختارة"
+            feedback="none"
             label={selectedServiceType.nextStepAction}
             onPress={onContinue}
             style={styles.serviceNextStepButton}
@@ -2321,6 +2324,7 @@ function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
           </View>
           <PremiumButton
             accessibilityLabel="بدء طلب رحلة"
+            feedback="none"
             label="اطلب رحلة"
             onPress={onStart}
             style={styles.bookingLauncherButton}

@@ -599,6 +599,31 @@ describe("CustomerHomeScreen", () => {
     }
   });
 
+  it("keeps booking step haptics to one pulse per continue command", async () => {
+    const hapticSpy = jest.spyOn(Haptics, "impactAsync").mockResolvedValue();
+    const screen = await renderCustomerLanding();
+
+    try {
+      await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
+      expect(hapticSpy).toHaveBeenCalledTimes(1);
+
+      hapticSpy.mockClear();
+      await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+      expect(hapticSpy).toHaveBeenCalledTimes(1);
+
+      hapticSpy.mockClear();
+      await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+      expect(hapticSpy).toHaveBeenCalledTimes(1);
+
+      await fireEvent.press(screen.getByLabelText("اختيار وجهة مطعم شورما عكيفك"));
+      hapticSpy.mockClear();
+      await fireEvent.press(screen.getByLabelText("متابعة من الوجهة"));
+      expect(hapticSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      hapticSpy.mockRestore();
+    }
+  });
+
   it("summarizes the booking path in a compact review card", async () => {
     const screen = await renderCustomerHome();
 

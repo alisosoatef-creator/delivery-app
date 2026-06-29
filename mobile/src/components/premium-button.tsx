@@ -27,7 +27,7 @@ type PremiumButtonProps = PropsWithChildren<{
 export function PremiumButton({
   accessibilityLabel,
   children,
-  feedback = "none",
+  feedback = "light",
   label,
   onPress,
   style,

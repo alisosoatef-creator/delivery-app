@@ -5,6 +5,7 @@ import { Text } from "react-native";
 
 import { MotionPressable } from "@/components/motion-pressable";
 import { getMotionDuration, MotionSurface } from "@/components/motion-surface";
+import { PremiumButton } from "@/components/premium-button";
 
 describe("Wasel motion components", () => {
   it("provides an accessible default touch target contract", async () => {
@@ -62,6 +63,20 @@ describe("Wasel motion components", () => {
     await fireEvent.press(screen.getByLabelText("تبديل التبويب"));
 
     expect(hapticSpy).toHaveBeenCalledTimes(1);
+    hapticSpy.mockRestore();
+  });
+
+  it("gives premium command buttons light haptic feedback by default", async () => {
+    const hapticSpy = jest.spyOn(Haptics, "impactAsync").mockResolvedValue();
+    const onPress = jest.fn();
+    const screen = await render(
+      <PremiumButton accessibilityLabel="Confirm ride" label="Confirm ride" onPress={onPress} />
+    );
+
+    await fireEvent.press(screen.getByLabelText("Confirm ride"));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+    expect(hapticSpy).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
     hapticSpy.mockRestore();
   });
 
