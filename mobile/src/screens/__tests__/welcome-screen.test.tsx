@@ -3,7 +3,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { controlSurfaces, glass, shadows } from "@/design/tokens";
+import { controlSurfaces, glass, shadows, spacing } from "@/design/tokens";
 
 import { WelcomeScreen } from "../welcome-screen";
 
@@ -92,6 +92,16 @@ describe("WelcomeScreen", () => {
     });
     expect(customerRoleStyle.minHeight).toBeLessThanOrEqual(60);
     expect(primaryButtonStyle.minHeight).toBeGreaterThanOrEqual(56);
+  });
+
+  it("keeps welcome scrolling responsive for fast role entry", async () => {
+    const { screen } = await renderWelcomeScreen();
+    const scroll = screen.getByTestId("welcome-scroll");
+    const contentStyle = StyleSheet.flatten(scroll.props.contentContainerStyle);
+
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(contentStyle.paddingBottom).toBe(34 + spacing.xxl + spacing.md);
   });
 
   it("exposes mock entry actions without API connection", async () => {

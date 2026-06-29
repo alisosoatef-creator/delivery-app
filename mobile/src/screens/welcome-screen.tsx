@@ -38,8 +38,11 @@ export function WelcomeScreen({
       <LinearGradient pointerEvents="none" colors={gradients.app} style={StyleSheet.absoluteFill} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        testID="welcome-scroll"
         contentContainerStyle={[
           styles.content,
           {
