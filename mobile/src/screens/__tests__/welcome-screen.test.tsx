@@ -76,6 +76,24 @@ describe("WelcomeScreen", () => {
     });
   });
 
+  it("keeps the Android welcome entry compact enough for the primary action", async () => {
+    const { screen } = await renderWelcomeScreen();
+    const brandStyle = StyleSheet.flatten(screen.getByTestId("welcome-brand-mark").props.style);
+    const customerRoleStyle = StyleSheet.flatten(
+      screen.getByTestId("welcome-customer-role").props.style
+    );
+    const primaryButtonStyle = StyleSheet.flatten(
+      screen.getAllByTestId("premium-motion-button")[0].props.style
+    );
+
+    expect(brandStyle).toMatchObject({
+      width: 88,
+      height: 88
+    });
+    expect(customerRoleStyle.minHeight).toBeLessThanOrEqual(60);
+    expect(primaryButtonStyle.minHeight).toBeGreaterThanOrEqual(56);
+  });
+
   it("exposes mock entry actions without API connection", async () => {
     const { actions, screen } = await renderWelcomeScreen();
 

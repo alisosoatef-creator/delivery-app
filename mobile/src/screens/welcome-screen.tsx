@@ -46,7 +46,7 @@ export function WelcomeScreen({
             alignSelf: "center",
             maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.xl,
-            paddingBottom: insets.bottom + spacing.xxl,
+            paddingBottom: insets.bottom + spacing.xxl + spacing.md,
             paddingHorizontal: responsive.horizontalPadding,
             width: "100%"
           }
@@ -211,16 +211,16 @@ const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
     justifyContent: "center",
-    gap: layoutRhythm.sectionGap
+    gap: layoutRhythm.compactSectionGap
   },
   hero: {
     alignItems: "center",
-    gap: spacing.md,
-    paddingVertical: spacing.lg
+    gap: spacing.sm,
+    paddingVertical: spacing.sm
   },
   logoHalo: {
-    width: 96,
-    height: 96,
+    width: 88,
+    height: 88,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.lg,
@@ -230,8 +230,8 @@ const styles = StyleSheet.create({
     boxShadow: shadows.cardStrong
   },
   logoMark: {
-    width: 76,
-    height: 76,
+    width: 70,
+    height: 70,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.md,
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
   },
   logoLetter: {
     color: colors.text,
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: "900",
     letterSpacing: 0
   },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   },
   brandName: {
     color: colors.text,
-    fontSize: 42,
+    fontSize: 38,
     fontWeight: "900",
     letterSpacing: 0,
     textAlign: "center",
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm
   },
   roleTile: {
-    minHeight: 66,
+    minHeight: 60,
     flexDirection: "row-reverse",
     alignItems: "center",
     gap: spacing.sm,
