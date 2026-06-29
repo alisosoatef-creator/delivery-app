@@ -96,8 +96,11 @@ export function CaptainHomeScreen() {
       <LinearGradient pointerEvents="none" colors={gradients.app} style={StyleSheet.absoluteFill} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        testID="captain-home-scroll"
         contentContainerStyle={[
           styles.content,
           {

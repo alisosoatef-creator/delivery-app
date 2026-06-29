@@ -1229,8 +1229,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       <LinearGradient pointerEvents="none" colors={gradients.app} style={StyleSheet.absoluteFill} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        testID="customer-home-scroll"
         contentContainerStyle={[
           styles.content,
           {
@@ -1499,6 +1502,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                               onChangeText={setDestinationDetail}
                               placeholder="أضف علامة واضحة للكابتن"
                               placeholderTextColor={colors.textMuted}
+                              returnKeyType="done"
                               style={styles.bookingReviewNoteInput}
                               value={destinationDetail}
                             />
@@ -1604,6 +1608,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                     onChangeText={onChange}
                                     placeholder="الاسم على البطاقة"
                                     placeholderTextColor={colors.textMuted}
+                                    returnKeyType="next"
                                     style={styles.paymentInput}
                                     value={value}
                                   />
@@ -1619,6 +1624,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                     onChangeText={onChange}
                                     placeholder="0000 0000 0000 0000"
                                     placeholderTextColor={colors.textMuted}
+                                    returnKeyType="next"
                                     style={styles.paymentInput}
                                     value={value}
                                   />
@@ -1634,6 +1640,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                       onChangeText={onChange}
                                       placeholder="MM/YY"
                                       placeholderTextColor={colors.textMuted}
+                                      returnKeyType="next"
                                       style={[styles.paymentInput, styles.paymentInputHalf]}
                                       value={value}
                                     />
@@ -1649,6 +1656,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                       onChangeText={onChange}
                                       placeholder="CVC"
                                       placeholderTextColor={colors.textMuted}
+                                      returnKeyType="done"
                                       secureTextEntry
                                       style={[styles.paymentInput, styles.paymentInputHalf]}
                                       value={value}
@@ -1935,6 +1943,7 @@ function CustomerDestinationSelectionPage({
             onChangeText={onChangeQuery}
             placeholder="ابحث عن مكان أو منطقة"
             placeholderTextColor={colors.textMuted}
+            returnKeyType="search"
             style={styles.searchInput}
             value={query}
           />
@@ -2044,6 +2053,7 @@ function CustomerDestinationSelectionPage({
                 onChangeText={onChangeDestinationDetail}
                 placeholder="مثلاً: الباب الرئيسي بجانب الصيدلية"
                 placeholderTextColor={colors.textMuted}
+                returnKeyType="done"
                 style={[styles.detailInput, styles.searchDetailInput]}
                 value={destinationDetail}
               />
@@ -2463,6 +2473,7 @@ function CustomerDeliveryPackagePanel({
         onChangeText={onChangeDescription}
         placeholder="مثلا: كيس ملابس صغير أو مستندات داخل ظرف"
         placeholderTextColor={colors.textMuted}
+        returnKeyType="done"
         style={styles.deliveryPackageInput}
         value={description}
       />
@@ -3130,6 +3141,7 @@ function CustomerSearchTab({
             onChangeText={onChangeQuery}
             placeholder={searchCopy.inputPlaceholder}
             placeholderTextColor={colors.textMuted}
+            returnKeyType="search"
             style={styles.searchInput}
             value={query}
           />
@@ -3256,6 +3268,7 @@ function CustomerSearchTab({
               onChangeText={onChangeDestinationDetail}
               placeholder={searchCopy.detailPlaceholder}
               placeholderTextColor={colors.textMuted}
+              returnKeyType="done"
               style={[styles.detailInput, styles.searchDetailInput]}
               value={destinationDetail ?? ""}
             />

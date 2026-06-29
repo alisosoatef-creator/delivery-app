@@ -4,7 +4,7 @@ import { Phone, ShieldCheck } from "lucide-react-native";
 import { StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { colors, controlSurfaces, glass, shadows } from "@/design/tokens";
+import { colors, controlSurfaces, glass, layoutRhythm, shadows, spacing } from "@/design/tokens";
 
 import {
   AuthField,
@@ -110,6 +110,41 @@ describe("auth-screen-kit", () => {
     expect(StyleSheet.flatten(screen.getByTestId("auth-note-card").props.style)).toMatchObject({
       backgroundColor: glass.subtle.backgroundColor,
       boxShadow: shadows.cardSubtle
+    });
+  });
+
+  it("keeps the auth frame compact and form-friendly on Android", async () => {
+    const screen = await render(
+      <SafeAreaProvider
+        initialMetrics={{
+          frame: { x: 0, y: 0, width: 390, height: 844 },
+          insets: { top: 48, right: 0, bottom: 34, left: 0 }
+        }}
+      >
+        <AuthScreenFrame>
+          <AuthTopBar appLabel="تطبيق العميل" onBack={() => undefined} />
+          <AuthFormCard testID="auth-form-card">
+            <AuthField
+              accessibilityLabel="رقم الجوال"
+              icon={<Phone color={colors.textMuted} size={17} />}
+              label="رقم الجوال"
+              onChangeText={() => undefined}
+              placeholder="05XXXXXXXX"
+              testID="auth-phone-field"
+              value=""
+            />
+          </AuthFormCard>
+        </AuthScreenFrame>
+      </SafeAreaProvider>
+    );
+    const frame = screen.getByTestId("auth-screen-scroll");
+    const contentStyle = StyleSheet.flatten(frame.props.contentContainerStyle);
+
+    expect(frame.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(frame.props.keyboardDismissMode).toBe("on-drag");
+    expect(contentStyle).toMatchObject({
+      gap: layoutRhythm.compactSectionGap,
+      paddingBottom: 34 + spacing.xxl + spacing.md
     });
   });
 });

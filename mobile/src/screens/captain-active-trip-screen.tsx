@@ -115,8 +115,11 @@ export function CaptainActiveTripScreen({
       <LinearGradient pointerEvents="none" colors={gradients.app} style={StyleSheet.absoluteFill} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        testID="captain-active-trip-scroll"
         contentContainerStyle={[
           styles.content,
           {

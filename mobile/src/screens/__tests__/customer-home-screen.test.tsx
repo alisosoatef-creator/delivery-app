@@ -186,6 +186,32 @@ describe("CustomerHomeScreen", () => {
     expect(notice.props.accessibilityRole).toBe("alert");
   });
 
+  it("keeps customer scrolling responsive while search and payment forms are open", async () => {
+    const screen = await renderCustomerLanding();
+
+    const scroll = screen.getByTestId("customer-home-scroll");
+    const contentStyle = StyleSheet.flatten(scroll.props.contentContainerStyle);
+
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(contentStyle.paddingBottom).toBe(34 + 120);
+  });
+
+  it("uses mobile-friendly keyboard actions in customer search and payment fields", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByLabelText("تفصيل الوجهة").props.returnKeyType).toBe("done");
+
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+    expect(screen.getByLabelText("اسم حامل البطاقة").props.returnKeyType).toBe("next");
+    expect(screen.getByLabelText("رقم بطاقة فيزا").props.returnKeyType).toBe("next");
+    expect(screen.getByLabelText("تاريخ انتهاء فيزا").props.returnKeyType).toBe("next");
+    expect(screen.getByLabelText("رمز CVC").props.returnKeyType).toBe("done");
+
+    await fireEvent.press(screen.getByText("البحث"));
+    expect(screen.getByLabelText("بحث الوجهات").props.returnKeyType).toBe("search");
+  });
+
   it("exposes search filters as accessible radio controls with safe touch targets", async () => {
     const screen = await renderCustomerLanding();
 

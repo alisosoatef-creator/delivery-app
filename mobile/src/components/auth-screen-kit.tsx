@@ -37,15 +37,18 @@ export function AuthScreenFrame({ children }: AuthScreenFrameProps) {
       <LinearGradient pointerEvents="none" colors={gradients.app} style={StyleSheet.absoluteFill} />
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
+        testID="auth-screen-scroll"
         contentContainerStyle={[
           styles.content,
           {
             alignSelf: "center",
             maxWidth: responsive.contentMaxWidth,
             paddingTop: insets.top + spacing.lg,
-            paddingBottom: insets.bottom + spacing.xxl,
+            paddingBottom: insets.bottom + spacing.xxl + spacing.md,
             paddingHorizontal: responsive.horizontalPadding,
             width: "100%"
           }
@@ -211,7 +214,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flexGrow: 1,
-    gap: layoutRhythm.sectionGap
+    gap: layoutRhythm.compactSectionGap
   },
   topBar: {
     minHeight: 48,

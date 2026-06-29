@@ -3,7 +3,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { controlSurfaces, glass, shadows } from "@/design/tokens";
+import { controlSurfaces, glass, shadows, spacing } from "@/design/tokens";
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CaptainHomeScreen } from "../captain-home-screen";
@@ -157,6 +157,16 @@ describe("CaptainHomeScreen", () => {
     const notice = screen.getByText("زر الاتصال بالعميل mock فقط الآن");
     expect(notice.props.accessibilityLiveRegion).toBe("polite");
     expect(notice.props.accessibilityRole).toBe("alert");
+  });
+
+  it("keeps captain scrolling responsive under the floating nav", async () => {
+    const screen = await renderCaptainHome();
+    const scroll = screen.getByTestId("captain-home-scroll");
+    const contentStyle = StyleSheet.flatten(scroll.props.contentContainerStyle);
+
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(contentStyle.paddingBottom).toBe(34 + 120);
   });
 
   it("keeps the floating navigation flexible for compact screens", async () => {
@@ -405,6 +415,18 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
+  });
+
+  it("keeps the active captain trip scroll responsive through the trip flow", async () => {
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    const scroll = screen.getByTestId("captain-active-trip-scroll");
+    const contentStyle = StyleSheet.flatten(scroll.props.contentContainerStyle);
+
+    expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
+    expect(scroll.props.keyboardDismissMode).toBe("on-drag");
+    expect(contentStyle.paddingBottom).toBe(34 + spacing.xxl);
   });
 
   it("guides the captain through the current trip action in one clear panel", async () => {
