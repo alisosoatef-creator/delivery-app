@@ -247,6 +247,33 @@ describe("CustomerHomeScreen", () => {
     });
   });
 
+  it("summarizes the cash payment choice inside one clear payment panel", async () => {
+    const screen = await renderCustomerHome();
+
+    expect(screen.getByTestId("customer-payment-method-panel")).toBeTruthy();
+    expect(screen.getByTestId("customer-payment-choice-summary")).toBeTruthy();
+    expect(screen.getByText("كاش عند الاستلام جاهز")).toBeTruthy();
+    expect(screen.getByText("الدفع عند الاستلام")).toBeTruthy();
+    expect(screen.queryByText("بطاقة فيزا mock")).toBeNull();
+  });
+
+  it("keeps Visa entry inside the payment panel with a readable readiness summary", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("فيزا"));
+
+    expect(screen.getByTestId("customer-payment-method-panel")).toBeTruthy();
+    expect(screen.getByTestId("customer-payment-choice-summary")).toBeTruthy();
+    expect(screen.getByText("فيزا تحتاج بيانات")).toBeTruthy();
+    expect(screen.getByText("أكمل البطاقة قبل إرسال الطلب")).toBeTruthy();
+    expect(screen.getByText("بطاقة فيزا mock")).toBeTruthy();
+
+    await fillMockVisaDetails(screen);
+
+    expect(screen.getByText("فيزا جاهزة")).toBeTruthy();
+    expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
+  });
+
   it("keeps the floating navigation flexible for compact screens", async () => {
     const screen = await renderCustomerLanding();
     const navStyle = StyleSheet.flatten(screen.getByTestId("floating-bottom-nav").props.style);
@@ -1504,7 +1531,8 @@ describe("CustomerHomeScreen", () => {
     expect(screen.queryByText("4.9")).toBeNull();
 
     await fireEvent.press(screen.getByLabelText("فتح الدعم والمساعدة mock"));
-    expect(screen.getByText("تم فتح الدعم والمساعدة mock")).toBeTruthy();
+    expect(screen.getByTestId("customer-support-hub")).toBeTruthy();
+    expect(screen.queryByText("تم فتح الدعم والمساعدة mock")).toBeNull();
   });
 
   it("keeps account readiness compact inside the profile tab", async () => {
@@ -1521,6 +1549,55 @@ describe("CustomerHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("مراجعة بيانات الحساب"));
     expect(screen.getByText("مراجعة بيانات الحساب mock فقط الآن")).toBeTruthy();
+  });
+
+  it("opens a focused customer support hub from the profile tab", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+    await fireEvent.press(screen.getByLabelText("فتح الدعم والمساعدة mock"));
+
+    expect(screen.getByTestId("customer-support-hub")).toBeTruthy();
+    expect(screen.getByText("الدعم والمساعدة")).toBeTruthy();
+    expect(screen.getByText("اختر نوع المساعدة بدون تعقيد")).toBeTruthy();
+    expect(screen.getByText("محادثة الدعم")).toBeTruthy();
+    expect(screen.getByText("الإبلاغ عن مشكلة")).toBeTruthy();
+    expect(screen.getByText("اتصال سريع")).toBeTruthy();
+    expect(screen.getByText("لا يوجد ربط API الآن")).toBeTruthy();
+    expect(screen.queryByTestId("customer-profile-payment-summary")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("العودة إلى حسابي"));
+
+    expect(screen.getByTestId("customer-profile-overview")).toBeTruthy();
+  });
+
+  it("shows a clean mock issue report summary inside support", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+    await fireEvent.press(screen.getByLabelText("فتح الدعم والمساعدة mock"));
+    await fireEvent.press(screen.getByLabelText("اختيار الإبلاغ عن مشكلة"));
+
+    expect(screen.getByTestId("customer-support-report-summary")).toBeTruthy();
+    expect(screen.getByText("بلاغ مشكلة جاهز")).toBeTruthy();
+    expect(screen.getByText("نوع البلاغ: الإبلاغ عن مشكلة")).toBeTruthy();
+    expect(screen.getByText("الأولوية: عالية")).toBeTruthy();
+    expect(screen.getByText("سيظهر هنا نموذج API لاحقاً")).toBeTruthy();
+  });
+
+  it("returns support subpages to the account root when tapping the account tab again", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+    await fireEvent.press(screen.getByLabelText("فتح الدعم والمساعدة mock"));
+
+    expect(screen.getByTestId("customer-support-hub")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب حسابي"));
+
+    expect(screen.queryByTestId("customer-support-hub")).toBeNull();
+    expect(screen.getByTestId("customer-profile-overview")).toBeTruthy();
+    expect(screen.getByTestId("customer-profile-payment-summary")).toBeTruthy();
   });
 
   it("keeps the search tab calm with one search box and simple filters", async () => {
@@ -1601,6 +1678,61 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("إنشاء طلب جديد")).toBeTruthy();
     expect(screen.getByTestId("customer-booking-review-card")).toBeTruthy();
     expect(screen.getAllByText("جامعة النجاح").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows calm city suggestions when the customer searches a West Bank city", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("البحث"));
+    await fireEvent.changeText(screen.getByLabelText("بحث الوجهات"), "جنين");
+
+    expect(screen.getByText("اقتراحات جنين")).toBeTruthy();
+    expect(screen.getByText("نتائج البحث: 3")).toBeTruthy();
+    expect(screen.getByText("وسط جنين")).toBeTruthy();
+    expect(screen.getByText("الجامعة العربية الأمريكية")).toBeTruthy();
+    expect(screen.getByText("مستشفى جنين الحكومي")).toBeTruthy();
+    expect(screen.queryByText("المنزل")).toBeNull();
+  });
+
+  it("uses city suggestions inside the dedicated destination step", async () => {
+    const screen = await renderCustomerServiceSelection();
+
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+    await fireEvent.changeText(screen.getByLabelText("ابحث عن وجهة"), "نابلس");
+
+    expect(screen.getByText("اقتراحات نابلس")).toBeTruthy();
+    expect(screen.getByText("4 نتائج")).toBeTruthy();
+    expect(screen.getByText("رفيديا")).toBeTruthy();
+    expect(screen.getByText("وسط البلد - الدوار")).toBeTruthy();
+    expect(screen.getByText("جامعة القدس المفتوحة")).toBeTruthy();
+  });
+
+  it("shows a compact destination summary after selecting a city search result", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("البحث"));
+    await fireEvent.changeText(screen.getByLabelText("بحث الوجهات"), "جنين");
+    await fireEvent.press(screen.getByLabelText("اختيار نتيجة وسط جنين"));
+
+    expect(screen.getByTestId("customer-search-destination-summary")).toBeTruthy();
+    expect(screen.getByText("المدينة: جنين")).toBeTruthy();
+    expect(screen.getByText("المسافة: 1.8 كم")).toBeTruthy();
+    expect(screen.getByText("السعر المتوقع: 22 شيكل")).toBeTruthy();
+  });
+
+  it("shows the same destination summary inside the booking destination step", async () => {
+    const screen = await renderCustomerServiceSelection();
+
+    await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
+    await fireEvent.press(screen.getByLabelText("متابعة من موقع الانطلاق"));
+    await fireEvent.changeText(screen.getByLabelText("ابحث عن وجهة"), "نابلس");
+    await fireEvent.press(screen.getByLabelText("اختيار وجهة رفيديا"));
+
+    expect(screen.getByTestId("customer-booking-destination-summary")).toBeTruthy();
+    expect(screen.getByText("المدينة: نابلس")).toBeTruthy();
+    expect(screen.getByText("المسافة: 2.4 كم")).toBeTruthy();
+    expect(screen.getByText("السعر المتوقع: 25 شيكل")).toBeTruthy();
   });
 
   it("adapts search guidance and selected destination copy to the active service type", async () => {

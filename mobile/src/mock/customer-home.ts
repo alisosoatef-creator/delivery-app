@@ -103,6 +103,74 @@ export const customerHomeMock = {
       icon: MapPin
     }
   ],
+  citySuggestions: [
+    {
+      city: "نابلس",
+      places: [
+        {
+          label: "رفيديا",
+          area: "نابلس - رفيديا",
+          detail: "شارع رفيديا الرئيسي",
+          distance: "2.4 كم",
+          price: "25 شيكل",
+          icon: MapPin
+        },
+        {
+          label: "وسط البلد - الدوار",
+          area: "نابلس - وسط البلد",
+          detail: "منطقة الدوار",
+          distance: "2.8 كم",
+          price: "28 شيكل",
+          icon: MapPin
+        },
+        {
+          label: "جامعة النجاح",
+          area: "نابلس - الحرم الجديد",
+          detail: "بوابة الجامعة الرئيسية",
+          distance: "3.1 كم",
+          price: "31 شيكل",
+          icon: Briefcase
+        },
+        {
+          label: "جامعة القدس المفتوحة",
+          area: "نابلس - المخفية",
+          detail: "مبنى جامعة القدس المفتوحة",
+          distance: "3.6 كم",
+          price: "32 شيكل",
+          icon: Briefcase
+        }
+      ]
+    },
+    {
+      city: "جنين",
+      places: [
+        {
+          label: "وسط جنين",
+          area: "جنين - وسط البلد",
+          detail: "منطقة دوار السينما",
+          distance: "1.8 كم",
+          price: "22 شيكل",
+          icon: MapPin
+        },
+        {
+          label: "الجامعة العربية الأمريكية",
+          area: "جنين - الزبابدة",
+          detail: "البوابة الرئيسية للجامعة",
+          distance: "9.5 كم",
+          price: "45 شيكل",
+          icon: Briefcase
+        },
+        {
+          label: "مستشفى جنين الحكومي",
+          area: "جنين - الحي الشرقي",
+          detail: "مدخل الطوارئ",
+          distance: "2.6 كم",
+          price: "26 شيكل",
+          icon: MapPin
+        }
+      ]
+    }
+  ],
   service: {
     label: "خدمة واصل",
     meta: "طلب واحد يصل لأقرب كابتن مناسب",

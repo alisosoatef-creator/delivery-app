@@ -61,7 +61,9 @@ import {
   type CustomerTripStage
 } from "@/state/mock-trip-flow";
 
-type DestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
+type SavedDestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
+type CitySuggestionPlace = (typeof customerHomeMock.citySuggestions)[number]["places"][number];
+type DestinationPlace = SavedDestinationPlace | CitySuggestionPlace;
 type PickupPoint = (typeof customerHomeMock.pickupOptions)[number];
 type PaymentMethod = (typeof customerHomeMock.paymentMethods)[number];
 type ServiceType = (typeof customerHomeMock.serviceTypes)[number];
@@ -86,6 +88,11 @@ type PaymentReadinessCopy = {
   detail: string;
   method: string;
   status: string;
+  title: string;
+};
+
+type PaymentChoiceSummary = {
+  detail: string;
   title: string;
 };
 
@@ -129,12 +136,110 @@ const CUSTOMER_PROFILE_SUPPORT_ITEMS = [
   "الإبلاغ عن مشكلة",
   "مركز المساعدة"
 ] as const;
+const CUSTOMER_SUPPORT_ACTIONS = [
+  {
+    detail: "رد سريع على أسئلة الرحلات والدفع",
+    label: "محادثة الدعم",
+    priority: "متوسطة",
+    response: "محادثة mock جاهزة، وسيتم ربطها بالدعم لاحقاً"
+  },
+  {
+    detail: "أخبرنا عن مشكلة بالرحلة أو الدفع",
+    label: "الإبلاغ عن مشكلة",
+    priority: "عالية",
+    response: "سيظهر هنا نموذج API لاحقاً"
+  },
+  {
+    detail: "تواصل مباشر عند الحالات المستعجلة",
+    label: "اتصال سريع",
+    priority: "فورية",
+    response: "اتصال mock جاهز، وسيتم ربط الرقم لاحقاً"
+  }
+] as const;
 const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "أماكن أخرى"] as const;
 const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض شخصية"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
+type CustomerSupportAction = (typeof CUSTOMER_SUPPORT_ACTIONS)[number];
+type CustomerSupportActionLabel = CustomerSupportAction["label"];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
 type CustomerBookingStep = "service" | "pickup" | "destination" | "details";
+type CustomerDestinationResults = {
+  places: DestinationPlace[];
+  title: string;
+};
+
+function normalizeDestinationSearch(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function findCitySuggestion(query: string) {
+  const normalizedQuery = normalizeDestinationSearch(query);
+
+  if (!normalizedQuery) {
+    return null;
+  }
+
+  return (
+    customerHomeMock.citySuggestions.find((citySuggestion) => {
+      const normalizedCity = citySuggestion.city.toLowerCase();
+
+      return normalizedQuery.includes(normalizedCity) || normalizedCity.includes(normalizedQuery);
+    }) ?? null
+  );
+}
+
+function matchesDestinationFilter(place: DestinationPlace, activeFilter?: CustomerSearchFilter) {
+  if (!activeFilter || activeFilter === "الكل") {
+    return true;
+  }
+
+  if (activeFilter === "مطاعم") {
+    return place.label.includes("مطعم");
+  }
+
+  if (activeFilter === "جامعات") {
+    return place.label.includes("جامعة");
+  }
+
+  return !place.label.includes("مطعم") && !place.label.includes("جامعة");
+}
+
+function getCustomerDestinationResults({
+  activeFilter,
+  fallbackTitle,
+  query
+}: {
+  activeFilter?: CustomerSearchFilter;
+  fallbackTitle: string;
+  query: string;
+}): CustomerDestinationResults {
+  const normalizedQuery = normalizeDestinationSearch(query);
+  const matchedCity = findCitySuggestion(query);
+  const sourcePlaces: DestinationPlace[] = matchedCity
+    ? [...matchedCity.places]
+    : [...customerHomeMock.savedPlaces];
+
+  const places = sourcePlaces.filter((place) => {
+    const matchesQuery =
+      Boolean(matchedCity) ||
+      !normalizedQuery ||
+      place.label.toLowerCase().includes(normalizedQuery) ||
+      place.area.toLowerCase().includes(normalizedQuery) ||
+      place.detail.toLowerCase().includes(normalizedQuery);
+
+    return matchesQuery && matchesDestinationFilter(place, activeFilter);
+  });
+
+  return {
+    places,
+    title: matchedCity ? `اقتراحات ${matchedCity.city}` : fallbackTitle
+  };
+}
+
+function getDestinationCity(place: DestinationPlace) {
+  return place.area.split(" - ")[0] || place.area;
+}
 
 const CUSTOMER_BOOKING_STEPS: readonly {
   helper: string;
@@ -406,6 +511,28 @@ function getPaymentReadinessCopy({
   };
 }
 
+function getPaymentChoiceSummary({
+  effectivePaymentMethod,
+  paymentMethod,
+  visaValidationReady
+}: {
+  effectivePaymentMethod: string;
+  paymentMethod: PaymentMethod;
+  visaValidationReady: boolean;
+}): PaymentChoiceSummary {
+  if (paymentMethod === "فيزا") {
+    return {
+      detail: visaValidationReady ? effectivePaymentMethod : "أكمل البطاقة قبل إرسال الطلب",
+      title: visaValidationReady ? "فيزا جاهزة" : "فيزا تحتاج بيانات"
+    };
+  }
+
+  return {
+    detail: "الدفع عند الاستلام",
+    title: "كاش عند الاستلام جاهز"
+  };
+}
+
 function getRequestReadinessCopy({
   paymentMethod,
   visaValidationReady
@@ -447,6 +574,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const [notice, setNotice] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isSupportHubOpen, setIsSupportHubOpen] = useState(false);
+  const [selectedSupportAction, setSelectedSupportAction] =
+    useState<CustomerSupportActionLabel>("محادثة الدعم");
   const [rating, setRating] = useState<number | null>(null);
   const [completionNote, setCompletionNote] = useState<string>("");
   const [selectedFeedbackTags, setSelectedFeedbackTags] = useState<string[]>([]);
@@ -544,6 +674,11 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     shouldSaveVisaCard,
     visaValidationReady: visaValidationResult.success
   });
+  const paymentChoiceSummary = getPaymentChoiceSummary({
+    effectivePaymentMethod,
+    paymentMethod,
+    visaValidationReady: visaValidationResult.success
+  });
   const requestReadinessCopy = getRequestReadinessCopy({
     paymentMethod,
     visaValidationReady: visaValidationResult.success
@@ -593,6 +728,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   function openBookingFlow() {
     setActiveNav("الرئيسية");
     setIsBookingFlowOpen(true);
+    setIsSupportHubOpen(false);
     setBookingStep("service");
     setNotice(null);
     setIsNotificationsOpen(false);
@@ -602,6 +738,29 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   function closeBookingFlow() {
     setIsBookingFlowOpen(false);
     setBookingStep("service");
+    setIsSupportHubOpen(false);
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
+  }
+
+  function openSupportHub() {
+    setIsSupportHubOpen(true);
+    setSelectedSupportAction("محادثة الدعم");
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
+  }
+
+  function closeSupportHub() {
+    setIsSupportHubOpen(false);
+    setNotice(null);
+    setIsNotificationsOpen(false);
+    void Haptics.selectionAsync();
+  }
+
+  function selectSupportAction(action: CustomerSupportAction) {
+    setSelectedSupportAction(action.label);
     setNotice(null);
     setIsNotificationsOpen(false);
     void Haptics.selectionAsync();
@@ -1303,7 +1462,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             {activeNav === "رحلاتي"
               ? customerHomeMock.trips.title
               : activeNav === "حسابي"
-                ? "ملف العميل"
+                ? isSupportHubOpen
+                  ? "مركز الدعم"
+                  : "ملف العميل"
                 : activeNav === "البحث"
                   ? "البحث"
                   : isBookingFlowOpen
@@ -1314,7 +1475,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             {activeNav === "رحلاتي"
               ? "تابع رحلتك الحالية وسجل رحلاتك السابقة"
               : activeNav === "حسابي"
-                ? "بياناتك الأساسية وتجربة الدفع mock"
+                ? isSupportHubOpen
+                  ? "كل خيارات المساعدة في مكان واحد"
+                  : "بياناتك الأساسية وتجربة الدفع mock"
                 : activeNav === "البحث"
                   ? "اختر وجهتك بسرعة من الأماكن القريبة والمحفوظة"
                   : isBookingFlowOpen
@@ -1324,16 +1487,26 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         </View>
 
         <MotionSurface
-          key={`${activeNav}-${isBookingFlowOpen ? "booking" : "tab"}`}
+          key={`${activeNav}-${isBookingFlowOpen ? "booking" : "tab"}-${
+            isSupportHubOpen ? "support" : "profile"
+          }`}
           testID="customer-active-tab-motion-surface"
         >
           {activeNav === "رحلاتي" ? (
             <CustomerTripsTab liveTrip={liveCustomerTrip} />
           ) : activeNav === "حسابي" ? (
-            <CustomerProfileTab
-              onOpenSupport={() => setNotice("تم فتح الدعم والمساعدة mock")}
-              onReviewProfile={() => setNotice("مراجعة بيانات الحساب mock فقط الآن")}
-            />
+            isSupportHubOpen ? (
+              <CustomerSupportHub
+                onBack={closeSupportHub}
+                onSelectAction={selectSupportAction}
+                selectedAction={selectedSupportAction}
+              />
+            ) : (
+              <CustomerProfileTab
+                onOpenSupport={openSupportHub}
+                onReviewProfile={() => setNotice("مراجعة بيانات الحساب mock فقط الآن")}
+              />
+            )
           ) : activeNav === "البحث" ? (
             <CustomerSearchTab
               activeFilter={activeSearchFilter}
@@ -1549,10 +1722,23 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                           />
                         ) : null}
 
-                        <View style={styles.paymentGroup}>
-                          <Text selectable style={styles.detailLabel}>
-                            طريقة الدفع
-                          </Text>
+                        <View testID="customer-payment-method-panel" style={styles.paymentGroup}>
+                          <View style={styles.paymentHeaderRow}>
+                            <Text selectable style={styles.detailLabel}>
+                              طريقة الدفع
+                            </Text>
+                            <View
+                              testID="customer-payment-choice-summary"
+                              style={styles.paymentChoiceSummary}
+                            >
+                              <Text selectable style={styles.paymentChoiceSummaryTitle}>
+                                {paymentChoiceSummary.title}
+                              </Text>
+                              <Text selectable style={styles.paymentChoiceSummaryMeta}>
+                                {paymentChoiceSummary.detail}
+                              </Text>
+                            </View>
+                          </View>
                           <View style={styles.paymentOptions}>
                             {customerHomeMock.paymentMethods.map((method) => (
                               <Pressable
@@ -1725,45 +1911,45 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                               ) : null}
                             </View>
                           ) : null}
-                        </View>
 
-                        <View
-                          testID="customer-payment-readiness-card"
-                          style={styles.paymentReadinessCard}
-                        >
-                          <View style={styles.paymentReadinessIcon}>
-                            <CreditCard
-                              color={
-                                paymentMethod === "فيزا" && !visaValidationResult.success
-                                  ? colors.warning
-                                  : colors.cyan
-                              }
-                              size={18}
-                            />
-                          </View>
-                          <View style={styles.paymentReadinessCopy}>
-                            <Text selectable style={styles.paymentReadinessTitle}>
-                              {paymentReadinessCopy.title}
-                            </Text>
-                            <Text selectable style={styles.paymentReadinessMethod}>
-                              {paymentReadinessCopy.method}
-                            </Text>
-                            <Text selectable style={styles.paymentReadinessMeta}>
-                              {paymentReadinessCopy.detail}
-                            </Text>
-                          </View>
-                          <View style={styles.paymentReadinessStatus}>
-                            <CheckCircle
-                              color={
-                                paymentMethod === "فيزا" && !visaValidationResult.success
-                                  ? colors.textMuted
-                                  : colors.success
-                              }
-                              size={15}
-                            />
-                            <Text selectable style={styles.paymentReadinessStatusText}>
-                              {paymentReadinessCopy.status}
-                            </Text>
+                          <View
+                            testID="customer-payment-readiness-card"
+                            style={styles.paymentReadinessCard}
+                          >
+                            <View style={styles.paymentReadinessIcon}>
+                              <CreditCard
+                                color={
+                                  paymentMethod === "فيزا" && !visaValidationResult.success
+                                    ? colors.warning
+                                    : colors.cyan
+                                }
+                                size={18}
+                              />
+                            </View>
+                            <View style={styles.paymentReadinessCopy}>
+                              <Text selectable style={styles.paymentReadinessTitle}>
+                                {paymentReadinessCopy.title}
+                              </Text>
+                              <Text selectable style={styles.paymentReadinessMethod}>
+                                {paymentReadinessCopy.method}
+                              </Text>
+                              <Text selectable style={styles.paymentReadinessMeta}>
+                                {paymentReadinessCopy.detail}
+                              </Text>
+                            </View>
+                            <View style={styles.paymentReadinessStatus}>
+                              <CheckCircle
+                                color={
+                                  paymentMethod === "فيزا" && !visaValidationResult.success
+                                    ? colors.textMuted
+                                    : colors.success
+                                }
+                                size={15}
+                              />
+                              <Text selectable style={styles.paymentReadinessStatusText}>
+                                {paymentReadinessCopy.status}
+                              </Text>
+                            </View>
                           </View>
                         </View>
 
@@ -1856,6 +2042,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 onPress={() => {
                   setNotice(null);
                   setActiveNav(item.label);
+                  setIsSupportHubOpen(false);
                   if (item.label === "الرئيسية") {
                     setIsBookingFlowOpen(false);
                   }
@@ -1902,14 +2089,11 @@ function CustomerDestinationSelectionPage({
   selectedDestination: DestinationPlace | null;
   selectedServiceType: ServiceType;
 }) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const results = customerHomeMock.savedPlaces.filter(
-    (place) =>
-      !normalizedQuery ||
-      place.label.toLowerCase().includes(normalizedQuery) ||
-      place.area.toLowerCase().includes(normalizedQuery) ||
-      place.detail.toLowerCase().includes(normalizedQuery)
-  );
+  const destinationResults = getCustomerDestinationResults({
+    fallbackTitle: "أماكن مقترحة",
+    query
+  });
+  const results = destinationResults.places;
 
   return (
     <View testID="customer-destination-selection-page" style={styles.destinationSelectionPage}>
@@ -1957,7 +2141,7 @@ function CustomerDestinationSelectionPage({
       <MotionSurface delay={110} testID="customer-motion-destination-results">
         <View style={styles.sectionHeader}>
           <Text selectable style={styles.sectionTitle}>
-            أماكن مقترحة
+            {destinationResults.title}
           </Text>
           <Text selectable style={styles.searchResultCount}>
             {`${results.length} نتائج`}
@@ -2034,6 +2218,11 @@ function CustomerDestinationSelectionPage({
                 </Text>
               </View>
             </View>
+
+            <DestinationReadinessSummary
+              place={selectedDestination}
+              testID="customer-booking-destination-summary"
+            />
 
             <View style={styles.searchDetailField}>
               <Text selectable style={styles.detailLabel}>
@@ -3023,23 +3212,12 @@ function CustomerSearchTab({
   searchCopy: CustomerSearchCopy;
   selectedDestination: DestinationPlace | null;
 }) {
-  const normalizedQuery = query.trim().toLowerCase();
-  const results = customerHomeMock.savedPlaces.filter((place) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      place.label.toLowerCase().includes(normalizedQuery) ||
-      place.area.toLowerCase().includes(normalizedQuery) ||
-      place.detail.toLowerCase().includes(normalizedQuery);
-    const matchesFilter =
-      activeFilter === "الكل" ||
-      (activeFilter === "مطاعم" && place.label.includes("مطعم")) ||
-      (activeFilter === "جامعات" && place.label.includes("جامعة")) ||
-      (activeFilter === "أماكن أخرى" &&
-        !place.label.includes("مطعم") &&
-        !place.label.includes("جامعة"));
-
-    return matchesQuery && matchesFilter;
+  const destinationResults = getCustomerDestinationResults({
+    activeFilter,
+    fallbackTitle: "نتائج البحث",
+    query
   });
+  const results = destinationResults.places;
 
   return (
     <View style={styles.tabStack}>
@@ -3098,7 +3276,7 @@ function CustomerSearchTab({
 
       <View style={styles.sectionHeader}>
         <Text selectable style={styles.sectionTitle}>
-          نتائج البحث
+          {destinationResults.title}
         </Text>
         <Text selectable style={styles.searchResultCount}>
           {`نتائج البحث: ${results.length}`}
@@ -3165,6 +3343,10 @@ function CustomerSearchTab({
               </Text>
             </View>
           </View>
+          <DestinationReadinessSummary
+            place={selectedDestination}
+            testID="customer-search-destination-summary"
+          />
           <View style={styles.searchDetailField}>
             <Text selectable style={styles.detailLabel}>
               {searchCopy.detailLabel}
@@ -3206,6 +3388,34 @@ function CustomerSearchTab({
           </Text>
         </GlassCard>
       ) : null}
+    </View>
+  );
+}
+
+function DestinationReadinessSummary({
+  place,
+  testID
+}: {
+  place: DestinationPlace;
+  testID: string;
+}) {
+  return (
+    <View testID={testID} style={styles.destinationSummaryGrid}>
+      <View style={styles.destinationSummaryPill}>
+        <Text selectable style={styles.destinationSummaryText}>
+          {`المدينة: ${getDestinationCity(place)}`}
+        </Text>
+      </View>
+      <View style={styles.destinationSummaryPill}>
+        <Text selectable style={styles.destinationSummaryText}>
+          {`المسافة: ${place.distance}`}
+        </Text>
+      </View>
+      <View style={styles.destinationSummaryPill}>
+        <Text selectable style={styles.destinationSummaryText}>
+          {`السعر المتوقع: ${place.price}`}
+        </Text>
+      </View>
     </View>
   );
 }
@@ -3786,6 +3996,142 @@ function CustomerProfileTab({
             فتح الدعم والمساعدة
           </Text>
         </Pressable>
+      </GlassCard>
+    </View>
+  );
+}
+
+function CustomerSupportHub({
+  onBack,
+  onSelectAction,
+  selectedAction
+}: {
+  onBack: () => void;
+  onSelectAction: (action: CustomerSupportAction) => void;
+  selectedAction: CustomerSupportActionLabel;
+}) {
+  const activeAction =
+    CUSTOMER_SUPPORT_ACTIONS.find((action) => action.label === selectedAction) ??
+    CUSTOMER_SUPPORT_ACTIONS[0];
+
+  return (
+    <View testID="customer-support-hub" style={styles.supportHubStack}>
+      <GlassCard style={styles.supportHubCard} variant="strong">
+        <Pressable
+          accessibilityLabel="العودة إلى حسابي"
+          accessibilityRole="button"
+          onPress={onBack}
+          style={({ pressed }) => [styles.supportBackButton, pressed ? styles.pressed : null]}
+        >
+          <ChevronRight color={colors.textSoft} size={18} />
+          <Text selectable style={styles.supportBackText}>
+            حسابي
+          </Text>
+        </Pressable>
+
+        <View style={styles.profileSectionHeader}>
+          <View style={styles.profileSectionIcon}>
+            <MessageCircle color={colors.cyan} size={18} />
+          </View>
+          <View style={styles.profileSectionCopy}>
+            <Text selectable style={styles.profileSectionTitle}>
+              الدعم والمساعدة
+            </Text>
+            <Text selectable style={styles.profileSectionMeta}>
+              اختر نوع المساعدة بدون تعقيد
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.supportActionGrid}>
+          {CUSTOMER_SUPPORT_ACTIONS.map((action) => {
+            const isActive = activeAction.label === action.label;
+
+            return (
+              <Pressable
+                key={action.label}
+                accessibilityLabel={`اختيار ${action.label}`}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isActive }}
+                onPress={() => onSelectAction(action)}
+                style={({ pressed }) => [
+                  styles.supportActionCard,
+                  isActive ? styles.supportActionCardActive : null,
+                  pressed ? styles.pressed : null
+                ]}
+              >
+                <View
+                  style={[
+                    styles.supportActionIcon,
+                    isActive ? styles.supportActionIconActive : null
+                  ]}
+                >
+                  {action.label === "محادثة الدعم" ? (
+                    <MessageCircle color={isActive ? colors.text : colors.cyan} size={18} />
+                  ) : action.label === "الإبلاغ عن مشكلة" ? (
+                    <XCircle color={isActive ? colors.text : colors.warning} size={18} />
+                  ) : (
+                    <Phone color={isActive ? colors.text : colors.success} size={18} />
+                  )}
+                </View>
+                <View style={styles.supportActionCopy}>
+                  <Text selectable style={styles.supportActionTitle}>
+                    {action.label}
+                  </Text>
+                  <Text selectable style={styles.supportActionMeta}>
+                    {action.detail}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        <View style={styles.supportApiNote}>
+          <Sparkles color={colors.cyan} size={15} />
+          <Text selectable style={styles.supportApiNoteText}>
+            لا يوجد ربط API الآن
+          </Text>
+        </View>
+      </GlassCard>
+
+      <GlassCard testID="customer-support-report-summary" style={styles.supportSummaryCard}>
+        <View style={styles.profileSectionHeader}>
+          <View style={styles.profileSectionIcon}>
+            <ShieldCheck color={colors.success} size={18} />
+          </View>
+          <View style={styles.profileSectionCopy}>
+            <Text selectable style={styles.profileSectionTitle}>
+              {activeAction.label === "الإبلاغ عن مشكلة"
+                ? "بلاغ مشكلة جاهز"
+                : `${activeAction.label} جاهزة`}
+            </Text>
+            <Text selectable style={styles.profileSectionMeta}>
+              طلب دعم mock محفوظ داخل الواجهة فقط
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.supportSummaryRows}>
+          <View style={styles.supportSummaryLine}>
+            <MessageCircle color={colors.cyan} size={16} />
+            <Text selectable style={styles.supportSummaryLineText}>
+              {`نوع البلاغ: ${activeAction.label}`}
+            </Text>
+          </View>
+          <View style={styles.supportSummaryLine}>
+            <ShieldCheck color={colors.success} size={16} />
+            <Text selectable style={styles.supportSummaryLineText}>
+              {`الأولوية: ${activeAction.priority}`}
+            </Text>
+          </View>
+          <View style={styles.supportSummaryLine}>
+            <Sparkles color={colors.violetSoft} size={16} />
+            <Text selectable style={styles.supportSummaryLineText}>
+              {activeAction.response}
+            </Text>
+          </View>
+        </View>
       </GlassCard>
     </View>
   );
@@ -4807,7 +5153,44 @@ const styles = StyleSheet.create({
     textAlignVertical: "top"
   },
   paymentGroup: {
-    gap: spacing.xs
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  paymentHeaderRow: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm
+  },
+  paymentChoiceSummary: {
+    flex: 1,
+    minHeight: 52,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    gap: 3,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.18)",
+    backgroundColor: "rgba(0, 229, 255, 0.06)"
+  },
+  paymentChoiceSummaryTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    lineHeight: 20
+  },
+  paymentChoiceSummaryMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
   },
   paymentOptions: {
     flexDirection: "row-reverse",
@@ -6373,6 +6756,29 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "800"
   },
+  destinationSummaryGrid: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  destinationSummaryPill: {
+    minHeight: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  destinationSummaryText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
   searchDetailField: {
     gap: spacing.xs,
     padding: spacing.sm,
@@ -7015,6 +7421,130 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900"
+  },
+  supportHubStack: {
+    gap: spacing.md
+  },
+  supportHubCard: {
+    gap: spacing.md,
+    padding: layoutRhythm.cardPadding,
+    borderRadius: radii.lg,
+    borderColor: glass.strong.borderColor,
+    backgroundColor: glass.strong.backgroundColor
+  },
+  supportBackButton: {
+    alignSelf: "flex-end",
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  supportBackText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  supportActionGrid: {
+    gap: spacing.sm
+  },
+  supportActionCard: {
+    minHeight: 74,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.15)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  supportActionCardActive: {
+    borderColor: "rgba(0, 229, 255, 0.28)",
+    backgroundColor: "rgba(0, 229, 255, 0.09)",
+    boxShadow: shadows.activeControl
+  },
+  supportActionIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.22)",
+    backgroundColor: "rgba(0, 229, 255, 0.08)"
+  },
+  supportActionIconActive: {
+    borderColor: "rgba(199, 183, 255, 0.34)",
+    backgroundColor: "rgba(139, 92, 246, 0.18)"
+  },
+  supportActionCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
+  supportActionTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  supportActionMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800",
+    lineHeight: 17
+  },
+  supportApiNote: {
+    minHeight: 42,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(0, 229, 255, 0.07)"
+  },
+  supportApiNoteText: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  supportSummaryCard: {
+    gap: spacing.md,
+    padding: layoutRhythm.cardPadding,
+    borderRadius: radii.lg,
+    borderColor: controlSurfaces.secondary.borderColor
+  },
+  supportSummaryRows: {
+    gap: spacing.xs
+  },
+  supportSummaryLine: {
+    minHeight: 46,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.05)"
+  },
+  supportSummaryLineText: {
+    ...rtlText,
+    flex: 1,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900",
+    lineHeight: 20
   },
   profileRow: {
     minHeight: 46,
