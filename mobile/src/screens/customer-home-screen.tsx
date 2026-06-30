@@ -126,41 +126,11 @@ type CustomerTripsDetailView = "current" | "completed-live" | `history:${string}
 
 const LIVE_CUSTOMER_REQUEST_ID = "request-live-customer";
 const CUSTOMER_FEEDBACK_TAGS = ["كابتن محترف", "قيادة هادئة", "سيارة نظيفة"] as const;
-const CUSTOMER_PROFILE_PAYMENT_SUMMARY = {
-  method: "فيزا • **** 4242",
-  monthlySpend: "184 شيكل",
-  status: "فيزا مفعلة"
-} as const;
-const CUSTOMER_PROFILE_SUPPORT_ITEMS = [
-  "محادثة الدعم",
-  "الإبلاغ عن مشكلة",
-  "مركز المساعدة"
-] as const;
-const CUSTOMER_SUPPORT_ACTIONS = [
-  {
-    detail: "رد سريع على أسئلة الرحلات والدفع",
-    label: "محادثة الدعم",
-    priority: "متوسطة",
-    response: "محادثة mock جاهزة، وسيتم ربطها بالدعم لاحقاً"
-  },
-  {
-    detail: "أخبرنا عن مشكلة بالرحلة أو الدفع",
-    label: "الإبلاغ عن مشكلة",
-    priority: "عالية",
-    response: "سيظهر هنا نموذج API لاحقاً"
-  },
-  {
-    detail: "تواصل مباشر عند الحالات المستعجلة",
-    label: "اتصال سريع",
-    priority: "فورية",
-    response: "اتصال mock جاهز، وسيتم ربط الرقم لاحقاً"
-  }
-] as const;
 const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "أماكن أخرى"] as const;
 const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض شخصية"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
-type CustomerSupportAction = (typeof CUSTOMER_SUPPORT_ACTIONS)[number];
+type CustomerSupportAction = (typeof customerHomeMock.profileSupport.actions)[number];
 type CustomerSupportActionLabel = CustomerSupportAction["label"];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
 type CustomerBookingStep = "service" | "pickup" | "destination" | "details";
@@ -3895,12 +3865,12 @@ function CustomerProfileTab({
           <ProfileRow
             icon={<CreditCard color={colors.violetSoft} size={16} />}
             label="طريقة الدفع"
-            value={CUSTOMER_PROFILE_PAYMENT_SUMMARY.status}
+            value={customerHomeMock.profilePaymentSummary.status}
           />
           <ProfileRow
             icon={<CreditCard color={colors.cyan} size={16} />}
             label="بطاقة الدفع"
-            value={CUSTOMER_PROFILE_PAYMENT_SUMMARY.method}
+            value={customerHomeMock.profilePaymentSummary.method}
           />
         </View>
       </GlassCard>
@@ -3927,7 +3897,7 @@ function CustomerProfileTab({
         <View style={styles.profileWalletGrid}>
           <View style={styles.profileWalletTilePrimary}>
             <Text selectable style={styles.profileWalletValue}>
-              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.monthlySpend}
+              {customerHomeMock.profilePaymentSummary.monthlySpend}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
               مدفوعات هذا الشهر
@@ -3935,7 +3905,7 @@ function CustomerProfileTab({
           </View>
           <View style={styles.profileWalletTile}>
             <Text selectable style={styles.profileWalletValueSmall}>
-              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.status}
+              {customerHomeMock.profilePaymentSummary.status}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
               حالة الدفع
@@ -3943,7 +3913,7 @@ function CustomerProfileTab({
           </View>
           <View style={styles.profileWalletTile}>
             <Text selectable style={styles.profileWalletValueSmall}>
-              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.method}
+              {customerHomeMock.profilePaymentSummary.method}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
               البطاقة الافتراضية
@@ -3968,7 +3938,7 @@ function CustomerProfileTab({
         </View>
 
         <View style={styles.profilePaymentList}>
-          {CUSTOMER_PROFILE_SUPPORT_ITEMS.map((item) => (
+          {customerHomeMock.profileSupport.items.map((item) => (
             <View key={item} style={styles.profilePaymentRow}>
               <View style={styles.profilePaymentStatus}>
                 <CheckCircle color={colors.success} size={16} />
@@ -4011,8 +3981,8 @@ function CustomerSupportHub({
   selectedAction: CustomerSupportActionLabel;
 }) {
   const activeAction =
-    CUSTOMER_SUPPORT_ACTIONS.find((action) => action.label === selectedAction) ??
-    CUSTOMER_SUPPORT_ACTIONS[0];
+    customerHomeMock.profileSupport.actions.find((action) => action.label === selectedAction) ??
+    customerHomeMock.profileSupport.actions[0];
 
   return (
     <View testID="customer-support-hub" style={styles.supportHubStack}>
@@ -4044,7 +4014,7 @@ function CustomerSupportHub({
         </View>
 
         <View style={styles.supportActionGrid}>
-          {CUSTOMER_SUPPORT_ACTIONS.map((action) => {
+          {customerHomeMock.profileSupport.actions.map((action) => {
             const isActive = activeAction.label === action.label;
 
             return (

@@ -264,6 +264,34 @@ export const customerHomeMock = {
     defaultPayment: "كاش عند الاستلام",
     rating: "4.9"
   },
+  profilePaymentSummary: {
+    method: "فيزا • **** 4242",
+    monthlySpend: "184 شيكل",
+    status: "فيزا مفعلة"
+  },
+  profileSupport: {
+    items: ["محادثة الدعم", "الإبلاغ عن مشكلة", "مركز المساعدة"],
+    actions: [
+      {
+        detail: "رد سريع على أسئلة الرحلات والدفع",
+        label: "محادثة الدعم",
+        priority: "متوسطة",
+        response: "محادثة mock جاهزة، وسيتم ربطها بالدعم لاحقاً"
+      },
+      {
+        detail: "أخبرنا عن مشكلة بالرحلة أو الدفع",
+        label: "الإبلاغ عن مشكلة",
+        priority: "عالية",
+        response: "سيظهر هنا نموذج API لاحقاً"
+      },
+      {
+        detail: "تواصل مباشر عند الحالات المستعجلة",
+        label: "اتصال سريع",
+        priority: "فورية",
+        response: "اتصال mock جاهز، وسيتم ربط الرقم لاحقاً"
+      }
+    ]
+  },
   navItems: [
     {
       label: "الرئيسية",
