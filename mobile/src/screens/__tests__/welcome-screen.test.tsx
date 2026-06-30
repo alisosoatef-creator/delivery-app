@@ -3,7 +3,7 @@ import { fireEvent, render } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { controlSurfaces, glass, shadows, spacing } from "@/design/tokens";
+import { controlSurfaces, shadows, spacing } from "@/design/tokens";
 
 import { WelcomeScreen } from "../welcome-screen";
 
@@ -35,22 +35,28 @@ describe("WelcomeScreen", () => {
     expect(screen.getByText("واصل")).toBeTruthy();
     expect(screen.getByText("واصل وجهتك بسهولة وثقة")).toBeTruthy();
     expect(screen.getByText("تجربة تنقل ذكية وآمنة مصممة من أجلك")).toBeTruthy();
-    expect(screen.getByText("اختر نوع الحساب")).toBeTruthy();
-    expect(screen.getByText("تطبيق العميل")).toBeTruthy();
-    expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
     expect(screen.getByText("تسجيل الدخول")).toBeTruthy();
     expect(screen.getByText("إنشاء حساب جديد")).toBeTruthy();
-    expect(screen.getByText("الدخول ككابتن")).toBeTruthy();
+    expect(screen.getByText("الدخول ككابتن توصيل")).toBeTruthy();
     expect(screen.getByTestId("welcome-brand-mark")).toBeTruthy();
   });
 
-  it("uses a calm premium hierarchy for brand, roles, and entry actions", async () => {
+  it("keeps the welcome entry focused on account actions only", async () => {
+    const { screen } = await renderWelcomeScreen();
+
+    expect(screen.queryByTestId("welcome-promise-card")).toBeNull();
+    expect(screen.queryByTestId("welcome-role-card")).toBeNull();
+    expect(screen.queryByText("خريطة أولًا، طلب أسرع")).toBeNull();
+    expect(screen.queryByText("اختر نوع الحساب")).toBeNull();
+    expect(screen.getAllByTestId("premium-motion-button")).toHaveLength(3);
+    expect(screen.getByLabelText("تسجيل الدخول")).toBeTruthy();
+    expect(screen.getByLabelText("إنشاء حساب جديد")).toBeTruthy();
+    expect(screen.getByLabelText("الدخول ككابتن توصيل")).toBeTruthy();
+  });
+
+  it("uses a calm premium hierarchy for brand and entry actions", async () => {
     const { screen } = await renderWelcomeScreen();
     const brandStyle = StyleSheet.flatten(screen.getByTestId("welcome-brand-mark").props.style);
-    const promiseStyle = StyleSheet.flatten(screen.getByTestId("welcome-promise-card").props.style);
-    const customerRoleStyle = StyleSheet.flatten(
-      screen.getByTestId("welcome-customer-role").props.style
-    );
     const buttons = screen.getAllByTestId("premium-motion-button");
     const primaryButtonStyle = StyleSheet.flatten(buttons[0].props.style);
     const secondaryButtonStyle = StyleSheet.flatten(buttons[1].props.style);
@@ -60,15 +66,7 @@ describe("WelcomeScreen", () => {
       borderColor: controlSurfaces.activeNavigation.borderColor,
       boxShadow: shadows.cardStrong
     });
-    expect(promiseStyle).toMatchObject({
-      backgroundColor: glass.strong.backgroundColor,
-      boxShadow: shadows.cardStrong
-    });
-    expect(customerRoleStyle).toMatchObject({
-      backgroundColor: controlSurfaces.secondary.backgroundColor,
-      borderColor: controlSurfaces.secondary.borderColor,
-      boxShadow: shadows.cardSubtle
-    });
+    expect(buttons).toHaveLength(3);
     expect(primaryButtonStyle.boxShadow).toBe(shadows.primaryAction);
     expect(secondaryButtonStyle).toMatchObject({
       backgroundColor: controlSurfaces.secondary.backgroundColor,
@@ -79,9 +77,6 @@ describe("WelcomeScreen", () => {
   it("keeps the Android welcome entry compact enough for the primary action", async () => {
     const { screen } = await renderWelcomeScreen();
     const brandStyle = StyleSheet.flatten(screen.getByTestId("welcome-brand-mark").props.style);
-    const customerRoleStyle = StyleSheet.flatten(
-      screen.getByTestId("welcome-customer-role").props.style
-    );
     const primaryButtonStyle = StyleSheet.flatten(
       screen.getAllByTestId("premium-motion-button")[0].props.style
     );
@@ -90,7 +85,7 @@ describe("WelcomeScreen", () => {
       width: 88,
       height: 88
     });
-    expect(customerRoleStyle.minHeight).toBeLessThanOrEqual(60);
+    expect(screen.queryByTestId("welcome-role-card")).toBeNull();
     expect(primaryButtonStyle.minHeight).toBeGreaterThanOrEqual(56);
   });
 
@@ -109,7 +104,7 @@ describe("WelcomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
     await fireEvent.press(screen.getByLabelText("إنشاء حساب جديد"));
-    await fireEvent.press(screen.getByLabelText("الدخول ككابتن"));
+    await fireEvent.press(screen.getByLabelText("الدخول ككابتن توصيل"));
 
     expect(actions.onCustomerLogin).toHaveBeenCalledTimes(1);
     expect(actions.onCustomerRegister).toHaveBeenCalledTimes(1);

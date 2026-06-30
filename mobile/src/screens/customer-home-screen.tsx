@@ -114,37 +114,34 @@ type CustomerTripsLiveRide = {
   serviceLabel: string;
   time: string;
 };
+type CustomerTripHistoryItem = (typeof customerHomeMock.trips.history)[number];
+type CustomerTripsDetailView = "current" | "completed-live" | `history:${string}` | null;
 
 const LIVE_CUSTOMER_REQUEST_ID = "request-live-customer";
 const CUSTOMER_FEEDBACK_TAGS = ["كابتن محترف", "قيادة هادئة", "سيارة نظيفة"] as const;
-const CUSTOMER_PROFILE_WALLET = {
-  balance: "120 شيكل",
-  label: "رصيد تجريبي",
+const CUSTOMER_PROFILE_PAYMENT_SUMMARY = {
+  method: "فيزا • **** 4242",
   monthlySpend: "184 شيكل",
-  points: "8 نقاط"
+  status: "فيزا مفعلة"
 } as const;
-const CUSTOMER_PROFILE_PAYMENT_METHODS = [
-  { detail: "افتراضي للطلبات السريعة", label: "كاش عند الاستلام", status: "نشط" },
-  { detail: "تنتهي 09/28", label: "فيزا • **** 4242", status: "جاهزة" }
+const CUSTOMER_PROFILE_SUPPORT_ITEMS = [
+  "محادثة الدعم",
+  "الإبلاغ عن مشكلة",
+  "مركز المساعدة"
 ] as const;
-const CUSTOMER_PROFILE_SECURITY_ITEMS = [
-  "توثيق الجوال مفعّل",
-  "مشاركة الرحلة مع جهة موثوقة",
-  "تنبيهات الدفع والرحلات مفعّلة"
-] as const;
-const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "الأقرب"] as const;
+const CUSTOMER_SEARCH_FILTERS = ["الكل", "مطاعم", "جامعات", "أماكن أخرى"] as const;
 const DELIVERY_PACKAGE_TYPES = ["طرد صغير", "مستندات", "أغراض شخصية"] as const;
 
 type CustomerSearchFilter = (typeof CUSTOMER_SEARCH_FILTERS)[number];
 type DeliveryPackageType = (typeof DELIVERY_PACKAGE_TYPES)[number];
 type CustomerBookingStep = "service" | "pickup" | "destination" | "details";
 
-const CUSTOMER_BOOKING_STEPS: ReadonlyArray<{
+const CUSTOMER_BOOKING_STEPS: readonly {
   helper: string;
   id: CustomerBookingStep;
   shortTitle: string;
   title: string;
-}> = [
+}[] = [
   {
     helper: "اختر داخل المدينة، خارج المدينة، أو توصيل طلبية.",
     id: "service",
@@ -1334,8 +1331,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             <CustomerTripsTab liveTrip={liveCustomerTrip} />
           ) : activeNav === "حسابي" ? (
             <CustomerProfileTab
-              onAddPayment={() => setNotice("تم فتح إضافة طريقة دفع mock")}
-              onManageSecurity={() => setNotice("تم فتح إعدادات أمان الحساب mock")}
+              onOpenSupport={() => setNotice("تم فتح الدعم والمساعدة mock")}
               onReviewProfile={() => setNotice("مراجعة بيانات الحساب mock فقط الآن")}
             />
           ) : activeNav === "البحث" ? (
@@ -1345,7 +1341,6 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               onChangeDestinationDetail={setDestinationDetail}
               onChangeFilter={setActiveSearchFilter}
               onChangeQuery={setSearchQuery}
-              onRefreshSuggestions={() => setNotice("تم تحديث اقتراحات البحث mock فقط الآن")}
               onSelectDestination={selectDestinationFromSearch}
               onUseDestination={useSelectedSearchDestination}
               pickupLabel={selectedPickup.label}
@@ -3003,77 +2998,12 @@ function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
   );
 }
 
-function CustomerDestinationDiscoveryPanel({
-  nearestPlace,
-  onRefreshSuggestions,
-  savedPlacesCount,
-  searchScope
-}: {
-  nearestPlace: DestinationPlace;
-  onRefreshSuggestions: () => void;
-  savedPlacesCount: number;
-  searchScope: string;
-}) {
-  return (
-    <View style={styles.destinationDiscoveryPanel}>
-      <View style={styles.destinationDiscoveryHeader}>
-        <View style={styles.destinationDiscoveryIcon}>
-          <Sparkles color={colors.cyan} size={20} />
-        </View>
-        <View style={styles.destinationDiscoveryCopy}>
-          <Text selectable style={styles.destinationDiscoveryTitle}>
-            مركز اكتشاف الوجهات
-          </Text>
-          <Text selectable style={styles.destinationDiscoveryMeta}>
-            اقتراحات ذكية
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.destinationDiscoveryGrid}>
-        <View style={styles.destinationDiscoveryMetric}>
-          <MapPin color={colors.success} size={16} />
-          <Text selectable style={styles.destinationDiscoveryValue}>
-            {`أقرب وجهة: ${nearestPlace.label}`}
-          </Text>
-        </View>
-        <View style={styles.destinationDiscoveryMetric}>
-          <Search color={colors.cyan} size={16} />
-          <Text selectable style={styles.destinationDiscoveryValue}>
-            {`نطاق البحث: ${searchScope}`}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.destinationDiscoveryFooter}>
-        <Text selectable style={styles.destinationDiscoveryText}>
-          {`وجهات محفوظة: ${savedPlacesCount}`}
-        </Text>
-        <Pressable
-          accessibilityLabel="تحديث اقتراحات البحث"
-          accessibilityRole="button"
-          onPress={onRefreshSuggestions}
-          style={({ pressed }) => [
-            styles.destinationDiscoveryButton,
-            pressed ? styles.pressed : null
-          ]}
-        >
-          <Text selectable style={styles.destinationDiscoveryButtonText}>
-            تحديث الاقتراحات
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 function CustomerSearchTab({
   activeFilter,
   destinationDetail,
   onChangeDestinationDetail,
   onChangeFilter,
   onChangeQuery,
-  onRefreshSuggestions,
   onSelectDestination,
   onUseDestination,
   pickupLabel,
@@ -3086,7 +3016,6 @@ function CustomerSearchTab({
   onChangeDestinationDetail: (detail: string) => void;
   onChangeFilter: (filter: CustomerSearchFilter) => void;
   onChangeQuery: (query: string) => void;
-  onRefreshSuggestions: () => void;
   onSelectDestination: (place: DestinationPlace) => void;
   onUseDestination: () => void;
   pickupLabel: string;
@@ -3105,8 +3034,9 @@ function CustomerSearchTab({
       activeFilter === "الكل" ||
       (activeFilter === "مطاعم" && place.label.includes("مطعم")) ||
       (activeFilter === "جامعات" && place.label.includes("جامعة")) ||
-      (activeFilter === "الأقرب" &&
-        (place.distance === "0.0 كم" || place.distance.startsWith("2.")));
+      (activeFilter === "أماكن أخرى" &&
+        !place.label.includes("مطعم") &&
+        !place.label.includes("جامعة"));
 
     return matchesQuery && matchesFilter;
   });
@@ -3114,30 +3044,6 @@ function CustomerSearchTab({
   return (
     <View style={styles.tabStack}>
       <GlassCard testID="customer-search-overview" style={styles.searchTabCard} variant="strong">
-        <View style={styles.tabHeader}>
-          <View style={styles.tabIcon}>
-            <Search color={colors.cyan} size={22} />
-          </View>
-          <View style={styles.tabCopy}>
-            <Text selectable style={styles.tabTitle}>
-              {searchCopy.title}
-            </Text>
-            <Text selectable style={styles.tabMeta}>
-              {searchCopy.subtitle}
-            </Text>
-            <Text selectable style={styles.tabMeta}>
-              {searchCopy.hint}
-            </Text>
-          </View>
-        </View>
-
-        <CustomerDestinationDiscoveryPanel
-          nearestPlace={customerHomeMock.savedPlaces[0]}
-          onRefreshSuggestions={onRefreshSuggestions}
-          savedPlacesCount={customerHomeMock.savedPlaces.length}
-          searchScope={searchCopy.scope}
-        />
-
         <View style={styles.searchInputShell}>
           <Search color={colors.textMuted} size={18} />
           <TextInput
@@ -3192,7 +3098,7 @@ function CustomerSearchTab({
 
       <View style={styles.sectionHeader}>
         <Text selectable style={styles.sectionTitle}>
-          اقتراحات قريبة
+          نتائج البحث
         </Text>
         <Text selectable style={styles.searchResultCount}>
           {`نتائج البحث: ${results.length}`}
@@ -3308,17 +3214,192 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
   const trips = customerHomeMock.trips;
   const currentTrip = liveTrip ?? trips.current;
   const activeStatus = liveTrip?.activeStatus ?? trips.activeStatus;
+  const [detailView, setDetailView] = useState<CustomerTripsDetailView>(null);
+  const selectedHistoryTrip =
+    detailView?.startsWith("history:") === true
+      ? trips.history.find((trip) => detailView === `history:${trip.id}`)
+      : undefined;
+
+  if (detailView === "current") {
+    return (
+      <CustomerCurrentTripDetails
+        activeStatus={activeStatus}
+        currentTrip={currentTrip}
+        liveTrip={liveTrip}
+        onBack={() => setDetailView(null)}
+      />
+    );
+  }
+
+  if (detailView === "completed-live" && liveTrip) {
+    return (
+      <View style={styles.tabStack}>
+        <CustomerTripDetailsHeader onBack={() => setDetailView(null)} title="تفاصيل الرحلة المكتملة" />
+        <CompletedTripHistoryCard liveTrip={liveTrip} />
+      </View>
+    );
+  }
+
+  if (selectedHistoryTrip) {
+    return <CustomerHistoryTripDetails onBack={() => setDetailView(null)} trip={selectedHistoryTrip} />;
+  }
 
   return (
     <View style={styles.tabStack}>
-      <GlassCard testID="customer-trips-overview" style={styles.tripOverviewCard} variant="strong">
+      <Pressable
+        accessibilityLabel="فتح تفاصيل الرحلة الحالية"
+        accessibilityRole="button"
+        onPress={() => setDetailView("current")}
+        style={({ pressed }) => [styles.tripSummaryPressable, pressed ? styles.pressed : null]}
+        testID="customer-current-trip-card"
+      >
+        <GlassCard testID="customer-trips-overview" style={styles.tripOverviewCard} variant="strong">
+          <View style={styles.tabHeader}>
+            <View style={styles.tabIcon}>
+              <Car color={colors.cyan} size={22} />
+            </View>
+            <View style={styles.tabCopy}>
+              <Text selectable style={styles.tabTitle}>
+                {trips.activeTitle}
+              </Text>
+              <Text selectable style={styles.tabMeta}>
+                {activeStatus}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.tripSummaryBody}>
+            <Text selectable style={styles.tripSummaryRoute}>
+              {currentTrip.route}
+            </Text>
+            {liveTrip?.destinationDetail ? (
+              <Text selectable style={styles.tripSummaryMeta}>
+                {liveTrip.destinationDetail}
+              </Text>
+            ) : null}
+            <View style={styles.tripSummaryFacts}>
+              <Text selectable style={styles.tripSummaryFact}>
+                {currentTrip.price}
+              </Text>
+              <Text selectable style={styles.tripSummaryFact}>
+                {currentTrip.captain}
+              </Text>
+            </View>
+            <Text selectable style={styles.tripSummaryMeta}>
+              {currentTrip.time}
+            </Text>
+            <Text selectable style={styles.tripOpenHint}>
+              عرض تفاصيل الرحلة
+            </Text>
+          </View>
+        </GlassCard>
+      </Pressable>
+
+      <View style={styles.sectionHeader}>
+        <Text selectable style={styles.sectionTitle}>
+          {trips.historyTitle}
+        </Text>
+      </View>
+
+      <View style={styles.historyList}>
+        {liveTrip?.isCompleted ? (
+          <Pressable
+            accessibilityLabel="فتح تفاصيل الرحلة المكتملة"
+            accessibilityRole="button"
+            onPress={() => setDetailView("completed-live")}
+            style={({ pressed }) => [styles.historyRow, pressed ? styles.pressed : null]}
+          >
+            <View style={styles.historyStatus}>
+              <CheckCircle color={colors.success} size={16} />
+              <Text selectable style={styles.historyStatusText}>
+                مكتملة
+              </Text>
+            </View>
+            <View style={styles.historyCopy}>
+              <Text selectable style={styles.historyTitle}>
+                {liveTrip.destinationDetail}
+              </Text>
+              <Text selectable style={styles.historyMeta}>
+                {`الآن • ${liveTrip.price}`}
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
+        {trips.history.map((trip) => (
+          <Pressable
+            key={trip.id}
+            accessibilityLabel={`فتح تفاصيل رحلة ${trip.destination}`}
+            accessibilityRole="button"
+            onPress={() => setDetailView(`history:${trip.id}`)}
+            style={({ pressed }) => [styles.historyRow, pressed ? styles.pressed : null]}
+          >
+            <View style={styles.historyStatus}>
+              <CheckCircle color={colors.success} size={16} />
+              <Text selectable style={styles.historyStatusText}>
+                {trip.status}
+              </Text>
+            </View>
+            <View style={styles.historyCopy}>
+              <Text selectable style={styles.historyTitle}>
+                {trip.destination}
+              </Text>
+              <Text selectable style={styles.historyMeta}>
+                {`${trip.date} • ${trip.price}`}
+              </Text>
+            </View>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function CustomerTripDetailsHeader({ onBack, title }: { onBack: () => void; title: string }) {
+  return (
+    <Pressable
+      accessibilityLabel="العودة إلى قائمة رحلاتي"
+      accessibilityRole="button"
+      onPress={onBack}
+      style={({ pressed }) => [styles.tripDetailsBackButton, pressed ? styles.pressed : null]}
+    >
+      <ChevronRight color={colors.textSoft} size={20} />
+      <Text selectable style={styles.tripDetailsBackText}>
+        {title}
+      </Text>
+    </Pressable>
+  );
+}
+
+function CustomerCurrentTripDetails({
+  activeStatus,
+  currentTrip,
+  liveTrip,
+  onBack
+}: {
+  activeStatus: string;
+  currentTrip: CustomerTripsLiveRide | typeof customerHomeMock.trips.current;
+  liveTrip: CustomerTripsLiveRide | null;
+  onBack: () => void;
+}) {
+  const mapPhase: MockRouteMapPhase = liveTrip?.isCompleted ? "completed" : liveTrip ? "driving" : "pickup";
+
+  return (
+    <View style={styles.tabStack}>
+      <CustomerTripDetailsHeader onBack={onBack} title="تفاصيل الرحلة الحالية" />
+      <MockRouteMap
+        destinationArea={currentTrip.route}
+        destinationDetail={liveTrip?.destinationDetail}
+        phase={mapPhase}
+        pickupLabel={customerHomeMock.pickup}
+      />
+      <GlassCard testID="customer-current-trip-details" style={styles.tripOverviewCard} variant="strong">
         <View style={styles.tabHeader}>
           <View style={styles.tabIcon}>
             <Car color={colors.cyan} size={22} />
           </View>
           <View style={styles.tabCopy}>
             <Text selectable style={styles.tabTitle}>
-              {trips.activeTitle}
+              الرحلة الحالية
             </Text>
             <Text selectable style={styles.tabMeta}>
               {activeStatus}
@@ -3336,36 +3417,42 @@ function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null
           <InfoRow label="الوقت" value={currentTrip.time} />
         </View>
       </GlassCard>
-
       {liveTrip ? <CustomerJourneyTimeline liveTrip={liveTrip} /> : null}
+    </View>
+  );
+}
 
-      <View style={styles.sectionHeader}>
-        <Text selectable style={styles.sectionTitle}>
-          {trips.historyTitle}
-        </Text>
-      </View>
-
-      <View style={styles.historyList}>
-        {liveTrip?.isCompleted ? <CompletedTripHistoryCard liveTrip={liveTrip} /> : null}
-        {trips.history.map((trip) => (
-          <View key={trip.id} style={styles.historyRow}>
-            <View style={styles.historyStatus}>
-              <CheckCircle color={colors.success} size={16} />
-              <Text selectable style={styles.historyStatusText}>
-                {trip.status}
-              </Text>
-            </View>
-            <View style={styles.historyCopy}>
-              <Text selectable style={styles.historyTitle}>
-                {trip.destination}
-              </Text>
-              <Text selectable style={styles.historyMeta}>
-                {`${trip.date} • ${trip.price}`}
-              </Text>
-            </View>
+function CustomerHistoryTripDetails({
+  onBack,
+  trip
+}: {
+  onBack: () => void;
+  trip: CustomerTripHistoryItem;
+}) {
+  return (
+    <View style={styles.tabStack}>
+      <CustomerTripDetailsHeader onBack={onBack} title="تفاصيل رحلة سابقة" />
+      <GlassCard testID="customer-history-trip-details" style={styles.tripOverviewCard} variant="strong">
+        <View style={styles.tabHeader}>
+          <View style={styles.tabIcon}>
+            <CheckCircle color={colors.success} size={22} />
           </View>
-        ))}
-      </View>
+          <View style={styles.tabCopy}>
+            <Text selectable style={styles.tabTitle}>
+              {trip.destination}
+            </Text>
+            <Text selectable style={styles.tabMeta}>
+              {trip.status}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.tripTimelineBox}>
+          <InfoRow label="الوجهة" value={trip.destination} />
+          <InfoRow label="التاريخ" value={trip.date} />
+          <InfoRow label="السعر" value={trip.price} />
+          <InfoRow label="الحالة" value={trip.status} />
+        </View>
+      </GlassCard>
     </View>
   );
 }
@@ -3519,31 +3606,10 @@ function CustomerProfileTrustCenter({
         </View>
         <View style={styles.customerTrustCopy}>
           <Text selectable style={styles.customerTrustTitle}>
-            مركز ثقة العميل
-          </Text>
-          <Text selectable style={styles.customerTrustMeta}>
             جاهزية الحساب
           </Text>
-        </View>
-      </View>
-
-      <View style={styles.customerTrustGrid}>
-        <View style={styles.customerTrustMetric}>
-          <CheckCircle color={colors.success} size={16} />
-          <Text selectable style={styles.customerTrustValue}>
-            رحلات آمنة
-          </Text>
-          <Text selectable style={styles.customerTrustLabel}>
-            مشاركة الرحلة مفعّلة
-          </Text>
-        </View>
-        <View style={styles.customerTrustMetric}>
-          <CreditCard color={colors.cyan} size={16} />
-          <Text selectable style={styles.customerTrustValue}>
-            الدفع محمي
-          </Text>
-          <Text selectable style={styles.customerTrustLabel}>
-            طرق الدفع جاهزة
+          <Text selectable style={styles.customerTrustMeta}>
+            بياناتك الأساسية جاهزة للطلبات
           </Text>
         </View>
       </View>
@@ -3572,12 +3638,10 @@ function CustomerProfileTrustCenter({
 }
 
 function CustomerProfileTab({
-  onAddPayment,
-  onManageSecurity,
+  onOpenSupport,
   onReviewProfile
 }: {
-  onAddPayment: () => void;
-  onManageSecurity: () => void;
+  onOpenSupport: () => void;
   onReviewProfile: () => void;
 }) {
   const profile = customerHomeMock.profile;
@@ -3621,27 +3685,31 @@ function CustomerProfileTab({
           <ProfileRow
             icon={<CreditCard color={colors.violetSoft} size={16} />}
             label="طريقة الدفع"
-            value={profile.defaultPayment}
+            value={CUSTOMER_PROFILE_PAYMENT_SUMMARY.status}
           />
           <ProfileRow
-            icon={<Star color={colors.warning} fill={colors.warning} size={16} />}
-            label="تقييمك"
-            value={profile.rating}
+            icon={<CreditCard color={colors.cyan} size={16} />}
+            label="بطاقة الدفع"
+            value={CUSTOMER_PROFILE_PAYMENT_SUMMARY.method}
           />
         </View>
       </GlassCard>
 
-      <GlassCard testID="customer-profile-wallet" style={styles.profileWalletCard} variant="strong">
+      <GlassCard
+        testID="customer-profile-payment-summary"
+        style={styles.profileWalletCard}
+        variant="strong"
+      >
         <View style={styles.profileSectionHeader}>
           <View style={styles.profileSectionIcon}>
             <CreditCard color={colors.cyan} size={18} />
           </View>
           <View style={styles.profileSectionCopy}>
             <Text selectable style={styles.profileSectionTitle}>
-              محفظة واصل
+              ملخص المدفوعات
             </Text>
             <Text selectable style={styles.profileSectionMeta}>
-              رصيد ومكافآت mock لنسخة التصميم
+              إجمالي ما دفعته هذا الشهر على واصل
             </Text>
           </View>
         </View>
@@ -3649,60 +3717,58 @@ function CustomerProfileTab({
         <View style={styles.profileWalletGrid}>
           <View style={styles.profileWalletTilePrimary}>
             <Text selectable style={styles.profileWalletValue}>
-              {CUSTOMER_PROFILE_WALLET.balance}
+              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.monthlySpend}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
-              {CUSTOMER_PROFILE_WALLET.label}
+              مدفوعات هذا الشهر
             </Text>
           </View>
           <View style={styles.profileWalletTile}>
             <Text selectable style={styles.profileWalletValueSmall}>
-              {CUSTOMER_PROFILE_WALLET.points}
+              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.status}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
-              نقاط واصل
+              حالة الدفع
             </Text>
           </View>
           <View style={styles.profileWalletTile}>
             <Text selectable style={styles.profileWalletValueSmall}>
-              {CUSTOMER_PROFILE_WALLET.monthlySpend}
+              {CUSTOMER_PROFILE_PAYMENT_SUMMARY.method}
             </Text>
             <Text selectable style={styles.profileWalletLabel}>
-              هذا الشهر
+              البطاقة الافتراضية
             </Text>
           </View>
         </View>
       </GlassCard>
 
-      <GlassCard testID="customer-profile-payment" style={styles.profilePaymentCard}>
+      <GlassCard testID="customer-profile-support" style={styles.profilePaymentCard}>
         <View style={styles.profileSectionHeader}>
           <View style={styles.profileSectionIcon}>
-            <CreditCard color={colors.violetSoft} size={18} />
+            <MessageCircle color={colors.violetSoft} size={18} />
           </View>
           <View style={styles.profileSectionCopy}>
             <Text selectable style={styles.profileSectionTitle}>
-              طرق الدفع
+              الدعم والمساعدة
             </Text>
             <Text selectable style={styles.profileSectionMeta}>
-              خيارات دفع mock جاهزة للتجربة
+              مساعدة وبلاغات سريعة بدون تعقيد
             </Text>
           </View>
         </View>
 
         <View style={styles.profilePaymentList}>
-          {CUSTOMER_PROFILE_PAYMENT_METHODS.map((method) => (
-            <View key={method.label} style={styles.profilePaymentRow}>
+          {CUSTOMER_PROFILE_SUPPORT_ITEMS.map((item) => (
+            <View key={item} style={styles.profilePaymentRow}>
               <View style={styles.profilePaymentStatus}>
-                <Text selectable style={styles.profilePaymentStatusText}>
-                  {method.status}
-                </Text>
+                <CheckCircle color={colors.success} size={16} />
               </View>
               <View style={styles.profilePaymentCopy}>
                 <Text selectable style={styles.profilePaymentTitle}>
-                  {method.label}
+                  {item}
                 </Text>
                 <Text selectable style={styles.profilePaymentMeta}>
-                  {method.detail}
+                  متاح للمرحلة التجريبية
                 </Text>
               </View>
             </View>
@@ -3710,57 +3776,14 @@ function CustomerProfileTab({
         </View>
 
         <Pressable
-          accessibilityLabel="إضافة طريقة دفع mock"
+          accessibilityLabel="فتح الدعم والمساعدة mock"
           accessibilityRole="button"
-          onPress={onAddPayment}
+          onPress={onOpenSupport}
           style={({ pressed }) => [styles.profileActionButton, pressed ? styles.pressed : null]}
         >
-          <Sparkles color={colors.cyan} size={16} />
+          <MessageCircle color={colors.cyan} size={16} />
           <Text selectable style={styles.profileActionText}>
-            إضافة طريقة دفع
-          </Text>
-        </Pressable>
-      </GlassCard>
-
-      <GlassCard testID="customer-profile-security" style={styles.profileSecurityCard}>
-        <View style={styles.profileSectionHeader}>
-          <View style={styles.profileSectionIcon}>
-            <ShieldCheck color={colors.success} size={18} />
-          </View>
-          <View style={styles.profileSectionCopy}>
-            <Text selectable style={styles.profileSectionTitle}>
-              مركز الأمان
-            </Text>
-            <Text selectable style={styles.profileSectionMeta}>
-              إعدادات حماية الرحلات والحساب
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.profileSecurityList}>
-          {CUSTOMER_PROFILE_SECURITY_ITEMS.map((item) => (
-            <View key={item} style={styles.profileSecurityRow}>
-              <CheckCircle color={colors.success} size={16} />
-              <Text selectable style={styles.profileSecurityText}>
-                {item}
-              </Text>
-            </View>
-          ))}
-        </View>
-
-        <Pressable
-          accessibilityLabel="إدارة أمان الحساب mock"
-          accessibilityRole="button"
-          onPress={onManageSecurity}
-          style={({ pressed }) => [
-            styles.profileActionButton,
-            styles.profileSecurityButton,
-            pressed ? styles.pressed : null
-          ]}
-        >
-          <ShieldCheck color={colors.success} size={16} />
-          <Text selectable style={styles.profileActionText}>
-            إدارة الأمان
+            فتح الدعم والمساعدة
           </Text>
         </Pressable>
       </GlassCard>
@@ -6186,96 +6209,6 @@ const styles = StyleSheet.create({
     borderColor: glass.strong.borderColor,
     backgroundColor: glass.strong.backgroundColor
   },
-  destinationDiscoveryPanel: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.24)",
-    backgroundColor: "rgba(0, 229, 255, 0.07)"
-  },
-  destinationDiscoveryHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm
-  },
-  destinationDiscoveryIcon: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.28)",
-    backgroundColor: "rgba(0, 229, 255, 0.12)"
-  },
-  destinationDiscoveryCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  destinationDiscoveryTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  destinationDiscoveryMeta: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "800"
-  },
-  destinationDiscoveryGrid: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  destinationDiscoveryMetric: {
-    flex: 1,
-    minHeight: 58,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 5,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-  },
-  destinationDiscoveryValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  destinationDiscoveryFooter: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: spacing.sm
-  },
-  destinationDiscoveryText: {
-    ...rtlText,
-    flex: 1,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  destinationDiscoveryButton: {
-    minHeight: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: "rgba(139, 92, 246, 0.32)",
-    backgroundColor: "rgba(139, 92, 246, 0.14)"
-  },
-  destinationDiscoveryButtonText: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
   searchInputShell: {
     minHeight: 50,
     flexDirection: "row-reverse",
@@ -6506,12 +6439,77 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "800"
   },
+  tripSummaryPressable: {
+    borderRadius: radii.lg
+  },
   tripOverviewCard: {
     gap: spacing.md,
     padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
     borderColor: glass.strong.borderColor,
     backgroundColor: glass.strong.backgroundColor
+  },
+  tripSummaryBody: {
+    alignItems: "flex-end",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  tripSummaryRoute: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  tripSummaryMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.compact,
+    fontWeight: "800"
+  },
+  tripSummaryFacts: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  tripSummaryFact: {
+    ...rtlText,
+    minHeight: 32,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    backgroundColor: "rgba(0, 229, 255, 0.1)"
+  },
+  tripOpenHint: {
+    ...rtlText,
+    alignSelf: "flex-start",
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  tripDetailsBackButton: {
+    minHeight: touchTargets.minimum,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: controlSurfaces.secondary.borderColor,
+    backgroundColor: controlSurfaces.secondary.backgroundColor
+  },
+  tripDetailsBackText: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
   },
   tripTimelineBox: {
     gap: spacing.xs,
@@ -6840,32 +6838,6 @@ const styles = StyleSheet.create({
     fontSize: typography.compact,
     fontWeight: "800"
   },
-  customerTrustGrid: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  customerTrustMetric: {
-    flex: 1,
-    minHeight: 78,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    gap: 4,
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.05)"
-  },
-  customerTrustValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  customerTrustLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
-  },
   customerTrustList: {
     gap: spacing.xs
   },
@@ -6902,12 +6874,6 @@ const styles = StyleSheet.create({
     backgroundColor: glass.strong.backgroundColor
   },
   profilePaymentCard: {
-    gap: spacing.md,
-    padding: layoutRhythm.cardPadding,
-    borderRadius: radii.lg,
-    borderColor: controlSurfaces.secondary.borderColor
-  },
-  profileSecurityCard: {
     gap: spacing.md,
     padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
@@ -7015,12 +6981,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: "rgba(0, 229, 255, 0.12)"
   },
-  profilePaymentStatusText: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.tiny,
-    fontWeight: "900"
-  },
   profilePaymentCopy: {
     flex: 1,
     alignItems: "flex-end",
@@ -7038,25 +6998,6 @@ const styles = StyleSheet.create({
     fontSize: typography.tiny,
     fontWeight: "800"
   },
-  profileSecurityList: {
-    gap: spacing.xs
-  },
-  profileSecurityRow: {
-    minHeight: 42,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.sm,
-    backgroundColor: "rgba(51, 231, 168, 0.08)"
-  },
-  profileSecurityText: {
-    ...rtlText,
-    flex: 1,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
   profileActionButton: {
     minHeight: 44,
     flexDirection: "row-reverse",
@@ -7068,10 +7009,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(0, 229, 255, 0.24)",
     backgroundColor: "rgba(0, 229, 255, 0.08)"
-  },
-  profileSecurityButton: {
-    borderColor: "rgba(51, 231, 168, 0.24)",
-    backgroundColor: "rgba(51, 231, 168, 0.08)"
   },
   profileActionText: {
     ...rtlText,

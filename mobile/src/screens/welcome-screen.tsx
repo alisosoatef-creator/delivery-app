@@ -1,5 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { Car, MapPin, ShieldCheck, Sparkles, User } from "lucide-react-native";
+import { Car, ShieldCheck, User } from "lucide-react-native";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -83,78 +83,6 @@ export function WelcomeScreen({
           </View>
         </View>
 
-        <GlassCard testID="welcome-promise-card" variant="strong" style={styles.promiseCard}>
-          <View style={styles.promiseHeader}>
-            <View style={styles.promiseIcon}>
-              <MapPin color={colors.cyan} size={20} />
-            </View>
-            <View style={styles.promiseCopy}>
-              <Text selectable style={styles.promiseTitle}>
-                خريطة أولًا، طلب أسرع
-              </Text>
-              <Text selectable style={styles.promiseText}>
-                واجهة عربية فاخرة تبدأ من موقعك ووجهتك
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.promiseMetrics}>
-            <View style={styles.metric}>
-              <Sparkles color={colors.cyan} size={17} />
-              <Text selectable style={styles.metricValue}>
-                8
-              </Text>
-              <Text selectable style={styles.metricLabel}>
-                كباتن قريبون
-              </Text>
-            </View>
-            <View style={styles.metric}>
-              <ShieldCheck color={colors.success} size={17} />
-              <Text selectable style={styles.metricValue}>
-                25 شيكل
-              </Text>
-              <Text selectable style={styles.metricLabel}>
-                سعر مقترح
-              </Text>
-            </View>
-          </View>
-        </GlassCard>
-
-        <GlassCard testID="welcome-role-card" style={styles.roleCard}>
-          <Text selectable style={styles.roleTitle}>
-            اختر نوع الحساب
-          </Text>
-          <View style={styles.roleGrid}>
-            <View testID="welcome-customer-role" style={styles.roleTile}>
-              <View style={styles.roleIcon}>
-                <User color={colors.cyan} size={18} />
-              </View>
-              <View style={styles.roleCopy}>
-                <Text selectable style={styles.roleName}>
-                  تطبيق العميل
-                </Text>
-                <Text selectable style={styles.roleMeta}>
-                  اطلب رحلتك من الخريطة
-                </Text>
-              </View>
-            </View>
-
-            <View testID="welcome-captain-role" style={styles.roleTile}>
-              <View style={styles.roleIcon}>
-                <Car color={colors.violetSoft} size={18} />
-              </View>
-              <View style={styles.roleCopy}>
-                <Text selectable style={styles.roleName}>
-                  تطبيق الكابتن
-                </Text>
-                <Text selectable style={styles.roleMeta}>
-                  استقبل الطلبات وتابع الأرباح
-                </Text>
-              </View>
-            </View>
-          </View>
-        </GlassCard>
-
         <View style={styles.actions}>
           <PremiumButton
             accessibilityLabel="تسجيل الدخول"
@@ -176,8 +104,8 @@ export function WelcomeScreen({
           </PremiumButton>
 
           <PremiumButton
-            accessibilityLabel="الدخول ككابتن"
-            label="الدخول ككابتن"
+            accessibilityLabel="الدخول ككابتن توصيل"
+            label="الدخول ككابتن توصيل"
             onPress={onCaptainEntry}
             style={styles.actionButton}
             variant="secondary"
@@ -285,125 +213,8 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: "center"
   },
-  promiseCard: {
-    gap: spacing.md,
-    padding: layoutRhythm.cardPadding,
-    borderRadius: radii.lg
-  },
-  promiseHeader: {
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.md
-  },
-  promiseIcon: {
-    width: 48,
-    height: 48,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.12)",
-    borderWidth: 1,
-    borderColor: "rgba(0, 229, 255, 0.28)"
-  },
-  promiseCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 4
-  },
-  promiseTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  promiseText: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.compact,
-    fontWeight: "700"
-  },
-  promiseMetrics: {
-    flexDirection: "row-reverse",
-    gap: spacing.sm
-  },
-  metric: {
-    flex: 1,
-    minHeight: 86,
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    padding: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: controlSurfaces.secondary.borderColor,
-    backgroundColor: controlSurfaces.secondary.backgroundColor,
-    boxShadow: shadows.cardSubtle
-  },
-  metricValue: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.section,
-    fontWeight: "900",
-    fontVariant: ["tabular-nums"]
-  },
-  metricLabel: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "700"
-  },
   actions: {
     gap: spacing.sm
-  },
-  roleCard: {
-    gap: spacing.md,
-    padding: layoutRhythm.cardPadding,
-    borderRadius: radii.lg
-  },
-  roleTitle: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.body,
-    fontWeight: "900"
-  },
-  roleGrid: {
-    gap: spacing.sm
-  },
-  roleTile: {
-    minHeight: 60,
-    flexDirection: "row-reverse",
-    alignItems: "center",
-    gap: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    borderRadius: radii.sm,
-    borderWidth: 1,
-    borderColor: controlSurfaces.secondary.borderColor,
-    backgroundColor: controlSurfaces.secondary.backgroundColor,
-    boxShadow: shadows.cardSubtle
-  },
-  roleIcon: {
-    width: 42,
-    height: 42,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: radii.pill,
-    backgroundColor: "rgba(0, 229, 255, 0.1)"
-  },
-  roleCopy: {
-    flex: 1,
-    alignItems: "flex-end",
-    gap: 3
-  },
-  roleName: {
-    ...rtlText,
-    color: colors.text,
-    fontSize: typography.compact,
-    fontWeight: "900"
-  },
-  roleMeta: {
-    ...rtlText,
-    color: colors.textMuted,
-    fontSize: typography.tiny,
-    fontWeight: "800"
   },
   actionButton: {
     minHeight: 56,

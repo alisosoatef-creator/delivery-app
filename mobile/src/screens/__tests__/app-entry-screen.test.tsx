@@ -61,7 +61,7 @@ describe("AppEntryScreen", () => {
   it("enters the captain dashboard through the captain mock auth flow", async () => {
     const screen = await renderAppEntryScreen();
 
-    await fireEvent.press(screen.getByLabelText("الدخول ككابتن"));
+    await fireEvent.press(screen.getByLabelText("الدخول ككابتن توصيل"));
 
     expect(screen.getByText("دخول الكابتن")).toBeTruthy();
     expect(screen.queryByText("أهلًا كابتن أحمد")).toBeNull();

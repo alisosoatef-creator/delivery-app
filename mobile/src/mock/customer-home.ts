@@ -169,7 +169,7 @@ export const customerHomeMock = {
       time: "اليوم 10:24",
       payment: "كاش عند الاستلام"
     },
-    historyTitle: "رحلات سابقة",
+    historyTitle: "آخر الرحلات",
     history: [
       {
         id: "trip-001",
