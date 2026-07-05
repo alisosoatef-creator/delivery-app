@@ -11,8 +11,8 @@ import {
   Wallet,
   XCircle
 } from "lucide-react-native";
-import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { BackHandler, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
@@ -70,16 +70,43 @@ export function CaptainHomeScreen() {
   );
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "captain", 4);
 
+  const returnToRequestsWorkspace = useCallback(() => {
+    dispatchRideRequests({ type: "clear-accepted-request" });
+    setActiveRequest(null);
+    setNotice(null);
+    setActiveTab("requests");
+  }, [dispatchRideRequests]);
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (activeRequest) {
+        returnToRequestsWorkspace();
+        return true;
+      }
+
+      if (previewRequest) {
+        setPreviewRequest(null);
+        setNotice(null);
+        return true;
+      }
+
+      if (activeTab !== "home") {
+        setActiveTab("home");
+        setNotice(null);
+        return true;
+      }
+
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [activeRequest, activeTab, previewRequest, returnToRequestsWorkspace]);
+
   if (activeRequest) {
     return (
       <CaptainActiveTripScreen
         request={activeRequest}
-        onBackToRequests={() => {
-          dispatchRideRequests({ type: "clear-accepted-request" });
-          setActiveRequest(null);
-          setNotice(null);
-          setActiveTab("requests");
-        }}
+        onBackToRequests={returnToRequestsWorkspace}
       />
     );
   }

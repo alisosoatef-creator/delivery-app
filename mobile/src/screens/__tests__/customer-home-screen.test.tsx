@@ -1,7 +1,7 @@
 import { describe, expect, it, jest } from "@jest/globals";
 import * as Haptics from "expo-haptics";
 import { act, fireEvent, render } from "@testing-library/react-native";
-import { Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
+import { BackHandler, Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { controlSurfaces, glass, shadows } from "@/design/tokens";
@@ -62,6 +62,25 @@ async function fillMockVisaDetails(screen: Awaited<ReturnType<typeof render>>) {
   await fireEvent.changeText(screen.getByLabelText("رقم بطاقة فيزا"), "4242424242424242");
   await fireEvent.changeText(screen.getByLabelText("تاريخ انتهاء فيزا"), "09/28");
   await fireEvent.changeText(screen.getByLabelText("رمز CVC"), "123");
+}
+
+function mockHardwareBackPress() {
+  const callbacks: (() => boolean | null | undefined)[] = [];
+  const remove = jest.fn();
+  const addEventListenerSpy = jest
+    .spyOn(BackHandler, "addEventListener")
+    .mockImplementation((eventName, callback) => {
+      if (eventName === "hardwareBackPress") {
+        callbacks.push(callback);
+      }
+
+      return { remove } as unknown as ReturnType<typeof BackHandler.addEventListener>;
+    });
+
+  return {
+    pressBack: () => callbacks.at(-1)?.(),
+    restore: () => addEventListenerSpy.mockRestore()
+  };
 }
 
 async function renderCustomerHomeWithCaptainAcceptanceProbe(
@@ -340,6 +359,51 @@ describe("CustomerHomeScreen", () => {
 
     expect(screen.getByTestId("customer-destination-selection-page")).toBeTruthy();
     expect(screen.queryByTestId("floating-bottom-nav")).toBeNull();
+  });
+
+  it("steps Android back through booking pages before returning to the focused home", async () => {
+    const hardwareBack = mockHardwareBackPress();
+    const screen = await renderCustomerDestinationSelection();
+
+    expect(screen.getByTestId("customer-destination-selection-page")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.getByTestId("customer-pickup-selection-page")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.getByTestId("customer-service-selection-page")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.getByTestId("customer-focused-home")).toBeTruthy();
+    expect(screen.queryByTestId("customer-booking-workspace")).toBeNull();
+
+    hardwareBack.restore();
+  });
+
+  it("returns Android back from secondary customer tabs to the focused home", async () => {
+    const hardwareBack = mockHardwareBackPress();
+    const screen = await renderCustomerLanding();
+
+    await fireEvent.press(screen.getByLabelText("فتح تبويب البحث"));
+    expect(screen.getByTestId("customer-search-overview")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.getByTestId("customer-focused-home")).toBeTruthy();
+    expect(screen.queryByTestId("customer-search-overview")).toBeNull();
+
+    hardwareBack.restore();
   });
 
   it("keeps the customer landing focused on one clear ride request action", async () => {

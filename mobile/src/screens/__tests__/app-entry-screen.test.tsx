@@ -1,5 +1,6 @@
-import { describe, expect, it } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react-native";
+import { describe, expect, it, jest } from "@jest/globals";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { BackHandler } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { MockAppProvider } from "@/state/mock-app-context";
@@ -19,6 +20,25 @@ async function renderAppEntryScreen() {
       </MockAppProvider>
     </SafeAreaProvider>
   );
+}
+
+function mockHardwareBackPress() {
+  const callbacks: (() => boolean | null | undefined)[] = [];
+  const remove = jest.fn();
+  const addEventListenerSpy = jest
+    .spyOn(BackHandler, "addEventListener")
+    .mockImplementation((eventName, callback) => {
+      if (eventName === "hardwareBackPress") {
+        callbacks.push(callback);
+      }
+
+      return { remove } as unknown as ReturnType<typeof BackHandler.addEventListener>;
+    });
+
+  return {
+    pressBack: () => callbacks.at(-1)?.(),
+    restore: () => addEventListenerSpy.mockRestore()
+  };
 }
 
 describe("AppEntryScreen", () => {
@@ -75,6 +95,23 @@ describe("AppEntryScreen", () => {
     expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
     expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
     expect(screen.getByTestId("captain-nearest-request-card")).toBeTruthy();
+  });
+
+  it("routes Android back from auth screens to welcome instead of leaving Expo Go", async () => {
+    const hardwareBack = mockHardwareBackPress();
+    const screen = await renderAppEntryScreen();
+
+    await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
+    expect(screen.getByTestId("auth-screen-scroll")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.getByTestId("welcome-scroll")).toBeTruthy();
+    expect(screen.queryByTestId("auth-screen-scroll")).toBeNull();
+
+    hardwareBack.restore();
   });
 
   it("previews the confirmed customer request inside the captain dashboard mock", async () => {

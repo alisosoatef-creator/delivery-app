@@ -1,3 +1,6 @@
+import { useEffect } from "react";
+import { BackHandler } from "react-native";
+
 import { CaptainAuthScreen } from "@/screens/captain-auth-screen";
 import { CaptainHomeScreen } from "@/screens/captain-home-screen";
 import { CustomerAuthScreen } from "@/screens/customer-auth-screen";
@@ -8,6 +11,23 @@ import { useMockAppSession } from "@/state/mock-app-context";
 export function AppEntryScreen() {
   const [session, dispatch] = useMockAppSession();
   const { entryMode } = session;
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (
+        entryMode === "customer-login" ||
+        entryMode === "customer-register" ||
+        entryMode === "captain-auth"
+      ) {
+        dispatch({ type: "back-to-welcome" });
+        return true;
+      }
+
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [dispatch, entryMode]);
 
   if (entryMode === "customer-home") {
     return <CustomerHomeScreen onPreviewCaptainRequests={() => dispatch({ type: "preview-captain-home" })} />;

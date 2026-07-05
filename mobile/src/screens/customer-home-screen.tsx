@@ -23,7 +23,16 @@ import {
 import type { ReactNode } from "react";
 import { useEffect, useReducer, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  BackHandler,
+  Keyboard,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
@@ -148,6 +157,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
+  const { showConfirmation, stage: rideStage } = tripFlow;
 
   useEffect(() => {
     const keyboardShowSubscription = Keyboard.addListener("keyboardDidShow", () => {
@@ -163,7 +173,75 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     };
   }, []);
 
-  const { showConfirmation, stage: rideStage } = tripFlow;
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (isKeyboardVisible) {
+        Keyboard.dismiss();
+        return true;
+      }
+
+      if (isNotificationsOpen) {
+        setIsNotificationsOpen(false);
+        setNotice(null);
+        return true;
+      }
+
+      if (isSupportHubOpen) {
+        setIsSupportHubOpen(false);
+        setNotice(null);
+        void Haptics.selectionAsync();
+        return true;
+      }
+
+      if (showConfirmation) {
+        dispatchTripFlow({ type: "reset" });
+        setNotice(null);
+        void Haptics.selectionAsync();
+        return true;
+      }
+
+      if (isBookingFlowOpen) {
+        if (bookingStep === "details") {
+          setBookingStep("destination");
+        } else if (bookingStep === "destination") {
+          setBookingStep("pickup");
+        } else if (bookingStep === "pickup") {
+          setBookingStep("service");
+        } else {
+          setIsBookingFlowOpen(false);
+          setBookingStep("service");
+        }
+
+        setIsSupportHubOpen(false);
+        setIsNotificationsOpen(false);
+        setNotice(null);
+        void Haptics.selectionAsync();
+        return true;
+      }
+
+      if (activeNav !== customerHomeMock.navItems[0].label) {
+        setActiveNav(customerHomeMock.navItems[0].label);
+        setIsSupportHubOpen(false);
+        setIsNotificationsOpen(false);
+        setNotice(null);
+        void Haptics.selectionAsync();
+        return true;
+      }
+
+      return true;
+    });
+
+    return () => subscription.remove();
+  }, [
+    activeNav,
+    bookingStep,
+    isBookingFlowOpen,
+    isKeyboardVisible,
+    isNotificationsOpen,
+    isSupportHubOpen,
+    showConfirmation
+  ]);
+
   const acceptedCustomerRequest =
     rideRequests.acceptedRequest?.id === LIVE_CUSTOMER_REQUEST_ID
       ? rideRequests.acceptedRequest

@@ -1,6 +1,6 @@
-import { describe, expect, it } from "@jest/globals";
-import { fireEvent, render } from "@testing-library/react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { describe, expect, it, jest } from "@jest/globals";
+import { act, fireEvent, render } from "@testing-library/react-native";
+import { BackHandler, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { controlSurfaces, glass, shadows, spacing } from "@/design/tokens";
@@ -135,6 +135,25 @@ async function renderCaptainHomeWithSubmittedRequestProbe() {
   );
 }
 
+function mockHardwareBackPress() {
+  const callbacks: (() => boolean | null | undefined)[] = [];
+  const remove = jest.fn();
+  const addEventListenerSpy = jest
+    .spyOn(BackHandler, "addEventListener")
+    .mockImplementation((eventName, callback) => {
+      if (eventName === "hardwareBackPress") {
+        callbacks.push(callback);
+      }
+
+      return { remove } as unknown as ReturnType<typeof BackHandler.addEventListener>;
+    });
+
+  return {
+    pressBack: () => callbacks.at(-1)?.(),
+    restore: () => addEventListenerSpy.mockRestore()
+  };
+}
+
 describe("CaptainHomeScreen", () => {
   it("exposes captain availability as an accessible switch", async () => {
     const screen = await renderCaptainHome();
@@ -167,6 +186,23 @@ describe("CaptainHomeScreen", () => {
     expect(scroll.props.keyboardShouldPersistTaps).toBe("handled");
     expect(scroll.props.keyboardDismissMode).toBe("on-drag");
     expect(contentStyle.paddingBottom).toBe(34 + 120);
+  });
+
+  it("routes Android back from an active captain trip to the requests workspace", async () => {
+    const hardwareBack = mockHardwareBackPress();
+    const screen = await renderCaptainHome();
+
+    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    expect(screen.getByTestId("captain-active-trip-scroll")).toBeTruthy();
+
+    await act(async () => {
+      expect(hardwareBack.pressBack()).toBe(true);
+    });
+
+    expect(screen.queryByTestId("captain-active-trip-scroll")).toBeNull();
+    expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
+
+    hardwareBack.restore();
   });
 
   it("keeps the floating navigation flexible for compact screens", async () => {
