@@ -38,6 +38,7 @@ import {
   getMockRealtimeConnectionSummary,
   getRecentMockRealtimeEvents
 } from "@/realtime/mock-realtime";
+import { getCaptainRequestDecisionView } from "@/screens/captain-home/captain-ux-model";
 import { CaptainActiveTripScreen } from "@/screens/captain-active-trip-screen";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import type { CustomerRideFeedback } from "@/state/mock-ride-requests";
@@ -50,14 +51,6 @@ const captainTabs = [
 ] as const;
 
 type CaptainTab = (typeof captainTabs)[number]["key"];
-
-function getCaptainAcceptanceReadinessCopy(request: CaptainAvailableRequest) {
-  return {
-    detail: "المسار والدفع واضحان",
-    status: `ابدأ خلال ${request.etaToPickup}`,
-    title: "الطلب جاهز للقبول"
-  };
-}
 
 export function CaptainHomeScreen() {
   const insets = useSafeAreaInsets();
@@ -334,6 +327,8 @@ function CaptainNearestRequestCard({
   onShowDetails: () => void;
   request: CaptainAvailableRequest;
 }) {
+  const decisionView = getCaptainRequestDecisionView(request);
+
   return (
     <GlassCard testID="captain-nearest-request-card" style={styles.requestCard} variant="strong">
       <View style={styles.requestTop}>
@@ -361,18 +356,18 @@ function CaptainNearestRequestCard({
         </View>
         <View style={styles.compactRouteCopy}>
           <Text selectable style={styles.compactRouteLabel}>
-            المسار
+            {decisionView.route.label}
           </Text>
           <Text selectable style={styles.compactRouteValue}>
-            {`${request.pickup} ← ${request.destinationArea}`}
+            {decisionView.route.value}
           </Text>
         </View>
       </View>
 
       <View style={styles.requestMetaGrid}>
-        <MiniInfo label="الوصول" value={request.etaToPickup} />
-        <MiniInfo label="المسافة" value={request.distance} />
-        <MiniInfo label="الدفع" value={request.paymentMethod} />
+        {decisionView.metrics.map((metric) => (
+          <MiniInfo key={metric.label} label={metric.label} value={metric.value} />
+        ))}
       </View>
 
       <MotionPressable
@@ -437,7 +432,8 @@ function CaptainAcceptPreviewCard({
   onConfirm: () => void;
   request: CaptainAvailableRequest;
 }) {
-  const acceptanceReadinessCopy = getCaptainAcceptanceReadinessCopy(request);
+  const decisionView = getCaptainRequestDecisionView(request);
+  const acceptanceReadinessCopy = decisionView.readiness;
 
   return (
     <GlassCard testID="captain-request-details" style={styles.acceptPreviewCard} variant="strong">
@@ -456,18 +452,9 @@ function CaptainAcceptPreviewCard({
       </View>
 
       <View testID="captain-request-details-rows" style={styles.previewRows}>
-        <PreviewRow label="العميل المحدد" value={request.customerName} />
-        <PreviewRow label="رقم العميل" value={request.customerPhone} />
-        <PreviewRow
-          label="المسار المقترح"
-          value={`${request.pickup} ← ${request.destinationArea}`}
-        />
-        <PreviewRow label="نوع الخدمة" value={request.serviceLabel} />
-        <PreviewRow label="ملاحظة العميل" value={request.destinationDetail} />
-        <PreviewRow label="طريقة الدفع" value={request.paymentMethod} />
-        <PreviewRow label="الدخل المتوقع" value={request.price} />
-        <PreviewRow label="المسافة" value={request.distance} />
-        <PreviewRow label="جاهز للانطلاق" value={`الوصول خلال ${request.etaToPickup}`} />
+        {decisionView.previewRows.map((row) => (
+          <PreviewRow key={row.label} label={row.label} value={row.value} />
+        ))}
       </View>
 
       <View

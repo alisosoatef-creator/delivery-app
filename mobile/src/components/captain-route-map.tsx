@@ -14,25 +14,16 @@ import {
   spacing,
   typography
 } from "@/design/tokens";
+import {
+  createCaptainRouteMapSnapshot,
+  type CaptainRouteMapSnapshot
+} from "@/maps/route-map-readiness";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
 
 type CaptainRouteMapProps = {
   request: CaptainAvailableRequest;
   step: CaptainTripStep;
-};
-
-type RouteConfig = {
-  activeLabel: string;
-  activePoint: string;
-  completedSegments: number;
-  driverPosition: {
-    left: number;
-    top: number;
-  };
-  nextPoint: string;
-  segment: number;
-  statusMeta: string;
 };
 
 const roads = [
@@ -45,51 +36,13 @@ const roads = [
   { top: "33%", left: "2%", width: "92%", rotate: "66deg", opacity: 0.18 }
 ] as const;
 
-const stepConfig: Record<CaptainTripStep, Omit<RouteConfig, "activePoint" | "nextPoint">> = {
-  pickup: {
-    activeLabel: "إلى نقطة الانطلاق",
-    completedSegments: 0,
-    driverPosition: { top: 186, left: 62 },
-    segment: 1,
-    statusMeta: "GPS نشط"
-  },
-  arrived: {
-    activeLabel: "تم الوصول لنقطة الانطلاق",
-    completedSegments: 1,
-    driverPosition: { top: 142, left: 122 },
-    segment: 2,
-    statusMeta: "جاهز لبدء الرحلة"
-  },
-  driving: {
-    activeLabel: "من العميل إلى الوجهة",
-    completedSegments: 2,
-    driverPosition: { top: 104, left: 206 },
-    segment: 3,
-    statusMeta: "تتبع مباشر"
-  },
-  completed: {
-    activeLabel: "تم إكمال خط السير",
-    completedSegments: 3,
-    driverPosition: { top: 62, left: 248 },
-    segment: 3,
-    statusMeta: "تم الوصول"
-  }
-};
-
 function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
-  const config = {
-    ...stepConfig[step],
-    activePoint:
-      step === "driving" || step === "completed" ? request.destinationArea : request.pickup,
-    nextPoint:
-      step === "driving" || step === "completed"
-        ? request.destinationDetail
-        : request.destinationArea
-  };
+  const snapshot = createCaptainRouteMapSnapshot({ request, step });
 
   return (
     <View
-      accessibilityLabel={`خط سير الكابتن: ${config.activeLabel}`}
+      accessibilityHint={snapshot.accessibilityHint}
+      accessibilityLabel={snapshot.accessibilityLabel}
       accessibilityRole="image"
       accessible
       testID="captain-route-map"
@@ -123,16 +76,16 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
       </View>
 
       <View
-        testID={routeSegmentTestId(config, 1)}
-        style={[styles.routeSegment, styles.routeSegmentOne, segmentTone(config, 1)]}
+        testID={routeSegmentTestId(snapshot, 1)}
+        style={[styles.routeSegment, styles.routeSegmentOne, segmentTone(snapshot, 1)]}
       />
       <View
-        testID={routeSegmentTestId(config, 2)}
-        style={[styles.routeSegment, styles.routeSegmentTwo, segmentTone(config, 2)]}
+        testID={routeSegmentTestId(snapshot, 2)}
+        style={[styles.routeSegment, styles.routeSegmentTwo, segmentTone(snapshot, 2)]}
       />
       <View
-        testID={routeSegmentTestId(config, 3)}
-        style={[styles.routeSegment, styles.routeSegmentThree, segmentTone(config, 3)]}
+        testID={routeSegmentTestId(snapshot, 3)}
+        style={[styles.routeSegment, styles.routeSegmentThree, segmentTone(snapshot, 3)]}
       />
 
       <View testID="captain-map-start-marker" style={[styles.marker, styles.startMarker]}>
@@ -151,7 +104,7 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
 
       <View
         testID="captain-route-driver-marker"
-        style={[styles.driverPulse, config.driverPosition]}
+        style={[styles.driverPulse, snapshot.driverPosition]}
       >
         <View style={styles.driverHalo} />
         <Car color={colors.text} size={20} />
@@ -166,7 +119,7 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
             خط سير الكابتن
           </Text>
           <Text selectable style={styles.headerMeta}>
-            {config.statusMeta}
+            {snapshot.statusMeta}
           </Text>
         </View>
       </View>
@@ -186,7 +139,7 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
             التوجيه الحالي
           </Text>
           <Text selectable style={styles.navigationStackValue}>
-            {`اتجاه: ${config.activeLabel}`}
+            {`اتجاه: ${snapshot.activeLabel}`}
           </Text>
         </View>
         <View style={styles.waypointRow}>
@@ -216,7 +169,7 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
       <View testID="captain-map-route-panel" style={styles.routePanel}>
         <View style={styles.routePanelTop}>
           <Text selectable style={styles.panelStatus}>
-            {config.activeLabel}
+            {snapshot.activeLabel}
           </Text>
           <View style={styles.livePill}>
             <Text selectable style={styles.livePillText}>
@@ -225,10 +178,10 @@ function CaptainRouteMapComponent({ request, step }: CaptainRouteMapProps) {
           </View>
         </View>
         <Text selectable style={styles.routePanelText}>
-          {`المسار النشط: ${config.activePoint}`}
+          {`المسار النشط: ${snapshot.activePoint}`}
         </Text>
         <Text selectable style={styles.routePanelText}>
-          {`الوجهة التالية: ${config.nextPoint}`}
+          {`الوجهة التالية: ${snapshot.nextPoint}`}
         </Text>
         <Text selectable style={styles.routePanelDetail}>
           {request.destinationDetail}
@@ -277,7 +230,10 @@ function RouteMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function segmentTone(config: RouteConfig, segment: number) {
+function segmentTone(
+  config: Pick<CaptainRouteMapSnapshot, "completedSegments" | "segment">,
+  segment: number
+) {
   if (segment <= config.completedSegments) {
     return styles.routeSegmentDone;
   }
@@ -289,7 +245,10 @@ function segmentTone(config: RouteConfig, segment: number) {
   return styles.routeSegmentPending;
 }
 
-function routeSegmentTestId(config: RouteConfig, segment: number) {
+function routeSegmentTestId(
+  config: Pick<CaptainRouteMapSnapshot, "completedSegments" | "segment">,
+  segment: number
+) {
   if (segment === config.segment && segment > config.completedSegments) {
     return "captain-map-active-route";
   }

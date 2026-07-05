@@ -6,6 +6,11 @@ import { StyleSheet } from "react-native";
 import { areCaptainRouteMapPropsEqual, CaptainRouteMap } from "@/components/captain-route-map";
 import { areMockRouteMapPropsEqual, MockRouteMap } from "@/components/mock-route-map";
 import { colors, glass, mapStyle, shadows } from "@/design/tokens";
+import {
+  REAL_MAP_READINESS_PACKAGES,
+  createCaptainRouteMapSnapshot,
+  createCustomerRouteMapSnapshot
+} from "@/maps/route-map-readiness";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 
@@ -24,6 +29,31 @@ const request: CaptainAvailableRequest = {
 };
 
 describe("route map render isolation", () => {
+  it("defines one mock-to-native map readiness contract for customer and captain maps", () => {
+    const customerSnapshot = createCustomerRouteMapSnapshot({
+      destinationArea: request.destinationArea,
+      destinationDetail: request.destinationDetail,
+      phase: "driving",
+      pickupLabel: request.pickup
+    });
+    const captainSnapshot = createCaptainRouteMapSnapshot({ request, step: "driving" });
+
+    expect(REAL_MAP_READINESS_PACKAGES).toEqual(["expo-location", "react-native-maps"]);
+    expect(customerSnapshot.provider).toMatchObject({
+      kind: "mock",
+      nativeProvider: "react-native-maps",
+      safeForExpoGo: true
+    });
+    expect(customerSnapshot.accessibilityHint).toContain("react-native-maps");
+    expect(customerSnapshot.markers.map((marker) => marker.role)).toEqual([
+      "pickup",
+      "captain",
+      "destination"
+    ]);
+    expect(captainSnapshot.provider).toEqual(customerSnapshot.provider);
+    expect(captainSnapshot.activeLabel).toBe("من العميل إلى الوجهة");
+  });
+
   it("keeps the customer map on the semantic surface hierarchy", async () => {
     const screen = await render(
       createElement(MockRouteMap, {
@@ -39,6 +69,10 @@ describe("route map render isolation", () => {
       borderColor: glass.floating.borderColor,
       boxShadow: shadows.floating
     });
+    expect(screen.getByTestId("mock-route-map")).toHaveProp(
+      "accessibilityHint",
+      expect.stringContaining("expo-location")
+    );
     expect(
       StyleSheet.flatten(screen.getByTestId("mock-map-primary-road").props.style)
     ).toMatchObject({
@@ -98,6 +132,10 @@ describe("route map render isolation", () => {
       borderColor: glass.floating.borderColor,
       boxShadow: shadows.floating
     });
+    expect(screen.getByTestId("captain-route-map")).toHaveProp(
+      "accessibilityHint",
+      expect.stringContaining("expo-location")
+    );
     expect(
       StyleSheet.flatten(screen.getByTestId("captain-map-primary-road").props.style)
     ).toMatchObject({

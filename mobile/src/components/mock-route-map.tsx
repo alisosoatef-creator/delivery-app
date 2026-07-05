@@ -13,6 +13,10 @@ import {
   shadows,
   spacing
 } from "@/design/tokens";
+import {
+  createCustomerRouteMapSnapshot,
+  type RouteMapPhase
+} from "@/maps/route-map-readiness";
 import { customerHomeMock } from "@/mock/customer-home";
 
 const roads = [
@@ -25,13 +29,7 @@ const roads = [
   { top: "36%", left: "6%", width: "86%", rotate: "69deg", opacity: 0.2 }
 ] as const;
 
-export type MockRouteMapPhase =
-  | "idle"
-  | "searching"
-  | "pickup"
-  | "arrived"
-  | "driving"
-  | "completed";
+export type MockRouteMapPhase = RouteMapPhase;
 
 type MockRouteMapProps = {
   destinationArea?: string | null;
@@ -49,73 +47,23 @@ const captainPositions: Record<MockRouteMapPhase, { left: number; top: number }>
   completed: { top: 62, left: 238 }
 };
 
-const phaseLabels: Record<MockRouteMapPhase, string> = {
-  idle: "مسار تجريبي جاهز",
-  searching: "نبحث عن أقرب كابتن",
-  pickup: "الكابتن يتحرك الآن",
-  arrived: "الكابتن عند نقطة الانطلاق",
-  driving: "الرحلة بدأت",
-  completed: "تم الوصول"
-};
-
-function getCaptainTracking(
-  phase: MockRouteMapPhase,
-  pickupLabel: string,
-  destinationLabel: string,
-  detailLabel?: string
-) {
-  if (phase === "pickup") {
-    return {
-      coordinates: "32.2257, 35.2396",
-      distance: "1.2 كم",
-      location: customerHomeMock.captain.locationLabel,
-      reached: `في الطريق إلى ${pickupLabel}`
-    };
-  }
-
-  if (phase === "arrived") {
-    return {
-      coordinates: "32.2220, 35.2442",
-      distance: "0.0 كم",
-      location: `عند ${pickupLabel}`,
-      reached: "نقطة الانطلاق"
-    };
-  }
-
-  if (phase === "driving") {
-    return {
-      coordinates: "32.2214, 35.2479",
-      distance: "2.1 كم",
-      location: `على مسار ${destinationLabel}`,
-      reached: "باتجاه الوجهة"
-    };
-  }
-
-  if (phase === "completed") {
-    return {
-      coordinates: "32.2199, 35.2513",
-      distance: "0.0 كم",
-      location: detailLabel ?? destinationLabel,
-      reached: "الوجهة"
-    };
-  }
-
-  return null;
-}
-
 function MockRouteMapComponent({
   destinationArea,
   destinationDetail,
   phase = "idle",
   pickupLabel = customerHomeMock.pickup
 }: MockRouteMapProps) {
-  const destinationLabel = destinationArea ?? "اختر وجهتك";
-  const detailLabel = destinationDetail?.trim();
-  const captainTracking = getCaptainTracking(phase, pickupLabel, destinationLabel, detailLabel);
+  const snapshot = createCustomerRouteMapSnapshot({
+    destinationArea,
+    destinationDetail,
+    phase,
+    pickupLabel
+  });
 
   return (
     <View
-      accessibilityLabel={`خريطة الرحلة: من ${pickupLabel} إلى ${destinationLabel}. ${phaseLabels[phase]}`}
+      accessibilityHint={snapshot.accessibilityHint}
+      accessibilityLabel={snapshot.accessibilityLabel}
       accessibilityRole="image"
       accessible
       testID="mock-route-map"
@@ -165,10 +113,10 @@ function MockRouteMapComponent({
 
       <View style={styles.mapBadge}>
         <Text selectable style={styles.badgeValue}>
-          {customerHomeMock.eta}
+          {snapshot.telemetry.etaValue}
         </Text>
         <Text selectable style={styles.badgeLabel}>
-          {phaseLabels[phase]}
+          {snapshot.phaseLabel}
         </Text>
       </View>
 
@@ -178,24 +126,24 @@ function MockRouteMapComponent({
             المرحلة الحالية
           </Text>
           <Text selectable style={styles.telemetryValue}>
-            {`حالة: ${phaseLabels[phase]}`}
+            {`حالة: ${snapshot.phaseLabel}`}
           </Text>
         </View>
         <View style={styles.telemetryMetrics}>
           <View style={styles.telemetryMetric}>
             <Text selectable style={styles.telemetryMetricLabel}>
-              مسافة الرحلة
+              {snapshot.telemetry.distanceLabel}
             </Text>
             <Text selectable style={styles.telemetryMetricValue}>
-              {customerHomeMock.tripDistance}
+              {snapshot.telemetry.distanceValue}
             </Text>
           </View>
           <View style={styles.telemetryMetric}>
             <Text selectable style={styles.telemetryMetricLabel}>
-              وصول الكابتن
+              {snapshot.telemetry.etaLabel}
             </Text>
             <Text selectable style={styles.telemetryMetricValue}>
-              {customerHomeMock.eta}
+              {snapshot.telemetry.etaValue}
             </Text>
           </View>
         </View>
@@ -206,17 +154,17 @@ function MockRouteMapComponent({
           الخريطة الحية
         </Text>
         <Text selectable style={styles.routePanelText}>
-          {`انطلاق: ${pickupLabel}`}
+          {`انطلاق: ${snapshot.pickupLabel}`}
         </Text>
         <Text selectable style={styles.routePanelText}>
-          {`وجهة: ${destinationLabel}`}
+          {`وجهة: ${snapshot.destinationLabel}`}
         </Text>
-        {detailLabel ? (
+        {snapshot.detailLabel ? (
           <Text selectable style={styles.routePanelDetail}>
-            {`تفصيل: ${detailLabel}`}
+            {`تفصيل: ${snapshot.detailLabel}`}
           </Text>
         ) : null}
-        {captainTracking ? (
+        {snapshot.captainTracking ? (
           <View style={styles.trackingPanel}>
             <View style={styles.trackingHeader}>
               <View style={styles.trackingIcon}>
@@ -227,20 +175,20 @@ function MockRouteMapComponent({
               </Text>
             </View>
             <Text selectable style={styles.trackingText}>
-              {`موقع الكابتن الآن: ${captainTracking.location}`}
+              {`موقع الكابتن الآن: ${snapshot.captainTracking.location}`}
             </Text>
             <Text selectable style={styles.trackingMeta}>
-              {`إحداثيات الكابتن: ${captainTracking.coordinates}`}
+              {`إحداثيات الكابتن: ${snapshot.captainTracking.coordinates}`}
             </Text>
             <View style={styles.trackingMetrics}>
               <View style={styles.trackingMetric}>
                 <Text selectable style={styles.trackingMetricText}>
-                  {`المسافة بينكم: ${captainTracking.distance}`}
+                  {`المسافة بينكم: ${snapshot.captainTracking.distance}`}
                 </Text>
               </View>
               <View style={styles.trackingMetric}>
                 <Text selectable style={styles.trackingMetricText}>
-                  {`وصل إلى: ${captainTracking.reached}`}
+                  {`وصل إلى: ${snapshot.captainTracking.reached}`}
                 </Text>
               </View>
             </View>

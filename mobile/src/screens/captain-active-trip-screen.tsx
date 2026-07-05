@@ -32,25 +32,20 @@ import {
   typography
 } from "@/design/tokens";
 import type { CaptainAvailableRequest } from "@/mock/captain-home";
+import {
+  getCaptainActiveTripView,
+  type CaptainActionGuideView,
+  type CaptainActiveTripDetailRowKind
+} from "@/screens/captain-home/captain-ux-model";
 import { useMockRideRequests } from "@/state/mock-app-context";
 import {
   captainTripFlowReducer,
-  createInitialCaptainTripFlow,
-  type CaptainTripStep
+  createInitialCaptainTripFlow
 } from "@/state/mock-trip-flow";
 
 type CaptainActiveTripScreenProps = {
   onBackToRequests: () => void;
   request: CaptainAvailableRequest;
-};
-
-type CaptainActionGuideCopy = {
-  detailLabel: string;
-  detailValue: string;
-  meta: string;
-  nextButtonLabel: string;
-  stepLabel: string;
-  title: string;
 };
 
 export function CaptainActiveTripScreen({
@@ -67,45 +62,18 @@ export function CaptainActiveTripScreen({
   const [notice, setNotice] = useState<string | null>(null);
   const { step: tripStep } = tripFlow;
 
-  const stepCopy = useMemo(() => {
-    if (tripStep === "arrived") {
-      return {
-        label: "تم الوصول للعميل",
-        meta: "العميل جاهز، ابدأ الرحلة عند الصعود",
-        buttonLabel: "ابدأ الرحلة الآن",
-        accessibilityLabel: "بدء الرحلة التجريبية",
-        nextAction: { type: "start-trip" as const },
-        nextStep: "driving" as CaptainTripStep
-      };
-    }
-
-    if (tripStep === "driving") {
-      return {
-        label: "العميل في الطريق",
-        meta: "تابع المسار إلى الوجهة النهائية",
-        buttonLabel: "إنهاء الرحلة",
-        accessibilityLabel: "إنهاء الرحلة التجريبية",
-        nextAction: { type: "complete-trip" as const },
-        nextStep: "completed" as CaptainTripStep
-      };
-    }
-
-    return {
-      label: "الطريق إلى العميل",
-      meta: "اتجه إلى نقطة الانطلاق واستعد لتأكيد الوصول",
-      buttonLabel: "وصلت للعميل",
-      accessibilityLabel: "تأكيد الوصول للعميل",
-      nextAction: { type: "arrive-to-customer" as const },
-      nextStep: "arrived" as CaptainTripStep
-    };
-  }, [tripStep]);
+  const tripView = useMemo(() => getCaptainActiveTripView(tripStep, request), [request, tripStep]);
 
   function handlePrimaryAction() {
+    if (!tripView.primaryAction) {
+      return;
+    }
+
     setNotice(null);
-    dispatchTripFlow(stepCopy.nextAction);
+    dispatchTripFlow(tripView.primaryAction.nextAction);
     dispatchRideRequests({
       requestId: request.id,
-      step: stepCopy.nextStep,
+      step: tripView.primaryAction.nextStep,
       type: "update-accepted-trip-step"
     });
   }
@@ -136,7 +104,7 @@ export function CaptainActiveTripScreen({
           <View style={styles.statusPill}>
             <Navigation color={colors.cyan} size={16} />
             <Text selectable style={styles.statusPillText}>
-              {tripStep === "completed" ? "مكتملة" : "نشطة"}
+              {tripView.hero.status}
             </Text>
           </View>
           <View style={styles.brandCopy}>
@@ -156,12 +124,10 @@ export function CaptainActiveTripScreen({
             </View>
             <View style={styles.heroCopy}>
               <Text selectable style={styles.heroTitle}>
-                {tripStep === "completed" ? "تم إنهاء الرحلة" : stepCopy.label}
+                {tripView.hero.title}
               </Text>
               <Text selectable style={styles.heroMeta}>
-                {tripStep === "completed"
-                  ? "تم تسجيل الرحلة ضمن بيانات mock لهذه المرحلة"
-                  : stepCopy.meta}
+                {tripView.hero.meta}
               </Text>
             </View>
           </View>
@@ -183,7 +149,7 @@ export function CaptainActiveTripScreen({
           </View>
         </GlassCard>
 
-        <CaptainTripActionGuide request={request} step={tripStep} />
+        <CaptainTripActionGuide guide={tripView.actionGuide} />
 
         <CaptainRouteMap request={request} step={tripStep} />
 
@@ -212,31 +178,14 @@ export function CaptainActiveTripScreen({
           </View>
 
           <View style={styles.detailsBox}>
-            <TripInfoRow
-              icon={<MapPin color={colors.success} size={16} />}
-              label="نقطة الانطلاق"
-              value={request.pickup}
-            />
-            <TripInfoRow
-              icon={<MapPin color={colors.cyan} size={16} />}
-              label="منطقة الوجهة"
-              value={request.destinationArea}
-            />
-            <TripInfoRow
-              icon={<Navigation color={colors.violetSoft} size={16} />}
-              label="تفصيل الوجهة"
-              value={request.destinationDetail}
-            />
-            <TripInfoRow
-              icon={<Wallet color={colors.cyan} size={16} />}
-              label="نوع الرحلة"
-              value={request.serviceLabel}
-            />
-            <TripInfoRow
-              icon={<Wallet color={colors.warning} size={16} />}
-              label="الدفع"
-              value={request.paymentMethod}
-            />
+            {tripView.detailRows.map((row) => (
+              <TripInfoRow
+                key={row.kind}
+                icon={<TripInfoRowIcon kind={row.kind} />}
+                label={row.label}
+                value={row.value}
+              />
+            ))}
           </View>
 
           <View style={styles.metricsGrid}>
@@ -276,10 +225,10 @@ export function CaptainActiveTripScreen({
             <View style={styles.completedBox}>
               <CheckCircle color={colors.cyan} size={34} />
               <Text selectable style={styles.completedTitle}>
-                أرباح الرحلة جاهزة
+                {tripView.completedSummary?.title}
               </Text>
               <Text selectable style={styles.completedMeta}>
-                {`${request.price} تمت إضافتها للأرباح mock`}
+                {tripView.completedSummary?.meta}
               </Text>
               <PremiumButton
                 accessibilityLabel="العودة لقائمة الطلبات"
@@ -307,12 +256,14 @@ export function CaptainActiveTripScreen({
               >
                 <MessageCircle color={colors.textSoft} size={18} />
               </Pressable>
-              <PremiumButton
-                accessibilityLabel={stepCopy.accessibilityLabel}
-                label={stepCopy.buttonLabel}
-                onPress={handlePrimaryAction}
-                style={styles.primaryButton}
-              />
+              {tripView.primaryAction ? (
+                <PremiumButton
+                  accessibilityLabel={tripView.primaryAction.accessibilityLabel}
+                  label={tripView.primaryAction.buttonLabel}
+                  onPress={handlePrimaryAction}
+                  style={styles.primaryButton}
+                />
+              ) : null}
             </View>
           )}
         </GlassCard>
@@ -322,14 +273,10 @@ export function CaptainActiveTripScreen({
 }
 
 function CaptainTripActionGuide({
-  request,
-  step
+  guide
 }: {
-  request: CaptainAvailableRequest;
-  step: CaptainTripStep;
+  guide: CaptainActionGuideView;
 }) {
-  const guide = getCaptainActionGuideCopy(step, request);
-
   return (
     <GlassCard testID="captain-trip-action-guide" style={styles.actionGuideCard}>
       <View style={styles.actionGuideTop}>
@@ -359,10 +306,10 @@ function CaptainTripActionGuide({
         </View>
         <View style={styles.actionGuideDetailBox}>
           <Text selectable style={styles.actionGuideDetailLabel}>
-            المسافة
+            {guide.distanceLabel}
           </Text>
           <Text selectable style={styles.actionGuideDetailValue}>
-            {request.distance}
+            {guide.distanceValue}
           </Text>
         </View>
       </View>
@@ -377,51 +324,24 @@ function CaptainTripActionGuide({
   );
 }
 
-function getCaptainActionGuideCopy(
-  step: CaptainTripStep,
-  request: CaptainAvailableRequest
-): CaptainActionGuideCopy {
-  if (step === "arrived") {
-    return {
-      detailLabel: "نقطة الصعود",
-      detailValue: request.pickup,
-      meta: "راجع اسم العميل وملاحظة الوجهة قبل بدء الرحلة",
-      nextButtonLabel: "ابدأ الرحلة الآن",
-      stepLabel: "خطوة الكابتن 2 من 4",
-      title: "ثبّت صعود العميل"
-    };
+function TripInfoRowIcon({ kind }: { kind: CaptainActiveTripDetailRowKind }) {
+  if (kind === "pickup") {
+    return <MapPin color={colors.success} size={16} />;
   }
 
-  if (step === "driving") {
-    return {
-      detailLabel: "الوجهة",
-      detailValue: request.destinationArea,
-      meta: "ابق على المسار النشط حتى الوصول لنقطة التسليم",
-      nextButtonLabel: "إنهاء الرحلة",
-      stepLabel: "خطوة الكابتن 3 من 4",
-      title: "قد إلى الوجهة"
-    };
+  if (kind === "destination") {
+    return <MapPin color={colors.cyan} size={16} />;
   }
 
-  if (step === "completed") {
-    return {
-      detailLabel: "الأرباح",
-      detailValue: request.price,
-      meta: "تم حفظ الرحلة داخل تجربة mock وجاهزة للرجوع للطلبات",
-      nextButtonLabel: "العودة للطلبات",
-      stepLabel: "خطوة الكابتن 4 من 4",
-      title: "الرحلة مكتملة"
-    };
+  if (kind === "destination-detail") {
+    return <Navigation color={colors.violetSoft} size={16} />;
   }
 
-  return {
-    detailLabel: "نقطة الالتقاء",
-    detailValue: request.pickup,
-    meta: `اتجه للعميل خلال ${request.etaToPickup} وخلّي المسار واضح`,
-    nextButtonLabel: "وصلت للعميل",
-    stepLabel: "خطوة الكابتن 1 من 4",
-    title: "اتجه إلى العميل"
-  };
+  if (kind === "service") {
+    return <Wallet color={colors.cyan} size={16} />;
+  }
+
+  return <Wallet color={colors.warning} size={16} />;
 }
 
 function CaptainSupportPanel({

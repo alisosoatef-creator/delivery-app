@@ -27,7 +27,7 @@ import { Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } fr
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { GlassCard } from "@/components/glass-card";
-import { MockRouteMap, type MockRouteMapPhase } from "@/components/mock-route-map";
+import { MockRouteMap } from "@/components/mock-route-map";
 import { MotionPressable } from "@/components/motion-pressable";
 import { MotionSurface } from "@/components/motion-surface";
 import { PremiumButton } from "@/components/premium-button";
@@ -45,7 +45,6 @@ import {
   touchTargets,
   typography
 } from "@/design/tokens";
-import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 import {
   CUSTOMER_BOOKING_STEPS,
@@ -57,10 +56,12 @@ import {
   formatCustomerFeedbackNote,
   getCustomerDestinationResults,
   getCustomerJourneySteps,
-  getCustomerProfileOverview,
+  getCustomerAccountDetailView,
+  getCustomerRideRequestDraft,
   getCustomerSearchCopy,
   getCustomerSearchTabView,
   getCustomerSupportHubView,
+  getCustomerTripDetailView,
   getCustomerTripsOverview,
   getDestinationCity,
   getPaymentChoiceSummary,
@@ -72,14 +73,14 @@ import {
   mapAcceptedTripStepToTripsStatus,
   mapCustomerStageToMapPhase,
   visaPaymentSchema,
+  type CustomerAccountInfoRowKind,
   type CustomerBookingStep,
-  type CustomerJourneyStep,
   type CustomerProfileTrustView,
   type CustomerSearchCopy,
   type CustomerSearchFilter,
   type CustomerSupportAction,
   type CustomerSupportActionLabel,
-  type CustomerTripHistoryItem,
+  type CustomerTripDetailViewModel,
   type CustomerTripsDetailView,
   type CustomerTripsLiveRide,
   type DeliveryPackageType,
@@ -233,11 +234,19 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     visaValidationReady: visaValidationResult.success
   });
   const isRequestBlockedByPayment = paymentMethod === "فيزا" && !visaValidationResult.success;
-  const deliveryPackageDescriptionTrimmed = deliveryPackageDescription.trim();
-  const captainDestinationDetail =
-    selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
-      ? `${destinationDetail} • ${selectedDeliveryPackageType} • ${deliveryPackageDescriptionTrimmed}`
-      : destinationDetail;
+  const customerRideRequestDraftPreview = selectedDestination
+    ? getCustomerRideRequestDraft({
+        deliveryPackageDescription,
+        destinationDetail,
+        effectivePaymentMethod,
+        selectedDeliveryPackageType,
+        selectedDestination,
+        selectedPickup,
+        selectedServiceLabel,
+        selectedServiceType
+      })
+    : null;
+  const captainDestinationDetail = customerRideRequestDraftPreview?.destinationDetail ?? destinationDetail;
   const isFocusedCustomerHome = activeNav === "الرئيسية" && !isBookingFlowOpen;
   const shouldShowFloatingNav =
     !isKeyboardVisible && !(isBookingFlowOpen && bookingStep !== "details");
@@ -419,19 +428,18 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
       return;
     }
 
-    const request: CaptainAvailableRequest = {
-      customerName: customerHomeMock.profile.name,
-      customerPhone: customerHomeMock.profile.phone,
-      destinationArea: selectedDestination.area,
-      destinationDetail: captainDestinationDetail,
-      distance: selectedDestination.distance,
-      etaToPickup: customerHomeMock.captain.arrivalEta,
-      id: LIVE_CUSTOMER_REQUEST_ID,
-      paymentMethod: effectivePaymentMethod,
-      pickup: selectedPickup.label,
-      price: selectedServiceType.price,
-      serviceLabel: selectedServiceLabel
-    };
+    const request =
+      customerRideRequestDraftPreview ??
+      getCustomerRideRequestDraft({
+        deliveryPackageDescription,
+        destinationDetail,
+        effectivePaymentMethod,
+        selectedDeliveryPackageType,
+        selectedDestination,
+        selectedPickup,
+        selectedServiceLabel,
+        selectedServiceType
+      });
 
     dispatchRideRequests({ request, type: "submit-customer-request" });
     dispatchTripFlow({ type: "confirm-request" });
@@ -2972,33 +2980,29 @@ function DestinationReadinessSummary({
 function CustomerTripsTab({ liveTrip }: { liveTrip: CustomerTripsLiveRide | null }) {
   const tripsView = getCustomerTripsOverview(liveTrip);
   const [detailView, setDetailView] = useState<CustomerTripsDetailView>(null);
-  const selectedHistoryTrip =
-    detailView?.startsWith("history:") === true
-      ? customerHomeMock.trips.history.find((trip) => detailView === `history:${trip.id}`)
-      : undefined;
+  const selectedTripDetail = detailView ? getCustomerTripDetailView({ detailView, liveTrip }) : null;
 
-  if (detailView === "current") {
+  if (selectedTripDetail?.kind === "current") {
     return (
       <CustomerCurrentTripDetails
-        activeStatus={tripsView.activeStatus}
-        currentTrip={tripsView.currentTrip}
+        detail={selectedTripDetail}
         liveTrip={liveTrip}
         onBack={() => setDetailView(null)}
       />
     );
   }
 
-  if (detailView === "completed-live" && liveTrip) {
+  if (selectedTripDetail?.kind === "completed-live" && liveTrip) {
     return (
       <View style={styles.tabStack}>
-        <CustomerTripDetailsHeader onBack={() => setDetailView(null)} title="تفاصيل الرحلة المكتملة" />
+        <CustomerTripDetailsHeader onBack={() => setDetailView(null)} title={selectedTripDetail.headerTitle} />
         <CompletedTripHistoryCard liveTrip={liveTrip} />
       </View>
     );
   }
 
-  if (selectedHistoryTrip) {
-    return <CustomerHistoryTripDetails onBack={() => setDetailView(null)} trip={selectedHistoryTrip} />;
+  if (selectedTripDetail?.kind === "history") {
+    return <CustomerHistoryTripDetails detail={selectedTripDetail} onBack={() => setDetailView(null)} />;
   }
 
   return (
@@ -3105,27 +3109,25 @@ function CustomerTripDetailsHeader({ onBack, title }: { onBack: () => void; titl
 }
 
 function CustomerCurrentTripDetails({
-  activeStatus,
-  currentTrip,
+  detail,
   liveTrip,
   onBack
 }: {
-  activeStatus: string;
-  currentTrip: CustomerTripsLiveRide | typeof customerHomeMock.trips.current;
+  detail: CustomerTripDetailViewModel;
   liveTrip: CustomerTripsLiveRide | null;
   onBack: () => void;
 }) {
-  const mapPhase: MockRouteMapPhase = liveTrip?.isCompleted ? "completed" : liveTrip ? "driving" : "pickup";
-
   return (
     <View style={styles.tabStack}>
-      <CustomerTripDetailsHeader onBack={onBack} title="تفاصيل الرحلة الحالية" />
-      <MockRouteMap
-        destinationArea={currentTrip.route}
-        destinationDetail={liveTrip?.destinationDetail}
-        phase={mapPhase}
-        pickupLabel={customerHomeMock.pickup}
-      />
+      <CustomerTripDetailsHeader onBack={onBack} title={detail.headerTitle} />
+      {detail.map ? (
+        <MockRouteMap
+          destinationArea={detail.map.destinationArea}
+          destinationDetail={detail.map.destinationDetail}
+          phase={detail.map.phase}
+          pickupLabel={detail.map.pickupLabel}
+        />
+      ) : null}
       <GlassCard testID="customer-current-trip-details" style={styles.tripOverviewCard} variant="strong">
         <View style={styles.tabHeader}>
           <View style={styles.tabIcon}>
@@ -3133,22 +3135,18 @@ function CustomerCurrentTripDetails({
           </View>
           <View style={styles.tabCopy}>
             <Text selectable style={styles.tabTitle}>
-              الرحلة الحالية
+              {detail.cardTitle}
             </Text>
             <Text selectable style={styles.tabMeta}>
-              {activeStatus}
+              {detail.status}
             </Text>
           </View>
         </View>
 
         <View style={styles.tripTimelineBox}>
-          <InfoRow label="المسار" value={currentTrip.route} />
-          {liveTrip ? <InfoRow label="تفصيل الوجهة" value={liveTrip.destinationDetail} /> : null}
-          {liveTrip ? <InfoRow label="الخدمة" value={liveTrip.serviceLabel} /> : null}
-          <InfoRow label="الكابتن" value={currentTrip.captain} />
-          <InfoRow label="السعر" value={currentTrip.price} />
-          <InfoRow label="الدفع" value={currentTrip.payment} />
-          <InfoRow label="الوقت" value={currentTrip.time} />
+          {detail.rows.map((row) => (
+            <InfoRow key={row.label} label={row.label} value={row.value} />
+          ))}
         </View>
       </GlassCard>
       {liveTrip ? <CustomerJourneyTimeline liveTrip={liveTrip} /> : null}
@@ -3157,15 +3155,15 @@ function CustomerCurrentTripDetails({
 }
 
 function CustomerHistoryTripDetails({
-  onBack,
-  trip
+  detail,
+  onBack
 }: {
+  detail: CustomerTripDetailViewModel;
   onBack: () => void;
-  trip: CustomerTripHistoryItem;
 }) {
   return (
     <View style={styles.tabStack}>
-      <CustomerTripDetailsHeader onBack={onBack} title="تفاصيل رحلة سابقة" />
+      <CustomerTripDetailsHeader onBack={onBack} title={detail.headerTitle} />
       <GlassCard testID="customer-history-trip-details" style={styles.tripOverviewCard} variant="strong">
         <View style={styles.tabHeader}>
           <View style={styles.tabIcon}>
@@ -3173,18 +3171,17 @@ function CustomerHistoryTripDetails({
           </View>
           <View style={styles.tabCopy}>
             <Text selectable style={styles.tabTitle}>
-              {trip.destination}
+              {detail.cardTitle}
             </Text>
             <Text selectable style={styles.tabMeta}>
-              {trip.status}
+              {detail.status}
             </Text>
           </View>
         </View>
         <View style={styles.tripTimelineBox}>
-          <InfoRow label="الوجهة" value={trip.destination} />
-          <InfoRow label="التاريخ" value={trip.date} />
-          <InfoRow label="السعر" value={trip.price} />
-          <InfoRow label="الحالة" value={trip.status} />
+          {detail.rows.map((row) => (
+            <InfoRow key={row.label} label={row.label} value={row.value} />
+          ))}
         </View>
       </GlassCard>
     </View>
@@ -3378,8 +3375,8 @@ function CustomerProfileTab({
   onOpenSupport: () => void;
   onReviewProfile: () => void;
 }) {
-  const profileView = getCustomerProfileOverview();
-  const profile = profileView.profile;
+  const accountView = getCustomerAccountDetailView();
+  const profile = accountView.profile;
 
   return (
     <View style={styles.profileStack}>
@@ -3403,30 +3400,18 @@ function CustomerProfileTab({
 
         <CustomerProfileTrustCenter
           onReviewProfile={onReviewProfile}
-          trust={profileView.trust}
+          trust={accountView.trust}
         />
 
         <View style={styles.profileRows}>
-          <ProfileRow
-            icon={<Phone color={colors.cyan} size={16} />}
-            label="رقم الجوال"
-            value={profile.phone}
-          />
-          <ProfileRow
-            icon={<MapPin color={colors.success} size={16} />}
-            label="المنطقة"
-            value={profile.homeArea}
-          />
-          <ProfileRow
-            icon={<CreditCard color={colors.violetSoft} size={16} />}
-            label="طريقة الدفع"
-            value={profileView.paymentSummary.status}
-          />
-          <ProfileRow
-            icon={<CreditCard color={colors.cyan} size={16} />}
-            label="بطاقة الدفع"
-            value={profileView.paymentSummary.method}
-          />
+          {accountView.rows.map((row) => (
+            <ProfileRow
+              key={row.kind}
+              icon={<ProfileRowIcon kind={row.kind} />}
+              label={row.label}
+              value={row.value}
+            />
+          ))}
         </View>
       </GlassCard>
 
@@ -3441,39 +3426,37 @@ function CustomerProfileTab({
           </View>
           <View style={styles.profileSectionCopy}>
             <Text selectable style={styles.profileSectionTitle}>
-              ملخص المدفوعات
+              {accountView.wallet.title}
             </Text>
             <Text selectable style={styles.profileSectionMeta}>
-              إجمالي ما دفعته هذا الشهر على واصل
+              {accountView.wallet.meta}
             </Text>
           </View>
         </View>
 
         <View style={styles.profileWalletGrid}>
-          <View style={styles.profileWalletTilePrimary}>
-            <Text selectable style={styles.profileWalletValue}>
-              {profileView.paymentSummary.monthlySpend}
-            </Text>
-            <Text selectable style={styles.profileWalletLabel}>
-              مدفوعات هذا الشهر
-            </Text>
-          </View>
-          <View style={styles.profileWalletTile}>
-            <Text selectable style={styles.profileWalletValueSmall}>
-              {profileView.paymentSummary.status}
-            </Text>
-            <Text selectable style={styles.profileWalletLabel}>
-              حالة الدفع
-            </Text>
-          </View>
-          <View style={styles.profileWalletTile}>
-            <Text selectable style={styles.profileWalletValueSmall}>
-              {profileView.paymentSummary.method}
-            </Text>
-            <Text selectable style={styles.profileWalletLabel}>
-              البطاقة الافتراضية
-            </Text>
-          </View>
+          {accountView.wallet.tiles.map((tile) => (
+            <View
+              key={tile.label}
+              style={
+                tile.tone === "primary" ? styles.profileWalletTilePrimary : styles.profileWalletTile
+              }
+            >
+              <Text
+                selectable
+                style={
+                  tile.tone === "primary"
+                    ? styles.profileWalletValue
+                    : styles.profileWalletValueSmall
+                }
+              >
+                {tile.value}
+              </Text>
+              <Text selectable style={styles.profileWalletLabel}>
+                {tile.label}
+              </Text>
+            </View>
+          ))}
         </View>
       </GlassCard>
 
@@ -3484,16 +3467,16 @@ function CustomerProfileTab({
           </View>
           <View style={styles.profileSectionCopy}>
             <Text selectable style={styles.profileSectionTitle}>
-              {profileView.support.title}
+              {accountView.support.title}
             </Text>
             <Text selectable style={styles.profileSectionMeta}>
-              {profileView.support.meta}
+              {accountView.support.meta}
             </Text>
           </View>
         </View>
 
         <View style={styles.profilePaymentList}>
-          {profileView.support.items.map((item) => (
+          {accountView.support.items.map((item) => (
             <View key={item.label} style={styles.profilePaymentRow}>
               <View style={styles.profilePaymentStatus}>
                 <CheckCircle color={colors.success} size={16} />
@@ -3518,12 +3501,28 @@ function CustomerProfileTab({
         >
           <MessageCircle color={colors.cyan} size={16} />
           <Text selectable style={styles.profileActionText}>
-            {profileView.support.actionLabel}
+            {accountView.support.actionLabel}
           </Text>
         </Pressable>
       </GlassCard>
     </View>
   );
+}
+
+function ProfileRowIcon({ kind }: { kind: CustomerAccountInfoRowKind }) {
+  if (kind === "phone") {
+    return <Phone color={colors.cyan} size={16} />;
+  }
+
+  if (kind === "area") {
+    return <MapPin color={colors.success} size={16} />;
+  }
+
+  if (kind === "payment-status") {
+    return <CreditCard color={colors.violetSoft} size={16} />;
+  }
+
+  return <CreditCard color={colors.cyan} size={16} />;
 }
 
 function CustomerSupportHub({

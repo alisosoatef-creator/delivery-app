@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import type { MockRouteMapPhase } from "@/components/mock-route-map";
 import { customerHomeMock } from "@/mock/customer-home";
+import type { CaptainAvailableRequest } from "@/mock/captain-home";
 import type { CaptainTripStep, CustomerTripStage } from "@/state/mock-trip-flow";
 
 export type SavedDestinationPlace = (typeof customerHomeMock.savedPlaces)[number];
@@ -79,9 +80,55 @@ export type CustomerTripsOverview = {
   historyRows: CustomerTripsHistoryRow[];
   historyTitle: string;
 };
+export type CustomerTripDetailRow = {
+  label: string;
+  value: string;
+};
+export type CustomerTripDetailMap = {
+  destinationArea: string;
+  destinationDetail: string | null;
+  phase: MockRouteMapPhase;
+  pickupLabel: string;
+};
+export type CustomerTripDetailViewModel = {
+  cardTitle: string;
+  headerTitle: string;
+  kind: "completed-live" | "current" | "history" | "missing";
+  map: CustomerTripDetailMap | null;
+  rows: CustomerTripDetailRow[];
+  status: string;
+};
 export type CustomerProfileSupportItemView = {
   label: string;
   meta: string;
+};
+export type CustomerProfileSupportView = {
+  actionLabel: string;
+  items: CustomerProfileSupportItemView[];
+  meta: string;
+  title: string;
+};
+export type CustomerAccountInfoRowKind = "area" | "payment-card" | "payment-status" | "phone";
+export type CustomerAccountInfoRow = {
+  kind: CustomerAccountInfoRowKind;
+  label: string;
+  value: string;
+};
+export type CustomerAccountWalletTile = {
+  label: string;
+  tone: "primary" | "secondary";
+  value: string;
+};
+export type CustomerAccountDetailView = {
+  profile: typeof customerHomeMock.profile;
+  rows: CustomerAccountInfoRow[];
+  support: CustomerProfileSupportView;
+  trust: CustomerProfileTrustView;
+  wallet: {
+    meta: string;
+    tiles: CustomerAccountWalletTile[];
+    title: string;
+  };
 };
 export type CustomerProfileTrustView = {
   completionLabel: string;
@@ -92,12 +139,7 @@ export type CustomerProfileTrustView = {
 export type CustomerProfileOverview = {
   paymentSummary: typeof customerHomeMock.profilePaymentSummary;
   profile: typeof customerHomeMock.profile;
-  support: {
-    actionLabel: string;
-    items: CustomerProfileSupportItemView[];
-    meta: string;
-    title: string;
-  };
+  support: CustomerProfileSupportView;
   trust: CustomerProfileTrustView;
 };
 export type CustomerSupportHubView = {
@@ -135,8 +177,53 @@ export type CustomerSearchTabView = {
   title: string;
 };
 
+export type CustomerRideRequestDraftInput = {
+  deliveryPackageDescription: string;
+  destinationDetail: string;
+  effectivePaymentMethod: string;
+  selectedDeliveryPackageType: DeliveryPackageType;
+  selectedDestination: DestinationPlace;
+  selectedPickup: PickupPoint;
+  selectedServiceLabel: string;
+  selectedServiceType: ServiceType;
+};
+
 export function normalizeDestinationSearch(value: string) {
   return value.trim().toLowerCase();
+}
+
+export function getCustomerRideRequestDraft({
+  deliveryPackageDescription,
+  destinationDetail,
+  effectivePaymentMethod,
+  selectedDeliveryPackageType,
+  selectedDestination,
+  selectedPickup,
+  selectedServiceLabel,
+  selectedServiceType
+}: CustomerRideRequestDraftInput): CaptainAvailableRequest {
+  const deliveryPackageDescriptionTrimmed = deliveryPackageDescription.trim();
+  const destinationDetailTrimmed = destinationDetail.trim();
+  const resolvedDestinationDetail =
+    selectedServiceType.id === "delivery" && deliveryPackageDescriptionTrimmed
+      ? `${
+          destinationDetailTrimmed || selectedDestination.detail
+        } • ${selectedDeliveryPackageType} • ${deliveryPackageDescriptionTrimmed}`
+      : destinationDetailTrimmed || selectedDestination.detail;
+
+  return {
+    customerName: customerHomeMock.profile.name,
+    customerPhone: customerHomeMock.profile.phone,
+    destinationArea: selectedDestination.area,
+    destinationDetail: resolvedDestinationDetail,
+    distance: selectedDestination.distance,
+    etaToPickup: customerHomeMock.captain.arrivalEta,
+    id: LIVE_CUSTOMER_REQUEST_ID,
+    paymentMethod: effectivePaymentMethod,
+    pickup: selectedPickup.label,
+    price: selectedServiceType.price,
+    serviceLabel: selectedServiceLabel
+  };
 }
 
 export function findCitySuggestion(query: string) {
@@ -264,6 +351,93 @@ export function getCustomerTripsOverview(
   };
 }
 
+export function getCustomerTripDetailView({
+  detailView,
+  liveTrip
+}: {
+  detailView: Exclude<CustomerTripsDetailView, null>;
+  liveTrip: CustomerTripsLiveRide | null;
+}): CustomerTripDetailViewModel {
+  const trips = customerHomeMock.trips;
+
+  if (detailView === "current") {
+    const currentTrip = liveTrip ?? trips.current;
+    const rows: CustomerTripDetailRow[] = [
+      { label: "المسار", value: currentTrip.route },
+      ...(liveTrip
+        ? [
+            { label: "تفصيل الوجهة", value: liveTrip.destinationDetail },
+            { label: "الخدمة", value: liveTrip.serviceLabel }
+          ]
+        : []),
+      { label: "الكابتن", value: currentTrip.captain },
+      { label: "السعر", value: currentTrip.price },
+      { label: "الدفع", value: currentTrip.payment },
+      { label: "الوقت", value: currentTrip.time }
+    ];
+
+    return {
+      cardTitle: "الرحلة الحالية",
+      headerTitle: "تفاصيل الرحلة الحالية",
+      kind: "current",
+      map: {
+        destinationArea: currentTrip.route,
+        destinationDetail: liveTrip?.destinationDetail ?? null,
+        phase: liveTrip?.isCompleted ? "completed" : liveTrip ? "driving" : "pickup",
+        pickupLabel: customerHomeMock.pickup
+      },
+      rows,
+      status: liveTrip?.activeStatus ?? trips.activeStatus
+    };
+  }
+
+  if (detailView === "completed-live" && liveTrip) {
+    return {
+      cardTitle: "ملخص الرحلة المكتملة",
+      headerTitle: "تفاصيل الرحلة المكتملة",
+      kind: "completed-live",
+      map: null,
+      rows: [
+        { label: "الإيصال", value: liveTrip.receiptNumber },
+        { label: "حالة الدفع", value: liveTrip.paymentStatus },
+        { label: "طريقة الدفع", value: liveTrip.payment },
+        { label: "التقييم", value: liveTrip.feedbackRating ? `${liveTrip.feedbackRating} نجوم` : "بانتظار التقييم" }
+      ],
+      status: liveTrip.activeStatus
+    };
+  }
+
+  const historyTrip =
+    detailView.startsWith("history:") === true
+      ? trips.history.find((trip) => detailView === `history:${trip.id}`)
+      : undefined;
+
+  if (historyTrip) {
+    return {
+      cardTitle: historyTrip.destination,
+      headerTitle: "تفاصيل رحلة سابقة",
+      kind: "history",
+      map: null,
+      rows: [
+        { label: "الوجهة", value: historyTrip.destination },
+        { label: "التاريخ", value: historyTrip.date },
+        { label: "السعر", value: historyTrip.price },
+        { label: "الحالة", value: historyTrip.status }
+      ],
+      status: historyTrip.status
+    };
+  }
+
+  return {
+    cardTitle: "لا توجد تفاصيل",
+    headerTitle: "تفاصيل غير متوفرة",
+    kind: "missing",
+    map: null,
+    rows: [],
+    status: "غير متاح"
+  };
+}
+
 export function getCustomerProfileOverview(): CustomerProfileOverview {
   return {
     paymentSummary: customerHomeMock.profilePaymentSummary,
@@ -282,6 +456,59 @@ export function getCustomerProfileOverview(): CustomerProfileOverview {
       meta: "بياناتك الأساسية جاهزة للطلبات",
       savedPlacesLabel: `الوجهات المحفوظة: ${customerHomeMock.savedPlaces.length}`,
       title: "جاهزية الحساب"
+    }
+  };
+}
+
+export function getCustomerAccountDetailView(): CustomerAccountDetailView {
+  const profileView = getCustomerProfileOverview();
+
+  return {
+    profile: profileView.profile,
+    rows: [
+      {
+        kind: "phone",
+        label: "رقم الجوال",
+        value: profileView.profile.phone
+      },
+      {
+        kind: "area",
+        label: "المنطقة",
+        value: profileView.profile.homeArea
+      },
+      {
+        kind: "payment-status",
+        label: "طريقة الدفع",
+        value: profileView.paymentSummary.status
+      },
+      {
+        kind: "payment-card",
+        label: "بطاقة الدفع",
+        value: profileView.paymentSummary.method
+      }
+    ],
+    support: profileView.support,
+    trust: profileView.trust,
+    wallet: {
+      meta: "إجمالي ما دفعته هذا الشهر على واصل",
+      tiles: [
+        {
+          label: "مدفوعات هذا الشهر",
+          tone: "primary",
+          value: profileView.paymentSummary.monthlySpend
+        },
+        {
+          label: "حالة الدفع",
+          tone: "secondary",
+          value: profileView.paymentSummary.status
+        },
+        {
+          label: "البطاقة الافتراضية",
+          tone: "secondary",
+          value: profileView.paymentSummary.method
+        }
+      ],
+      title: "ملخص المدفوعات"
     }
   };
 }
