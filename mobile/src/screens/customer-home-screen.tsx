@@ -84,7 +84,6 @@ import {
   visaPaymentSchema,
   type CustomerAccountInfoRowKind,
   type CustomerBookingStep,
-  type CustomerProfileTrustView,
   type CustomerSearchCopy,
   type CustomerSearchFilter,
   type CustomerSupportAction,
@@ -1139,10 +1138,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                 selectedAction={selectedSupportAction}
               />
             ) : (
-              <CustomerProfileTab
-                onOpenSupport={openSupportHub}
-                onReviewProfile={() => setNotice("تم فتح مراجعة بيانات الحساب")}
-              />
+              <CustomerProfileTab onOpenSupport={openSupportHub} />
             )
           ) : activeNav === "البحث" ? (
             <CustomerSearchTab
@@ -3400,59 +3396,7 @@ function CompletedTripHistoryCard({ liveTrip }: { liveTrip: CustomerTripsLiveRid
   );
 }
 
-function CustomerProfileTrustCenter({
-  onReviewProfile,
-  trust
-}: {
-  onReviewProfile: () => void;
-  trust: CustomerProfileTrustView;
-}) {
-  return (
-    <View style={styles.customerTrustPanel}>
-      <View style={styles.customerTrustHeader}>
-        <View style={styles.customerTrustIcon}>
-          <ShieldCheck color={colors.success} size={20} />
-        </View>
-        <View style={styles.customerTrustCopy}>
-          <Text selectable style={styles.customerTrustTitle}>
-            {trust.title}
-          </Text>
-          <Text selectable style={styles.customerTrustMeta}>
-            {trust.meta}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.customerTrustList}>
-        <Text selectable style={styles.customerTrustText}>
-          {trust.completionLabel}
-        </Text>
-        <Text selectable style={styles.customerTrustText}>
-          {trust.savedPlacesLabel}
-        </Text>
-      </View>
-
-      <Pressable
-        accessibilityLabel="مراجعة بيانات الحساب"
-        accessibilityRole="button"
-        onPress={onReviewProfile}
-        style={({ pressed }) => [styles.customerTrustButton, pressed ? styles.pressed : null]}
-      >
-        <Text selectable style={styles.customerTrustButtonText}>
-          مراجعة بيانات الحساب
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function CustomerProfileTab({
-  onOpenSupport,
-  onReviewProfile
-}: {
-  onOpenSupport: () => void;
-  onReviewProfile: () => void;
-}) {
+function CustomerProfileTab({ onOpenSupport }: { onOpenSupport: () => void }) {
   const accountView = getCustomerAccountDetailView();
   const profile = accountView.profile;
 
@@ -3475,11 +3419,6 @@ function CustomerProfileTab({
             </Text>
           </View>
         </View>
-
-        <CustomerProfileTrustCenter
-          onReviewProfile={onReviewProfile}
-          trust={accountView.trust}
-        />
 
         <View style={styles.profileRows}>
           {accountView.rows.map((row) => (

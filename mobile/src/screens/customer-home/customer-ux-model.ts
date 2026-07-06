@@ -123,24 +123,16 @@ export type CustomerAccountDetailView = {
   profile: typeof customerHomeMock.profile;
   rows: CustomerAccountInfoRow[];
   support: CustomerProfileSupportView;
-  trust: CustomerProfileTrustView;
   wallet: {
     meta: string;
     tiles: CustomerAccountWalletTile[];
     title: string;
   };
 };
-export type CustomerProfileTrustView = {
-  completionLabel: string;
-  meta: string;
-  savedPlacesLabel: string;
-  title: string;
-};
 export type CustomerProfileOverview = {
   paymentSummary: typeof customerHomeMock.profilePaymentSummary;
   profile: typeof customerHomeMock.profile;
   support: CustomerProfileSupportView;
-  trust: CustomerProfileTrustView;
 };
 export type CustomerSupportHubView = {
   actions: readonly CustomerSupportAction[];
@@ -450,12 +442,6 @@ export function getCustomerProfileOverview(): CustomerProfileOverview {
       })),
       meta: "مساعدة وبلاغات سريعة بدون تعقيد",
       title: "الدعم والمساعدة"
-    },
-    trust: {
-      completionLabel: "الملف مكتمل: 92%",
-      meta: "بياناتك الأساسية جاهزة للطلبات",
-      savedPlacesLabel: `الوجهات المحفوظة: ${customerHomeMock.savedPlaces.length}`,
-      title: "جاهزية الحساب"
     }
   };
 }
@@ -488,7 +474,6 @@ export function getCustomerAccountDetailView(): CustomerAccountDetailView {
       }
     ],
     support: profileView.support,
-    trust: profileView.trust,
     wallet: {
       meta: "إجمالي ما دفعته هذا الشهر على واصل",
       tiles: [

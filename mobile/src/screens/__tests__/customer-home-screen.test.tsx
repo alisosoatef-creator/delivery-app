@@ -1602,20 +1602,21 @@ describe("CustomerHomeScreen", () => {
     expect(screen.queryByText("تم فتح الدعم والمساعدة")).toBeNull();
   });
 
-  it("keeps account readiness compact inside the profile tab", async () => {
+  it("keeps account details compact inside the profile tab", async () => {
     const screen = await renderCustomerHome();
 
     await fireEvent.press(screen.getByText("حسابي"));
 
-    expect(screen.getByText("جاهزية الحساب")).toBeTruthy();
-    expect(screen.getByText("جاهزية الحساب")).toBeTruthy();
-    expect(screen.getByText("الملف مكتمل: 92%")).toBeTruthy();
-    expect(screen.getByText("الوجهات المحفوظة: 4")).toBeTruthy();
+    expect(screen.queryByText("جاهزية الحساب")).toBeNull();
+    expect(screen.queryByText("الملف مكتمل: 92%")).toBeNull();
+    expect(screen.queryByText("الوجهات المحفوظة: 4")).toBeNull();
+    expect(screen.queryByLabelText("مراجعة بيانات الحساب")).toBeNull();
+    expect(screen.getByText("رقم الجوال")).toBeTruthy();
+    expect(screen.getByText("المنطقة")).toBeTruthy();
+    expect(screen.getByText("طريقة الدفع")).toBeTruthy();
+    expect(screen.getByText("بطاقة الدفع")).toBeTruthy();
     expect(screen.getByText("محادثة الدعم")).toBeTruthy();
     expect(screen.getByText("مركز المساعدة")).toBeTruthy();
-
-    await fireEvent.press(screen.getByLabelText("مراجعة بيانات الحساب"));
-    expect(screen.getByText("تم فتح مراجعة بيانات الحساب")).toBeTruthy();
   });
 
   it("opens a focused customer support hub from the profile tab", async () => {

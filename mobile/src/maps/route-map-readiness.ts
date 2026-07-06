@@ -1,4 +1,4 @@
-import type { CaptainAvailableRequest } from "@/mock/captain-home";
+import { captainHomeMock, type CaptainAvailableRequest } from "@/mock/captain-home";
 import { customerHomeMock } from "@/mock/customer-home";
 import type { CaptainTripStep } from "@/state/mock-trip-flow";
 
@@ -14,11 +14,39 @@ export type RouteMapPhase =
 
 export type RouteMapMarkerRole = "pickup" | "captain" | "destination";
 
+export type RouteMapCoordinate = {
+  latitude: number;
+  longitude: number;
+};
+
 export type RouteMapMarker = {
   coordinate: null;
   id: string;
   label: string;
   role: RouteMapMarkerRole;
+};
+
+export type RouteMapLocationRole = "customer" | "captain" | "destination";
+
+export type RouteMapLocation = {
+  coordinate: RouteMapCoordinate;
+  detail: string | null;
+  id: string;
+  label: string;
+  role: RouteMapLocationRole;
+};
+
+export type RouteMapLegId = "captain-to-customer" | "customer-to-destination";
+
+export type RouteMapLegStatus = "pending" | "active" | "complete";
+
+export type RouteMapLeg = {
+  distance: string;
+  eta: string;
+  from: RouteMapLocationRole;
+  id: RouteMapLegId;
+  status: RouteMapLegStatus;
+  to: RouteMapLocationRole;
 };
 
 export type RouteMapProviderReadiness = {
@@ -28,6 +56,34 @@ export type RouteMapProviderReadiness = {
   nativeProvider: "react-native-maps";
   safeForExpoGo: true;
   status: "mock-ready";
+};
+
+export type RouteMapReplacementReadiness = {
+  coordinateMode: "mock-coordinates";
+  locationProvider: "expo-location";
+  nativeProvider: "react-native-maps";
+  readyForNative: true;
+  requiredPackages: typeof REAL_MAP_READINESS_PACKAGES;
+};
+
+export type RouteMapContract = {
+  captainLocation: RouteMapLocation;
+  customerLocation: RouteMapLocation;
+  destination: RouteMapLocation;
+  eta: {
+    captainArrival: string;
+    tripEstimate: string;
+  };
+  phase: RouteMapPhase;
+  provider: RouteMapProviderReadiness;
+  replacement: RouteMapReplacementReadiness;
+  route: {
+    activeLegId: RouteMapLegId;
+    distance: string;
+    legs: RouteMapLeg[];
+    polyline: RouteMapCoordinate[];
+    statusLabel: string;
+  };
 };
 
 export type CustomerCaptainTrackingSnapshot = {
@@ -48,6 +104,7 @@ export type CustomerRouteMapSnapshot = {
   phaseLabel: string;
   pickupLabel: string;
   provider: RouteMapProviderReadiness;
+  routeContract: RouteMapContract;
   telemetry: {
     distanceLabel: string;
     distanceValue: string;
@@ -69,6 +126,7 @@ export type CaptainRouteMapSnapshot = {
   markers: RouteMapMarker[];
   nextPoint: string;
   provider: RouteMapProviderReadiness;
+  routeContract: RouteMapContract;
   segment: number;
   statusMeta: string;
 };
@@ -85,6 +143,22 @@ export const routeMapProviderReadiness: RouteMapProviderReadiness = {
 const routeMapReadinessHint =
   "واجهة الخريطة جاهزة لتتبع المسار واستبدالها لاحقاً بخريطة حقيقية عند تركيب expo-location و react-native-maps.";
 
+const mockRouteCoordinates = {
+  captain: { latitude: 32.2257, longitude: 35.2396 },
+  customer: { latitude: 32.222, longitude: 35.2442 },
+  destination: { latitude: 32.2199, longitude: 35.2513 },
+  waypointToCustomer: { latitude: 32.2237, longitude: 35.2421 },
+  waypointToDestination: { latitude: 32.2214, longitude: 35.2479 }
+} as const satisfies Record<string, RouteMapCoordinate>;
+
+const routeMapReplacementReadiness: RouteMapReplacementReadiness = {
+  coordinateMode: "mock-coordinates",
+  locationProvider: "expo-location",
+  nativeProvider: "react-native-maps",
+  readyForNative: true,
+  requiredPackages: REAL_MAP_READINESS_PACKAGES
+};
+
 export const routeMapPhaseLabels: Record<RouteMapPhase, string> = {
   idle: "مسار الرحلة جاهز",
   searching: "نبحث عن أقرب كابتن",
@@ -96,7 +170,16 @@ export const routeMapPhaseLabels: Record<RouteMapPhase, string> = {
 
 const captainStepConfig: Record<
   CaptainTripStep,
-  Omit<CaptainRouteMapSnapshot, "accessibilityHint" | "accessibilityLabel" | "activePoint" | "markers" | "nextPoint" | "provider">
+  Omit<
+    CaptainRouteMapSnapshot,
+    | "accessibilityHint"
+    | "accessibilityLabel"
+    | "activePoint"
+    | "markers"
+    | "nextPoint"
+    | "provider"
+    | "routeContract"
+  >
 > = {
   pickup: {
     activeLabel: "إلى نقطة الانطلاق",
@@ -160,6 +243,18 @@ export function createCustomerRouteMapSnapshot({
     phaseLabel,
     pickupLabel: resolvedPickupLabel,
     provider: routeMapProviderReadiness,
+    routeContract: createRouteMapContract({
+      captainDetail: customerHomeMock.captain.locationLabel,
+      captainLabel: customerHomeMock.captain.name,
+      customerDetail: "نقطة انطلاق العميل",
+      destinationDetail: detailLabel,
+      destinationLabel,
+      distance: customerHomeMock.tripDistance,
+      eta: customerHomeMock.eta,
+      phase,
+      pickupLabel: resolvedPickupLabel,
+      statusLabel: phaseLabel
+    }),
     telemetry: {
       distanceLabel: "مسافة الرحلة",
       distanceValue: customerHomeMock.tripDistance,
@@ -178,16 +273,188 @@ export function createCaptainRouteMapSnapshot({
 }): CaptainRouteMapSnapshot {
   const config = captainStepConfig[step];
   const isDestinationLeg = step === "driving" || step === "completed";
+  const phase = captainStepToRoutePhase(step);
 
   return {
     ...config,
     accessibilityHint: routeMapReadinessHint,
     accessibilityLabel: `خط سير الكابتن: ${config.activeLabel}`,
     activePoint: isDestinationLeg ? request.destinationArea : request.pickup,
-    markers: createRouteMapMarkers(request.pickup, request.customerName, request.destinationArea),
+    markers: createRouteMapMarkers(request.pickup, captainHomeMock.captainName, request.destinationArea),
     nextPoint: isDestinationLeg ? request.destinationDetail : request.destinationArea,
-    provider: routeMapProviderReadiness
+    provider: routeMapProviderReadiness,
+    routeContract: createRouteMapContract({
+      captainDetail: captainHomeMock.profile.vehicle,
+      captainLabel: captainHomeMock.captainName,
+      customerDetail: request.customerName,
+      destinationDetail: request.destinationDetail,
+      destinationLabel: request.destinationArea,
+      distance: request.distance,
+      eta: request.etaToPickup,
+      phase,
+      pickupLabel: request.pickup,
+      statusLabel: config.activeLabel
+    })
   };
+}
+
+function createRouteMapContract({
+  captainDetail,
+  captainLabel,
+  customerDetail,
+  destinationDetail,
+  destinationLabel,
+  distance,
+  eta,
+  phase,
+  pickupLabel,
+  statusLabel
+}: {
+  captainDetail: string | null;
+  captainLabel: string;
+  customerDetail: string | null;
+  destinationDetail: string | null;
+  destinationLabel: string;
+  distance: string;
+  eta: string;
+  phase: RouteMapPhase;
+  pickupLabel: string;
+  statusLabel: string;
+}): RouteMapContract {
+  const activeLegId = getActiveLegId(phase);
+
+  return {
+    captainLocation: createRouteMapLocation({
+      coordinate: mockRouteCoordinates.captain,
+      detail: captainDetail,
+      id: "captain-location",
+      label: captainLabel,
+      role: "captain"
+    }),
+    customerLocation: createRouteMapLocation({
+      coordinate: mockRouteCoordinates.customer,
+      detail: customerDetail,
+      id: "customer-location",
+      label: pickupLabel,
+      role: "customer"
+    }),
+    destination: createRouteMapLocation({
+      coordinate: mockRouteCoordinates.destination,
+      detail: destinationDetail,
+      id: "destination-location",
+      label: destinationLabel,
+      role: "destination"
+    }),
+    eta: {
+      captainArrival: eta,
+      tripEstimate: eta
+    },
+    phase,
+    provider: routeMapProviderReadiness,
+    replacement: routeMapReplacementReadiness,
+    route: {
+      activeLegId,
+      distance,
+      legs: createRouteMapLegs(phase, distance, eta),
+      polyline: [
+        mockRouteCoordinates.captain,
+        mockRouteCoordinates.waypointToCustomer,
+        mockRouteCoordinates.customer,
+        mockRouteCoordinates.waypointToDestination,
+        mockRouteCoordinates.destination
+      ],
+      statusLabel
+    }
+  };
+}
+
+function createRouteMapLocation({
+  coordinate,
+  detail,
+  id,
+  label,
+  role
+}: RouteMapLocation): RouteMapLocation {
+  return {
+    coordinate,
+    detail,
+    id,
+    label,
+    role
+  };
+}
+
+function createRouteMapLegs(
+  phase: RouteMapPhase,
+  distance: string,
+  eta: string
+): RouteMapLeg[] {
+  return [
+    {
+      distance: phase === "driving" || phase === "completed" ? "0.0 كم" : "1.2 كم",
+      eta,
+      from: "captain",
+      id: "captain-to-customer",
+      status: getLegStatus(phase, "captain-to-customer"),
+      to: "customer"
+    },
+    {
+      distance,
+      eta,
+      from: "customer",
+      id: "customer-to-destination",
+      status: getLegStatus(phase, "customer-to-destination"),
+      to: "destination"
+    }
+  ];
+}
+
+function getActiveLegId(phase: RouteMapPhase): RouteMapLegId {
+  if (phase === "driving" || phase === "completed") {
+    return "customer-to-destination";
+  }
+
+  return "captain-to-customer";
+}
+
+function getLegStatus(phase: RouteMapPhase, legId: RouteMapLegId): RouteMapLegStatus {
+  if (phase === "completed") {
+    return "complete";
+  }
+
+  if (legId === "captain-to-customer") {
+    if (phase === "pickup") {
+      return "active";
+    }
+
+    if (phase === "arrived" || phase === "driving") {
+      return "complete";
+    }
+
+    return "pending";
+  }
+
+  if (phase === "driving") {
+    return "active";
+  }
+
+  return "pending";
+}
+
+function captainStepToRoutePhase(step: CaptainTripStep): RouteMapPhase {
+  if (step === "pickup") {
+    return "pickup";
+  }
+
+  if (step === "arrived") {
+    return "arrived";
+  }
+
+  if (step === "driving") {
+    return "driving";
+  }
+
+  return "completed";
 }
 
 function createRouteMapMarkers(

@@ -204,8 +204,7 @@ describe("customer UX model", () => {
     const accountView = getCustomerAccountDetailView();
 
     expect(profileView.profile.name).toBe("علي محمد");
-    expect(profileView.trust.completionLabel).toBe("الملف مكتمل: 92%");
-    expect(profileView.trust.savedPlacesLabel).toBe("الوجهات المحفوظة: 4");
+    expect(profileView).not.toHaveProperty("trust");
     expect(profileView.paymentSummary.monthlySpend).toBe("184 شيكل");
     expect(profileView.paymentSummary.status).toBe("فيزا مفعلة");
     expect(profileView.support.items.map((item) => item.label)).toEqual([
@@ -237,6 +236,7 @@ describe("customer UX model", () => {
       "فيزا • **** 4242"
     ]);
     expect(accountView.rows.some((row) => row.label.includes("تقييم"))).toBe(false);
+    expect(accountView).not.toHaveProperty("trust");
     expect(accountView.wallet.title).toBe("ملخص المدفوعات");
     expect(accountView.wallet.tiles.map((tile) => tile.label)).toEqual([
       "مدفوعات هذا الشهر",
