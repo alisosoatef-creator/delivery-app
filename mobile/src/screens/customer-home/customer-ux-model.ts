@@ -446,7 +446,7 @@ export function getCustomerProfileOverview(): CustomerProfileOverview {
       actionLabel: "فتح الدعم والمساعدة",
       items: customerHomeMock.profileSupport.items.map((item) => ({
         label: item,
-        meta: "متاح للمرحلة التجريبية"
+        meta: "متاح الآن"
       })),
       meta: "مساعدة وبلاغات سريعة بدون تعقيد",
       title: "الدعم والمساعدة"
@@ -523,14 +523,14 @@ export function getCustomerSupportHubView(
   return {
     actions: customerHomeMock.profileSupport.actions,
     activeAction,
-    apiNote: "لا يوجد ربط API الآن",
+    apiNote: "سيتم إرسال البلاغ للمراجعة",
     summary: {
       lines: [
         `نوع البلاغ: ${activeAction.label}`,
         `الأولوية: ${activeAction.priority}`,
         activeAction.response
       ],
-      meta: "طلب دعم mock محفوظ داخل الواجهة فقط",
+      meta: "تم تجهيز طلب الدعم داخل مركز المساعدة",
       title:
         activeAction.label === "الإبلاغ عن مشكلة"
           ? "بلاغ مشكلة جاهز"
@@ -800,7 +800,7 @@ export function getPaymentReadinessCopy({
 
   if (visaValidationReady) {
     return {
-      detail: shouldSaveVisaCard ? "الحفظ مفعّل mock" : "بدون حفظ البطاقة",
+      detail: shouldSaveVisaCard ? "الحفظ مفعّل" : "بدون حفظ البطاقة",
       method: effectivePaymentMethod,
       status: "لن يتم خصم أي مبلغ الآن",
       title: "فيزا جاهزة للطلب"
@@ -810,7 +810,7 @@ export function getPaymentReadinessCopy({
   return {
     detail: isVisaPaymentDirty ? "راجع بيانات البطاقة قبل الطلب" : "أدخل بيانات البطاقة",
     method: "فيزا",
-    status: "تجربة mock بدون خصم",
+    status: "لن يتم خصم أي مبلغ الآن",
     title: "بانتظار إكمال فيزا"
   };
 }

@@ -173,7 +173,7 @@ describe("CaptainHomeScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("اتصال بالعميل"));
 
-    const notice = screen.getByText("زر الاتصال بالعميل mock فقط الآن");
+    const notice = screen.getByText("سيتم تفعيل الاتصال بالعميل قريباً");
     expect(notice.props.accessibilityLiveRegion).toBe("polite");
     expect(notice.props.accessibilityRole).toBe("alert");
   });
@@ -192,7 +192,7 @@ describe("CaptainHomeScreen", () => {
     const hardwareBack = mockHardwareBackPress();
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     expect(screen.getByTestId("captain-active-trip-scroll")).toBeTruthy();
 
     await act(async () => {
@@ -251,14 +251,14 @@ describe("CaptainHomeScreen", () => {
       boxShadow: shadows.cardSubtle
     });
     expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
-    expect(screen.getAllByLabelText("قبول الطلب التجريبي")).toHaveLength(1);
-    expect(screen.getByLabelText("عرض تفاصيل الطلب التجريبي")).toBeTruthy();
+    expect(screen.getAllByLabelText("قبول الطلب")).toHaveLength(1);
+    expect(screen.getByLabelText("عرض تفاصيل الطلب")).toBeTruthy();
     expect(screen.queryByText("مركز تشغيل الكابتن")).toBeNull();
     expect(screen.queryByText("ملخص طلب العميل")).toBeNull();
     expect(screen.queryByTestId("captain-decision-signal-panel")).toBeNull();
     expect(screen.queryByText("سجل التحديثات المباشرة")).toBeNull();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(
       StyleSheet.flatten(screen.getByTestId("captain-request-details").props.style)
@@ -315,7 +315,7 @@ describe("CaptainHomeScreen", () => {
   it("opens complete request details before confirming acceptance", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(screen.getByText("تفاصيل الطلب قبل القبول")).toBeTruthy();
     expect(screen.getByText("العميل المحدد")).toBeTruthy();
@@ -332,7 +332,7 @@ describe("CaptainHomeScreen", () => {
   it("shows final captain acceptance readiness before confirming request", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(screen.getByTestId("captain-acceptance-readiness-strip")).toBeTruthy();
     expect(screen.getByText("الطلب جاهز للقبول")).toBeTruthy();
@@ -343,7 +343,7 @@ describe("CaptainHomeScreen", () => {
   it("keeps the captain acceptance readiness copy visually bounded", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(screen.getByText("الطلب جاهز للقبول").props.numberOfLines).toBe(1);
     expect(screen.getByText("المسار والدفع واضحان").props.numberOfLines).toBe(2);
@@ -361,7 +361,7 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getAllByText("فيزا • **** 4242").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("استلام من الباب الرئيسي وتسليم عند الاستقبال")).toBeNull();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(screen.getByText("نوع الخدمة")).toBeTruthy();
     expect(screen.getByText("ملاحظة العميل")).toBeTruthy();
@@ -398,9 +398,9 @@ describe("CaptainHomeScreen", () => {
 
     expect(screen.getByText("علي محمد")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("رفض الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("رفض الطلب"));
 
-    expect(screen.getByText("تم رفض الطلب التجريبي")).toBeTruthy();
+    expect(screen.getByText("تم رفض الطلب")).toBeTruthy();
     expect(screen.getByText("لا توجد طلبات متاحة الآن")).toBeTruthy();
     expect(screen.queryByText("الكابتن اعتذر عن الطلب")).toBeNull();
 
@@ -413,7 +413,7 @@ describe("CaptainHomeScreen", () => {
   it("moves an accepted request into the active captain trip mock flow", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     expect(
       StyleSheet.flatten(screen.getByTestId("captain-active-trip-hero").props.style)
     ).toMatchObject({
@@ -441,13 +441,13 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("تم الوصول للعميل")).toBeTruthy();
     expect(screen.getByText("ابدأ الرحلة الآن")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
     expect(screen.getByText("العميل في الطريق")).toBeTruthy();
     expect(screen.getByText("إنهاء الرحلة")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
     expect(screen.getByText("تم إنهاء الرحلة")).toBeTruthy();
-    expect(screen.getByText("25 شيكل تمت إضافتها للأرباح mock")).toBeTruthy();
+    expect(screen.getByText("25 شيكل تمت إضافتها للأرباح")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     expect(screen.getByTestId("captain-requests-workspace")).toBeTruthy();
@@ -456,7 +456,7 @@ describe("CaptainHomeScreen", () => {
   it("keeps the active captain trip scroll responsive through the trip flow", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     const scroll = screen.getByTestId("captain-active-trip-scroll");
     const contentStyle = StyleSheet.flatten(scroll.props.contentContainerStyle);
 
@@ -468,7 +468,7 @@ describe("CaptainHomeScreen", () => {
   it("guides the captain through the current trip action in one clear panel", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
 
     expect(screen.getByTestId("captain-trip-action-guide")).toBeTruthy();
     expect(screen.getByText("خطوة الكابتن 1 من 4")).toBeTruthy();
@@ -481,13 +481,13 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("ثبّت صعود العميل")).toBeTruthy();
     expect(screen.getByText("الزر التالي: ابدأ الرحلة الآن")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
 
     expect(screen.getByText("خطوة الكابتن 3 من 4")).toBeTruthy();
     expect(screen.getByText("قد إلى الوجهة")).toBeTruthy();
     expect(screen.getByText("الزر التالي: إنهاء الرحلة")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
 
     expect(screen.getByText("خطوة الكابتن 4 من 4")).toBeTruthy();
     expect(screen.getByText("الرحلة مكتملة")).toBeTruthy();
@@ -497,7 +497,7 @@ describe("CaptainHomeScreen", () => {
   it("shows a premium captain GPS route through pickup and destination steps", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
 
     expect(screen.getByTestId("captain-route-map")).toHaveProp("accessibilityRole", "image");
     expect(screen.getByTestId("captain-route-map")).toHaveProp("accessible", true);
@@ -510,31 +510,31 @@ describe("CaptainHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
     expect(screen.getByText("تم الوصول لنقطة الانطلاق")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
     expect(screen.getByText("من العميل إلى الوجهة")).toBeTruthy();
     expect(screen.getAllByText("2.4 كم").length).toBeGreaterThanOrEqual(1);
 
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
     expect(screen.getByText("تم إكمال خط السير")).toBeTruthy();
   });
 
   it("keeps captain support and location sharing actions available during the trip", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
 
     expect(screen.getByText("مركز دعم الكابتن")).toBeTruthy();
     expect(screen.getByText("مشاركة موقعي")).toBeTruthy();
     expect(screen.getByText("مشكلة بالرحلة")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("مشاركة موقع الكابتن مع الدعم"));
-    expect(screen.getByText("تم تجهيز مشاركة موقع الكابتن mock")).toBeTruthy();
+    expect(screen.getByText("تم تجهيز مشاركة موقع الكابتن")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("تسجيل مشكلة في الرحلة"));
-    expect(screen.getByText("تم تسجيل مشكلة الرحلة mock")).toBeTruthy();
+    expect(screen.getByText("تم تسجيل مشكلة الرحلة")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
 
     expect(screen.getByText("العميل في الطريق")).toBeTruthy();
     expect(screen.getByText("مركز دعم الكابتن")).toBeTruthy();
@@ -546,26 +546,26 @@ describe("CaptainHomeScreen", () => {
 
     expect(screen.getByText("shared step: none")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     expect(screen.getByText("shared step: pickup")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
     expect(screen.getByText("shared step: arrived")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
     expect(screen.getByText("shared step: driving")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
     expect(screen.getByText("shared step: completed")).toBeTruthy();
   });
 
   it("clears the completed accepted trip when captain returns to requests", async () => {
     const screen = await renderCaptainHomeWithSharedStepProbe();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
 
     expect(screen.getByText("shared step: completed")).toBeTruthy();
 
@@ -595,16 +595,16 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("رصيد قابل للسحب")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("مراجعة الأداء اليومي"));
-    expect(screen.getByText("مراجعة الأداء اليومي mock فقط الآن")).toBeTruthy();
+    expect(screen.getByText("تم فتح مراجعة الأداء اليومي")).toBeTruthy();
   });
 
   it("shows the completed accepted trip inside captain earnings", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
 
@@ -617,10 +617,10 @@ describe("CaptainHomeScreen", () => {
   it("adds the completed accepted trip to captain earnings totals", async () => {
     const screen = await renderCaptainHome();
 
-    await fireEvent.press(screen.getByLabelText("قبول الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("قبول الطلب"));
     await fireEvent.press(screen.getByLabelText("تأكيد الوصول للعميل"));
-    await fireEvent.press(screen.getByLabelText("بدء الرحلة التجريبية"));
-    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة التجريبية"));
+    await fireEvent.press(screen.getByLabelText("بدء الرحلة"));
+    await fireEvent.press(screen.getByLabelText("إنهاء الرحلة"));
     await fireEvent.press(screen.getByLabelText("العودة لقائمة الطلبات"));
     await fireEvent.press(screen.getByLabelText("فتح تبويب الأرباح"));
 
@@ -650,8 +650,8 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("آخر دفعة")).toBeTruthy();
     expect(screen.getByText("سحب الأرباح")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("سحب أرباح تجريبي"));
-    expect(screen.getByText("طلب السحب mock فقط الآن")).toBeTruthy();
+    await fireEvent.press(screen.getByLabelText("سحب الأرباح"));
+    expect(screen.getByText("تم تجهيز طلب سحب الأرباح")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("فتح تبويب حسابي"));
     expect(screen.getByText("حساب الكابتن")).toBeTruthy();
@@ -683,7 +683,7 @@ describe("CaptainHomeScreen", () => {
     expect(screen.getByText("مستوى الخدمة: ممتاز")).toBeTruthy();
 
     await fireEvent.press(screen.getByLabelText("تحديث بيانات الكابتن"));
-    expect(screen.getByText("تحديث بيانات الكابتن mock فقط الآن")).toBeTruthy();
+    expect(screen.getByText("تم فتح تحديث بيانات الكابتن")).toBeTruthy();
   });
 
   it("shows the latest customer feedback inside captain profile", async () => {

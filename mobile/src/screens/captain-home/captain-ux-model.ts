@@ -121,7 +121,7 @@ export function getCaptainActiveTripView(
         title: "تم الوصول للعميل"
       },
       primaryAction: {
-        accessibilityLabel: "بدء الرحلة التجريبية",
+        accessibilityLabel: "بدء الرحلة",
         buttonLabel: "ابدأ الرحلة الآن",
         nextAction: { type: "start-trip" },
         nextStep: "driving"
@@ -149,7 +149,7 @@ export function getCaptainActiveTripView(
         title: "العميل في الطريق"
       },
       primaryAction: {
-        accessibilityLabel: "إنهاء الرحلة التجريبية",
+        accessibilityLabel: "إنهاء الرحلة",
         buttonLabel: "إنهاء الرحلة",
         nextAction: { type: "complete-trip" },
         nextStep: "completed"
@@ -164,18 +164,18 @@ export function getCaptainActiveTripView(
         detailValue: request.price,
         distanceLabel: "المسافة",
         distanceValue: request.distance,
-        meta: "تم حفظ الرحلة داخل تجربة mock وجاهزة للرجوع للطلبات",
+        meta: "تم حفظ الرحلة وهي جاهزة للرجوع للطلبات",
         nextButtonLabel: "العودة للطلبات",
         stepLabel: "خطوة الكابتن 4 من 4",
         title: "الرحلة مكتملة"
       },
       completedSummary: {
-        meta: `${request.price} تمت إضافتها للأرباح mock`,
+        meta: `${request.price} تمت إضافتها للأرباح`,
         title: "أرباح الرحلة جاهزة"
       },
       detailRows: getCaptainActiveTripDetailRows(request),
       hero: {
-        meta: "تم تسجيل الرحلة ضمن بيانات mock لهذه المرحلة",
+        meta: "تم تسجيل الرحلة ضمن سجل الكابتن",
         status: "مكتملة",
         title: "تم إنهاء الرحلة"
       },

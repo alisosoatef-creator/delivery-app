@@ -181,9 +181,9 @@ export function CaptainHomeScreen() {
           </Text>
           <Text selectable style={styles.subtitle}>
             {activeTab === "earnings"
-              ? "ملخص دخل الكابتن بدون ربط API"
+              ? "ملخص دخل الكابتن اليومي"
               : activeTab === "profile"
-                ? "بيانات تشغيلية mock للكابتن"
+                ? "بيانات تشغيلية للكابتن"
                 : activeTab === "requests"
                   ? "تابع الطلبات والتحديثات المباشرة في مكان واحد"
                   : "راجع أقرب طلب واتخذ قرارك بسرعة"}
@@ -228,13 +228,13 @@ export function CaptainHomeScreen() {
             <CaptainEarningsTab
               completedRequests={rideRequests.completedRequests}
               ratingDisplay={captainRatingDisplay}
-              onReview={() => setNotice("مراجعة الأداء اليومي mock فقط الآن")}
+              onReview={() => setNotice("تم فتح مراجعة الأداء اليومي")}
               onWithdraw={() => setNotice(captainHomeMock.earnings.withdrawNotice)}
             />
           ) : activeTab === "profile" ? (
             <CaptainProfileTab
               customerFeedback={rideRequests.customerFeedback}
-              onUpdateProfile={() => setNotice("تحديث بيانات الكابتن mock فقط الآن")}
+              onUpdateProfile={() => setNotice("تم فتح تحديث بيانات الكابتن")}
             />
           ) : (
             <View
@@ -268,11 +268,11 @@ export function CaptainHomeScreen() {
                     dispatchRideRequests({ requestId: request.id, type: "accept-request" });
                     setActiveRequest(request);
                   }}
-                  onCall={() => setNotice("زر الاتصال بالعميل mock فقط الآن")}
+                  onCall={() => setNotice("سيتم تفعيل الاتصال بالعميل قريباً")}
                   onDecline={() => {
                     dispatchRideRequests({ requestId: request.id, type: "decline-request" });
                     setPreviewRequest(null);
-                    setNotice("تم رفض الطلب التجريبي");
+                    setNotice("تم رفض الطلب");
                   }}
                   onShowDetails={() => setPreviewRequest(request)}
                   request={request}
@@ -398,7 +398,7 @@ function CaptainNearestRequestCard({
       </View>
 
       <MotionPressable
-        accessibilityLabel="عرض تفاصيل الطلب التجريبي"
+        accessibilityLabel="عرض تفاصيل الطلب"
         accessibilityRole="button"
         onPress={onShowDetails}
         style={styles.acceptPreviewTrigger}
@@ -426,7 +426,7 @@ function CaptainNearestRequestCard({
           <Phone color={colors.textSoft} size={18} />
         </Pressable>
         <Pressable
-          accessibilityLabel="رفض الطلب التجريبي"
+          accessibilityLabel="رفض الطلب"
           accessibilityRole="button"
           onPress={onDecline}
           style={({ pressed }) => [styles.declineButton, pressed ? styles.pressed : null]}
@@ -437,7 +437,7 @@ function CaptainNearestRequestCard({
           </Text>
         </Pressable>
         <PremiumButton
-          accessibilityLabel="قبول الطلب التجريبي"
+          accessibilityLabel="قبول الطلب"
           feedback="light"
           label="قبول الطلب"
           onPress={onAccept}
@@ -731,7 +731,7 @@ function CaptainEarningsTab({
       </View>
 
       <PremiumButton
-        accessibilityLabel="سحب أرباح تجريبي"
+        accessibilityLabel="سحب الأرباح"
         label={earnings.withdrawLabel}
         onPress={onWithdraw}
         style={styles.withdrawButton}

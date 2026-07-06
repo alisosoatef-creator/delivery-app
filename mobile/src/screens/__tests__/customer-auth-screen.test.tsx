@@ -25,18 +25,21 @@ async function renderAuthScreen(mode: "login" | "register") {
 }
 
 describe("CustomerAuthScreen", () => {
-  it("renders a premium mock customer login form", async () => {
+  it("renders a premium customer login form without public dev copy", async () => {
     const { actions, screen } = await renderAuthScreen("login");
 
-    expect(screen.getByText("تسجيل الدخول")).toBeTruthy();
+    expect(screen.getAllByText("تسجيل الدخول").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("رقم الجوال")).toBeTruthy();
     expect(screen.getByText("المدينة")).toBeTruthy();
     expect(screen.queryByText("الاسم الكامل")).toBeNull();
-    expect(screen.getByText("دخول تجريبي")).toBeTruthy();
+    expect(screen.getAllByText("تسجيل الدخول").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("دخول تجريبي")).toBeNull();
+    expect(JSON.stringify(screen.toJSON())).not.toContain("mock");
+    expect(JSON.stringify(screen.toJSON())).not.toContain("تجريبي");
 
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599123456");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
+    await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
 
     expect(actions.onSubmit).toHaveBeenCalledWith({
       city: "نابلس",
@@ -46,7 +49,7 @@ describe("CustomerAuthScreen", () => {
     });
   });
 
-  it("renders a premium mock customer registration form", async () => {
+  it("renders a premium customer registration form without public dev copy", async () => {
     const { actions, screen } = await renderAuthScreen("register");
 
     expect(screen.getByText("إنشاء حساب جديد")).toBeTruthy();
@@ -57,7 +60,12 @@ describe("CustomerAuthScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("الاسم الكامل"), "علي محمد");
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599000000");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("إنشاء الحساب التجريبي"));
+    expect(screen.getByText("إنشاء الحساب")).toBeTruthy();
+    expect(screen.queryByText("إنشاء الحساب التجريبي")).toBeNull();
+    expect(JSON.stringify(screen.toJSON())).not.toContain("mock");
+    expect(JSON.stringify(screen.toJSON())).not.toContain("تجريبي");
+
+    await fireEvent.press(screen.getByLabelText("إنشاء الحساب"));
 
     expect(actions.onSubmit).toHaveBeenCalledWith({
       city: "نابلس",

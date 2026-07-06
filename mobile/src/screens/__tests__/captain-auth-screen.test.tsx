@@ -25,20 +25,23 @@ async function renderCaptainAuthScreen() {
 }
 
 describe("CaptainAuthScreen", () => {
-  it("renders a premium mock captain login form and submits captain data", async () => {
+  it("renders a premium captain login form without public dev copy and submits captain data", async () => {
     const { actions, screen } = await renderCaptainAuthScreen();
 
-    expect(screen.getByText("دخول الكابتن")).toBeTruthy();
+    expect(screen.getAllByText("دخول الكابتن").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("بيانات الكابتن")).toBeTruthy();
     expect(screen.getByText("رقم الجوال")).toBeTruthy();
     expect(screen.getByText("رقم المركبة")).toBeTruthy();
     expect(screen.getByText("المدينة")).toBeTruthy();
-    expect(screen.getByText("دخول الكابتن التجريبي")).toBeTruthy();
+    expect(screen.getAllByText("دخول الكابتن").length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByText("دخول الكابتن التجريبي")).toBeNull();
+    expect(JSON.stringify(screen.toJSON())).not.toContain("mock");
+    expect(JSON.stringify(screen.toJSON())).not.toContain("تجريبي");
 
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "05995551212");
     await fireEvent.changeText(screen.getByLabelText("رقم المركبة"), "12-345-67");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("دخول الكابتن التجريبي"));
+    await fireEvent.press(screen.getByLabelText("دخول الكابتن"));
 
     expect(actions.onSubmit).toHaveBeenCalledWith({
       city: "نابلس",

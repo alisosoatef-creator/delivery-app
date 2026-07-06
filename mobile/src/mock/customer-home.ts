@@ -64,7 +64,7 @@ export const customerHomeMock = {
     {
       id: "payment-ready",
       title: "الدفع جاهز",
-      detail: "يمكنك اختيار كاش أو فيزا في نسخة mock الحالية",
+      detail: "يمكنك اختيار كاش أو فيزا قبل تأكيد الطلب",
       time: "اليوم",
       tone: "info"
     }
@@ -169,6 +169,64 @@ export const customerHomeMock = {
           icon: MapPin
         }
       ]
+    },
+    {
+      city: "رام الله",
+      places: [
+        {
+          label: "دوار المنارة",
+          area: "رام الله - وسط البلد",
+          detail: "منطقة دوار المنارة",
+          distance: "1.9 كم",
+          price: "24 شيكل",
+          icon: MapPin
+        },
+        {
+          label: "جامعة بيرزيت",
+          area: "رام الله - بيرزيت",
+          detail: "البوابة الرئيسية للجامعة",
+          distance: "10.4 كم",
+          price: "48 شيكل",
+          icon: Briefcase
+        },
+        {
+          label: "مجمع فلسطين الطبي",
+          area: "رام الله - المصايف",
+          detail: "مدخل الطوارئ الرئيسي",
+          distance: "3.2 كم",
+          price: "29 شيكل",
+          icon: MapPin
+        }
+      ]
+    },
+    {
+      city: "الخليل",
+      places: [
+        {
+          label: "الحرم الإبراهيمي",
+          area: "الخليل - البلدة القديمة",
+          detail: "ساحة الحرم الإبراهيمي",
+          distance: "2.7 كم",
+          price: "27 شيكل",
+          icon: MapPin
+        },
+        {
+          label: "جامعة الخليل",
+          area: "الخليل - عين سارة",
+          detail: "بوابة جامعة الخليل الرئيسية",
+          distance: "4.8 كم",
+          price: "34 شيكل",
+          icon: Briefcase
+        },
+        {
+          label: "باب الزاوية",
+          area: "الخليل - وسط البلد",
+          detail: "منطقة باب الزاوية",
+          distance: "1.9 كم",
+          price: "24 شيكل",
+          icon: MapPin
+        }
+      ]
     }
   ],
   service: {
@@ -224,7 +282,7 @@ export const customerHomeMock = {
   searchTab: {
     title: "بحث سريع",
     subtitle: "اختر وجهة محفوظة أو ابدأ من الخريطة",
-    hint: "الأماكن القريبة في نابلس جاهزة كتجربة mock"
+    hint: "الأماكن القريبة في نابلس جاهزة للاختيار السريع"
   },
   trips: {
     title: "رحلاتي",
@@ -276,19 +334,19 @@ export const customerHomeMock = {
         detail: "رد سريع على أسئلة الرحلات والدفع",
         label: "محادثة الدعم",
         priority: "متوسطة",
-        response: "محادثة mock جاهزة، وسيتم ربطها بالدعم لاحقاً"
+        response: "تم تجهيز محادثة الدعم لمتابعة طلبك"
       },
       {
         detail: "أخبرنا عن مشكلة بالرحلة أو الدفع",
         label: "الإبلاغ عن مشكلة",
         priority: "عالية",
-        response: "سيظهر هنا نموذج API لاحقاً"
+        response: "تم تجهيز نموذج البلاغ لمراجعة المشكلة"
       },
       {
         detail: "تواصل مباشر عند الحالات المستعجلة",
         label: "اتصال سريع",
         priority: "فورية",
-        response: "اتصال mock جاهز، وسيتم ربط الرقم لاحقاً"
+        response: "تم تجهيز الاتصال السريع للدعم"
       }
     ]
   },

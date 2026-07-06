@@ -55,7 +55,7 @@ describe("AppEntryScreen", () => {
 
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599123456");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
+    await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
 
     expect(screen.getByText("جاهز لمشوارك؟")).toBeTruthy();
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
@@ -72,7 +72,7 @@ describe("AppEntryScreen", () => {
     await fireEvent.changeText(screen.getByLabelText("الاسم الكامل"), "علي محمد");
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599000000");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("إنشاء الحساب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("إنشاء الحساب"));
 
     expect(screen.getByText("جاهز لمشوارك؟")).toBeTruthy();
     expect(screen.getByText("اطلب رحلة")).toBeTruthy();
@@ -83,13 +83,13 @@ describe("AppEntryScreen", () => {
 
     await fireEvent.press(screen.getByLabelText("الدخول ككابتن توصيل"));
 
-    expect(screen.getByText("دخول الكابتن")).toBeTruthy();
+    expect(screen.getAllByText("دخول الكابتن").length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByText("أهلًا كابتن أحمد")).toBeNull();
 
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "05995551212");
     await fireEvent.changeText(screen.getByLabelText("رقم المركبة"), "12-345-67");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("دخول الكابتن التجريبي"));
+    await fireEvent.press(screen.getByLabelText("دخول الكابتن"));
 
     expect(screen.getByText("تطبيق الكابتن")).toBeTruthy();
     expect(screen.getByText("أهلًا كابتن أحمد")).toBeTruthy();
@@ -120,7 +120,7 @@ describe("AppEntryScreen", () => {
     await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
     await fireEvent.changeText(screen.getByLabelText("رقم الجوال"), "0599123456");
     await fireEvent.changeText(screen.getByLabelText("المدينة"), "نابلس");
-    await fireEvent.press(screen.getByLabelText("دخول تجريبي"));
+    await fireEvent.press(screen.getByLabelText("تسجيل الدخول"));
 
     await fireEvent.press(screen.getByLabelText("بدء طلب رحلة"));
     await fireEvent.press(screen.getByLabelText("متابعة الخدمة المختارة"));
@@ -143,7 +143,7 @@ describe("AppEntryScreen", () => {
     expect(screen.getByText("أقرب طلب جاهز")).toBeTruthy();
     expect(screen.getByText("علي محمد")).toBeTruthy();
 
-    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب التجريبي"));
+    await fireEvent.press(screen.getByLabelText("عرض تفاصيل الطلب"));
 
     expect(screen.getByTestId("captain-request-details")).toBeTruthy();
     expect(screen.getByText("+970 59 000 4321")).toBeTruthy();

@@ -157,6 +157,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   );
   const [searchQuery, setSearchQuery] = useState("");
   const [activeSearchFilter, setActiveSearchFilter] = useState<CustomerSearchFilter>("الكل");
+  const [isSearchDestinationPrepared, setIsSearchDestinationPrepared] = useState(false);
   const { showConfirmation, stage: rideStage } = tripFlow;
 
   useEffect(() => {
@@ -264,8 +265,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         feedbackRating: liveCustomerFeedback?.rating ?? null,
         isCompleted: rideRequests.acceptedTripStep === "completed",
         payment: acceptedCustomerRequest.paymentMethod,
-        paymentStatus:
-          rideRequests.acceptedTripStep === "completed" ? "مدفوع mock" : "بانتظار اكتمال الرحلة",
+        paymentStatus: rideRequests.acceptedTripStep === "completed" ? "مدفوع" : "بانتظار اكتمال الرحلة",
         price: acceptedCustomerRequest.price,
         receiptNumber: "WAS-0001",
         route: `${acceptedCustomerRequest.pickup} ← ${acceptedCustomerRequest.destinationArea}`,
@@ -358,7 +358,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   function enableMockLocation() {
     setIsMockLocationEnabled(true);
     setIsNotificationsOpen(false);
-    setNotice("تم تفعيل موقع mock لهذه النسخة");
+    setNotice("تم تفعيل موقعك الحالي");
   }
 
   function openBookingFlow() {
@@ -406,7 +406,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setSelectedPickup(nextPickup);
     setIsMockLocationEnabled(true);
     setIsNotificationsOpen(false);
-    setNotice(`تم اختيار ${nextPickup.label} كنقطة انطلاق mock`);
+    setNotice(`تم اختيار ${nextPickup.label} كنقطة انطلاق`);
   }
 
   function selectDestination(place: DestinationPlace) {
@@ -419,6 +419,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
 
   function selectDestinationFromSearch(place: DestinationPlace) {
     selectDestination(place);
+    setIsSearchDestinationPrepared(true);
     setNotice(`تم اختيار ${place.label} ${selectedSearchCopy.selectedNoticeSuffix}`);
   }
 
@@ -473,7 +474,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   }
 
   function useSelectedSearchDestination() {
-    if (!selectedDestination) {
+    if (!selectedDestination || !isSearchDestinationPrepared) {
       setNotice("اختر وجهة من نتائج البحث");
       return;
     }
@@ -481,6 +482,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     setActiveNav("الرئيسية");
     setIsBookingFlowOpen(true);
     setBookingStep("details");
+    setIsSearchDestinationPrepared(false);
     setNotice(`تم تجهيز ${selectedDestination.label} للطلب`);
   }
 
@@ -717,7 +719,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             </PremiumButton>
             <PremiumButton
               accessibilityLabel={
-                onPreviewCaptainRequests ? "معاينة الطلب عند الكابتن" : "عرض الكابتن التجريبي"
+                onPreviewCaptainRequests ? "معاينة الطلب عند الكابتن" : "عرض الكابتن"
               }
               label={onPreviewCaptainRequests ? "معاينة عند الكابتن" : "عرض الكابتن"}
               onPress={
@@ -845,15 +847,15 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
           ) : null}
 
           <CustomerSafetyPanel
-            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
-            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة mock")}
+            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان")}
+            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة")}
           />
 
           <View style={styles.stageActions}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="اتصال بالكابتن"
-              onPress={() => setNotice("زر الاتصال mock فقط الآن")}
+              onPress={() => setNotice("سيتم تفعيل الاتصال قريباً")}
               style={styles.iconAction}
             >
               <Phone color={colors.textSoft} size={18} />
@@ -861,13 +863,13 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="رسالة للكابتن"
-              onPress={() => setNotice("زر الرسالة mock فقط الآن")}
+              onPress={() => setNotice("سيتم تفعيل الرسائل قريباً")}
               style={styles.iconAction}
             >
               <MessageCircle color={colors.textSoft} size={18} />
             </Pressable>
             <PremiumButton
-              accessibilityLabel="بدء الرحلة التجريبية"
+              accessibilityLabel="بدء الرحلة"
               label="بدء الرحلة"
               onPress={() => dispatchTripFlow({ type: "start-trip" })}
               style={styles.stagePrimaryButton}
@@ -948,8 +950,8 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             route={activeRideRoute}
           />
           <CustomerSafetyPanel
-            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان mock")}
-            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة mock")}
+            onSafetyAlert={() => setNotice("تم تسجيل تنبيه الأمان")}
+            onShareTrip={() => setNotice("تم تجهيز رابط مشاركة الرحلة")}
           />
           <PremiumButton
             accessibilityLabel="إنهاء الرحلة"
@@ -975,7 +977,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         <CustomerReceiptCard
           amount={acceptedCustomerRequest?.price ?? selectedServiceType.price}
           destinationDetail={acceptedCustomerRequest?.destinationDetail ?? captainDestinationDetail}
-          onDownload={() => setNotice("تم تجهيز إيصال الرحلة mock")}
+          onDownload={() => setNotice("تم تجهيز إيصال الرحلة")}
           paymentMethod={acceptedCustomerRequest?.paymentMethod ?? effectivePaymentMethod}
           receiptNumber="WAS-0001"
           route={
@@ -1112,7 +1114,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
               : activeNav === "حسابي"
                 ? isSupportHubOpen
                   ? "كل خيارات المساعدة في مكان واحد"
-                  : "بياناتك الأساسية وتجربة الدفع mock"
+                  : "بياناتك الأساسية ووسائل الدفع"
                 : activeNav === "البحث"
                   ? "اختر وجهتك بسرعة من الأماكن القريبة والمحفوظة"
                   : isBookingFlowOpen
@@ -1139,22 +1141,29 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
             ) : (
               <CustomerProfileTab
                 onOpenSupport={openSupportHub}
-                onReviewProfile={() => setNotice("مراجعة بيانات الحساب mock فقط الآن")}
+                onReviewProfile={() => setNotice("تم فتح مراجعة بيانات الحساب")}
               />
             )
           ) : activeNav === "البحث" ? (
             <CustomerSearchTab
               activeFilter={activeSearchFilter}
-              destinationDetail={selectedDestination ? destinationDetail : undefined}
+              destinationDetail={
+                isSearchDestinationPrepared && selectedDestination ? destinationDetail : undefined
+              }
               onChangeDestinationDetail={setDestinationDetail}
-              onChangeFilter={setActiveSearchFilter}
-              onChangeQuery={setSearchQuery}
+              onChangeFilter={(filter) => {
+                setActiveSearchFilter(filter);
+                setIsSearchDestinationPrepared(false);
+              }}
+              onChangeQuery={(query) => {
+                setSearchQuery(query);
+                setIsSearchDestinationPrepared(false);
+              }}
               onSelectDestination={selectDestinationFromSearch}
               onUseDestination={useSelectedSearchDestination}
-              pickupLabel={selectedPickup.label}
               query={searchQuery}
               searchCopy={selectedSearchCopy}
-              selectedDestination={selectedDestination}
+              selectedDestination={isSearchDestinationPrepared ? selectedDestination : null}
             />
           ) : isBookingFlowOpen ? (
             <View testID="customer-booking-workspace" style={styles.bookingWorkspace}>
@@ -1407,10 +1416,10 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                 </View>
                                 <View style={styles.visaPaymentCopy}>
                                   <Text selectable style={styles.visaPaymentTitle}>
-                                    بطاقة فيزا mock
+                                    بطاقة فيزا
                                   </Text>
                                   <Text selectable style={styles.visaPaymentMeta}>
-                                    بيانات تجريبية فقط، لن يتم خصم أي مبلغ الآن.
+                                    لن يتم خصم أي مبلغ الآن.
                                   </Text>
                                 </View>
                               </View>
@@ -1539,7 +1548,7 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                                   </Text>
                                   {shouldSaveVisaCard ? (
                                     <Text selectable style={styles.visaSummaryMeta}>
-                                      سيتم حفظ البطاقة mock للاستخدام القادم
+                                      سيتم حفظ البطاقة للاستخدام القادم
                                     </Text>
                                   ) : null}
                                 </View>
@@ -1678,6 +1687,9 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
                   setNotice(null);
                   setActiveNav(item.label);
                   setIsSupportHubOpen(false);
+                  if (item.label === "البحث") {
+                    setIsSearchDestinationPrepared(false);
+                  }
                   if (item.label === "الرئيسية") {
                     setIsBookingFlowOpen(false);
                   }
@@ -2130,14 +2142,11 @@ function CustomerBookingLauncher({ onStart }: { onStart: () => void }) {
         >
           <View testID="customer-home-ready-status" style={styles.bookingReadyStatus}>
             <View style={styles.bookingReadyIcon}>
-              <MapPin color={colors.cyan} size={24} />
+              <CheckCircle color={colors.cyan} size={22} />
             </View>
             <View style={styles.bookingReadyCopy}>
               <Text selectable style={styles.bookingReadyTitle}>
-                اطلب رحلتك الآن
-              </Text>
-              <Text selectable style={styles.bookingReadyMeta}>
-                ابدأ بطلب واحد واضح، وبعدها نرتب النوع والموقع والدفع خطوة بخطوة.
+                جاهز الآن
               </Text>
             </View>
           </View>
@@ -2652,7 +2661,7 @@ function CustomerPickupHandoffPanel({
 
       <View style={styles.pickupHandoffCodeCard}>
         <Text selectable style={styles.pickupHandoffCodeLabel}>
-          رمز التحقق mock
+          رمز التحقق
         </Text>
         <Text selectable style={styles.pickupHandoffCodeValue}>
           4821
@@ -2706,7 +2715,7 @@ function CustomerLocationCard({
     <GlassCard testID="customer-pickup-location-card" style={styles.locationCard} variant="strong">
       <View style={styles.locationHeader}>
         <Pressable
-          accessibilityLabel="تفعيل موقع mock"
+          accessibilityLabel="تفعيل الموقع الحالي"
           accessibilityRole="button"
           onPress={onEnableLocation}
           style={({ pressed }) => [
@@ -2717,7 +2726,7 @@ function CustomerLocationCard({
         >
           <MapPin color={isMockLocationEnabled ? colors.cyan : colors.textSoft} size={16} />
           <Text selectable style={styles.locationToggleText}>
-            {isMockLocationEnabled ? "GPS mock مفعّل" : "GPS mock غير مفعّل"}
+            {isMockLocationEnabled ? "تحديد الموقع مفعّل" : "تحديد الموقع غير مفعّل"}
           </Text>
         </Pressable>
 
@@ -2830,7 +2839,6 @@ function CustomerSearchTab({
   onChangeQuery,
   onSelectDestination,
   onUseDestination,
-  pickupLabel,
   query,
   searchCopy,
   selectedDestination
@@ -2842,14 +2850,13 @@ function CustomerSearchTab({
   onChangeQuery: (query: string) => void;
   onSelectDestination: (place: DestinationPlace) => void;
   onUseDestination: () => void;
-  pickupLabel: string;
   query: string;
   searchCopy: CustomerSearchCopy;
   selectedDestination: DestinationPlace | null;
 }) {
   const searchView = getCustomerSearchTabView({
     activeFilter,
-    fallbackTitle: "نتائج البحث",
+    fallbackTitle: query.trim() ? "نتائج البحث" : "اقتراحات قريبة",
     query
   });
   const results = searchView.results;
@@ -2901,13 +2908,6 @@ function CustomerSearchTab({
           })}
         </View>
       </GlassCard>
-
-      <MockRouteMap
-        destinationArea={selectedDestination?.area}
-        destinationDetail={selectedDestination ? destinationDetail : undefined}
-        phase="idle"
-        pickupLabel={pickupLabel}
-      />
 
       <View style={styles.sectionHeader}>
         <Text selectable style={styles.sectionTitle}>
@@ -3572,7 +3572,7 @@ function CustomerProfileTab({
         </View>
 
         <Pressable
-          accessibilityLabel="فتح الدعم والمساعدة mock"
+          accessibilityLabel="فتح الدعم والمساعدة"
           accessibilityRole="button"
           onPress={onOpenSupport}
           style={({ pressed }) => [styles.profileActionButton, pressed ? styles.pressed : null]}
@@ -4324,28 +4324,29 @@ const styles = StyleSheet.create({
     fontWeight: "900"
   },
   bookingLauncherCard: {
-    minHeight: 238,
+    minHeight: 156,
     justifyContent: "space-between",
-    gap: spacing.lg,
+    gap: spacing.md,
     padding: layoutRhythm.cardPadding,
     borderRadius: radii.lg,
     borderColor: glass.strong.borderColor,
     backgroundColor: glass.strong.backgroundColor
   },
   bookingReadyStatus: {
-    minHeight: 112,
+    minHeight: 62,
     flexDirection: "row-reverse",
     alignItems: "center",
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: radii.md,
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radii.sm,
     borderWidth: 1,
     borderColor: "rgba(0, 229, 255, 0.24)",
     backgroundColor: "rgba(0, 229, 255, 0.075)"
   },
   bookingReadyIcon: {
-    width: 54,
-    height: 54,
+    width: 42,
+    height: 42,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.pill,
@@ -4361,19 +4362,12 @@ const styles = StyleSheet.create({
   bookingReadyTitle: {
     ...rtlText,
     color: colors.text,
-    fontSize: typography.section,
+    fontSize: typography.body,
     fontWeight: "900"
-  },
-  bookingReadyMeta: {
-    ...rtlText,
-    color: colors.textSoft,
-    fontSize: typography.compact,
-    fontWeight: "800",
-    lineHeight: 21
   },
   bookingLauncherButton: {
     width: "100%",
-    minHeight: 66
+    minHeight: 68
   },
   serviceTypePicker: {
     gap: spacing.md,

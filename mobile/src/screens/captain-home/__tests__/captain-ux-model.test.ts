@@ -92,7 +92,7 @@ describe("captain UX model", () => {
     });
     expect(completed).toMatchObject({
       completedSummary: {
-        meta: `${request.price} تمت إضافتها للأرباح mock`,
+        meta: `${request.price} تمت إضافتها للأرباح`,
         title: "أرباح الرحلة جاهزة"
       },
       hero: {

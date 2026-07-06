@@ -35,7 +35,7 @@ export function CustomerAuthScreen({ mode, onBack, onSubmit }: CustomerAuthScree
   const [city, setCity] = useState("نابلس");
   const isRegister = mode === "register";
 
-  function submitMockAuth() {
+  function submitAuth() {
     onSubmit({
       city,
       mode,
@@ -50,14 +50,14 @@ export function CustomerAuthScreen({ mode, onBack, onSubmit }: CustomerAuthScree
 
       <AuthHero
         title={isRegister ? "إنشاء حساب جديد" : "تسجيل الدخول"}
-        subtitle={isRegister ? "ابدأ تجربة واصل ببيانات تجريبية" : "ادخل إلى تجربة العميل بدون ربط API"}
+        subtitle={isRegister ? "جهّز حسابك وابدأ طلباتك بسلاسة" : "ادخل إلى حسابك واستكمل رحلتك"}
       />
 
       <AuthFormCard>
         <AuthFormHeader
           icon={<ShieldCheck color={colors.cyan} size={20} />}
           title="بيانات العميل"
-          meta="mock UI فقط في هذه المرحلة"
+          meta="بيانات بسيطة لبدء تجربة واصل"
         />
 
         {isRegister ? (
@@ -91,14 +91,14 @@ export function CustomerAuthScreen({ mode, onBack, onSubmit }: CustomerAuthScree
         />
 
         <PremiumButton
-          accessibilityLabel={isRegister ? "إنشاء الحساب التجريبي" : "دخول تجريبي"}
-          label={isRegister ? "إنشاء الحساب التجريبي" : "دخول تجريبي"}
-          onPress={submitMockAuth}
+          accessibilityLabel={isRegister ? "إنشاء الحساب" : "تسجيل الدخول"}
+          label={isRegister ? "إنشاء الحساب" : "تسجيل الدخول"}
+          onPress={submitAuth}
           style={styles.submitButton}
         />
       </AuthFormCard>
 
-      <AuthNote text="لا يوجد ربط backend أو تحقق SMS الآن. هذه شاشة mock لتثبيت تجربة الدخول فقط." />
+      <AuthNote text="يمكنك تعديل بياناتك لاحقاً من ملف العميل." />
     </AuthScreenFrame>
   );
 }

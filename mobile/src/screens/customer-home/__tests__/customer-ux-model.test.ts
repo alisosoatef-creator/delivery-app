@@ -45,6 +45,16 @@ describe("customer UX model", () => {
       fallbackTitle: "نتائج البحث",
       query: "جنين"
     });
+    const ramallahResults = getCustomerDestinationResults({
+      activeFilter: "جامعات",
+      fallbackTitle: "نتائج البحث",
+      query: "رام الله"
+    });
+    const hebronResults = getCustomerDestinationResults({
+      activeFilter: "أماكن أخرى",
+      fallbackTitle: "نتائج البحث",
+      query: "الخليل"
+    });
 
     expect(cityResults.title).toBe("اقتراحات جنين");
     expect(cityResults.places).toHaveLength(3);
@@ -55,6 +65,13 @@ describe("customer UX model", () => {
     ]);
     expect(universityResults.places.map((place) => place.label)).toEqual([
       "الجامعة العربية الأمريكية"
+    ]);
+    expect(ramallahResults.title).toBe("اقتراحات رام الله");
+    expect(ramallahResults.places.map((place) => place.label)).toEqual(["جامعة بيرزيت"]);
+    expect(hebronResults.title).toBe("اقتراحات الخليل");
+    expect(hebronResults.places.map((place) => place.label)).toEqual([
+      "الحرم الإبراهيمي",
+      "باب الزاوية"
     ]);
   });
 
@@ -88,7 +105,7 @@ describe("customer UX model", () => {
       feedbackRating: null,
       isCompleted: true,
       payment: "فيزا • **** 4242",
-      paymentStatus: "مدفوع mock",
+      paymentStatus: "مدفوع",
       price: "25 شيكل",
       receiptNumber: "WAS-0001",
       route: "زواتا ← نابلس - رفيديا",
@@ -133,7 +150,7 @@ describe("customer UX model", () => {
     const currentDetail = getCustomerTripDetailView({ detailView: "current", liveTrip });
     const completedDetail = getCustomerTripDetailView({
       detailView: "completed-live",
-      liveTrip: { ...liveTrip, activeStatus: "تم الوصول", isCompleted: true, paymentStatus: "مدفوع mock" }
+      liveTrip: { ...liveTrip, activeStatus: "تم الوصول", isCompleted: true, paymentStatus: "مدفوع" }
     });
     const historyTrip = customerHomeMock.trips.history[0];
     const historyDetail = getCustomerTripDetailView({
@@ -196,16 +213,16 @@ describe("customer UX model", () => {
       "الإبلاغ عن مشكلة",
       "مركز المساعدة"
     ]);
-    expect(profileView.support.items.every((item) => item.meta === "متاح للمرحلة التجريبية")).toBe(
+    expect(profileView.support.items.every((item) => item.meta === "متاح الآن")).toBe(
       true
     );
     expect(supportView.activeAction.label).toBe("الإبلاغ عن مشكلة");
-    expect(supportView.apiNote).toBe("لا يوجد ربط API الآن");
+    expect(supportView.apiNote).toBe("سيتم إرسال البلاغ للمراجعة");
     expect(supportView.summary.title).toBe("بلاغ مشكلة جاهز");
     expect(supportView.summary.lines).toEqual([
       "نوع البلاغ: الإبلاغ عن مشكلة",
       "الأولوية: عالية",
-      "سيظهر هنا نموذج API لاحقاً"
+      "تم تجهيز نموذج البلاغ لمراجعة المشكلة"
     ]);
     expect(accountView.rows.map((row) => row.label)).toEqual([
       "رقم الجوال",

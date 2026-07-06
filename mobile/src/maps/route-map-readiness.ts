@@ -83,10 +83,10 @@ export const routeMapProviderReadiness: RouteMapProviderReadiness = {
 };
 
 const routeMapReadinessHint =
-  "خريطة mock آمنة لـ Expo Go وجاهزة للاستبدال لاحقاً بخريطة حقيقية عند تركيب expo-location و react-native-maps.";
+  "واجهة الخريطة جاهزة لتتبع المسار واستبدالها لاحقاً بخريطة حقيقية عند تركيب expo-location و react-native-maps.";
 
 export const routeMapPhaseLabels: Record<RouteMapPhase, string> = {
-  idle: "مسار تجريبي جاهز",
+  idle: "مسار الرحلة جاهز",
   searching: "نبحث عن أقرب كابتن",
   pickup: "الكابتن يتحرك الآن",
   arrived: "الكابتن عند نقطة الانطلاق",

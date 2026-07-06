@@ -18,7 +18,7 @@ describe("customerHomeMock", () => {
         expect.objectContaining({
           label: "الإبلاغ عن مشكلة",
           priority: "عالية",
-          response: "سيظهر هنا نموذج API لاحقاً"
+          response: "تم تجهيز نموذج البلاغ لمراجعة المشكلة"
         }),
         expect.objectContaining({
           label: "اتصال سريع",

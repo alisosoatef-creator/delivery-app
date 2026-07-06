@@ -33,7 +33,7 @@ export const captainHomeMock = {
     weeklyLabel: "نشاط الأسبوع",
     weeklyBars: ["40", "85", "60", "110", "72", "130", "95"],
     withdrawLabel: "سحب الأرباح",
-    withdrawNotice: "طلب السحب mock فقط الآن"
+    withdrawNotice: "تم تجهيز طلب سحب الأرباح"
   },
   profile: {
     title: "حساب الكابتن",

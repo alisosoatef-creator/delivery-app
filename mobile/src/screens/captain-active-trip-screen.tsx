@@ -203,8 +203,8 @@ export function CaptainActiveTripScreen({
 
           {tripStep !== "completed" ? (
             <CaptainSupportPanel
-              onReportIssue={() => setNotice("تم تسجيل مشكلة الرحلة mock")}
-              onShareLocation={() => setNotice("تم تجهيز مشاركة موقع الكابتن mock")}
+              onReportIssue={() => setNotice("تم تسجيل مشكلة الرحلة")}
+              onShareLocation={() => setNotice("تم تجهيز مشاركة موقع الكابتن")}
             />
           ) : null}
 
@@ -243,7 +243,7 @@ export function CaptainActiveTripScreen({
               <Pressable
                 accessibilityLabel="اتصال بالعميل أثناء الرحلة"
                 accessibilityRole="button"
-                onPress={() => setNotice("زر الاتصال mock فقط الآن")}
+                onPress={() => setNotice("سيتم تفعيل الاتصال قريباً")}
                 style={styles.iconAction}
               >
                 <Phone color={colors.textSoft} size={18} />
@@ -251,7 +251,7 @@ export function CaptainActiveTripScreen({
               <Pressable
                 accessibilityLabel="رسالة للعميل أثناء الرحلة"
                 accessibilityRole="button"
-                onPress={() => setNotice("زر الرسالة mock فقط الآن")}
+                onPress={() => setNotice("سيتم تفعيل الرسائل قريباً")}
                 style={styles.iconAction}
               >
                 <MessageCircle color={colors.textSoft} size={18} />

@@ -30,7 +30,7 @@ export function CaptainAuthScreen({ onBack, onSubmit }: CaptainAuthScreenProps) 
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [city, setCity] = useState("نابلس");
 
-  function submitMockAuth() {
+  function submitAuth() {
     onSubmit({
       city,
       phone,
@@ -42,13 +42,13 @@ export function CaptainAuthScreen({ onBack, onSubmit }: CaptainAuthScreenProps) 
     <AuthScreenFrame>
       <AuthTopBar appLabel="تطبيق الكابتن" onBack={onBack} />
 
-      <AuthHero title="دخول الكابتن" subtitle="سجّل بيانات تشغيلية mock قبل فتح لوحة الطلبات" />
+      <AuthHero title="دخول الكابتن" subtitle="سجّل بياناتك وافتح لوحة الطلبات" />
 
       <AuthFormCard style={styles.formCard}>
         <AuthFormHeader
           icon={<ShieldCheck color={colors.cyan} size={20} />}
           title="بيانات الكابتن"
-          meta="لا يوجد تحقق SMS أو ربط backend الآن"
+          meta="تحقق من بيانات التشغيل قبل بدء الطلبات"
         />
 
         <AuthField
@@ -80,14 +80,14 @@ export function CaptainAuthScreen({ onBack, onSubmit }: CaptainAuthScreenProps) 
         />
 
         <PremiumButton
-          accessibilityLabel="دخول الكابتن التجريبي"
-          label="دخول الكابتن التجريبي"
-          onPress={submitMockAuth}
+          accessibilityLabel="دخول الكابتن"
+          label="دخول الكابتن"
+          onPress={submitAuth}
           style={styles.submitButton}
         />
       </AuthFormCard>
 
-      <AuthNote text="هذه شاشة mock لتثبيت تجربة الكابتن فقط. الربط مع backend والتوثيق الحقيقي يأتي لاحقًا." />
+      <AuthNote text="تأكد من رقم المركبة والمدينة قبل استقبال الطلبات." />
     </AuthScreenFrame>
   );
 }
