@@ -9,15 +9,19 @@ import {
   ChevronRight,
   Clock,
   CreditCard,
+  AlertTriangle,
+  LogOut,
   MapPin,
   MessageCircle,
   Navigation,
   Phone,
   Search,
+  Settings,
   ShieldCheck,
   Sparkles,
   Star,
-  User,
+  Trash2,
+  TrendingUp,
   XCircle
 } from "lucide-react-native";
 import type { ReactNode } from "react";
@@ -113,6 +117,8 @@ type CustomerHomeScreenProps = {
   onPreviewCaptainRequests?: () => void;
 };
 
+type CustomerNotification = (typeof customerHomeMock.notifications)[number];
+
 export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScreenProps = {}) {
   const insets = useSafeAreaInsets();
   const responsive = useResponsiveLayout();
@@ -132,6 +138,12 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
   const [rideRequests, dispatchRideRequests] = useMockRideRequests();
   const [notice, setNotice] = useState<string | null>(null);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [visibleNotifications, setVisibleNotifications] = useState<CustomerNotification[]>(
+    () => [...customerHomeMock.notifications]
+  );
+  const [clearedNotifications, setClearedNotifications] = useState<CustomerNotification[] | null>(
+    null
+  );
   const [isSupportHubOpen, setIsSupportHubOpen] = useState(false);
   const [selectedSupportAction, setSelectedSupportAction] =
     useState<CustomerSupportActionLabel>("محادثة الدعم");
@@ -278,9 +290,29 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
     "customer"
   );
   const recentRealtimeEvents = getRecentMockRealtimeEvents(rideRequests.realtime, "customer", 4);
+  const notificationCount = visibleNotifications.length;
   const selectedServiceLabel =
     selectedServiceType.id === "city" ? customerHomeMock.service.label : selectedServiceType.label;
   const selectedSearchCopy = getCustomerSearchCopy(selectedServiceType);
+
+  function handleClearNotifications() {
+    if (visibleNotifications.length === 0) {
+      return;
+    }
+
+    setClearedNotifications(visibleNotifications);
+    setVisibleNotifications([]);
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
+
+  function handleUndoClearNotifications() {
+    if (!clearedNotifications?.length) {
+      return;
+    }
+
+    setVisibleNotifications(clearedNotifications);
+    setClearedNotifications(null);
+  }
   const visaPaymentValues = visaForm.watch();
   const isVisaPaymentDirty = Object.values(visaPaymentValues).some(
     (value) => value.trim().length > 0
@@ -1039,21 +1071,46 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         ]}
       >
         <View style={styles.header}>
-          <Pressable
-            accessibilityRole="button"
+          <MotionPressable
             accessibilityLabel="فتح التنبيهات"
-            hitSlop={10}
+            accessibilityHint={`${notificationCount} إشعارات جديدة`}
+            accessibilityRole="button"
+            feedback="selection"
             onPress={() => {
               setNotice(null);
               setIsNotificationsOpen((current) => !current);
             }}
+            pressedScale={0.96}
+            style={styles.notificationPill}
+            testID="customer-notification-pill"
           >
-            {({ pressed }) => (
-              <GlassCard style={[styles.iconButton, pressed ? styles.pressed : null]}>
-                <Bell color={colors.textSoft} size={18} />
-              </GlassCard>
-            )}
-          </Pressable>
+            <LinearGradient
+              colors={["rgba(139, 92, 246, 0.18)", "rgba(0, 229, 255, 0.2)"]}
+              pointerEvents="none"
+              style={StyleSheet.absoluteFill}
+            />
+            <LinearGradient
+              colors={["rgba(255, 255, 255, 0.16)", "rgba(255, 255, 255, 0)"]}
+              pointerEvents="none"
+              style={styles.notificationPillHighlight}
+            />
+            <View style={styles.notificationPillIcon}>
+              <Bell color={colors.text} size={18} />
+            </View>
+            <View
+              accessibilityLabel={`${notificationCount} إشعارات`}
+              testID="customer-notification-count-badge"
+              style={styles.notificationCountBadge}
+            >
+              <Text
+                selectable
+                style={styles.notificationCountText}
+                testID="customer-notification-count-text"
+              >
+                {String(notificationCount)}
+              </Text>
+            </View>
+          </MotionPressable>
           <View style={styles.brandLockup}>
             <View style={styles.brandCopy}>
               <Text selectable style={styles.brandName}>
@@ -1085,7 +1142,15 @@ export function CustomerHomeScreen({ onPreviewCaptainRequests }: CustomerHomeScr
         ) : null}
 
         {isNotificationsOpen ? (
-          <CustomerNotificationCenter onClose={() => setIsNotificationsOpen(false)} />
+          <MotionSurface testID="customer-motion-notification-center">
+            <CustomerNotificationCenter
+              canUndoClear={Boolean(clearedNotifications?.length)}
+              notifications={visibleNotifications}
+              onClear={handleClearNotifications}
+              onClose={() => setIsNotificationsOpen(false)}
+              onUndoClear={handleUndoClearNotifications}
+            />
+          </MotionSurface>
         ) : null}
 
         {!isFocusedCustomerHome && latestRealtimeEvent ? (
@@ -2776,19 +2841,35 @@ function CustomerLocationCard({
   );
 }
 
-function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
+function CustomerNotificationCenter({
+  canUndoClear,
+  notifications,
+  onClear,
+  onClose,
+  onUndoClear
+}: {
+  canUndoClear: boolean;
+  notifications: CustomerNotification[];
+  onClear: () => void;
+  onClose: () => void;
+  onUndoClear: () => void;
+}) {
+  const hasNotifications = notifications.length > 0;
+
   return (
     <GlassCard style={styles.notificationCenterCard} variant="strong">
       <View style={styles.notificationHeader}>
-        <Pressable
+        <MotionPressable
           accessibilityLabel="إغلاق التنبيهات"
           accessibilityRole="button"
+          feedback="selection"
           hitSlop={8}
           onPress={onClose}
-          style={({ pressed }) => [styles.notificationCloseButton, pressed ? styles.pressed : null]}
+          pressedScale={0.94}
+          style={styles.notificationCloseButton}
         >
           <XCircle color={colors.textMuted} size={18} />
-        </Pressable>
+        </MotionPressable>
         <View style={styles.notificationHeaderCopy}>
           <Text selectable style={styles.notificationTitle}>
             مركز التنبيهات
@@ -2799,30 +2880,104 @@ function CustomerNotificationCenter({ onClose }: { onClose: () => void }) {
         </View>
       </View>
 
-      <View style={styles.notificationList}>
-        {customerHomeMock.notifications.map((notification) => (
-          <View key={notification.id} style={styles.notificationRow}>
-            <View
-              style={[
-                styles.notificationDot,
-                notification.tone === "live" ? styles.notificationDotLive : null,
-                notification.tone === "success" ? styles.notificationDotSuccess : null
-              ]}
-            />
-            <View style={styles.notificationCopy}>
-              <Text selectable style={styles.notificationRowTitle}>
-                {notification.title}
+      <View style={styles.notificationToolbar}>
+        <MotionPressable
+          accessibilityLabel="مسح سجل التنبيهات"
+          disabled={!hasNotifications}
+          feedback="light"
+          onPress={onClear}
+          pressedScale={0.96}
+          style={[
+            styles.notificationClearButton,
+            !hasNotifications ? styles.notificationClearButtonDisabled : null
+          ]}
+        >
+          <Trash2 color={hasNotifications ? colors.textSoft : colors.textMuted} size={15} />
+          <Text selectable style={styles.notificationClearText}>
+            مسح الكل
+          </Text>
+        </MotionPressable>
+        <View style={styles.notificationFilterChip}>
+          <Text selectable style={styles.notificationFilterText}>
+            الكل
+          </Text>
+          <ChevronLeft color={colors.textMuted} size={14} />
+        </View>
+      </View>
+
+      {hasNotifications ? (
+        <View style={styles.notificationList}>
+          {notifications.map((notification) => (
+            <MotionSurface key={notification.id} style={styles.notificationRow}>
+              <View
+                style={[
+                  styles.notificationDot,
+                  notification.tone === "live" ? styles.notificationDotLive : null,
+                  notification.tone === "success" ? styles.notificationDotSuccess : null
+                ]}
+              />
+              <View style={styles.notificationCopy}>
+                <Text selectable style={styles.notificationRowTitle}>
+                  {notification.title}
+                </Text>
+                <Text selectable style={styles.notificationRowDetail}>
+                  {notification.detail}
+                </Text>
+              </View>
+              <Text selectable style={styles.notificationTime}>
+                {notification.time}
               </Text>
-              <Text selectable style={styles.notificationRowDetail}>
-                {notification.detail}
-              </Text>
-            </View>
-            <Text selectable style={styles.notificationTime}>
-              {notification.time}
+            </MotionSurface>
+          ))}
+        </View>
+      ) : (
+        <MotionSurface style={styles.notificationEmptyState} testID="customer-notifications-empty">
+          <LinearGradient
+            colors={["rgba(99, 102, 241, 0.18)", "rgba(0, 229, 255, 0.08)"]}
+            pointerEvents="none"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.notificationEmptyIcon}>
+            <Bell color={colors.violetSoft} size={30} />
+          </View>
+          <View style={styles.notificationEmptySparkles}>
+            <Sparkles color={colors.violetSoft} size={14} />
+            <Sparkles color={colors.textSoft} size={10} />
+            <Sparkles color={colors.violetSoft} size={12} />
+          </View>
+          <Text selectable style={styles.notificationEmptyTitle}>
+            لا توجد إشعارات
+          </Text>
+          <Text selectable style={styles.notificationEmptyMeta}>
+            عند وصول إشعار جديد سنجده هنا
+          </Text>
+        </MotionSurface>
+      )}
+
+      {!hasNotifications && canUndoClear ? (
+        <MotionSurface style={styles.notificationUndoToast} testID="customer-notifications-undo">
+          <CheckCircle color={colors.violetSoft} size={24} />
+          <View style={styles.notificationUndoCopy}>
+            <Text selectable style={styles.notificationUndoTitle}>
+              تم مسح سجل التنبيهات بنجاح
+            </Text>
+            <Text selectable style={styles.notificationUndoMeta}>
+              تم الحذف منذ ثوان
             </Text>
           </View>
-        ))}
-      </View>
+          <MotionPressable
+            accessibilityLabel="تراجع عن مسح سجل التنبيهات"
+            feedback="selection"
+            onPress={onUndoClear}
+            pressedScale={0.96}
+            style={styles.notificationUndoButton}
+          >
+            <Text selectable style={styles.notificationUndoText}>
+              تراجع
+            </Text>
+          </MotionPressable>
+        </MotionSurface>
+      ) : null}
     </GlassCard>
   );
 }
@@ -3399,22 +3554,55 @@ function CompletedTripHistoryCard({ liveTrip }: { liveTrip: CustomerTripsLiveRid
 function CustomerProfileTab({ onOpenSupport }: { onOpenSupport: () => void }) {
   const accountView = getCustomerAccountDetailView();
   const profile = accountView.profile;
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [logoutNotice, setLogoutNotice] = useState<string | null>(null);
+
+  function handleLogoutPress() {
+    setLogoutNotice(null);
+    setIsLogoutConfirmOpen(true);
+  }
+
+  function handleCancelLogout() {
+    setIsLogoutConfirmOpen(false);
+  }
+
+  function handleConfirmLogout() {
+    setIsLogoutConfirmOpen(false);
+    setLogoutNotice("تم تأكيد تسجيل الخروج التجريبي");
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }
 
   return (
     <View style={styles.profileStack}>
       <GlassCard testID="customer-profile-overview" style={styles.profileCard} variant="strong">
-        <View style={styles.profileHeader}>
-          <View style={styles.profileAvatar}>
-            <User color={colors.text} size={24} />
+        <View testID="customer-profile-identity-card" style={styles.profileIdentityCard}>
+          <LinearGradient
+            colors={["rgba(139, 92, 246, 0.2)", "rgba(0, 229, 255, 0.1)"]}
+            pointerEvents="none"
+            style={StyleSheet.absoluteFill}
+          />
+          <View style={styles.profileIdentityAvatar}>
+            <Text selectable style={styles.profileIdentityInitial}>
+              ع
+            </Text>
+            <View style={styles.profileVerifiedBadge}>
+              <CheckCircle color={colors.text} size={13} />
+            </View>
           </View>
-          <View style={styles.profileCopy}>
-            <Text selectable style={styles.profileTitle}>
+          <View style={styles.profileIdentityCopy}>
+            <Text selectable style={styles.profileIdentityEyebrow}>
               {profile.title}
+            </Text>
+            <Text selectable style={styles.profileTitle}>
+              بطاقة هوية العميل
             </Text>
             <Text selectable style={styles.profileName}>
               {profile.name}
             </Text>
             <Text selectable style={styles.profileMeta}>
+              {`${profile.phone} • ${profile.city}، فلسطين`}
+            </Text>
+            <Text selectable style={styles.profileCityChip}>
               {profile.city}
             </Text>
           </View>
@@ -3437,93 +3625,185 @@ function CustomerProfileTab({ onOpenSupport }: { onOpenSupport: () => void }) {
         style={styles.profileWalletCard}
         variant="strong"
       >
-        <View style={styles.profileSectionHeader}>
-          <View style={styles.profileSectionIcon}>
-            <CreditCard color={colors.cyan} size={18} />
+        <View style={styles.profileSpendHeader}>
+          <View style={styles.profileSpendIcon}>
+            <TrendingUp color={colors.text} size={20} />
           </View>
-          <View style={styles.profileSectionCopy}>
-            <Text selectable style={styles.profileSectionTitle}>
-              {accountView.wallet.title}
+          <View style={styles.profileSpendCopy}>
+            <Text selectable style={styles.profileSpendEyebrow}>
+              ملخص المدفوعات
             </Text>
-            <Text selectable style={styles.profileSectionMeta}>
+            <Text selectable style={styles.profileSpendLabel}>
+              مصروفات الشهر
+            </Text>
+            <Text selectable style={styles.profileSpendValue}>
+              {accountView.wallet.tiles[0]?.value}
+            </Text>
+            <Text selectable style={styles.profileSpendMeta}>
               {accountView.wallet.meta}
             </Text>
           </View>
         </View>
 
-        <View style={styles.profileWalletGrid}>
-          {accountView.wallet.tiles.map((tile) => (
-            <View
-              key={tile.label}
-              style={
-                tile.tone === "primary" ? styles.profileWalletTilePrimary : styles.profileWalletTile
-              }
-            >
-              <Text
-                selectable
-                style={
-                  tile.tone === "primary"
-                    ? styles.profileWalletValue
-                    : styles.profileWalletValueSmall
-                }
-              >
-                {tile.value}
-              </Text>
-              <Text selectable style={styles.profileWalletLabel}>
-                {tile.label}
-              </Text>
-            </View>
-          ))}
-        </View>
+        <Text selectable style={styles.profileWalletLabel}>
+          مدفوعات هذا الشهر
+        </Text>
       </GlassCard>
 
       <GlassCard testID="customer-profile-support" style={styles.profilePaymentCard}>
-        <View style={styles.profileSectionHeader}>
-          <View style={styles.profileSectionIcon}>
-            <MessageCircle color={colors.violetSoft} size={18} />
-          </View>
-          <View style={styles.profileSectionCopy}>
-            <Text selectable style={styles.profileSectionTitle}>
-              {accountView.support.title}
-            </Text>
-            <Text selectable style={styles.profileSectionMeta}>
-              {accountView.support.meta}
-            </Text>
-          </View>
+        <View style={styles.profileActionList}>
+          <ProfileActionRow
+            icon={<CreditCard color={colors.cyan} size={18} />}
+            meta={accountView.wallet.tiles[1]?.value ?? profile.defaultPayment}
+            title="حالة الدفع"
+          />
+          <ProfileActionRow
+            icon={<CreditCard color={colors.text} size={18} />}
+            meta={accountView.wallet.tiles[2]?.value ?? profile.defaultPayment}
+            title="البطاقة / طريقة الدفع"
+          />
+          <ProfileActionRow
+            accessibilityLabel="فتح الدعم والمساعدة"
+            icon={<MessageCircle color={colors.violetSoft} size={18} />}
+            meta={accountView.support.meta}
+            onPress={onOpenSupport}
+            title={accountView.support.title}
+          />
+          <ProfileActionRow
+            accessibilityLabel="فتح الإبلاغ عن مشكلة"
+            icon={<AlertTriangle color={colors.warning} size={18} />}
+            meta="ساعدنا في تحسين تجربتك"
+            onPress={onOpenSupport}
+            title="الإبلاغ عن مشكلة"
+          />
+          <ProfileActionRow
+            icon={<Settings color={colors.textSoft} size={18} />}
+            meta="اللغة، الإشعارات، وخصوصيتك"
+            title="الإعدادات والأمان"
+          />
         </View>
 
-        <View style={styles.profilePaymentList}>
-          {accountView.support.items.map((item) => (
-            <View key={item.label} style={styles.profilePaymentRow}>
-              <View style={styles.profilePaymentStatus}>
-                <CheckCircle color={colors.success} size={16} />
-              </View>
-              <View style={styles.profilePaymentCopy}>
-                <Text selectable style={styles.profilePaymentTitle}>
-                  {item.label}
-                </Text>
-                <Text selectable style={styles.profilePaymentMeta}>
-                  {item.meta}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-
-        <Pressable
-          accessibilityLabel="فتح الدعم والمساعدة"
-          accessibilityRole="button"
-          onPress={onOpenSupport}
-          style={({ pressed }) => [styles.profileActionButton, pressed ? styles.pressed : null]}
-        >
-          <MessageCircle color={colors.cyan} size={16} />
-          <Text selectable style={styles.profileActionText}>
-            {accountView.support.actionLabel}
+        <View style={styles.profileSupportShortcuts}>
+          <Text selectable style={styles.profileSupportShortcutText}>
+            محادثة الدعم
           </Text>
-        </Pressable>
+          <Text selectable style={styles.profileSupportShortcutText}>
+            مركز المساعدة
+          </Text>
+        </View>
+
+        {logoutNotice ? (
+          <MotionSurface style={styles.profileLogoutNotice}>
+            <CheckCircle color={colors.success} size={16} />
+            <Text selectable style={styles.profileLogoutNoticeText}>
+              {logoutNotice}
+            </Text>
+          </MotionSurface>
+        ) : null}
+
+        {isLogoutConfirmOpen ? (
+          <MotionSurface style={styles.profileLogoutConfirm} testID="customer-motion-logout-confirm">
+            <View style={styles.profileLogoutConfirmIcon}>
+              <ShieldCheck color={colors.warning} size={20} />
+            </View>
+            <View style={styles.profileLogoutConfirmCopy}>
+              <Text selectable style={styles.profileLogoutConfirmTitle}>
+                تأكيد تسجيل الخروج
+              </Text>
+              <Text selectable style={styles.profileLogoutConfirmMeta}>
+                سيتم إغلاق جلسة واصل على هذا الجهاز
+              </Text>
+            </View>
+            <View style={styles.profileLogoutConfirmActions}>
+              <MotionPressable
+                accessibilityLabel="إلغاء تسجيل الخروج"
+                feedback="selection"
+                onPress={handleCancelLogout}
+                style={styles.profileLogoutCancelButton}
+              >
+                <Text selectable style={styles.profileLogoutCancelText}>
+                  إلغاء
+                </Text>
+              </MotionPressable>
+              <MotionPressable
+                accessibilityLabel="تأكيد تسجيل الخروج"
+                feedback="light"
+                onPress={handleConfirmLogout}
+                style={styles.profileLogoutConfirmButton}
+              >
+                <Text selectable style={styles.profileLogoutConfirmButtonText}>
+                  تأكيد
+                </Text>
+              </MotionPressable>
+            </View>
+          </MotionSurface>
+        ) : null}
+
+        <MotionPressable
+          accessibilityLabel="تسجيل الخروج"
+          feedback="light"
+          onPress={handleLogoutPress}
+          pressedScale={0.97}
+          style={styles.profileLogoutButton}
+        >
+          <LogOut color={colors.danger} size={18} />
+          <View style={styles.profileLogoutCopy}>
+            <Text selectable style={styles.profileLogoutTitle}>
+              تسجيل الخروج
+            </Text>
+            <Text selectable style={styles.profileLogoutMeta}>
+              سنطلب التأكيد قبل إغلاق الجلسة
+            </Text>
+          </View>
+        </MotionPressable>
       </GlassCard>
     </View>
   );
+}
+
+function ProfileActionRow({
+  accessibilityLabel,
+  icon,
+  meta,
+  onPress,
+  title
+}: {
+  accessibilityLabel?: string;
+  icon: ReactNode;
+  meta: string;
+  onPress?: () => void;
+  title: string;
+}) {
+  const content = (
+    <>
+      <View style={styles.profileActionRowIcon}>{icon}</View>
+      <View style={styles.profileActionRowCopy}>
+        <Text selectable style={styles.profilePaymentTitle}>
+          {title}
+        </Text>
+        <Text selectable style={styles.profilePaymentMeta}>
+          {meta}
+        </Text>
+      </View>
+      {onPress ? <ChevronRight color={colors.textSoft} size={17} /> : null}
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <MotionPressable
+        accessibilityLabel={accessibilityLabel ?? title}
+        feedback="selection"
+        onPress={onPress}
+        pressedScale={0.98}
+        style={styles.profileActionRow}
+      >
+        {content}
+      </MotionPressable>
+    );
+  }
+
+  return <View style={styles.profileActionRow}>{content}</View>;
 }
 
 function ProfileRowIcon({ kind }: { kind: CustomerAccountInfoRowKind }) {
@@ -3757,6 +4037,56 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: radii.sm
+  },
+  notificationPill: {
+    minWidth: 92,
+    minHeight: 52,
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.xs,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.34)",
+    backgroundColor: "rgba(12, 19, 34, 0.86)",
+    boxShadow: shadows.floating
+  },
+  notificationPillHighlight: {
+    position: "absolute",
+    top: 0,
+    right: 0,
+    left: 0,
+    height: "48%"
+  },
+  notificationPillIcon: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(7, 11, 20, 0.58)"
+  },
+  notificationCountBadge: {
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: colors.blue,
+    boxShadow: "0 0 18px rgba(0, 229, 255, 0.36)"
+  },
+  notificationCountText: {
+    color: colors.text,
+    fontSize: 16,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"],
+    textAlign: "center"
   },
   pressed: {
     opacity: 0.76,
@@ -5282,6 +5612,48 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border
   },
+  notificationToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm
+  },
+  notificationClearButton: {
+    minHeight: 38,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.045)",
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.16)"
+  },
+  notificationClearButtonDisabled: {
+    opacity: 0.5
+  },
+  notificationClearText: {
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  notificationFilterChip: {
+    minHeight: 36,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xxs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(3, 9, 18, 0.34)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)"
+  },
+  notificationFilterText: {
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
   notificationList: {
     gap: spacing.xs
   },
@@ -5329,6 +5701,96 @@ const styles = StyleSheet.create({
   },
   notificationTime: {
     color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  notificationEmptyState: {
+    minHeight: 180,
+    overflow: "hidden",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    padding: spacing.lg,
+    borderRadius: radii.lg,
+    backgroundColor: "rgba(3, 9, 18, 0.36)",
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.12)"
+  },
+  notificationEmptyIcon: {
+    width: 68,
+    height: 68,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(199, 183, 255, 0.3)",
+    boxShadow: "0 0 32px rgba(99, 102, 241, 0.22)"
+  },
+  notificationEmptySparkles: {
+    position: "absolute",
+    top: 50,
+    width: 170,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    opacity: 0.72
+  },
+  notificationEmptyTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900",
+    marginTop: spacing.xs
+  },
+  notificationEmptyMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "700",
+    textAlign: "center"
+  },
+  notificationUndoToast: {
+    minHeight: 68,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: "rgba(12, 19, 34, 0.82)",
+    borderWidth: 1,
+    borderColor: "rgba(139, 92, 246, 0.36)",
+    boxShadow: "0 0 28px rgba(139, 92, 246, 0.18)"
+  },
+  notificationUndoCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  notificationUndoTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  notificationUndoMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "700"
+  },
+  notificationUndoButton: {
+    minHeight: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: spacing.sm,
+    borderRadius: radii.pill,
+    backgroundColor: "rgba(0, 229, 255, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.24)"
+  },
+  notificationUndoText: {
+    color: colors.cyan,
     fontSize: typography.tiny,
     fontWeight: "900"
   },
@@ -6703,6 +7165,71 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: spacing.md
   },
+  profileIdentityCard: {
+    overflow: "hidden",
+    minHeight: 118,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md,
+    padding: spacing.md,
+    borderRadius: radii.lg,
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.2)",
+    backgroundColor: "rgba(7, 11, 20, 0.48)",
+    boxShadow: "0 18px 42px rgba(0, 0, 0, 0.22)"
+  },
+  profileIdentityAvatar: {
+    width: 72,
+    height: 72,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 2,
+    borderColor: "rgba(0, 229, 255, 0.54)",
+    backgroundColor: "rgba(139, 92, 246, 0.22)",
+    boxShadow: "0 0 26px rgba(0, 229, 255, 0.22)"
+  },
+  profileIdentityInitial: {
+    color: colors.text,
+    fontSize: 28,
+    fontWeight: "900"
+  },
+  profileVerifiedBadge: {
+    position: "absolute",
+    right: 2,
+    bottom: 3,
+    width: 22,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.32)",
+    backgroundColor: colors.blue
+  },
+  profileIdentityCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  profileIdentityEyebrow: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  profileCityChip: {
+    overflow: "hidden",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radii.pill,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)"
+  },
   profileAvatar: {
     width: 58,
     height: 58,
@@ -6811,6 +7338,52 @@ const styles = StyleSheet.create({
     borderColor: glass.strong.borderColor,
     backgroundColor: glass.strong.backgroundColor
   },
+  profileSpendHeader: {
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.md
+  },
+  profileSpendIcon: {
+    width: 56,
+    height: 56,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(199, 183, 255, 0.38)",
+    backgroundColor: "rgba(139, 92, 246, 0.2)",
+    boxShadow: "0 0 28px rgba(139, 92, 246, 0.24)"
+  },
+  profileSpendCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  profileSpendEyebrow: {
+    ...rtlText,
+    color: colors.cyan,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  profileSpendLabel: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "900"
+  },
+  profileSpendValue: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: 26,
+    fontWeight: "900",
+    fontVariant: ["tabular-nums"]
+  },
+  profileSpendMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
   profilePaymentCard: {
     gap: spacing.md,
     padding: layoutRhythm.cardPadding,
@@ -6900,6 +7473,36 @@ const styles = StyleSheet.create({
   profilePaymentList: {
     gap: spacing.xs
   },
+  profileActionList: {
+    gap: spacing.xs
+  },
+  profileActionRow: {
+    minHeight: 64,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(147, 177, 255, 0.14)",
+    backgroundColor: "rgba(255, 255, 255, 0.045)"
+  },
+  profileActionRowIcon: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(7, 11, 20, 0.42)"
+  },
+  profileActionRowCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: 3
+  },
   profilePaymentRow: {
     minHeight: 58,
     flexDirection: "row",
@@ -6953,6 +7556,139 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: typography.compact,
     fontWeight: "900"
+  },
+  profileSupportShortcuts: {
+    flexDirection: "row-reverse",
+    flexWrap: "wrap",
+    gap: spacing.xs
+  },
+  profileSupportShortcutText: {
+    alignSelf: "flex-end",
+    overflow: "hidden",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radii.pill,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "900",
+    backgroundColor: "rgba(0, 229, 255, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(0, 229, 255, 0.14)"
+  },
+  profileLogoutNotice: {
+    minHeight: 48,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.xs,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    backgroundColor: "rgba(51, 231, 168, 0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(51, 231, 168, 0.24)"
+  },
+  profileLogoutNoticeText: {
+    ...rtlText,
+    flex: 1,
+    color: colors.text,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileLogoutConfirm: {
+    gap: spacing.sm,
+    padding: spacing.md,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 198, 87, 0.28)",
+    backgroundColor: "rgba(255, 198, 87, 0.08)"
+  },
+  profileLogoutConfirmIcon: {
+    width: 42,
+    height: 42,
+    alignSelf: "flex-end",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: "rgba(255, 198, 87, 0.24)",
+    backgroundColor: "rgba(255, 198, 87, 0.1)"
+  },
+  profileLogoutConfirmCopy: {
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  profileLogoutConfirmTitle: {
+    ...rtlText,
+    color: colors.text,
+    fontSize: typography.body,
+    fontWeight: "900"
+  },
+  profileLogoutConfirmMeta: {
+    ...rtlText,
+    color: colors.textSoft,
+    fontSize: typography.tiny,
+    fontWeight: "800"
+  },
+  profileLogoutConfirmActions: {
+    flexDirection: "row-reverse",
+    gap: spacing.xs
+  },
+  profileLogoutCancelButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.12)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)"
+  },
+  profileLogoutCancelText: {
+    color: colors.textSoft,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileLogoutConfirmButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: radii.sm,
+    borderWidth: 1,
+    borderColor: "rgba(255, 89, 120, 0.38)",
+    backgroundColor: "rgba(255, 89, 120, 0.12)"
+  },
+  profileLogoutConfirmButtonText: {
+    color: colors.danger,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileLogoutButton: {
+    minHeight: 68,
+    flexDirection: "row-reverse",
+    alignItems: "center",
+    gap: spacing.sm,
+    padding: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderColor: "rgba(255, 89, 120, 0.38)",
+    backgroundColor: "rgba(255, 89, 120, 0.08)"
+  },
+  profileLogoutCopy: {
+    flex: 1,
+    alignItems: "flex-end",
+    gap: spacing.xxs
+  },
+  profileLogoutTitle: {
+    ...rtlText,
+    color: colors.danger,
+    fontSize: typography.compact,
+    fontWeight: "900"
+  },
+  profileLogoutMeta: {
+    ...rtlText,
+    color: colors.textMuted,
+    fontSize: typography.tiny,
+    fontWeight: "800"
   },
   supportHubStack: {
     gap: spacing.md

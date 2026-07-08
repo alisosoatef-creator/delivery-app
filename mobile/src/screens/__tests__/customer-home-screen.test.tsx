@@ -4,7 +4,7 @@ import { act, fireEvent, render } from "@testing-library/react-native";
 import { BackHandler, Keyboard, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
-import { controlSurfaces, glass, shadows } from "@/design/tokens";
+import { colors, controlSurfaces, glass, radii, shadows } from "@/design/tokens";
 import { MockAppProvider, useMockRideRequests } from "@/state/mock-app-context";
 
 import { CustomerHomeScreen } from "../customer-home-screen";
@@ -732,6 +732,24 @@ describe("CustomerHomeScreen", () => {
 
   it("opens and closes a premium customer notification center", async () => {
     const screen = await renderCustomerHome();
+    const notificationPillStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-notification-pill").props.style
+    );
+    const notificationBadgeStyle = StyleSheet.flatten(
+      screen.getByTestId("customer-notification-count-badge").props.style
+    );
+
+    expect(notificationPillStyle).toMatchObject({
+      minHeight: 52,
+      minWidth: 92,
+      borderRadius: radii.pill,
+      boxShadow: shadows.floating
+    });
+    expect(notificationBadgeStyle).toMatchObject({
+      backgroundColor: colors.blue,
+      borderRadius: radii.pill
+    });
+    expect(screen.getByTestId("customer-notification-count-text").props.children).toBe("3");
 
     await fireEvent.press(screen.getByLabelText("فتح التنبيهات"));
 
@@ -743,6 +761,64 @@ describe("CustomerHomeScreen", () => {
     await fireEvent.press(screen.getByLabelText("إغلاق التنبيهات"));
 
     expect(screen.queryByText("مركز التنبيهات")).toBeNull();
+  });
+
+  it("clears customer notifications into an empty state and restores them with undo", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByLabelText("فتح التنبيهات"));
+
+    expect(screen.getByText("الكابتن وصل للعميل")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("مسح سجل التنبيهات"));
+
+    expect(screen.queryByText("الكابتن وصل للعميل")).toBeNull();
+    expect(screen.getByText("لا توجد إشعارات")).toBeTruthy();
+    expect(screen.getByText("عند وصول إشعار جديد سنجده هنا")).toBeTruthy();
+    expect(screen.getByText("تم مسح سجل التنبيهات بنجاح")).toBeTruthy();
+    expect(screen.getByText("تم الحذف منذ ثوان")).toBeTruthy();
+    expect(screen.getByTestId("customer-notification-count-text").props.children).toBe("0");
+
+    await fireEvent.press(screen.getByLabelText("تراجع عن مسح سجل التنبيهات"));
+
+    expect(screen.getByText("الكابتن وصل للعميل")).toBeTruthy();
+    expect(screen.getByTestId("customer-notification-count-text").props.children).toBe("3");
+  });
+
+  it("adds light motion and haptic feedback to notification and logout interactions", async () => {
+    const screen = await renderCustomerHome();
+    const selectionSpy = jest.spyOn(Haptics, "selectionAsync").mockResolvedValue();
+    const impactSpy = jest.spyOn(Haptics, "impactAsync").mockResolvedValue();
+    const notificationSpy = jest.spyOn(Haptics, "notificationAsync").mockResolvedValue();
+
+    await fireEvent.press(screen.getByTestId("customer-notification-pill"));
+
+    expect(screen.getByTestId("customer-motion-notification-center")).toBeTruthy();
+    expect(selectionSpy).toHaveBeenCalledTimes(1);
+
+    await fireEvent.press(screen.getByLabelText("مسح سجل التنبيهات"));
+
+    expect(impactSpy).toHaveBeenCalledWith(Haptics.ImpactFeedbackStyle.Light);
+    expect(notificationSpy).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
+
+    await fireEvent.press(screen.getByLabelText("تراجع عن مسح سجل التنبيهات"));
+
+    expect(selectionSpy).toHaveBeenCalledTimes(2);
+
+    await fireEvent.press(screen.getByLabelText("إغلاق التنبيهات"));
+    await fireEvent.press(screen.getByText("حسابي"));
+
+    const impactCallsBeforeLogout = impactSpy.mock.calls.length;
+    await fireEvent.press(screen.getByLabelText("تسجيل الخروج"));
+
+    expect(screen.getByTestId("customer-motion-logout-confirm")).toBeTruthy();
+    expect(impactSpy.mock.calls.length).toBeGreaterThan(impactCallsBeforeLogout);
+
+    const successCallsBeforeConfirm = notificationSpy.mock.calls.length;
+    await fireEvent.press(screen.getByLabelText("تأكيد تسجيل الخروج"));
+
+    expect(notificationSpy.mock.calls.length).toBeGreaterThan(successCallsBeforeConfirm);
+    expect(notificationSpy).toHaveBeenCalledWith(Haptics.NotificationFeedbackType.Success);
   });
 
   it("does not start captain search before a destination is selected", async () => {
@@ -1617,6 +1693,36 @@ describe("CustomerHomeScreen", () => {
     expect(screen.getByText("بطاقة الدفع")).toBeTruthy();
     expect(screen.getByText("محادثة الدعم")).toBeTruthy();
     expect(screen.getByText("مركز المساعدة")).toBeTruthy();
+  });
+
+  it("shows a calm premium account page with logout confirmation", async () => {
+    const screen = await renderCustomerHome();
+
+    await fireEvent.press(screen.getByText("حسابي"));
+
+    expect(screen.getByTestId("customer-profile-identity-card")).toBeTruthy();
+    expect(screen.getByText("بطاقة هوية العميل")).toBeTruthy();
+    expect(screen.getByText("رقم الجوال")).toBeTruthy();
+    expect(screen.getByText("+970 59 000 4321")).toBeTruthy();
+    expect(screen.getByText("المنطقة")).toBeTruthy();
+    expect(screen.getByText("زواتا")).toBeTruthy();
+    expect(screen.getByText("مصروفات الشهر")).toBeTruthy();
+    expect(screen.getByText("البطاقة / طريقة الدفع")).toBeTruthy();
+    expect(screen.getByText("الدعم والمساعدة")).toBeTruthy();
+    expect(screen.getByText("الإعدادات والأمان")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("تسجيل الخروج"));
+
+    expect(screen.getByText("تأكيد تسجيل الخروج")).toBeTruthy();
+    expect(screen.getByText("سيتم إغلاق جلسة واصل على هذا الجهاز")).toBeTruthy();
+
+    await fireEvent.press(screen.getByLabelText("إلغاء تسجيل الخروج"));
+    expect(screen.queryByText("تأكيد تسجيل الخروج")).toBeNull();
+
+    await fireEvent.press(screen.getByLabelText("تسجيل الخروج"));
+    await fireEvent.press(screen.getByLabelText("تأكيد تسجيل الخروج"));
+
+    expect(screen.getByText("تم تأكيد تسجيل الخروج التجريبي")).toBeTruthy();
   });
 
   it("opens a focused customer support hub from the profile tab", async () => {
